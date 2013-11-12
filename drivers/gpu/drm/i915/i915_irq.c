@@ -424,13 +424,34 @@ static void gen6_pm_rps_work(struct work_struct *work)
 	mutex_unlock(&dev_priv->dev->struct_mutex);
 }
 
-static void pch_irq_handler(struct drm_device *dev)
+static void gen6_queue_rps_work(struct drm_i915_private *dev_priv,
+				u32 pm_iir)
+{
+	unsigned long flags;
+
+	/*
+	 * IIR bits should never already be set because IMR should
+	 * prevent an interrupt from being shown in IIR. The warning
+	 * displays a case where we've unsafely cleared
+	 * dev_priv->pm_iir. Although missing an interrupt of the same
+	 * type is not a problem, it displays a problem in the logic.
+	 *
+	 * The mask bit in IMR is cleared by rps_work.
+	 */
+
+	spin_lock_irqsave(&dev_priv->rps_lock, flags);
+	dev_priv->pm_iir |= pm_iir;
+	I915_WRITE(GEN6_PMIMR, dev_priv->pm_iir);
+	POSTING_READ(GEN6_PMIMR);
+	spin_unlock_irqrestore(&dev_priv->rps_lock, flags);
+
+	queue_work(dev_priv->wq, &dev_priv->rps_work);
+}
+
+static void ibx_irq_handler(struct drm_device *dev, u32 pch_iir)
 {
 	drm_i915_private_t *dev_priv = (drm_i915_private_t *) dev->dev_private;
-	u32 pch_iir;
 	int pipe;
-
-	pch_iir = I915_READ(SDEIIR);
 
 	if (pch_iir & SDE_AUDIO_POWER_MASK)
 		DRM_DEBUG_DRIVER("PCH audio power change on port %d\n",
@@ -465,6 +486,35 @@ static void pch_irq_handler(struct drm_device *dev)
 		DRM_DEBUG_DRIVER("PCH transcoder B underrun interrupt\n");
 	if (pch_iir & SDE_TRANSA_FIFO_UNDER)
 		DRM_DEBUG_DRIVER("PCH transcoder A underrun interrupt\n");
+}
+
+static void cpt_irq_handler(struct drm_device *dev, u32 pch_iir)
+{
+	drm_i915_private_t *dev_priv = (drm_i915_private_t *) dev->dev_private;
+	int pipe;
+
+	if (pch_iir & SDE_AUDIO_POWER_MASK_CPT)
+		DRM_DEBUG_DRIVER("PCH audio power change on port %d\n",
+				 (pch_iir & SDE_AUDIO_POWER_MASK_CPT) >>
+				 SDE_AUDIO_POWER_SHIFT_CPT);
+
+	if (pch_iir & SDE_AUX_MASK_CPT)
+		DRM_DEBUG_DRIVER("AUX channel interrupt\n");
+
+	if (pch_iir & SDE_GMBUS_CPT)
+		DRM_DEBUG_DRIVER("PCH GMBUS interrupt\n");
+
+	if (pch_iir & SDE_AUDIO_CP_REQ_CPT)
+		DRM_DEBUG_DRIVER("Audio CP request interrupt\n");
+
+	if (pch_iir & SDE_AUDIO_CP_CHG_CPT)
+		DRM_DEBUG_DRIVER("Audio CP change interrupt\n");
+
+	if (pch_iir & SDE_FDI_MASK_CPT)
+		for_each_pipe(pipe)
+			DRM_DEBUG_DRIVER("  pipe %c FDI IIR: 0x%08x\n",
+					 pipe_name(pipe),
+					 I915_READ(FDI_RX_IIR(pipe)));
 }
 
 static irqreturn_t ivybridge_irq_handler(DRM_IRQ_ARGS)
@@ -509,6 +559,12 @@ static irqreturn_t ivybridge_irq_handler(DRM_IRQ_ARGS)
 	if (de_iir & DE_GSE_IVB)
 		intel_opregion_gse_intr(dev);
 
+	if (de_iir & DE_PIPEA_VBLANK_IVB)
+		drm_handle_vblank(dev, 0);
+
+	if (de_iir & DE_PIPEB_VBLANK_IVB)
+		drm_handle_vblank(dev, 1);
+
 	if (de_iir & DE_PLANEA_FLIP_DONE_IVB) {
 		intel_prepare_page_flip(dev, 0);
 		intel_finish_page_flip_plane(dev, 0);
@@ -519,29 +575,15 @@ static irqreturn_t ivybridge_irq_handler(DRM_IRQ_ARGS)
 		intel_finish_page_flip_plane(dev, 1);
 	}
 
-	if (de_iir & DE_PIPEA_VBLANK_IVB)
-		drm_handle_vblank(dev, 0);
-
-	if (de_iir & DE_PIPEB_VBLANK_IVB)
-		drm_handle_vblank(dev, 1);
-
 	/* check event from PCH */
 	if (de_iir & DE_PCH_EVENT_IVB) {
 		if (pch_iir & SDE_HOTPLUG_MASK_CPT)
 			queue_work(dev_priv->wq, &dev_priv->hotplug_work);
-		pch_irq_handler(dev);
+		cpt_irq_handler(dev, pch_iir);
 	}
 
-	if (pm_iir & GEN6_PM_DEFERRED_EVENTS) {
-		unsigned long flags;
-		spin_lock_irqsave(&dev_priv->rps_lock, flags);
-		WARN(dev_priv->pm_iir & pm_iir, "Missed a PM interrupt\n");
-		dev_priv->pm_iir |= pm_iir;
-		I915_WRITE(GEN6_PMIMR, dev_priv->pm_iir);
-		POSTING_READ(GEN6_PMIMR);
-		spin_unlock_irqrestore(&dev_priv->rps_lock, flags);
-		queue_work(dev_priv->wq, &dev_priv->rps_work);
-	}
+	if (pm_iir & GEN6_PM_DEFERRED_EVENTS)
+		gen6_queue_rps_work(dev_priv, pm_iir);
 
 	/* should clear PCH hotplug event before clear CPU irq */
 	I915_WRITE(SDEIIR, pch_iir);
@@ -609,6 +651,12 @@ static irqreturn_t ironlake_irq_handler(DRM_IRQ_ARGS)
 	if (de_iir & DE_GSE)
 		intel_opregion_gse_intr(dev);
 
+	if (de_iir & DE_PIPEA_VBLANK)
+		drm_handle_vblank(dev, 0);
+
+	if (de_iir & DE_PIPEB_VBLANK)
+		drm_handle_vblank(dev, 1);
+
 	if (de_iir & DE_PLANEA_FLIP_DONE) {
 		intel_prepare_page_flip(dev, 0);
 		intel_finish_page_flip_plane(dev, 0);
@@ -619,17 +667,14 @@ static irqreturn_t ironlake_irq_handler(DRM_IRQ_ARGS)
 		intel_finish_page_flip_plane(dev, 1);
 	}
 
-	if (de_iir & DE_PIPEA_VBLANK)
-		drm_handle_vblank(dev, 0);
-
-	if (de_iir & DE_PIPEB_VBLANK)
-		drm_handle_vblank(dev, 1);
-
 	/* check event from PCH */
 	if (de_iir & DE_PCH_EVENT) {
 		if (pch_iir & hotplug_mask)
 			queue_work(dev_priv->wq, &dev_priv->hotplug_work);
-		pch_irq_handler(dev);
+		if (HAS_PCH_CPT(dev))
+			cpt_irq_handler(dev, pch_iir);
+		else
+			ibx_irq_handler(dev, pch_iir);
 	}
 
 	if (de_iir & DE_PCU_EVENT) {
@@ -637,25 +682,8 @@ static irqreturn_t ironlake_irq_handler(DRM_IRQ_ARGS)
 		i915_handle_rps_change(dev);
 	}
 
-	if (IS_GEN6(dev) && pm_iir & GEN6_PM_DEFERRED_EVENTS) {
-		/*
-		 * IIR bits should never already be set because IMR should
-		 * prevent an interrupt from being shown in IIR. The warning
-		 * displays a case where we've unsafely cleared
-		 * dev_priv->pm_iir. Although missing an interrupt of the same
-		 * type is not a problem, it displays a problem in the logic.
-		 *
-		 * The mask bit in IMR is cleared by rps_work.
-		 */
-		unsigned long flags;
-		spin_lock_irqsave(&dev_priv->rps_lock, flags);
-		WARN(dev_priv->pm_iir & pm_iir, "Missed a PM interrupt\n");
-		dev_priv->pm_iir |= pm_iir;
-		I915_WRITE(GEN6_PMIMR, dev_priv->pm_iir);
-		POSTING_READ(GEN6_PMIMR);
-		spin_unlock_irqrestore(&dev_priv->rps_lock, flags);
-		queue_work(dev_priv->wq, &dev_priv->rps_work);
-	}
+	if (IS_GEN6(dev) && pm_iir & GEN6_PM_DEFERRED_EVENTS)
+		gen6_queue_rps_work(dev_priv, pm_iir);
 
 	/* should clear PCH hotplug event before clear CPU irq */
 	I915_WRITE(SDEIIR, pch_iir);
@@ -1191,7 +1219,9 @@ static void i915_pageflip_stall_check(struct drm_device *dev, int pipe)
 	spin_lock_irqsave(&dev->event_lock, flags);
 	work = intel_crtc->unpin_work;
 
-	if (work == NULL || work->pending || !work->enable_stall_check) {
+	if (work == NULL ||
+	    atomic_read(&work->pending) >= INTEL_FLIP_COMPLETE ||
+	    !work->enable_stall_check) {
 		/* Either the pending flip IRQ arrived, or we're too early. Don't check */
 		spin_unlock_irqrestore(&dev->event_lock, flags);
 		return;
@@ -1669,7 +1699,7 @@ void i915_hangcheck_elapsed(unsigned long data)
 {
 	struct drm_device *dev = (struct drm_device *)data;
 	drm_i915_private_t *dev_priv = dev->dev_private;
-	uint32_t acthd, instdone, instdone1;
+	uint32_t acthd, instdone, instdone1, acthd_bsd, acthd_blt;
 	bool err = false;
 
 	if (!i915_enable_hangcheck)
@@ -1686,16 +1716,21 @@ void i915_hangcheck_elapsed(unsigned long data)
 	}
 
 	if (INTEL_INFO(dev)->gen < 4) {
-		acthd = I915_READ(ACTHD);
 		instdone = I915_READ(INSTDONE);
 		instdone1 = 0;
 	} else {
-		acthd = I915_READ(ACTHD_I965);
 		instdone = I915_READ(INSTDONE_I965);
 		instdone1 = I915_READ(INSTDONE1);
 	}
+	acthd = intel_ring_get_active_head(&dev_priv->ring[RCS]);
+	acthd_bsd = HAS_BSD(dev) ?
+		intel_ring_get_active_head(&dev_priv->ring[VCS]) : 0;
+	acthd_blt = HAS_BLT(dev) ?
+		intel_ring_get_active_head(&dev_priv->ring[BCS]) : 0;
 
 	if (dev_priv->last_acthd == acthd &&
+	    dev_priv->last_acthd_bsd == acthd_bsd &&
+	    dev_priv->last_acthd_blt == acthd_blt &&
 	    dev_priv->last_instdone == instdone &&
 	    dev_priv->last_instdone1 == instdone1) {
 		if (dev_priv->hangcheck_count++ > 1) {
@@ -1727,6 +1762,8 @@ void i915_hangcheck_elapsed(unsigned long data)
 		dev_priv->hangcheck_count = 0;
 
 		dev_priv->last_acthd = acthd;
+		dev_priv->last_acthd_bsd = acthd_bsd;
+		dev_priv->last_acthd_blt = acthd_blt;
 		dev_priv->last_instdone = instdone;
 		dev_priv->last_instdone1 = instdone1;
 	}
@@ -2003,10 +2040,22 @@ static int i915_driver_irq_postinstall(struct drm_device *dev)
 			hotplug_en |= HDMIC_HOTPLUG_INT_EN;
 		if (dev_priv->hotplug_supported_mask & HDMID_HOTPLUG_INT_STATUS)
 			hotplug_en |= HDMID_HOTPLUG_INT_EN;
-		if (dev_priv->hotplug_supported_mask & SDVOC_HOTPLUG_INT_STATUS)
-			hotplug_en |= SDVOC_HOTPLUG_INT_EN;
-		if (dev_priv->hotplug_supported_mask & SDVOB_HOTPLUG_INT_STATUS)
-			hotplug_en |= SDVOB_HOTPLUG_INT_EN;
+		if (IS_G4X(dev)) {
+			if (dev_priv->hotplug_supported_mask & SDVOC_HOTPLUG_INT_STATUS_G4X)
+				hotplug_en |= SDVOC_HOTPLUG_INT_EN;
+			if (dev_priv->hotplug_supported_mask & SDVOB_HOTPLUG_INT_STATUS_G4X)
+				hotplug_en |= SDVOB_HOTPLUG_INT_EN;
+		} else if (IS_GEN4(dev)) {
+			if (dev_priv->hotplug_supported_mask & SDVOC_HOTPLUG_INT_STATUS_I965)
+				hotplug_en |= SDVOC_HOTPLUG_INT_EN;
+			if (dev_priv->hotplug_supported_mask & SDVOB_HOTPLUG_INT_STATUS_I965)
+				hotplug_en |= SDVOB_HOTPLUG_INT_EN;
+		} else {
+			if (dev_priv->hotplug_supported_mask & SDVOC_HOTPLUG_INT_STATUS_I915)
+				hotplug_en |= SDVOC_HOTPLUG_INT_EN;
+			if (dev_priv->hotplug_supported_mask & SDVOB_HOTPLUG_INT_STATUS_I915)
+				hotplug_en |= SDVOB_HOTPLUG_INT_EN;
+		}
 		if (dev_priv->hotplug_supported_mask & CRT_HOTPLUG_INT_STATUS) {
 			hotplug_en |= CRT_HOTPLUG_INT_EN;
 

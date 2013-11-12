@@ -18,6 +18,7 @@
 #include <asm/machdep.h>
 #include <asm/smp.h>
 #include <asm/pmc.h>
+#include <asm/firmware.h>
 
 #include "cacheinfo.h"
 
@@ -178,18 +179,36 @@ SYSFS_PMCSETUP(purr, SPRN_PURR);
 SYSFS_PMCSETUP(spurr, SPRN_SPURR);
 SYSFS_PMCSETUP(dscr, SPRN_DSCR);
 
+/*
+  Lets only enable read for phyp resources and
+  enable write when needed with a separate function.
+  Lets be conservative and default to pseries.
+*/
 static SYSDEV_ATTR(mmcra, 0600, show_mmcra, store_mmcra);
 static SYSDEV_ATTR(spurr, 0600, show_spurr, NULL);
 static SYSDEV_ATTR(dscr, 0600, show_dscr, store_dscr);
-static SYSDEV_ATTR(purr, 0600, show_purr, store_purr);
+static SYSDEV_ATTR(purr, 0400, show_purr, store_purr);
 
 unsigned long dscr_default = 0;
 EXPORT_SYMBOL(dscr_default);
+
+static void add_write_permission_dev_attr(struct sysdev_attribute *attr)
+{
+	attr->attr.mode |= 0200;
+}
 
 static ssize_t show_dscr_default(struct sysdev_class *class,
 		struct sysdev_class_attribute *attr, char *buf)
 {
 	return sprintf(buf, "%lx\n", dscr_default);
+}
+
+static void update_dscr(void *dummy)
+{
+	if (!current->thread.dscr_inherit) {
+		current->thread.dscr = dscr_default;
+		mtspr(SPRN_DSCR, dscr_default);
+	}
 }
 
 static ssize_t __used store_dscr_default(struct sysdev_class *class,
@@ -203,6 +222,8 @@ static ssize_t __used store_dscr_default(struct sysdev_class *class,
 	if (ret != 1)
 		return -EINVAL;
 	dscr_default = val;
+
+	on_each_cpu(update_dscr, NULL, 1);
 
 	return count;
 }
@@ -384,8 +405,11 @@ static void __cpuinit register_cpu_online(unsigned int cpu)
 	if (cpu_has_feature(CPU_FTR_MMCRA))
 		sysdev_create_file(s, &attr_mmcra);
 
-	if (cpu_has_feature(CPU_FTR_PURR))
+	if (cpu_has_feature(CPU_FTR_PURR)) {
+		if (!firmware_has_feature(FW_FEATURE_LPAR))
+			add_write_permission_dev_attr(&attr_purr);
 		sysdev_create_file(s, &attr_purr);
+	}
 
 	if (cpu_has_feature(CPU_FTR_SPURR))
 		sysdev_create_file(s, &attr_spurr);

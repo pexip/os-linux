@@ -341,34 +341,10 @@ void (*pm_idle)(void);
 EXPORT_SYMBOL(pm_idle);
 #endif
 
-#ifdef CONFIG_X86_32
-/*
- * This halt magic was a workaround for ancient floppy DMA
- * wreckage. It should be safe to remove.
- */
-static int hlt_counter;
-void disable_hlt(void)
-{
-	hlt_counter++;
-}
-EXPORT_SYMBOL(disable_hlt);
-
-void enable_hlt(void)
-{
-	hlt_counter--;
-}
-EXPORT_SYMBOL(enable_hlt);
-
-static inline int hlt_use_halt(void)
-{
-	return (!hlt_counter && boot_cpu_data.hlt_works_ok);
-}
-#else
 static inline int hlt_use_halt(void)
 {
 	return 1;
 }
-#endif
 
 /*
  * We use this if we don't have any better
@@ -663,6 +639,16 @@ unsigned long arch_align_stack(unsigned long sp)
 unsigned long arch_randomize_brk(struct mm_struct *mm)
 {
 	unsigned long range_end = mm->brk + 0x02000000;
-	return randomize_range(mm->brk, range_end, 0) ? : mm->brk;
+	unsigned long bump = 0;
+#ifdef CONFIG_X86_32
+	/* when using ASLR in arch_get_unmapped_exec_area, we must shove
+	   the brk segment way out of the way of the exec area, since it
+	   can collide with future allocations if not. */
+	if ( (mm->get_unmapped_exec_area == arch_get_unmapped_exec_area) &&
+	     (mm->brk < 0x08000000) ) {
+		bump = (TASK_SIZE/6);
+	}
+#endif
+	return bump + (randomize_range(mm->brk, range_end, 0) ? : mm->brk);
 }
 

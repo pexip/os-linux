@@ -241,6 +241,8 @@ source "drivers/atm/Kconfig"
 
 source "drivers/net/caif/Kconfig"
 
+source "drivers/net/dsa/Kconfig"
+
 source "drivers/net/ethernet/Kconfig"
 
 source "drivers/net/fddi/Kconfig"
@@ -337,5 +339,7 @@ config VMXNET3
 	  This driver supports VMware's vmxnet3 virtual ethernet NIC.
 	  To compile this driver as a module, choose M here: the
 	  module will be called vmxnet3.
+
+source "drivers/net/hyperv/Kconfig"
 
 endif # NETDEVICES

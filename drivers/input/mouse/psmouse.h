@@ -8,6 +8,7 @@
 #define PSMOUSE_CMD_SETSTREAM	0x00ea
 #define PSMOUSE_CMD_SETPOLL	0x00f0
 #define PSMOUSE_CMD_POLL	0x00eb	/* caller sets number of bytes to receive */
+#define PSMOUSE_CMD_RESET_WRAP	0x00ec
 #define PSMOUSE_CMD_GETID	0x02f2
 #define PSMOUSE_CMD_SETRATE	0x10f3
 #define PSMOUSE_CMD_ENABLE	0x00f4
@@ -25,6 +26,7 @@ enum psmouse_state {
 	PSMOUSE_INITIALIZING,
 	PSMOUSE_RESYNCING,
 	PSMOUSE_CMD_MODE,
+	PSMOUSE_CMD_CYTP,	/* Cypress Trackpad detecting and initializing state. */
 	PSMOUSE_ACTIVATED,
 };
 
@@ -77,6 +79,9 @@ struct psmouse {
 };
 
 enum psmouse_type {
+	/* IMPORTANT! src/eventcomm.c in x-x-i-s uses the hard-coded values
+	 * of some of these (awful!), so never insert new entries to the
+	 * middle of the list!  */
 	PSMOUSE_NONE,
 	PSMOUSE_PS2,
 	PSMOUSE_PS2PP,
@@ -93,6 +98,7 @@ enum psmouse_type {
 	PSMOUSE_HGPK,
 	PSMOUSE_ELANTECH,
 	PSMOUSE_FSP,
+	PSMOUSE_CYPRESS,
 	PSMOUSE_AUTO		/* This one should always be last */
 };
 
@@ -102,6 +108,8 @@ int psmouse_sliced_command(struct psmouse *psmouse, unsigned char command);
 int psmouse_reset(struct psmouse *psmouse);
 void psmouse_set_state(struct psmouse *psmouse, enum psmouse_state new_state);
 void psmouse_set_resolution(struct psmouse *psmouse, unsigned int resolution);
+int psmouse_activate(struct psmouse *psmouse);
+int psmouse_deactivate(struct psmouse *psmouse);
 
 struct psmouse_attribute {
 	struct device_attribute dattr;

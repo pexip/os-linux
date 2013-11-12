@@ -43,6 +43,24 @@ static int synaptics_send_cmd(struct psmouse *psmouse, unsigned char c,
 }
 
 /*
+ * V3 and later support this fast command
+ */
+static int elantech_send_cmd(struct psmouse *psmouse, unsigned char c,
+				unsigned char *param)
+{
+	struct ps2dev *ps2dev = &psmouse->ps2dev;
+
+	if (ps2_command(ps2dev, NULL, ETP_PS2_CUSTOM_COMMAND) ||
+	    ps2_command(ps2dev, NULL, c) ||
+	    ps2_command(ps2dev, param, PSMOUSE_CMD_GETINFO)) {
+		psmouse_err(psmouse, "%s query 0x%02x failed.\n", __func__, c);
+		return -1;
+	}
+
+	return 0;
+}
+
+/*
  * A retrying version of ps2_command
  */
 static int elantech_ps2_command(struct psmouse *psmouse,
@@ -468,7 +486,6 @@ static void elantech_input_sync_v4(struct psmouse *psmouse)
 	unsigned char *packet = psmouse->packet;
 
 	input_report_key(dev, BTN_LEFT, packet[0] & 0x01);
-	input_report_key(dev, BTN_RIGHT, packet[0] & 0x02);
 	input_mt_report_pointer_emulation(dev, true);
 	input_sync(dev);
 }
@@ -677,18 +694,18 @@ static int elantech_packet_check_v3(struct psmouse *psmouse)
 static int elantech_packet_check_v4(struct psmouse *psmouse)
 {
 	unsigned char *packet = psmouse->packet;
+	unsigned char packet_type = packet[3] & 0x03;
 
-	if ((packet[0] & 0x0c) == 0x04 &&
-	    (packet[3] & 0x1f) == 0x11)
+	switch (packet_type) {
+	case 0:
+		return PACKET_V4_STATUS;
+
+	case 1:
 		return PACKET_V4_HEAD;
 
-	if ((packet[0] & 0x0c) == 0x04 &&
-	    (packet[3] & 0x1f) == 0x12)
+	case 2:
 		return PACKET_V4_MOTION;
-
-	if ((packet[0] & 0x0c) == 0x04 &&
-	    (packet[3] & 0x1f) == 0x10)
-		return PACKET_V4_STATUS;
+	}
 
 	return PACKET_UNKNOWN;
 }
@@ -863,13 +880,13 @@ static int elantech_set_range(struct psmouse *psmouse,
 			i = (etd->fw_version > 0x020800 &&
 			     etd->fw_version < 0x020900) ? 1 : 2;
 
-			if (synaptics_send_cmd(psmouse, ETP_FW_ID_QUERY, param))
+			if (etd->send_cmd(psmouse, ETP_FW_ID_QUERY, param))
 				return -1;
 
 			fixed_dpi = param[1] & 0x10;
 
 			if (((etd->fw_version >> 16) == 0x14) && fixed_dpi) {
-				if (synaptics_send_cmd(psmouse, ETP_SAMPLE_QUERY, param))
+				if (etd->send_cmd(psmouse, ETP_SAMPLE_QUERY, param))
 					return -1;
 
 				*x_max = (etd->capabilities[1] - i) * param[1] / 2;
@@ -888,7 +905,7 @@ static int elantech_set_range(struct psmouse *psmouse,
 		break;
 
 	case 3:
-		if (synaptics_send_cmd(psmouse, ETP_FW_ID_QUERY, param))
+		if (etd->send_cmd(psmouse, ETP_FW_ID_QUERY, param))
 			return -1;
 
 		*x_max = (0x0f & param[0]) << 8 | param[1];
@@ -896,7 +913,7 @@ static int elantech_set_range(struct psmouse *psmouse,
 		break;
 
 	case 4:
-		if (synaptics_send_cmd(psmouse, ETP_FW_ID_QUERY, param))
+		if (etd->send_cmd(psmouse, ETP_FW_ID_QUERY, param))
 			return -1;
 
 		*x_max = (0x0f & param[0]) << 8 | param[1];
@@ -913,6 +930,30 @@ static int elantech_set_range(struct psmouse *psmouse,
 }
 
 /*
+ * (value from firmware) * 10 + 790 = dpi
+ * we also have to convert dpi to dots/mm (*10/254 to avoid floating point)
+ */
+static unsigned int elantech_convert_res(unsigned int val)
+{
+	return (val * 10 + 790) * 10 / 254;
+}
+
+static int elantech_get_resolution_v4(struct psmouse *psmouse,
+				      unsigned int *x_res,
+				      unsigned int *y_res)
+{
+	unsigned char param[3];
+
+	if (elantech_send_cmd(psmouse, ETP_RESOLUTION_QUERY, param))
+		return -1;
+
+	*x_res = elantech_convert_res(param[1] & 0x0f);
+	*y_res = elantech_convert_res((param[1] & 0xf0) >> 4);
+
+	return 0;
+}
+
+/*
  * Set the appropriate event bits for the input subsystem
  */
 static int elantech_set_input_params(struct psmouse *psmouse)
@@ -920,10 +961,12 @@ static int elantech_set_input_params(struct psmouse *psmouse)
 	struct input_dev *dev = psmouse->dev;
 	struct elantech_data *etd = psmouse->private;
 	unsigned int x_min = 0, y_min = 0, x_max = 0, y_max = 0, width = 0;
+	unsigned int x_res = 0, y_res = 0;
 
 	if (elantech_set_range(psmouse, &x_min, &y_min, &x_max, &y_max, &width))
 		return -1;
 
+	__set_bit(INPUT_PROP_POINTER, dev->propbit);
 	__set_bit(EV_KEY, dev->evbit);
 	__set_bit(EV_ABS, dev->evbit);
 	__clear_bit(EV_REL, dev->evbit);
@@ -967,10 +1010,22 @@ static int elantech_set_input_params(struct psmouse *psmouse)
 		break;
 
 	case 4:
+		if (elantech_get_resolution_v4(psmouse, &x_res, &y_res)) {
+			/*
+			 * if query failed, print a warning and leave the values
+			 * zero to resemble synaptics.c behavior.
+			 */
+			psmouse_warn(psmouse, "couldn't query resolution data.\n");
+		}
+		/* v4 is clickpad, with only one button. */
+		__set_bit(INPUT_PROP_BUTTONPAD, dev->propbit);
+		__clear_bit(BTN_RIGHT, dev->keybit);
 		__set_bit(BTN_TOOL_QUADTAP, dev->keybit);
 		/* For X to recognize me as touchpad. */
 		input_set_abs_params(dev, ABS_X, x_min, x_max, 0, 0);
 		input_set_abs_params(dev, ABS_Y, y_min, y_max, 0, 0);
+		input_abs_set_res(dev, ABS_X, x_res);
+		input_abs_set_res(dev, ABS_Y, y_res);
 		/*
 		 * range of pressure and width is the same as v2,
 		 * report ABS_PRESSURE, ABS_TOOL_WIDTH for compatibility.
@@ -983,6 +1038,8 @@ static int elantech_set_input_params(struct psmouse *psmouse)
 		input_mt_init_slots(dev, ETP_MAX_FINGERS);
 		input_set_abs_params(dev, ABS_MT_POSITION_X, x_min, x_max, 0, 0);
 		input_set_abs_params(dev, ABS_MT_POSITION_Y, y_min, y_max, 0, 0);
+		input_abs_set_res(dev, ABS_MT_POSITION_X, x_res);
+		input_abs_set_res(dev, ABS_MT_POSITION_Y, y_res);
 		input_set_abs_params(dev, ABS_MT_PRESSURE, ETP_PMIN_V2,
 				     ETP_PMAX_V2, 0, 0);
 		/*
@@ -1226,6 +1283,7 @@ static int elantech_set_properties(struct elantech_data *etd)
 			etd->hw_version = 3;
 			break;
 		case 6:
+		case 7:
 			etd->hw_version = 4;
 			break;
 		default:
@@ -1233,9 +1291,11 @@ static int elantech_set_properties(struct elantech_data *etd)
 		}
 	}
 
-	/*
-	 * Turn on packet checking by default.
-	 */
+	/* decide which send_cmd we're gonna use early */
+	etd->send_cmd = etd->hw_version >= 3 ? elantech_send_cmd :
+					       synaptics_send_cmd;
+
+	/* Turn on packet checking by default */
 	etd->paritycheck = 1;
 
 	/*
@@ -1291,7 +1351,7 @@ int elantech_init(struct psmouse *psmouse)
 		     "assuming hardware version %d (with firmware version 0x%02x%02x%02x)\n",
 		     etd->hw_version, param[0], param[1], param[2]);
 
-	if (synaptics_send_cmd(psmouse, ETP_CAPABILITIES_QUERY,
+	if (etd->send_cmd(psmouse, ETP_CAPABILITIES_QUERY,
 	    etd->capabilities)) {
 		psmouse_err(psmouse, "failed to query capabilities.\n");
 		goto init_fail;

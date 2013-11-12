@@ -32,7 +32,6 @@
 #include <linux/console.h>
 #include <linux/vmalloc.h>
 #include <linux/swap.h>
-#include <linux/kmsg_dump.h>
 #include <linux/syscore_ops.h>
 
 #include <asm/page.h>
@@ -949,6 +948,11 @@ SYSCALL_DEFINE4(kexec_load, unsigned long, entry, unsigned long, nr_segments,
 	if (!capable(CAP_SYS_BOOT))
 		return -EPERM;
 
+	/* Processes in containers must not be allowed to load a new
+	 * kernel, even if they have CAP_SYS_BOOT */
+	if (task_active_pid_ns(current) != &init_pid_ns)
+		return -EPERM;
+
 	/*
 	 * Verify we have a legal set of flags
 	 * This leaves us room for future extensions.
@@ -1093,8 +1097,6 @@ void crash_kexec(struct pt_regs *regs)
 	if (mutex_trylock(&kexec_mutex)) {
 		if (kexec_crash_image) {
 			struct pt_regs fixed_regs;
-
-			kmsg_dump(KMSG_DUMP_KEXEC);
 
 			crash_setup_regs(&fixed_regs, regs);
 			crash_save_vmcoreinfo();

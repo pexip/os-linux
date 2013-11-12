@@ -106,13 +106,32 @@ efx_max_tx_len(struct efx_nic *efx, dma_addr_t dma_addr)
 	 * little benefit from using descriptors that cross those
 	 * boundaries and we keep things simple by not doing so.
 	 */
-	unsigned len = (~dma_addr & 0xfff) + 1;
+	unsigned len = (~dma_addr & (EFX_PAGE_SIZE - 1)) + 1;
 
 	/* Work around hardware bug for unaligned buffers. */
 	if (EFX_WORKAROUND_5391(efx) && (dma_addr & 0xf))
 		len = min_t(unsigned, len, 512 - (dma_addr & 0xf));
 
 	return len;
+}
+
+unsigned int efx_tx_max_skb_descs(struct efx_nic *efx)
+{
+	/* Header and payload descriptor for each output segment, plus
+	 * one for every input fragment boundary within a segment
+	 */
+	unsigned int max_descs = EFX_TSO_MAX_SEGS * 2 + MAX_SKB_FRAGS;
+
+	/* Possibly one more per segment for the alignment workaround */
+	if (EFX_WORKAROUND_5391(efx))
+		max_descs += EFX_TSO_MAX_SEGS;
+
+	/* Possibly more for PCIe page boundaries within input fragments */
+	if (PAGE_SIZE > EFX_PAGE_SIZE)
+		max_descs += max_t(unsigned int, MAX_SKB_FRAGS,
+				   DIV_ROUND_UP(GSO_MAX_SIZE, EFX_PAGE_SIZE));
+
+	return max_descs;
 }
 
 /*

@@ -196,6 +196,13 @@ static void r600_hdmi_videoinfoframe(
 	frame[0xD] = (right_bar >> 8);
 
 	r600_hdmi_infoframe_checksum(0x82, 0x02, 0x0D, frame);
+	/* Our header values (type, version, length) should be alright, Intel
+	 * is using the same. Checksum function also seems to be OK, it works
+	 * fine for audio infoframe. However calculated value is always lower
+	 * by 2 in comparison to fglrx. It breaks displaying anything in case
+	 * of TVs that strictly check the checksum. Hack it manually here to
+	 * workaround this issue. */
+	frame[0x0] += 2;
 
 	WREG32(offset+R600_HDMI_VIDEOINFOFRAME_0,
 		frame[0x0] | (frame[0x1] << 8) | (frame[0x2] << 16) | (frame[0x3] << 24));
@@ -499,7 +506,7 @@ void r600_hdmi_enable(struct drm_encoder *encoder)
 	offset = radeon_encoder->hdmi_offset;
 	if (ASIC_IS_DCE32(rdev) && !ASIC_IS_DCE4(rdev)) {
 		WREG32_P(radeon_encoder->hdmi_config_offset + 0x4, 0x1, ~0x1);
-	} else if (rdev->family >= CHIP_R600 && !ASIC_IS_DCE3(rdev)) {
+	} else if (ASIC_IS_DCE2(rdev) && !ASIC_IS_DCE3(rdev)) {
 		switch (radeon_encoder->encoder_id) {
 		case ENCODER_OBJECT_ID_INTERNAL_KLDSCP_TMDS1:
 			WREG32_P(AVIVO_TMDSA_CNTL, 0x4, ~0x4);
@@ -565,7 +572,7 @@ void r600_hdmi_disable(struct drm_encoder *encoder)
 
 	if (ASIC_IS_DCE32(rdev) && !ASIC_IS_DCE4(rdev)) {
 		WREG32_P(radeon_encoder->hdmi_config_offset + 0x4, 0, ~0x1);
-	} else if (rdev->family >= CHIP_R600 && !ASIC_IS_DCE3(rdev)) {
+	} else if (ASIC_IS_DCE2(rdev) && !ASIC_IS_DCE3(rdev)) {
 		switch (radeon_encoder->encoder_id) {
 		case ENCODER_OBJECT_ID_INTERNAL_KLDSCP_TMDS1:
 			WREG32_P(AVIVO_TMDSA_CNTL, 0, ~0x4);

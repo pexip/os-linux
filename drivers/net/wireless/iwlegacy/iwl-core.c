@@ -1757,6 +1757,7 @@ int iwl_legacy_force_reset(struct iwl_priv *priv, bool external)
 
 	return 0;
 }
+EXPORT_SYMBOL(iwl_legacy_force_reset);
 
 int
 iwl_legacy_mac_change_interface(struct ieee80211_hw *hw,
@@ -1884,14 +1885,12 @@ void iwl_legacy_bg_watchdog(unsigned long data)
 		return;
 
 	/* monitor and check for other stuck queues */
-	if (iwl_legacy_is_any_associated(priv)) {
-		for (cnt = 0; cnt < priv->hw_params.max_txq_num; cnt++) {
-			/* skip as we already checked the command queue */
-			if (cnt == priv->cmd_queue)
-				continue;
-			if (iwl_legacy_check_stuck_queue(priv, cnt))
-				return;
-		}
+	for (cnt = 0; cnt < priv->hw_params.max_txq_num; cnt++) {
+		/* skip as we already checked the command queue */
+		if (cnt == priv->cmd_queue)
+			continue;
+		if (iwl_legacy_check_stuck_queue(priv, cnt))
+			return;
 	}
 
 	mod_timer(&priv->watchdog, jiffies +

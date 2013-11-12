@@ -170,11 +170,11 @@ __create_page_tables:
 	 * Create identity mapping to cater for __enable_mmu.
 	 * This identity mapping will be removed by paging_init().
 	 */
-	adr	r0, __enable_mmu_loc
+	adr	r0, __turn_mmu_on_loc
 	ldmia	r0, {r3, r5, r6}
 	sub	r0, r0, r3			@ virt->phys offset
-	add	r5, r5, r0			@ phys __enable_mmu
-	add	r6, r6, r0			@ phys __enable_mmu_end
+	add	r5, r5, r0			@ phys __turn_mmu_on
+	add	r6, r6, r0			@ phys __turn_mmu_on_end
 	mov	r5, r5, lsr #SECTION_SHIFT
 	mov	r6, r6, lsr #SECTION_SHIFT
 
@@ -221,6 +221,7 @@ __create_page_tables:
 	/*
 	 * Then map boot params address in r2 or
 	 * the first 1MB of ram if boot params address is not specified.
+	 * We map 2 sections in case the ATAGs/DTB crosses a section boundary.
 	 */
 	mov	r0, r2, lsr #SECTION_SHIFT
 	movs	r0, r0, lsl #SECTION_SHIFT
@@ -229,6 +230,8 @@ __create_page_tables:
 	add	r3, r3, #PAGE_OFFSET
 	add	r3, r4, r3, lsr #(SECTION_SHIFT - PMD_ORDER)
 	orr	r6, r7, r0
+	str	r6, [r3], #1 << PMD_ORDER
+	add	r6, r6, #1 << SECTION_SHIFT
 	str	r6, [r3]
 
 #ifdef CONFIG_DEBUG_LL
@@ -287,10 +290,10 @@ __create_page_tables:
 ENDPROC(__create_page_tables)
 	.ltorg
 	.align
-__enable_mmu_loc:
+__turn_mmu_on_loc:
 	.long	.
-	.long	__enable_mmu
-	.long	__enable_mmu_end
+	.long	__turn_mmu_on
+	.long	__turn_mmu_on_end
 
 #if defined(CONFIG_SMP)
 	__CPUINIT
@@ -398,15 +401,17 @@ ENDPROC(__enable_mmu)
  * other registers depend on the function called upon completion
  */
 	.align	5
-__turn_mmu_on:
+	.pushsection	.idmap.text, "ax"
+ENTRY(__turn_mmu_on)
 	mov	r0, r0
 	mcr	p15, 0, r0, c1, c0, 0		@ write control reg
 	mrc	p15, 0, r3, c0, c0, 0		@ read id reg
 	mov	r3, r3
 	mov	r3, r13
 	mov	pc, r3
-__enable_mmu_end:
+__turn_mmu_on_end:
 ENDPROC(__turn_mmu_on)
+	.popsection
 
 
 #ifdef CONFIG_SMP_ON_UP

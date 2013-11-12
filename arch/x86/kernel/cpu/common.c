@@ -676,9 +676,7 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 	if (this_cpu->c_early_init)
 		this_cpu->c_early_init(c);
 
-#ifdef CONFIG_SMP
 	c->cpu_index = 0;
-#endif
 	filter_cpuid_features(c, false);
 
 	setup_smep(c);
@@ -764,10 +762,7 @@ static void __cpuinit generic_identify(struct cpuinfo_x86 *c)
 		c->apicid = c->initial_apicid;
 # endif
 #endif
-
-#ifdef CONFIG_X86_HT
 		c->phys_proc_id = c->initial_apicid;
-#endif
 	}
 
 	setup_smep(c);
@@ -843,6 +838,22 @@ static void __cpuinit identify_cpu(struct cpuinfo_x86 *c)
 
 	/* Filter out anything that depends on CPUID levels we don't have */
 	filter_cpuid_features(c, true);
+
+#ifdef CONFIG_X86_32
+	/*
+	 *  emulation of NX with segment limits unfortunately means
+	 *  we have to disable the fast system calls, due to the way that
+	 *  sysexit clears the segment limits on return.
+	 *  If we have either disabled exec-shield on the boot command line,
+	 *  or we have NX, then we don't need to do this.
+	 */
+	if (!disable_nx) {
+#ifdef CONFIG_X86_PAE
+		if (!test_cpu_cap(c, X86_FEATURE_NX))
+#endif
+			clear_cpu_cap(c, X86_FEATURE_SEP);
+	}
+#endif
 
 	/* If the model name is still unset, do table lookup. */
 	if (!c->x86_model_id[0]) {
@@ -1139,6 +1150,15 @@ static void dbg_restore_debug_regs(void)
 #else /* ! CONFIG_KGDB */
 #define dbg_restore_debug_regs()
 #endif /* ! CONFIG_KGDB */
+
+/*
+ * Prints an error where the NUMA and configured core-number mismatch and the
+ * platform didn't override this to fix it up
+ */
+void __cpuinit x86_default_fixup_cpu_id(struct cpuinfo_x86 *c, int node)
+{
+	pr_err("NUMA core number %d differs from configured core number %d\n", node, c->phys_proc_id);
+}
 
 /*
  * cpu_init() initializes state that is per-CPU. Some data is already

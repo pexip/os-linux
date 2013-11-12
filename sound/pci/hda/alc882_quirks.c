@@ -2773,6 +2773,7 @@ static void alc889A_mb31_unsol_event(struct hda_codec *codec, unsigned int res)
 		alc889A_mb31_automute(codec);
 }
 
+
 static const hda_nid_t alc883_slave_dig_outs[] = {
 	ALC1200_DIGOUT_NID, 0,
 };
@@ -2780,6 +2781,11 @@ static const hda_nid_t alc883_slave_dig_outs[] = {
 static const hda_nid_t alc1200_slave_dig_outs[] = {
 	ALC883_DIGOUT_NID, 0,
 };
+
+static void alc882_unsol_event(struct hda_codec *codec, unsigned int res)
+{
+	alc_exec_unsol_event(codec, res >> 26);
+}
 
 /*
  * configuration and preset
@@ -2895,7 +2901,6 @@ static const struct snd_pci_quirk alc882_cfg_tbl[] = {
 	SND_PCI_QUIRK(0x1071, 0x8258, "Evesham Voyaeger", ALC883_LAPTOP_EAPD),
 	SND_PCI_QUIRK(0x10f1, 0x2350, "TYAN-S2350", ALC888_6ST_DELL),
 	SND_PCI_QUIRK(0x108e, 0x534d, NULL, ALC883_3ST_6ch),
-	SND_PCI_QUIRK(0x1458, 0xa002, "Gigabyte P35 DS3R", ALC882_6ST_DIG),
 
 	SND_PCI_QUIRK(0x1462, 0x0349, "MSI", ALC883_TARGA_2ch_DIG),
 	SND_PCI_QUIRK(0x1462, 0x040d, "MSI", ALC883_TARGA_2ch_DIG),
@@ -3046,7 +3051,7 @@ static const struct alc_config_preset alc882_presets[] = {
 			.channel_mode = alc885_mba21_ch_modes,
 			.num_channel_mode = ARRAY_SIZE(alc885_mba21_ch_modes),
 			.input_mux = &alc882_capture_source,
-			.unsol_event = alc_sku_unsol_event,
+			.unsol_event = alc882_unsol_event,
 			.setup = alc885_mba21_setup,
 			.init_hook = alc_hp_automute,
        },
@@ -3062,7 +3067,7 @@ static const struct alc_config_preset alc882_presets[] = {
 		.input_mux = &alc882_capture_source,
 		.dig_out_nid = ALC882_DIGOUT_NID,
 		.dig_in_nid = ALC882_DIGIN_NID,
-		.unsol_event = alc_sku_unsol_event,
+		.unsol_event = alc882_unsol_event,
 		.setup = alc885_mbp3_setup,
 		.init_hook = alc_hp_automute,
 	},
@@ -3077,7 +3082,7 @@ static const struct alc_config_preset alc882_presets[] = {
 		.input_mux = &mb5_capture_source,
 		.dig_out_nid = ALC882_DIGOUT_NID,
 		.dig_in_nid = ALC882_DIGIN_NID,
-		.unsol_event = alc_sku_unsol_event,
+		.unsol_event = alc882_unsol_event,
 		.setup = alc885_mb5_setup,
 		.init_hook = alc_hp_automute,
 	},
@@ -3092,7 +3097,7 @@ static const struct alc_config_preset alc882_presets[] = {
 		.input_mux = &macmini3_capture_source,
 		.dig_out_nid = ALC882_DIGOUT_NID,
 		.dig_in_nid = ALC882_DIGIN_NID,
-		.unsol_event = alc_sku_unsol_event,
+		.unsol_event = alc882_unsol_event,
 		.setup = alc885_macmini3_setup,
 		.init_hook = alc_hp_automute,
 	},
@@ -3133,7 +3138,7 @@ static const struct alc_config_preset alc882_presets[] = {
 		.input_mux = &alc889A_imac91_capture_source,
 		.dig_out_nid = ALC882_DIGOUT_NID,
 		.dig_in_nid = ALC882_DIGIN_NID,
-		.unsol_event = alc_sku_unsol_event,
+		.unsol_event = alc882_unsol_event,
 		.setup = alc885_imac91_setup,
 		.init_hook = alc_hp_automute,
 	},

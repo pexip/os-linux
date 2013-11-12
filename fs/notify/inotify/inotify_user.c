@@ -293,10 +293,8 @@ static int inotify_release(struct inode *ignored, struct file *file)
 
 	pr_debug("%s: group=%p\n", __func__, group);
 
-	fsnotify_clear_marks_by_group(group);
-
 	/* free this group, matching get was inotify_init->fsnotify_obtain_group */
-	fsnotify_put_group(group);
+	fsnotify_destroy_group(group);
 
 	return 0;
 }
@@ -533,6 +531,7 @@ void inotify_ignored_and_remove_idr(struct fsnotify_mark *fsn_mark,
 
 	fsn_event_priv = &event_priv->fsnotify_event_priv_data;
 
+	fsnotify_get_group(group);
 	fsn_event_priv->group = group;
 	event_priv->wd = i_mark->wd;
 
@@ -577,10 +576,7 @@ static int inotify_update_existing_watch(struct fsnotify_group *group,
 	int add = (arg & IN_MASK_ADD);
 	int ret;
 
-	/* don't allow invalid bits: we don't want flags set */
 	mask = inotify_arg_to_mask(arg);
-	if (unlikely(!(mask & IN_ALL_EVENTS)))
-		return -EINVAL;
 
 	fsn_mark = fsnotify_find_inode_mark(group, inode);
 	if (!fsn_mark)
@@ -630,10 +626,7 @@ static int inotify_new_watch(struct fsnotify_group *group,
 	struct idr *idr = &group->inotify_data.idr;
 	spinlock_t *idr_lock = &group->inotify_data.idr_lock;
 
-	/* don't allow invalid bits: we don't want flags set */
 	mask = inotify_arg_to_mask(arg);
-	if (unlikely(!(mask & IN_ALL_EVENTS)))
-		return -EINVAL;
 
 	tmp_i_mark = kmem_cache_alloc(inotify_inode_mark_cachep, GFP_KERNEL);
 	if (unlikely(!tmp_i_mark))
@@ -712,7 +705,7 @@ static struct fsnotify_group *inotify_new_group(unsigned int max_events)
 
 	if (atomic_inc_return(&group->inotify_data.user->inotify_devs) >
 	    inotify_max_user_instances) {
-		fsnotify_put_group(group);
+		fsnotify_destroy_group(group);
 		return ERR_PTR(-EMFILE);
 	}
 
@@ -741,7 +734,7 @@ SYSCALL_DEFINE1(inotify_init1, int, flags)
 	ret = anon_inode_getfd("inotify", &inotify_fops, group,
 				  O_RDONLY | flags);
 	if (ret < 0)
-		fsnotify_put_group(group);
+		fsnotify_destroy_group(group);
 
 	return ret;
 }
@@ -760,6 +753,10 @@ SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char __user *, pathname,
 	struct file *filp;
 	int ret, fput_needed;
 	unsigned flags = 0;
+
+	/* don't allow invalid bits: we don't want flags set */
+	if (unlikely(!(mask & ALL_INOTIFY_BITS)))
+		return -EINVAL;
 
 	filp = fget_light(fd, &fput_needed);
 	if (unlikely(!filp))
@@ -817,7 +814,7 @@ SYSCALL_DEFINE2(inotify_rm_watch, int, fd, __s32, wd)
 
 	ret = 0;
 
-	fsnotify_destroy_mark(&i_mark->fsn_mark);
+	fsnotify_destroy_mark(&i_mark->fsn_mark, group);
 
 	/* match ref taken by inotify_idr_find */
 	fsnotify_put_mark(&i_mark->fsn_mark);

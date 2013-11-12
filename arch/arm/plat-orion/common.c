@@ -263,10 +263,12 @@ void __init orion_ge00_init(struct mv643xx_eth_platform_data *eth_data,
 			    unsigned long mapbase,
 			    unsigned long irq,
 			    unsigned long irq_err,
-			    int tclk)
+			    int tclk,
+			    unsigned int tx_csum_limit)
 {
 	fill_resources(&orion_ge00_shared, orion_ge00_shared_resources,
 		       mapbase + 0x2000, SZ_16K - 1, irq_err);
+	orion_ge00_shared_data.tx_csum_limit = tx_csum_limit;
 	ge_complete(&orion_ge00_shared_data, mbus_dram_info, tclk,
 		    orion_ge00_resources, irq, &orion_ge00_shared,
 		    eth_data, &orion_ge00);
@@ -317,10 +319,12 @@ void __init orion_ge01_init(struct mv643xx_eth_platform_data *eth_data,
 			    unsigned long mapbase,
 			    unsigned long irq,
 			    unsigned long irq_err,
-			    int tclk)
+			    int tclk,
+			    unsigned int tx_csum_limit)
 {
 	fill_resources(&orion_ge01_shared, orion_ge01_shared_resources,
 		       mapbase + 0x2000, SZ_16K - 1, irq_err);
+	orion_ge01_shared_data.tx_csum_limit = tx_csum_limit;
 	ge_complete(&orion_ge01_shared_data, mbus_dram_info, tclk,
 		    orion_ge01_resources, irq, &orion_ge01_shared,
 		    eth_data, &orion_ge01);
@@ -343,7 +347,7 @@ static struct resource orion_ge10_shared_resources[] = {
 
 static struct platform_device orion_ge10_shared = {
 	.name		= MV643XX_ETH_SHARED_NAME,
-	.id		= 1,
+	.id		= 2,
 	.dev		= {
 		.platform_data	= &orion_ge10_shared_data,
 	},
@@ -358,8 +362,8 @@ static struct resource orion_ge10_resources[] = {
 
 static struct platform_device orion_ge10 = {
 	.name		= MV643XX_ETH_NAME,
-	.id		= 1,
-	.num_resources	= 2,
+	.id		= 2,
+	.num_resources	= 1,
 	.resource	= orion_ge10_resources,
 	.dev		= {
 		.coherent_dma_mask	= DMA_BIT_MASK(32),
@@ -397,7 +401,7 @@ static struct resource orion_ge11_shared_resources[] = {
 
 static struct platform_device orion_ge11_shared = {
 	.name		= MV643XX_ETH_SHARED_NAME,
-	.id		= 1,
+	.id		= 3,
 	.dev		= {
 		.platform_data	= &orion_ge11_shared_data,
 	},
@@ -412,8 +416,8 @@ static struct resource orion_ge11_resources[] = {
 
 static struct platform_device orion_ge11 = {
 	.name		= MV643XX_ETH_NAME,
-	.id		= 1,
-	.num_resources	= 2,
+	.id		= 3,
+	.num_resources	= 1,
 	.resource	= orion_ge11_resources,
 	.dev		= {
 		.coherent_dma_mask	= DMA_BIT_MASK(32),
@@ -806,10 +810,7 @@ void __init orion_xor1_init(unsigned long mapbase_low,
 /*****************************************************************************
  * EHCI
  ****************************************************************************/
-static struct orion_ehci_data orion_ehci_data = {
-	.phy_version	= EHCI_PHY_NA,
-};
-
+static struct orion_ehci_data orion_ehci_data;
 static u64 ehci_dmamask = DMA_BIT_MASK(32);
 
 
@@ -830,9 +831,11 @@ static struct platform_device orion_ehci = {
 
 void __init orion_ehci_init(struct mbus_dram_target_info *mbus_dram_info,
 			    unsigned long mapbase,
-			    unsigned long irq)
+			    unsigned long irq,
+			    enum orion_ehci_phy_ver phy_version)
 {
 	orion_ehci_data.dram = mbus_dram_info;
+	orion_ehci_data.phy_version = phy_version;
 	fill_resources(&orion_ehci, orion_ehci_resources, mapbase, SZ_4K - 1,
 		       irq);
 

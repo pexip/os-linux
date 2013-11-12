@@ -699,9 +699,12 @@ static int vfp_set(struct task_struct *target,
 {
 	int ret;
 	struct thread_info *thread = task_thread_info(target);
-	struct vfp_hard_struct new_vfp = thread->vfpstate.hard;
+	struct vfp_hard_struct new_vfp;
 	const size_t user_fpregs_offset = offsetof(struct user_vfp, fpregs);
 	const size_t user_fpscr_offset = offsetof(struct user_vfp, fpscr);
+
+	vfp_sync_hwstate(thread);
+	new_vfp = thread->vfpstate.hard;
 
 	ret = user_regset_copyin(&pos, &count, &kbuf, &ubuf,
 				  &new_vfp.fpregs,
@@ -723,9 +726,8 @@ static int vfp_set(struct task_struct *target,
 	if (ret)
 		return ret;
 
-	vfp_sync_hwstate(thread);
-	thread->vfpstate.hard = new_vfp;
 	vfp_flush_hwstate(thread);
+	thread->vfpstate.hard = new_vfp;
 
 	return 0;
 }
@@ -906,6 +908,15 @@ asmlinkage int syscall_trace(int why, struct pt_regs *regs, int scno)
 {
 	unsigned long ip;
 
+	current_thread_info()->syscall = scno;
+
+	/*
+	 * Only check seccomp on entry. Do the secure computing check first;
+	 * failures should be fast.
+	 */
+	if (why == 0 && secure_computing(scno) == -1)
+		return -1;
+
 	if (!test_thread_flag(TIF_SYSCALL_TRACE))
 		return scno;
 	if (!(current->ptrace & PT_PTRACED))
@@ -917,8 +928,6 @@ asmlinkage int syscall_trace(int why, struct pt_regs *regs, int scno)
 	 */
 	ip = regs->ARM_ip;
 	regs->ARM_ip = why;
-
-	current_thread_info()->syscall = scno;
 
 	/* the 0x80 provides a way for the tracing parent to distinguish
 	   between a syscall stop and SIGTRAP delivery */

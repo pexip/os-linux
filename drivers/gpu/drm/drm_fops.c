@@ -129,15 +129,19 @@ int drm_open(struct inode *inode, struct file *filp)
 	minor = idr_find(&drm_minors_idr, minor_id);
 	if (!minor)
 		return -ENODEV;
-
+	if (IS_ERR(minor))
+		return PTR_ERR(minor);
 	if (!(dev = minor->dev))
 		return -ENODEV;
 
 	retcode = drm_open_helper(inode, filp, dev);
 	if (!retcode) {
 		atomic_inc(&dev->counts[_DRM_STAT_OPENS]);
-		if (!dev->open_count++)
+		if (!dev->open_count++) {
 			retcode = drm_setup(dev);
+			if (retcode)
+				dev->open_count--;
+		}
 	}
 	if (!retcode) {
 		mutex_lock(&dev->struct_mutex);
@@ -177,7 +181,10 @@ int drm_stub_open(struct inode *inode, struct file *filp)
 	minor = idr_find(&drm_minors_idr, minor_id);
 	if (!minor)
 		goto out;
-
+	if (IS_ERR(minor)) {
+		err = PTR_ERR(minor);
+		goto out;
+	}
 	if (!(dev = minor->dev))
 		goto out;
 
@@ -486,6 +493,11 @@ int drm_release(struct inode *inode, struct file *filp)
 		  task_pid_nr(current),
 		  (long)old_encode_dev(file_priv->minor->device),
 		  dev->open_count);
+
+	/* Release any auth tokens that might point to this file_priv,
+	   (do that under the drm_global_mutex) */
+	if (file_priv->magic)
+		(void) drm_remove_magic(file_priv->master, file_priv->magic);
 
 	/* if the master has gone away we can't do anything with the lock */
 	if (file_priv->minor->master)

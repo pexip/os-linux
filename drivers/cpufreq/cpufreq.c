@@ -126,6 +126,15 @@ static int __init init_cpufreq_transition_notifier_list(void)
 }
 pure_initcall(init_cpufreq_transition_notifier_list);
 
+static int off __read_mostly;
+int cpufreq_disabled(void)
+{
+	return off;
+}
+void disable_cpufreq(void)
+{
+	off = 1;
+}
 static LIST_HEAD(cpufreq_governor_list);
 static DEFINE_MUTEX(cpufreq_governor_mutex);
 
@@ -1440,6 +1449,9 @@ int __cpufreq_driver_target(struct cpufreq_policy *policy,
 {
 	int retval = -EINVAL;
 
+	if (cpufreq_disabled())
+		return -ENODEV;
+
 	pr_debug("target for CPU %u: %u kHz, relation %u\n", policy->cpu,
 		target_freq, relation);
 	if (cpu_online(policy->cpu) && cpufreq_driver->target)
@@ -1548,6 +1560,9 @@ int cpufreq_register_governor(struct cpufreq_governor *governor)
 	if (!governor)
 		return -EINVAL;
 
+	if (cpufreq_disabled())
+		return -ENODEV;
+
 	mutex_lock(&cpufreq_governor_mutex);
 
 	err = -EBUSY;
@@ -1569,6 +1584,9 @@ void cpufreq_unregister_governor(struct cpufreq_governor *governor)
 #endif
 
 	if (!governor)
+		return;
+
+	if (cpufreq_disabled())
 		return;
 
 #ifdef CONFIG_HOTPLUG_CPU
@@ -1798,6 +1816,20 @@ static struct notifier_block __refdata cpufreq_cpu_notifier = {
  *               REGISTER / UNREGISTER CPUFREQ DRIVER                *
  *********************************************************************/
 
+static char cpufreq_driver_name[CPUFREQ_NAME_LEN];
+
+static int __init cpufreq_driver_setup(char *str)
+{
+	strlcpy(cpufreq_driver_name, str, CPUFREQ_NAME_LEN);
+	return 1;
+}
+
+/*
+ * Set this name to only allow one specific cpu freq driver, e.g.,
+ * cpufreq_driver=powernow-k8
+ */
+__setup("cpufreq_driver=", cpufreq_driver_setup);
+
 /**
  * cpufreq_register_driver - register a CPU Frequency driver
  * @driver_data: A struct cpufreq_driver containing the values#
@@ -1813,11 +1845,20 @@ int cpufreq_register_driver(struct cpufreq_driver *driver_data)
 	unsigned long flags;
 	int ret;
 
+	if (cpufreq_disabled())
+		return -ENODEV;
+
 	if (!driver_data || !driver_data->verify || !driver_data->init ||
 	    ((!driver_data->setpolicy) && (!driver_data->target)))
 		return -EINVAL;
 
-	pr_debug("trying to register driver %s\n", driver_data->name);
+	pr_debug("trying to register driver %s, cpufreq_driver=%s\n",
+		driver_data->name, cpufreq_driver_name);
+
+	if (cpufreq_driver_name[0])
+		if (!driver_data->name ||
+			strcmp(cpufreq_driver_name, driver_data->name))
+				return -EINVAL;
 
 	if (driver_data->setpolicy)
 		driver_data->flags |= CPUFREQ_CONST_LOOPS;
@@ -1901,6 +1942,9 @@ EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
 static int __init cpufreq_core_init(void)
 {
 	int cpu;
+
+	if (cpufreq_disabled())
+		return -ENODEV;
 
 	for_each_possible_cpu(cpu) {
 		per_cpu(cpufreq_policy_cpu, cpu) = -1;

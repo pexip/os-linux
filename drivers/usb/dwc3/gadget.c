@@ -449,16 +449,16 @@ static int dwc3_gadget_ep_enable(struct usb_ep *ep,
 
 	switch (usb_endpoint_type(desc)) {
 	case USB_ENDPOINT_XFER_CONTROL:
-		strncat(dep->name, "-control", sizeof(dep->name));
+		strlcat(dep->name, "-control", sizeof(dep->name));
 		break;
 	case USB_ENDPOINT_XFER_ISOC:
-		strncat(dep->name, "-isoc", sizeof(dep->name));
+		strlcat(dep->name, "-isoc", sizeof(dep->name));
 		break;
 	case USB_ENDPOINT_XFER_BULK:
-		strncat(dep->name, "-bulk", sizeof(dep->name));
+		strlcat(dep->name, "-bulk", sizeof(dep->name));
 		break;
 	case USB_ENDPOINT_XFER_INT:
-		strncat(dep->name, "-int", sizeof(dep->name));
+		strlcat(dep->name, "-int", sizeof(dep->name));
 		break;
 	default:
 		dev_err(dwc->dev, "invalid endpoint transfer type\n");
@@ -1217,6 +1217,7 @@ err1:
 	__dwc3_gadget_ep_disable(dwc->eps[0]);
 
 err0:
+	dwc->gadget_driver = NULL;
 	spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return ret;
@@ -1277,6 +1278,7 @@ static int __devinit dwc3_gadget_init_endpoints(struct dwc3 *dwc)
 
 		if (epnum == 0 || epnum == 1) {
 			dep->endpoint.maxpacket = 512;
+			dep->endpoint.maxburst = 1;
 			dep->endpoint.ops = &dwc3_gadget_ep0_ops;
 			if (!epnum)
 				dwc->gadget.ep0 = &dep->endpoint;
@@ -1309,10 +1311,19 @@ static void dwc3_gadget_free_endpoints(struct dwc3 *dwc)
 
 	for (epnum = 0; epnum < DWC3_ENDPOINTS_NUM; epnum++) {
 		dep = dwc->eps[epnum];
-		dwc3_free_trb_pool(dep);
-
-		if (epnum != 0 && epnum != 1)
+		/*
+		 * Physical endpoints 0 and 1 are special; they form the
+		 * bi-directional USB endpoint 0.
+		 *
+		 * For those two physical endpoints, we don't allocate a TRB
+		 * pool nor do we add them the endpoints list. Due to that, we
+		 * shouldn't do these two operations otherwise we would end up
+		 * with all sorts of bugs when removing dwc3.ko.
+		 */
+		if (epnum != 0 && epnum != 1) {
+			dwc3_free_trb_pool(dep);
 			list_del(&dep->endpoint.ep_list);
+		}
 
 		kfree(dep);
 	}
@@ -1405,7 +1416,7 @@ static void dwc3_endpoint_transfer_complete(struct dwc3 *dwc,
 static void dwc3_gadget_start_isoc(struct dwc3 *dwc,
 		struct dwc3_ep *dep, const struct dwc3_event_depevt *event)
 {
-	u32 uf;
+	u32 uf, mask;
 
 	if (list_empty(&dep->request_list)) {
 		dev_vdbg(dwc->dev, "ISOC ep %s run out for requests.\n",
@@ -1413,16 +1424,10 @@ static void dwc3_gadget_start_isoc(struct dwc3 *dwc,
 		return;
 	}
 
-	if (event->parameters) {
-		u32 mask;
-
-		mask = ~(dep->interval - 1);
-		uf = event->parameters & mask;
-		/* 4 micro frames in the future */
-		uf += dep->interval * 4;
-	} else {
-		uf = 0;
-	}
+	mask = ~(dep->interval - 1);
+	uf = event->parameters & mask;
+	/* 4 micro frames in the future */
+	uf += dep->interval * 4;
 
 	__dwc3_gadget_kick_transfer(dep, uf, 1);
 }

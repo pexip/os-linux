@@ -52,20 +52,6 @@ static inline int ring_space(struct intel_ring_buffer *ring)
 	return space;
 }
 
-static u32 i915_gem_get_seqno(struct drm_device *dev)
-{
-	drm_i915_private_t *dev_priv = dev->dev_private;
-	u32 seqno;
-
-	seqno = dev_priv->next_seqno;
-
-	/* reserve 0 for non-seqno */
-	if (++dev_priv->next_seqno == 0)
-		dev_priv->next_seqno = 1;
-
-	return seqno;
-}
-
 static int
 render_ring_flush(struct intel_ring_buffer *ring,
 		  u32	invalidate_domains,
@@ -216,30 +202,44 @@ gen6_render_ring_flush(struct intel_ring_buffer *ring,
 	int ret;
 
 	/* Force SNB workarounds for PIPE_CONTROL flushes */
-	intel_emit_post_sync_nonzero_flush(ring);
+	ret = intel_emit_post_sync_nonzero_flush(ring);
+	if (ret)
+		return ret;
 
 	/* Just flush everything.  Experiments have shown that reducing the
 	 * number of bits based on the write domains has little performance
 	 * impact.
 	 */
-	flags |= PIPE_CONTROL_RENDER_TARGET_CACHE_FLUSH;
-	flags |= PIPE_CONTROL_INSTRUCTION_CACHE_INVALIDATE;
-	flags |= PIPE_CONTROL_TEXTURE_CACHE_INVALIDATE;
-	flags |= PIPE_CONTROL_DEPTH_CACHE_FLUSH;
-	flags |= PIPE_CONTROL_VF_CACHE_INVALIDATE;
-	flags |= PIPE_CONTROL_CONST_CACHE_INVALIDATE;
-	flags |= PIPE_CONTROL_STATE_CACHE_INVALIDATE;
+	if (flush_domains) {
+		flags |= PIPE_CONTROL_RENDER_TARGET_CACHE_FLUSH;
+		flags |= PIPE_CONTROL_DEPTH_CACHE_FLUSH;
+		/*
+		 * Ensure that any following seqno writes only happen
+		 * when the render cache is indeed flushed.
+		 */
+		flags |= PIPE_CONTROL_CS_STALL;
+	}
+	if (invalidate_domains) {
+		flags |= PIPE_CONTROL_TLB_INVALIDATE;
+		flags |= PIPE_CONTROL_INSTRUCTION_CACHE_INVALIDATE;
+		flags |= PIPE_CONTROL_TEXTURE_CACHE_INVALIDATE;
+		flags |= PIPE_CONTROL_VF_CACHE_INVALIDATE;
+		flags |= PIPE_CONTROL_CONST_CACHE_INVALIDATE;
+		flags |= PIPE_CONTROL_STATE_CACHE_INVALIDATE;
+		/*
+		 * TLB invalidate requires a post-sync write.
+		 */
+		flags |= PIPE_CONTROL_QW_WRITE | PIPE_CONTROL_CS_STALL;
+	}
 
-	ret = intel_ring_begin(ring, 6);
+	ret = intel_ring_begin(ring, 4);
 	if (ret)
 		return ret;
 
-	intel_ring_emit(ring, GFX_OP_PIPE_CONTROL(5));
+	intel_ring_emit(ring, GFX_OP_PIPE_CONTROL(4));
 	intel_ring_emit(ring, flags);
 	intel_ring_emit(ring, scratch_addr | PIPE_CONTROL_GLOBAL_GTT);
-	intel_ring_emit(ring, 0); /* lower dword */
-	intel_ring_emit(ring, 0); /* uppwer dword */
-	intel_ring_emit(ring, MI_NOOP);
+	intel_ring_emit(ring, 0);
 	intel_ring_advance(ring);
 
 	return 0;
@@ -263,17 +263,20 @@ u32 intel_ring_get_active_head(struct intel_ring_buffer *ring)
 
 static int init_ring_common(struct intel_ring_buffer *ring)
 {
-	drm_i915_private_t *dev_priv = ring->dev->dev_private;
+	struct drm_device *dev = ring->dev;
+	drm_i915_private_t *dev_priv = dev->dev_private;
 	struct drm_i915_gem_object *obj = ring->obj;
+	int ret = 0;
 	u32 head;
+
+	if (HAS_FORCE_WAKE(dev))
+		gen6_gt_force_wake_get(dev_priv);
 
 	/* Stop the ring if it's running. */
 	I915_WRITE_CTL(ring, 0);
 	I915_WRITE_HEAD(ring, 0);
 	ring->write_tail(ring, 0);
 
-	/* Initialize the ring. */
-	I915_WRITE_START(ring, obj->gtt_offset);
 	head = I915_READ_HEAD(ring) & HEAD_ADDR;
 
 	/* G45 ring initialization fails to reset head to zero */
@@ -299,14 +302,19 @@ static int init_ring_common(struct intel_ring_buffer *ring)
 		}
 	}
 
+	/* Initialize the ring. This must happen _after_ we've cleared the ring
+	 * registers with the above sequence (the readback of the HEAD registers
+	 * also enforces ordering), otherwise the hw might lose the new ring
+	 * register values. */
+	I915_WRITE_START(ring, obj->gtt_offset);
 	I915_WRITE_CTL(ring,
 			((ring->size - PAGE_SIZE) & RING_NR_PAGES)
-			| RING_REPORT_64K | RING_VALID);
+			| RING_VALID);
 
 	/* If the head is still not zero, the ring is dead */
-	if ((I915_READ_CTL(ring) & RING_VALID) == 0 ||
-	    I915_READ_START(ring) != obj->gtt_offset ||
-	    (I915_READ_HEAD(ring) & HEAD_ADDR) != 0) {
+	if (wait_for((I915_READ_CTL(ring) & RING_VALID) != 0 &&
+		     I915_READ_START(ring) == obj->gtt_offset &&
+		     (I915_READ_HEAD(ring) & HEAD_ADDR) == 0, 50)) {
 		DRM_ERROR("%s initialization failed "
 				"ctl %08x head %08x tail %08x start %08x\n",
 				ring->name,
@@ -314,7 +322,8 @@ static int init_ring_common(struct intel_ring_buffer *ring)
 				I915_READ_HEAD(ring),
 				I915_READ_TAIL(ring),
 				I915_READ_START(ring));
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	if (!drm_core_check_feature(ring->dev, DRIVER_MODESET))
@@ -325,7 +334,11 @@ static int init_ring_common(struct intel_ring_buffer *ring)
 		ring->space = ring_space(ring);
 	}
 
-	return 0;
+out:
+	if (HAS_FORCE_WAKE(dev))
+		gen6_gt_force_wake_put(dev_priv);
+
+	return ret;
 }
 
 static int
@@ -399,19 +412,41 @@ static int init_render_ring(struct intel_ring_buffer *ring)
 
 	if (INTEL_INFO(dev)->gen > 3) {
 		int mode = VS_TIMER_DISPATCH << 16 | VS_TIMER_DISPATCH;
-		if (IS_GEN6(dev) || IS_GEN7(dev))
-			mode |= MI_FLUSH_ENABLE << 16 | MI_FLUSH_ENABLE;
 		I915_WRITE(MI_MODE, mode);
-		if (IS_GEN7(dev))
-			I915_WRITE(GFX_MODE_GEN7,
-				   GFX_MODE_DISABLE(GFX_TLB_INVALIDATE_ALWAYS) |
-				   GFX_MODE_ENABLE(GFX_REPLAY_MODE));
 	}
+
+	/* We need to disable the AsyncFlip performance optimisations in order
+	 * to use MI_WAIT_FOR_EVENT within the CS. It should already be
+	 * programmed to '1' on all products.
+	 */
+	if (INTEL_INFO(dev)->gen >= 6)
+		I915_WRITE(MI_MODE, GFX_MODE_ENABLE(ASYNC_FLIP_PERF_DISABLE));
+
+	if (IS_GEN7(dev))
+		I915_WRITE(GFX_MODE_GEN7,
+			   GFX_MODE_DISABLE(GFX_TLB_INVALIDATE_ALWAYS) |
+			   GFX_MODE_ENABLE(GFX_REPLAY_MODE));
 
 	if (INTEL_INFO(dev)->gen >= 5) {
 		ret = init_pipe_control(ring);
 		if (ret)
 			return ret;
+	}
+
+
+	if (IS_GEN6(dev)) {
+		/* From the Sandybridge PRM, volume 1 part 3, page 24:
+		 * "If this bit is set, STCunit will have LRA as replacement
+		 *  policy. [...] This bit must be reset.  LRA replacement
+		 *  policy is not supported."
+		 */
+		I915_WRITE(CACHE_MODE_0,
+			   CM0_STC_EVICT_DISABLE_LRA_SNB << CM0_MASK_SHIFT);
+	}
+
+	if (INTEL_INFO(dev)->gen >= 6) {
+		I915_WRITE(INSTPM,
+			   INSTPM_FORCE_ORDERING << 16 | INSTPM_FORCE_ORDERING);
 	}
 
 	return ret;
@@ -462,7 +497,7 @@ gen6_add_request(struct intel_ring_buffer *ring,
 	mbox1_reg = ring->signal_mbox[0];
 	mbox2_reg = ring->signal_mbox[1];
 
-	*seqno = i915_gem_get_seqno(ring->dev);
+	*seqno = i915_gem_next_request_seqno(ring);
 
 	update_mboxes(ring, *seqno, mbox1_reg);
 	update_mboxes(ring, *seqno, mbox2_reg);
@@ -560,8 +595,7 @@ static int
 pc_render_add_request(struct intel_ring_buffer *ring,
 		      u32 *result)
 {
-	struct drm_device *dev = ring->dev;
-	u32 seqno = i915_gem_get_seqno(dev);
+	u32 seqno = i915_gem_next_request_seqno(ring);
 	struct pipe_control *pc = ring->private;
 	u32 scratch_addr = pc->gtt_offset + 128;
 	int ret;
@@ -612,8 +646,7 @@ static int
 render_ring_add_request(struct intel_ring_buffer *ring,
 			u32 *result)
 {
-	struct drm_device *dev = ring->dev;
-	u32 seqno = i915_gem_get_seqno(dev);
+	u32 seqno = i915_gem_next_request_seqno(ring);
 	int ret;
 
 	ret = intel_ring_begin(ring, 4);
@@ -628,6 +661,19 @@ render_ring_add_request(struct intel_ring_buffer *ring,
 
 	*result = seqno;
 	return 0;
+}
+
+static u32
+gen6_ring_get_seqno(struct intel_ring_buffer *ring)
+{
+	struct drm_device *dev = ring->dev;
+
+	/* Workaround to force correct ordering between irq and seqno writes on
+	 * ivb (and maybe also on snb) by reading from a CS register (like
+	 * ACTHD) before reading the status page. */
+	if (IS_GEN7(dev))
+		intel_ring_get_active_head(ring);
+	return intel_read_status_page(ring, I915_GEM_HWS_INDEX);
 }
 
 static u32
@@ -744,6 +790,18 @@ void intel_ring_setup_status_page(struct intel_ring_buffer *ring)
 
 	I915_WRITE(mmio, (u32)ring->status_page.gfx_addr);
 	POSTING_READ(mmio);
+
+	/* Flush the TLB for this page */
+	if (INTEL_INFO(dev)->gen >= 6) {
+		u32 reg = RING_INSTPM(ring->mmio_base);
+		I915_WRITE(reg,
+			   _MASKED_BIT_ENABLE(INSTPM_TLB_INVALIDATE |
+					      INSTPM_SYNC_FLUSH));
+		if (wait_for((I915_READ(reg) & INSTPM_SYNC_FLUSH) == 0,
+			     1000))
+			DRM_ERROR("%s: wait for SyncFlush to complete for TLB invalidation timed out\n",
+				  ring->name);
+	}
 }
 
 static int
@@ -774,7 +832,7 @@ ring_add_request(struct intel_ring_buffer *ring,
 	if (ret)
 		return ret;
 
-	seqno = i915_gem_get_seqno(ring->dev);
+	seqno = i915_gem_next_request_seqno(ring);
 
 	intel_ring_emit(ring, MI_STORE_DWORD_INDEX);
 	intel_ring_emit(ring, I915_GEM_HWS_INDEX << MI_STORE_DWORD_INDEX_SHIFT);
@@ -794,6 +852,12 @@ gen6_ring_get_irq(struct intel_ring_buffer *ring, u32 gflag, u32 rflag)
 
 	if (!dev->irq_enabled)
 	       return false;
+
+	/* It looks like we need to prevent the gt from suspending while waiting
+	 * for an notifiy irq, otherwise irqs seem to get lost on at least the
+	 * blt/bsd rings on ivb. */
+	if (IS_GEN7(dev))
+		gen6_gt_force_wake_get(dev_priv);
 
 	spin_lock(&ring->irq_lock);
 	if (ring->irq_refcount++ == 0) {
@@ -819,6 +883,9 @@ gen6_ring_put_irq(struct intel_ring_buffer *ring, u32 gflag, u32 rflag)
 		ironlake_disable_irq(dev_priv, gflag);
 	}
 	spin_unlock(&ring->irq_lock);
+
+	if (IS_GEN7(dev))
+		gen6_gt_force_wake_put(dev_priv);
 }
 
 static bool
@@ -1007,6 +1074,10 @@ int intel_init_ring_buffer(struct drm_device *dev,
 	if (ret)
 		goto err_unref;
 
+	ret = i915_gem_object_set_to_gtt_domain(obj, true);
+	if (ret)
+		goto err_unpin;
+
 	ring->map.size = ring->size;
 	ring->map.offset = dev->agp->base + obj->gtt_offset;
 	ring->map.type = 0;
@@ -1030,7 +1101,7 @@ int intel_init_ring_buffer(struct drm_device *dev,
 	 * of the buffer.
 	 */
 	ring->effective_size = ring->size;
-	if (IS_I830(ring->dev))
+	if (IS_I830(ring->dev) || IS_845G(ring->dev))
 		ring->effective_size -= 128;
 
 	return 0;
@@ -1105,18 +1176,6 @@ int intel_wait_ring_buffer(struct intel_ring_buffer *ring, int n)
 	struct drm_device *dev = ring->dev;
 	struct drm_i915_private *dev_priv = dev->dev_private;
 	unsigned long end;
-	u32 head;
-
-	/* If the reported head position has wrapped or hasn't advanced,
-	 * fallback to the slow and accurate path.
-	 */
-	head = intel_read_status_page(ring, 4);
-	if (head > ring->head) {
-		ring->head = head;
-		ring->space = ring_space(ring);
-		if (ring->space >= n)
-			return 0;
-	}
 
 	trace_i915_ring_wait_begin(ring);
 	end = jiffies + 3 * HZ;
@@ -1246,10 +1305,17 @@ static int gen6_ring_flush(struct intel_ring_buffer *ring,
 		return ret;
 
 	cmd = MI_FLUSH_DW;
+	/*
+	 * Bspec vol 1c.5 - video engine command streamer:
+	 * "If ENABLED, all TLBs will be invalidated once the flush
+	 * operation is complete. This bit is only valid when the
+	 * Post-Sync Operation field is a value of 1h or 3h."
+	 */
 	if (invalidate & I915_GEM_GPU_DOMAINS)
-		cmd |= MI_INVALIDATE_TLB | MI_INVALIDATE_BSD;
+		cmd |= MI_INVALIDATE_TLB | MI_INVALIDATE_BSD |
+			MI_FLUSH_DW_STORE_INDEX | MI_FLUSH_DW_OP_STOREDW;
 	intel_ring_emit(ring, cmd);
-	intel_ring_emit(ring, 0);
+	intel_ring_emit(ring, I915_GEM_HWS_SCRATCH_ADDR | MI_FLUSH_DW_USE_GTT);
 	intel_ring_emit(ring, 0);
 	intel_ring_emit(ring, MI_NOOP);
 	intel_ring_advance(ring);
@@ -1316,7 +1382,7 @@ static const struct intel_ring_buffer gen6_bsd_ring = {
 	.write_tail		= gen6_bsd_ring_write_tail,
 	.flush			= gen6_ring_flush,
 	.add_request		= gen6_add_request,
-	.get_seqno		= ring_get_seqno,
+	.get_seqno		= gen6_ring_get_seqno,
 	.irq_get		= gen6_bsd_ring_get_irq,
 	.irq_put		= gen6_bsd_ring_put_irq,
 	.dispatch_execbuffer	= gen6_ring_dispatch_execbuffer,
@@ -1422,10 +1488,17 @@ static int blt_ring_flush(struct intel_ring_buffer *ring,
 		return ret;
 
 	cmd = MI_FLUSH_DW;
+	/*
+	 * Bspec vol 1c.3 - blitter engine command streamer:
+	 * "If ENABLED, all TLBs will be invalidated once the flush
+	 * operation is complete. This bit is only valid when the
+	 * Post-Sync Operation field is a value of 1h or 3h."
+	 */
 	if (invalidate & I915_GEM_DOMAIN_RENDER)
-		cmd |= MI_INVALIDATE_TLB;
+		cmd |= MI_INVALIDATE_TLB | MI_FLUSH_DW_STORE_INDEX |
+			MI_FLUSH_DW_OP_STOREDW | MI_FLUSH_DW_OP_STOREDW;
 	intel_ring_emit(ring, cmd);
-	intel_ring_emit(ring, 0);
+	intel_ring_emit(ring, I915_GEM_HWS_SCRATCH_ADDR | MI_FLUSH_DW_USE_GTT);
 	intel_ring_emit(ring, 0);
 	intel_ring_emit(ring, MI_NOOP);
 	intel_ring_advance(ring);
@@ -1451,7 +1524,7 @@ static const struct intel_ring_buffer gen6_blt_ring = {
 	.write_tail		= ring_write_tail,
 	.flush			= blt_ring_flush,
 	.add_request		= gen6_add_request,
-	.get_seqno		= ring_get_seqno,
+	.get_seqno		= gen6_ring_get_seqno,
 	.irq_get		= blt_ring_get_irq,
 	.irq_put		= blt_ring_put_irq,
 	.dispatch_execbuffer	= gen6_ring_dispatch_execbuffer,
@@ -1474,6 +1547,7 @@ int intel_init_render_ring_buffer(struct drm_device *dev)
 		ring->flush = gen6_render_ring_flush;
 		ring->irq_get = gen6_render_ring_get_irq;
 		ring->irq_put = gen6_render_ring_put_irq;
+		ring->get_seqno = gen6_ring_get_seqno;
 	} else if (IS_GEN5(dev)) {
 		ring->add_request = pc_render_add_request;
 		ring->get_seqno = pc_render_get_seqno;

@@ -172,6 +172,7 @@ static void __init xen_fill_possible_map(void)
 static void __init xen_filter_cpu_maps(void)
 {
 	int i, rc;
+	unsigned int subtract = 0;
 
 	if (!xen_initial_domain())
 		return;
@@ -186,8 +187,22 @@ static void __init xen_filter_cpu_maps(void)
 		} else {
 			set_cpu_possible(i, false);
 			set_cpu_present(i, false);
+			subtract++;
 		}
 	}
+#ifdef CONFIG_HOTPLUG_CPU
+	/* This is akin to using 'nr_cpus' on the Linux command line.
+	 * Which is OK as when we use 'dom0_max_vcpus=X' we can only
+	 * have up to X, while nr_cpu_ids is greater than X. This
+	 * normally is not a problem, except when CPU hotplugging
+	 * is involved and then there might be more than X CPUs
+	 * in the guest - which will not work as there is no
+	 * hypercall to expand the max number of VCPUs an already
+	 * running guest has. So cap it up to X. */
+	if (subtract)
+		nr_cpu_ids = nr_cpu_ids - subtract;
+#endif
+
 }
 
 static void __init xen_smp_prepare_boot_cpu(void)
@@ -452,8 +467,8 @@ static void xen_smp_send_reschedule(int cpu)
 	xen_send_IPI_one(cpu, XEN_RESCHEDULE_VECTOR);
 }
 
-static void xen_send_IPI_mask(const struct cpumask *mask,
-			      enum ipi_vector vector)
+static void __xen_send_IPI_mask(const struct cpumask *mask,
+			      int vector)
 {
 	unsigned cpu;
 
@@ -465,7 +480,7 @@ static void xen_smp_send_call_function_ipi(const struct cpumask *mask)
 {
 	int cpu;
 
-	xen_send_IPI_mask(mask, XEN_CALL_FUNCTION_VECTOR);
+	__xen_send_IPI_mask(mask, XEN_CALL_FUNCTION_VECTOR);
 
 	/* Make sure other vcpus get a chance to run if they need to. */
 	for_each_cpu(cpu, mask) {
@@ -478,8 +493,81 @@ static void xen_smp_send_call_function_ipi(const struct cpumask *mask)
 
 static void xen_smp_send_call_function_single_ipi(int cpu)
 {
-	xen_send_IPI_mask(cpumask_of(cpu),
+	__xen_send_IPI_mask(cpumask_of(cpu),
 			  XEN_CALL_FUNCTION_SINGLE_VECTOR);
+}
+
+static inline int xen_map_vector(int vector)
+{
+	int xen_vector;
+
+	switch (vector) {
+	case RESCHEDULE_VECTOR:
+		xen_vector = XEN_RESCHEDULE_VECTOR;
+		break;
+	case CALL_FUNCTION_VECTOR:
+		xen_vector = XEN_CALL_FUNCTION_VECTOR;
+		break;
+	case CALL_FUNCTION_SINGLE_VECTOR:
+		xen_vector = XEN_CALL_FUNCTION_SINGLE_VECTOR;
+		break;
+	default:
+		xen_vector = -1;
+		printk(KERN_ERR "xen: vector 0x%x is not implemented\n",
+			vector);
+	}
+
+	return xen_vector;
+}
+
+void xen_send_IPI_mask(const struct cpumask *mask,
+			      int vector)
+{
+	int xen_vector = xen_map_vector(vector);
+
+	if (xen_vector >= 0)
+		__xen_send_IPI_mask(mask, xen_vector);
+}
+
+void xen_send_IPI_all(int vector)
+{
+	int xen_vector = xen_map_vector(vector);
+
+	if (xen_vector >= 0)
+		__xen_send_IPI_mask(cpu_online_mask, xen_vector);
+}
+
+void xen_send_IPI_self(int vector)
+{
+	int xen_vector = xen_map_vector(vector);
+
+	if (xen_vector >= 0)
+		xen_send_IPI_one(smp_processor_id(), xen_vector);
+}
+
+void xen_send_IPI_mask_allbutself(const struct cpumask *mask,
+				int vector)
+{
+	unsigned cpu;
+	unsigned int this_cpu = smp_processor_id();
+
+	if (!(num_online_cpus() > 1))
+		return;
+
+	for_each_cpu_and(cpu, mask, cpu_online_mask) {
+		if (this_cpu == cpu)
+			continue;
+
+		xen_smp_send_call_function_single_ipi(cpu);
+	}
+}
+
+void xen_send_IPI_allbutself(int vector)
+{
+	int xen_vector = xen_map_vector(vector);
+
+	if (xen_vector >= 0)
+		xen_send_IPI_mask_allbutself(cpu_online_mask, xen_vector);
 }
 
 static irqreturn_t xen_call_function_interrupt(int irq, void *dev_id)
@@ -548,6 +636,8 @@ static void xen_hvm_cpu_die(unsigned int cpu)
 	unbind_from_irqhandler(per_cpu(xen_callfunc_irq, cpu), NULL);
 	unbind_from_irqhandler(per_cpu(xen_debug_irq, cpu), NULL);
 	unbind_from_irqhandler(per_cpu(xen_callfuncsingle_irq, cpu), NULL);
+	xen_uninit_lock_cpu(cpu);
+	xen_teardown_timer(cpu);
 	native_cpu_die(cpu);
 }
 

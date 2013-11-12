@@ -1358,9 +1358,9 @@ eperm:
 	goto out;
 }
 
-void reset_vc(struct vc_data *vc)
+void reset_vc(struct vc_data *vc, int mode)
 {
-	vc->vc_mode = KD_TEXT;
+	vc->vc_mode = mode;
 	kbd_table[vc->vc_num].kbdmode = default_utf8 ? VC_UNICODE : VC_XLATE;
 	vc->vt_mode.mode = VT_AUTO;
 	vc->vt_mode.waitv = 0;
@@ -1391,7 +1391,7 @@ void vc_SAK(struct work_struct *work)
 		 */
 		if (tty)
 			__do_SAK(tty);
-		reset_vc(vc);
+		reset_vc(vc, KD_TEXT);
 	}
 	console_unlock();
 }
@@ -1463,7 +1463,6 @@ compat_kdfontop_ioctl(struct compat_console_font_op __user *fontop,
 	if (!perm && op->op != KD_FONT_OP_GET)
 		return -EPERM;
 	op->data = compat_ptr(((struct compat_console_font_op *)op)->data);
-	op->flags |= KD_FONT_FLAG_OLD;
 	i = con_font_op(vc, op);
 	if (i)
 		return i;
@@ -1653,7 +1652,7 @@ static void complete_change_console(struct vc_data *vc)
 		 * this outside of VT_PROCESS but there is no single process
 		 * to account for and tracking tty count may be undesirable.
 		 */
-			reset_vc(vc);
+			reset_vc(vc, KD_TEXT);
 
 			if (old_vc_mode != vc->vc_mode) {
 				if (vc->vc_mode == KD_TEXT)
@@ -1725,7 +1724,7 @@ void change_console(struct vc_data *new_vc)
 		 * this outside of VT_PROCESS but there is no single process
 		 * to account for and tracking tty count may be undesirable.
 		 */
-		reset_vc(vc);
+		reset_vc(vc, KD_TEXT);
 
 		/*
 		 * Fall through to normal (VT_AUTO) handling of the switch...

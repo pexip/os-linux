@@ -277,6 +277,7 @@ int xen_blkif_schedule(void *arg)
 {
 	struct xen_blkif *blkif = arg;
 	struct xen_vbd *vbd = &blkif->vbd;
+	int ret;
 
 	xen_blkif_get(blkif);
 
@@ -297,8 +298,12 @@ int xen_blkif_schedule(void *arg)
 		blkif->waiting_reqs = 0;
 		smp_mb(); /* clear flag *before* checking for work */
 
-		if (do_block_io_op(blkif))
+		ret = do_block_io_op(blkif);
+		if (ret > 0)
 			blkif->waiting_reqs = 1;
+		if (ret == -EACCES)
+			wait_event_interruptible(blkif->shutdown_wq,
+						 kthread_should_stop());
 
 		if (log_stats && time_after(jiffies, blkif->st_print))
 			print_stats(blkif);
@@ -539,6 +544,12 @@ __do_block_io_op(struct xen_blkif *blkif)
 	rp = blk_rings->common.sring->req_prod;
 	rmb(); /* Ensure we see queued requests up to 'rp'. */
 
+	if (RING_REQUEST_PROD_OVERFLOW(&blk_rings->common, rp)) {
+		rc = blk_rings->common.rsp_prod_pvt;
+		pr_warn(DRV_PFX "Frontend provided bogus ring requests (%d - %d = %d). Halting ring processing on dev=%04x\n",
+			rp, rc, rp - rc, blkif->vbd.pdevice);
+		return -EACCES;
+	}
 	while (rc != rp) {
 
 		if (RING_REQUEST_CONS_OVERFLOW(&blk_rings->common, rc))
@@ -655,8 +666,18 @@ static int dispatch_rw_block_io(struct xen_blkif *blkif,
 	}
 
 	preq.dev           = req->handle;
-	preq.sector_number = req->u.rw.sector_number;
-	preq.nr_sects      = 0;
+	if (operation == REQ_DISCARD) {
+		/*
+		 * It's safe to initialise preq.nr_sects here because the
+		 * 'for' loop below won't iterate as req->nr_segments = 0
+		 * (see blkif_queue_request)
+		 */
+		preq.sector_number = req->u.discard.sector_number;
+		preq.nr_sects      = req->u.discard.nr_sectors;
+	} else {
+		preq.sector_number = req->u.rw.sector_number;
+		preq.nr_sects      = 0;
+	}
 
 	pending_req->blkif     = blkif;
 	pending_req->id        = req->id;
@@ -758,13 +779,7 @@ static int dispatch_rw_block_io(struct xen_blkif *blkif,
 		}
 	}
 
-	/*
-	 * We set it one so that the last submit_bio does not have to call
-	 * atomic_inc.
-	 */
 	atomic_set(&pending_req->pendcnt, nbio);
-
-	/* Get a reference count for the disk queue and start sending I/O */
 	blk_start_plug(&plug);
 
 	for (i = 0; i < nbio; i++)
@@ -792,6 +807,7 @@ static int dispatch_rw_block_io(struct xen_blkif *blkif,
  fail_put_bio:
 	for (i = 0; i < nbio; i++)
 		bio_put(biolist[i]);
+	atomic_set(&pending_req->pendcnt, 1);
 	__end_block_io_op(pending_req, -EINVAL);
 	msleep(1); /* back off a bit */
 	return -EIO;

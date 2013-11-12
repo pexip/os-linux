@@ -119,11 +119,22 @@ struct common_audit_data {
 					unsigned long max;
 				} rlim;
 				struct {
+					const char *src_name;
+					const char *type;
+					const char *trans;
+					const char *data;
+					unsigned long flags;
+				} mnt;
+				struct {
 					const char *target;
 					u32 request;
 					u32 denied;
 					uid_t ouid;
 				} fs;
+				struct {
+					int type, protocol;
+					struct sock *sk;
+				} net;
 			};
 		} apparmor_audit_data;
 #endif

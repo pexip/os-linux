@@ -1564,8 +1564,6 @@ static int b43legacy_request_firmware(struct b43legacy_wldev *dev)
 	const char *filename;
 	int err;
 
-	/* do dummy read */
-	ssb_read32(dev->dev, SSB_TMSHIGH);
 	if (!fw->ucode) {
 		if (rev == 2)
 			filename = "ucode2";
@@ -3839,6 +3837,8 @@ static void b43legacy_remove(struct ssb_device *dev)
 	cancel_work_sync(&wldev->restart_work);
 
 	B43legacy_WARN_ON(!wl);
+	if (!wldev->fw.ucode)
+		return;			/* NULL if fw never loaded */
 	if (wl->current_dev == wldev)
 		ieee80211_unregister_hw(wl->hw);
 

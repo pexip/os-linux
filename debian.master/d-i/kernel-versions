@@ -1,0 +1,17 @@
+# arch	version		flavour		installedname			suffix	bdep
+amd64	3.2.0-57	generic		3.2.0-57-generic		-	
+amd64	3.2.0-57	virtual		3.2.0-57-virtual		-	
+
+i386	3.2.0-57	generic		3.2.0-57-generic		-	
+i386	3.2.0-57	generic-pae	3.2.0-57-generic-pae	-	
+i386	3.2.0-57	virtual		3.2.0-57-virtual		-	
+
+armel	3.2.0-57	omap		3.2.0-57-omap		-
+
+armhf	3.2.0-57	omap		3.2.0-57-omap		-
+armhf	3.2.0-57	highbank	3.2.0-57-highbank		-
+
+# Ports
+# arch	version		flavour		installedname			suffix	bdep
+powerpc	3.2.0-57	powerpc-smp			3.2.0-57-powerpc-smp		-	
+powerpc	3.2.0-57	powerpc64-smp		3.2.0-57-powerpc64-smp	-	

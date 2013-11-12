@@ -2025,7 +2025,7 @@ BTRFS_SETGET_STACK_FUNCS(root_last_snapshot, struct btrfs_root_item,
 
 static inline bool btrfs_root_readonly(struct btrfs_root *root)
 {
-	return root->root_item.flags & BTRFS_ROOT_SUBVOL_RDONLY;
+	return (root->root_item.flags & cpu_to_le64(BTRFS_ROOT_SUBVOL_RDONLY)) != 0;
 }
 
 /* struct btrfs_root_backup */
@@ -2540,6 +2540,8 @@ void btrfs_set_root_node(struct btrfs_root_item *item,
 void btrfs_check_and_init_root_item(struct btrfs_root_item *item);
 
 /* dir-item.c */
+int btrfs_check_dir_item_collision(struct btrfs_root *root, u64 dir,
+			  const char *name, int name_len);
 int btrfs_insert_dir_item(struct btrfs_trans_handle *trans,
 			  struct btrfs_root *root, const char *name,
 			  int name_len, struct inode *dir,

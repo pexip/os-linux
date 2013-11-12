@@ -54,9 +54,6 @@
 #define EFX_FLUSH_INTERVAL 10
 #define EFX_FLUSH_POLL_COUNT 100
 
-/* Size and alignment of special buffers (4KB) */
-#define EFX_BUF_SIZE 4096
-
 /* Depth of RX flush request fifo */
 #define EFX_RX_FLUSH_COUNT 4
 
@@ -196,7 +193,7 @@ efx_init_special_buffer(struct efx_nic *efx, struct efx_special_buffer *buffer)
 	/* Write buffer descriptors to NIC */
 	for (i = 0; i < buffer->entries; i++) {
 		index = buffer->index + i;
-		dma_addr = buffer->dma_addr + (i * 4096);
+		dma_addr = buffer->dma_addr + (i * EFX_BUF_SIZE);
 		netif_dbg(efx, probe, efx->net_dev,
 			  "mapping special buffer %d at %llx\n",
 			  index, (unsigned long long)dma_addr);
@@ -371,7 +368,8 @@ efx_may_push_tx_desc(struct efx_tx_queue *tx_queue, unsigned int write_count)
 		return false;
 
 	tx_queue->empty_read_count = 0;
-	return ((empty_read_count ^ write_count) & ~EFX_EMPTY_COUNT_VALID) == 0;
+	return ((empty_read_count ^ write_count) & ~EFX_EMPTY_COUNT_VALID) == 0
+		&& tx_queue->write_count - write_count == 1;
 }
 
 /* For each entry inserted into the software descriptor ring, create a
@@ -1261,13 +1259,27 @@ int efx_nic_flush_queues(struct efx_nic *efx)
 			}
 			efx_for_each_possible_channel_tx_queue(tx_queue, channel) {
 				if (tx_queue->initialised &&
-				    tx_queue->flushed != FLUSH_DONE)
-					++tx_pending;
+				    tx_queue->flushed != FLUSH_DONE) {
+					efx_oword_t txd_ptr_tbl;
+
+					efx_reado_table(efx, &txd_ptr_tbl,
+							FR_BZ_TX_DESC_PTR_TBL,
+							tx_queue->queue);
+					if (EFX_OWORD_FIELD(txd_ptr_tbl,
+							    FRF_AZ_TX_DESCQ_FLUSH) ||
+					    EFX_OWORD_FIELD(txd_ptr_tbl,
+							    FRF_AZ_TX_DESCQ_EN))
+						++tx_pending;
+					else
+						tx_queue->flushed = FLUSH_DONE;
+				}
 			}
 		}
 
-		if (rx_pending == 0 && tx_pending == 0)
+		if (rx_pending == 0 && tx_pending == 0) {
+			efx->type->finish_flush(efx);
 			return 0;
+		}
 
 		msleep(EFX_FLUSH_INTERVAL);
 		efx_poll_flush_events(efx);
@@ -1293,6 +1305,7 @@ int efx_nic_flush_queues(struct efx_nic *efx)
 		}
 	}
 
+	efx->type->finish_flush(efx);
 	return -ETIMEDOUT;
 }
 

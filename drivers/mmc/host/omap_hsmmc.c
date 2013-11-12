@@ -1915,7 +1915,7 @@ static int __init omap_hsmmc_probe(struct platform_device *pdev)
 	host->slot_id	= 0;
 	host->mapbase	= res->start;
 	host->base	= ioremap(host->mapbase, SZ_4K);
-	host->power_mode = MMC_POWER_OFF;
+	host->power_mode = -1;
 	host->next_data.cookie = 1;
 
 	platform_set_drvdata(pdev, host);
@@ -2188,9 +2188,7 @@ static int omap_hsmmc_suspend(struct device *dev)
 		} else {
 			host->suspended = 0;
 			if (host->pdata->resume) {
-				ret = host->pdata->resume(&pdev->dev,
-							  host->slot_id);
-				if (ret)
+				if (host->pdata->resume(&pdev->dev, host->slot_id))
 					dev_dbg(mmc_dev(host->mmc),
 						"Unmask interrupt failed\n");
 			}

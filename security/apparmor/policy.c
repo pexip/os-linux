@@ -93,7 +93,7 @@
 /* root profile namespace */
 struct aa_namespace *root_ns;
 
-const char *profile_mode_names[] = {
+const char *const profile_mode_names[] = {
 	"enforce",
 	"complain",
 	"kill",
@@ -724,6 +724,8 @@ fail:
  */
 static void free_profile(struct aa_profile *profile)
 {
+	struct aa_profile *p;
+
 	AA_DEBUG("%s(%p)\n", __func__, profile);
 
 	if (!profile)
@@ -745,12 +747,34 @@ static void free_profile(struct aa_profile *profile)
 
 	aa_free_file_rules(&profile->file);
 	aa_free_cap_rules(&profile->caps);
+	aa_free_net_rules(&profile->net);
 	aa_free_rlimit_rules(&profile->rlimits);
 
 	aa_free_sid(profile->sid);
 	aa_put_dfa(profile->xmatch);
+	aa_put_dfa(profile->policy.dfa);
 
-	aa_put_profile(profile->replacedby);
+	/* put the profile reference, but not via put_profile/kref_put
+	 * replacedby can form a long chain that can result in cascading
+	 * frees that blows the stack lp#1056078. The long chain creation
+	 * should be addressed in profile replacement.
+	 * This just addresses recursion of free_profile causing the
+	 * stack to blow.
+	 */
+	for (p = profile->replacedby; p; ) {
+		if (atomic_dec_and_test(&p->base.count.refcount)) {
+			/* no more refs on p, grab its replacedby */
+			struct aa_profile *next = p->replacedby;
+			/* break the chain */
+			p->replacedby = NULL;
+			/* now free p, chain is broken */
+			free_profile(p);
+
+			/* follow up with next profile in the chain */
+			p = next;
+		} else
+			break;
+	}
 
 	kzfree(profile);
 }
@@ -901,6 +925,10 @@ struct aa_profile *aa_lookup_profile(struct aa_namespace *ns, const char *hname)
 	read_lock(&ns->lock);
 	profile = aa_get_profile(__lookup_profile(&ns->base, hname));
 	read_unlock(&ns->lock);
+
+	/* the unconfined profile is not in the regular profile list */
+	if (!profile && strcmp(hname, "unconfined") == 0)
+		profile = aa_get_profile(ns->unconfined);
 
 	/* refcount released by caller */
 	return profile;

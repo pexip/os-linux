@@ -32,9 +32,11 @@
 #include "include/context.h"
 #include "include/file.h"
 #include "include/ipc.h"
+#include "include/net.h"
 #include "include/path.h"
 #include "include/policy.h"
 #include "include/procattr.h"
+#include "include/mount.h"
 
 /* Flag indicating whether initialization completed */
 int apparmor_initialized __initdata;
@@ -136,16 +138,16 @@ static int apparmor_capget(struct task_struct *target, kernel_cap_t *effective,
 	return 0;
 }
 
-static int apparmor_capable(struct task_struct *task, const struct cred *cred,
-			    struct user_namespace *ns, int cap, int audit)
+static int apparmor_capable(const struct cred *cred, struct user_namespace *ns,
+			    int cap, int audit)
 {
 	struct aa_profile *profile;
 	/* cap_capable returns 0 on success, else -EPERM */
-	int error = cap_capable(task, cred, ns, cap, audit);
+	int error = cap_capable(cred, ns, cap, audit);
 	if (!error) {
 		profile = aa_cred_profile(cred);
 		if (!unconfined(profile))
-			error = aa_capable(task, profile, cap, audit);
+			error = aa_capable(current, profile, cap, audit);
 	}
 	return error;
 }
@@ -262,7 +264,7 @@ static int apparmor_path_unlink(struct path *dir, struct dentry *dentry)
 }
 
 static int apparmor_path_mkdir(struct path *dir, struct dentry *dentry,
-			       int mode)
+			       umode_t mode)
 {
 	return common_perm_create(OP_MKDIR, dir, dentry, AA_MAY_CREATE,
 				  S_IFDIR);
@@ -274,7 +276,7 @@ static int apparmor_path_rmdir(struct path *dir, struct dentry *dentry)
 }
 
 static int apparmor_path_mknod(struct path *dir, struct dentry *dentry,
-			       int mode, unsigned int dev)
+			       umode_t mode, unsigned int dev)
 {
 	return common_perm_create(OP_MKNOD, dir, dentry, AA_MAY_CREATE, mode);
 }
@@ -344,13 +346,12 @@ static int apparmor_path_rename(struct path *old_dir, struct dentry *old_dentry,
 	return error;
 }
 
-static int apparmor_path_chmod(struct dentry *dentry, struct vfsmount *mnt,
-			       mode_t mode)
+static int apparmor_path_chmod(struct path *path, umode_t mode)
 {
-	if (!mediated_filesystem(dentry->d_inode))
+	if (!mediated_filesystem(path->dentry->d_inode))
 		return 0;
 
-	return common_perm_mnt_dentry(OP_CHMOD, mnt, dentry, AA_MAY_CHMOD);
+	return common_perm_mnt_dentry(OP_CHMOD, path->mnt, path->dentry, AA_MAY_CHMOD);
 }
 
 static int apparmor_path_chown(struct path *path, uid_t uid, gid_t gid)
@@ -512,6 +513,60 @@ static int apparmor_file_mprotect(struct vm_area_struct *vma,
 			   !(vma->vm_flags & VM_SHARED) ? MAP_PRIVATE : 0);
 }
 
+static int apparmor_sb_mount(char *dev_name, struct path *path, char *type,
+			     unsigned long flags, void *data)
+{
+	struct aa_profile *profile;
+	int error = 0;
+
+	/* Discard magic */
+	if ((flags & MS_MGC_MSK) == MS_MGC_VAL)
+		flags &= ~MS_MGC_MSK;
+
+	flags &= ~AA_MS_IGNORE_MASK;
+
+	profile = __aa_current_profile();
+	if (!unconfined(profile)) {
+		if (flags & MS_REMOUNT)
+			error = aa_remount(profile, path, flags, data);
+		else if (flags & MS_BIND)
+			error = aa_bind_mount(profile, path, dev_name, flags);
+		else if (flags & (MS_SHARED | MS_PRIVATE | MS_SLAVE |
+				  MS_UNBINDABLE))
+			error = aa_mount_change_type(profile, path, flags);
+		else if (flags & MS_MOVE)
+			error = aa_move_mount(profile, path, dev_name);
+		else
+			error = aa_new_mount(profile, dev_name, path, type,
+					     flags, data);
+	}
+	return error;
+}
+
+static int apparmor_sb_umount(struct vfsmount *mnt, int flags)
+{
+	struct aa_profile *profile;
+	int error = 0;
+
+	profile = __aa_current_profile();
+	if (!unconfined(profile))
+		error = aa_umount(profile, mnt, flags);
+
+	return error;
+}
+
+static int apparmor_sb_pivotroot(struct path *old_path, struct path *new_path)
+{
+	struct aa_profile *profile;
+	int error = 0;
+
+	profile = __aa_current_profile();
+	if (!unconfined(profile))
+		error = aa_pivotroot(profile, old_path, new_path);
+
+	return error;
+}
+
 static int apparmor_getprocattr(struct task_struct *task, char *name,
 				char **value)
 {
@@ -621,6 +676,104 @@ static int apparmor_task_setrlimit(struct task_struct *task,
 	return error;
 }
 
+static int apparmor_socket_create(int family, int type, int protocol, int kern)
+{
+	struct aa_profile *profile;
+	int error = 0;
+
+	if (kern)
+		return 0;
+
+	profile = __aa_current_profile();
+	if (!unconfined(profile))
+		error = aa_net_perm(OP_CREATE, profile, family, type, protocol,
+				    NULL);
+	return error;
+}
+
+static int apparmor_socket_bind(struct socket *sock,
+				struct sockaddr *address, int addrlen)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_BIND, sk);
+}
+
+static int apparmor_socket_connect(struct socket *sock,
+				   struct sockaddr *address, int addrlen)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_CONNECT, sk);
+}
+
+static int apparmor_socket_listen(struct socket *sock, int backlog)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_LISTEN, sk);
+}
+
+static int apparmor_socket_accept(struct socket *sock, struct socket *newsock)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_ACCEPT, sk);
+}
+
+static int apparmor_socket_sendmsg(struct socket *sock,
+				   struct msghdr *msg, int size)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_SENDMSG, sk);
+}
+
+static int apparmor_socket_recvmsg(struct socket *sock,
+				   struct msghdr *msg, int size, int flags)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_RECVMSG, sk);
+}
+
+static int apparmor_socket_getsockname(struct socket *sock)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_GETSOCKNAME, sk);
+}
+
+static int apparmor_socket_getpeername(struct socket *sock)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_GETPEERNAME, sk);
+}
+
+static int apparmor_socket_getsockopt(struct socket *sock, int level,
+				      int optname)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_GETSOCKOPT, sk);
+}
+
+static int apparmor_socket_setsockopt(struct socket *sock, int level,
+				      int optname)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_SETSOCKOPT, sk);
+}
+
+static int apparmor_socket_shutdown(struct socket *sock, int how)
+{
+	struct sock *sk = sock->sk;
+
+	return aa_revalidate_sk(OP_SOCK_SHUTDOWN, sk);
+}
+
 static struct security_operations apparmor_ops = {
 	.name =				"apparmor",
 
@@ -628,6 +781,10 @@ static struct security_operations apparmor_ops = {
 	.ptrace_traceme =		apparmor_ptrace_traceme,
 	.capget =			apparmor_capget,
 	.capable =			apparmor_capable,
+
+	.sb_mount =			apparmor_sb_mount,
+	.sb_umount =			apparmor_sb_umount,
+	.sb_pivotroot =			apparmor_sb_pivotroot,
 
 	.path_link =			apparmor_path_link,
 	.path_unlink =			apparmor_path_unlink,
@@ -652,6 +809,19 @@ static struct security_operations apparmor_ops = {
 	.getprocattr =			apparmor_getprocattr,
 	.setprocattr =			apparmor_setprocattr,
 
+	.socket_create =		apparmor_socket_create,
+	.socket_bind =			apparmor_socket_bind,
+	.socket_connect =		apparmor_socket_connect,
+	.socket_listen =		apparmor_socket_listen,
+	.socket_accept =		apparmor_socket_accept,
+	.socket_sendmsg =		apparmor_socket_sendmsg,
+	.socket_recvmsg =		apparmor_socket_recvmsg,
+	.socket_getsockname =		apparmor_socket_getsockname,
+	.socket_getpeername =		apparmor_socket_getpeername,
+	.socket_getsockopt =		apparmor_socket_getsockopt,
+	.socket_setsockopt =		apparmor_socket_setsockopt,
+	.socket_shutdown =		apparmor_socket_shutdown,
+
 	.cred_alloc_blank =		apparmor_cred_alloc_blank,
 	.cred_free =			apparmor_cred_free,
 	.cred_prepare =			apparmor_cred_prepare,
@@ -671,7 +841,7 @@ static struct security_operations apparmor_ops = {
 
 static int param_set_aabool(const char *val, const struct kernel_param *kp);
 static int param_get_aabool(char *buffer, const struct kernel_param *kp);
-#define param_check_aabool(name, p) __param_check(name, p, int)
+#define param_check_aabool param_check_bool
 static struct kernel_param_ops param_ops_aabool = {
 	.set = param_set_aabool,
 	.get = param_get_aabool
@@ -679,7 +849,7 @@ static struct kernel_param_ops param_ops_aabool = {
 
 static int param_set_aauint(const char *val, const struct kernel_param *kp);
 static int param_get_aauint(char *buffer, const struct kernel_param *kp);
-#define param_check_aauint(name, p) __param_check(name, p, int)
+#define param_check_aauint param_check_uint
 static struct kernel_param_ops param_ops_aauint = {
 	.set = param_set_aauint,
 	.get = param_get_aauint
@@ -687,7 +857,7 @@ static struct kernel_param_ops param_ops_aauint = {
 
 static int param_set_aalockpolicy(const char *val, const struct kernel_param *kp);
 static int param_get_aalockpolicy(char *buffer, const struct kernel_param *kp);
-#define param_check_aalockpolicy(name, p) __param_check(name, p, int)
+#define param_check_aalockpolicy param_check_bool
 static struct kernel_param_ops param_ops_aalockpolicy = {
 	.set = param_set_aalockpolicy,
 	.get = param_get_aalockpolicy

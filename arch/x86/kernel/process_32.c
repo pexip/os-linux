@@ -247,7 +247,10 @@ int copy_thread(unsigned long clone_flags, unsigned long sp,
 void
 start_thread(struct pt_regs *regs, unsigned long new_ip, unsigned long new_sp)
 {
+	int cpu;
+
 	set_user_gs(regs, 0);
+
 	regs->fs		= 0;
 	regs->ds		= __USER_DS;
 	regs->es		= __USER_DS;
@@ -255,6 +258,11 @@ start_thread(struct pt_regs *regs, unsigned long new_ip, unsigned long new_sp)
 	regs->cs		= __USER_CS;
 	regs->ip		= new_ip;
 	regs->sp		= new_sp;
+
+	cpu = get_cpu();
+	load_user_cs_desc(cpu, current->mm);
+	put_cpu();
+
 	/*
 	 * Free the old FP and other extended state
 	 */
@@ -297,22 +305,14 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
 				 *next = &next_p->thread;
 	int cpu = smp_processor_id();
 	struct tss_struct *tss = &per_cpu(init_tss, cpu);
-	bool preload_fpu;
+	fpu_switch_t fpu;
 
 	/* never put a printk in __switch_to... printk() calls wake_up*() indirectly */
 
-	/*
-	 * If the task has used fpu the last 5 timeslices, just do a full
-	 * restore of the math state immediately to avoid the trap; the
-	 * chances of needing FPU soon are obviously high now
-	 */
-	preload_fpu = tsk_used_math(next_p) && next_p->fpu_counter > 5;
+	fpu = switch_fpu_prepare(prev_p, next_p);
 
-	__unlazy_fpu(prev_p);
-
-	/* we're going to use this soon, after a few expensive things */
-	if (preload_fpu)
-		prefetch(next->fpu.state);
+	if (next_p->mm)
+		load_user_cs_desc(cpu, next_p->mm);
 
 	/*
 	 * Reload esp0.
@@ -352,11 +352,6 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
 		     task_thread_info(next_p)->flags & _TIF_WORK_CTXSW_NEXT))
 		__switch_to_xtra(prev_p, next_p, tss);
 
-	/* If we're going to preload the fpu context, make sure clts
-	   is run while we're batching the cpu state updates. */
-	if (preload_fpu)
-		clts();
-
 	/*
 	 * Leave lazy mode, flushing any hypercalls made here.
 	 * This must be done before restoring TLS segments so
@@ -366,14 +361,13 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
 	 */
 	arch_end_context_switch(next_p);
 
-	if (preload_fpu)
-		__math_state_restore();
-
 	/*
 	 * Restore %gs if needed (which is common)
 	 */
 	if (prev->gs | next->gs)
 		lazy_load_gs(next->gs);
+
+	switch_fpu_finish(next_p, fpu);
 
 	percpu_write(current_task, next_p);
 
@@ -407,3 +401,40 @@ unsigned long get_wchan(struct task_struct *p)
 	return 0;
 }
 
+static void modify_cs(struct mm_struct *mm, unsigned long limit)
+{
+	mm->context.exec_limit = limit;
+	set_user_cs(&mm->context.user_cs, limit);
+	if (mm == current->mm) {
+		int cpu;
+
+		cpu = get_cpu();
+		load_user_cs_desc(cpu, mm);
+		put_cpu();
+	}
+}
+
+void arch_add_exec_range(struct mm_struct *mm, unsigned long limit)
+{
+	if (limit > mm->context.exec_limit)
+		modify_cs(mm, limit);
+}
+
+void arch_remove_exec_range(struct mm_struct *mm, unsigned long old_end)
+{
+	struct vm_area_struct *vma;
+	unsigned long limit = PAGE_SIZE;
+
+	if (old_end == mm->context.exec_limit) {
+		for (vma = mm->mmap; vma; vma = vma->vm_next)
+			if ((vma->vm_flags & VM_EXEC) && (vma->vm_end > limit))
+				limit = vma->vm_end;
+		modify_cs(mm, limit);
+	}
+}
+
+void arch_flush_exec_range(struct mm_struct *mm)
+{
+	mm->context.exec_limit = 0;
+	set_user_cs(&mm->context.user_cs, 0);
+}

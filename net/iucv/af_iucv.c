@@ -380,7 +380,6 @@ static int afiucv_hs_send(struct iucv_message *imsg, struct sock *sock,
 			skb_trim(skb, skb->dev->mtu);
 	}
 	skb->protocol = ETH_P_AF_IUCV;
-	skb_shinfo(skb)->tx_flags |= SKBTX_DRV_NEEDS_SK_REF;
 	nskb = skb_clone(skb, GFP_ATOMIC);
 	if (!nskb)
 		return -ENOMEM;
@@ -1356,6 +1355,8 @@ static int iucv_sock_recvmsg(struct kiocb *iocb, struct socket *sock,
 	struct sk_buff *skb, *rskb, *cskb, *sskb;
 	int blen;
 	int err = 0;
+
+	msg->msg_namelen = 0;
 
 	if ((sk->sk_state == IUCV_DISCONN || sk->sk_state == IUCV_SEVERED) &&
 	    skb_queue_empty(&iucv->backlog_skb_q) &&

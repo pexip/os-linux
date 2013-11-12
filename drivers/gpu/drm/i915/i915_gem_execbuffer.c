@@ -574,7 +574,8 @@ i915_gem_execbuffer_reserve(struct intel_ring_buffer *ring,
 					if (ret)
 						break;
 				}
-				obj->pending_fenced_gpu_access = need_fence;
+				obj->pending_fenced_gpu_access =
+					!!(entry->flags & EXEC_OBJECT_NEEDS_FENCE);
 			}
 
 			entry->offset = obj->gtt_offset;
@@ -656,6 +657,8 @@ i915_gem_execbuffer_relocate_slow(struct drm_device *dev,
 	total = 0;
 	for (i = 0; i < count; i++) {
 		struct drm_i915_gem_relocation_entry __user *user_relocs;
+		u64 invalid_offset = (u64)-1;
+		int j;
 
 		user_relocs = (void __user *)(uintptr_t)exec[i].relocs_ptr;
 
@@ -664,6 +667,25 @@ i915_gem_execbuffer_relocate_slow(struct drm_device *dev,
 			ret = -EFAULT;
 			mutex_lock(&dev->struct_mutex);
 			goto err;
+		}
+
+		/* As we do not update the known relocation offsets after
+		 * relocating (due to the complexities in lock handling),
+		 * we need to mark them as invalid now so that we force the
+		 * relocation processing next time. Just in case the target
+		 * object is evicted and then rebound into its old
+		 * presumed_offset before the next execbuffer - if that
+		 * happened we would make the mistake of assuming that the
+		 * relocations were valid.
+		 */
+		for (j = 0; j < exec[i].relocation_count; j++) {
+			if (copy_to_user(&user_relocs[j].presumed_offset,
+					 &invalid_offset,
+					 sizeof(invalid_offset))) {
+				ret = -EFAULT;
+				mutex_lock(&dev->struct_mutex);
+				goto err;
+			}
 		}
 
 		reloc_offset[i] = total;
@@ -885,15 +907,20 @@ validate_exec_list(struct drm_i915_gem_exec_object2 *exec,
 		   int count)
 {
 	int i;
+	int relocs_total = 0;
+	int relocs_max = INT_MAX / sizeof(struct drm_i915_gem_relocation_entry);
 
 	for (i = 0; i < count; i++) {
 		char __user *ptr = (char __user *)(uintptr_t)exec[i].relocs_ptr;
 		int length; /* limited by fault_in_pages_readable() */
 
-		/* First check for malicious input causing overflow */
-		if (exec[i].relocation_count >
-		    INT_MAX / sizeof(struct drm_i915_gem_relocation_entry))
+		/* First check for malicious input causing overflow in
+		 * the worst case where we need to allocate the entire
+		 * relocation tree as a single array.
+		 */
+		if (exec[i].relocation_count > relocs_max - relocs_total)
 			return -EINVAL;
+		relocs_total += exec[i].relocation_count;
 
 		length = exec[i].relocation_count *
 			sizeof(struct drm_i915_gem_relocation_entry);
@@ -971,6 +998,31 @@ i915_gem_execbuffer_retire_commands(struct drm_device *dev,
 }
 
 static int
+i915_reset_gen7_sol_offsets(struct drm_device *dev,
+			    struct intel_ring_buffer *ring)
+{
+	drm_i915_private_t *dev_priv = dev->dev_private;
+	int ret, i;
+
+	if (!IS_GEN7(dev) || ring != &dev_priv->ring[RCS])
+		return 0;
+
+	ret = intel_ring_begin(ring, 4 * 3);
+	if (ret)
+		return ret;
+
+	for (i = 0; i < 4; i++) {
+		intel_ring_emit(ring, MI_LOAD_REGISTER_IMM(1));
+		intel_ring_emit(ring, GEN7_SO_WRITE_OFFSET(i));
+		intel_ring_emit(ring, 0);
+	}
+
+	intel_ring_advance(ring);
+
+	return 0;
+}
+
+static int
 i915_gem_do_execbuffer(struct drm_device *dev, void *data,
 		       struct drm_file *file,
 		       struct drm_i915_gem_execbuffer2 *args,
@@ -984,6 +1036,7 @@ i915_gem_do_execbuffer(struct drm_device *dev, void *data,
 	struct intel_ring_buffer *ring;
 	u32 exec_start, exec_len;
 	u32 seqno;
+	u32 mask;
 	int ret, mode, i;
 
 	if (!i915_gem_check_execbuffer(args)) {
@@ -1021,6 +1074,7 @@ i915_gem_do_execbuffer(struct drm_device *dev, void *data,
 	}
 
 	mode = args->flags & I915_EXEC_CONSTANTS_MASK;
+	mask = I915_EXEC_CONSTANTS_MASK;
 	switch (mode) {
 	case I915_EXEC_CONSTANTS_REL_GENERAL:
 	case I915_EXEC_CONSTANTS_ABSOLUTE:
@@ -1034,18 +1088,9 @@ i915_gem_do_execbuffer(struct drm_device *dev, void *data,
 			    mode == I915_EXEC_CONSTANTS_REL_SURFACE)
 				return -EINVAL;
 
-			ret = intel_ring_begin(ring, 4);
-			if (ret)
-				return ret;
-
-			intel_ring_emit(ring, MI_NOOP);
-			intel_ring_emit(ring, MI_LOAD_REGISTER_IMM(1));
-			intel_ring_emit(ring, INSTPM);
-			intel_ring_emit(ring,
-					I915_EXEC_CONSTANTS_MASK << 16 | mode);
-			intel_ring_advance(ring);
-
-			dev_priv->relative_constants_mode = mode;
+			/* The HW changed the meaning on this bit on gen6 */
+			if (INTEL_INFO(dev)->gen >= 6)
+				mask &= ~I915_EXEC_CONSTANTS_REL_SURFACE;
 		}
 		break;
 	default:
@@ -1064,6 +1109,11 @@ i915_gem_do_execbuffer(struct drm_device *dev, void *data,
 			return -EINVAL;
 		}
 
+		if (args->num_cliprects > UINT_MAX / sizeof(*cliprects)) {
+			DRM_DEBUG("execbuf with %u cliprects\n",
+				  args->num_cliprects);
+			return -EINVAL;
+		}
 		cliprects = kmalloc(args->num_cliprects * sizeof(*cliprects),
 				    GFP_KERNEL);
 		if (cliprects == NULL) {
@@ -1174,6 +1224,27 @@ i915_gem_do_execbuffer(struct drm_device *dev, void *data,
 
 			BUG_ON(ring->sync_seqno[i]);
 		}
+	}
+
+	if (ring == &dev_priv->ring[RCS] &&
+	    mode != dev_priv->relative_constants_mode) {
+		ret = intel_ring_begin(ring, 4);
+		if (ret)
+				goto err;
+
+		intel_ring_emit(ring, MI_NOOP);
+		intel_ring_emit(ring, MI_LOAD_REGISTER_IMM(1));
+		intel_ring_emit(ring, INSTPM);
+		intel_ring_emit(ring, mask << 16 | mode);
+		intel_ring_advance(ring);
+
+		dev_priv->relative_constants_mode = mode;
+	}
+
+	if (args->flags & I915_EXEC_GEN7_SOL_RESET) {
+		ret = i915_reset_gen7_sol_offsets(dev, ring);
+		if (ret)
+			goto err;
 	}
 
 	trace_i915_gem_ring_dispatch(ring, seqno);
@@ -1314,7 +1385,8 @@ i915_gem_execbuffer2(struct drm_device *dev, void *data,
 	struct drm_i915_gem_exec_object2 *exec2_list = NULL;
 	int ret;
 
-	if (args->buffer_count < 1) {
+	if (args->buffer_count < 1 ||
+	    args->buffer_count > UINT_MAX / sizeof(*exec2_list)) {
 		DRM_ERROR("execbuf2 with %d buffers\n", args->buffer_count);
 		return -EINVAL;
 	}
