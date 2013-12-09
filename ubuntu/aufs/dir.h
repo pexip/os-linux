@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ int au_nhash_append_wh(struct au_nhash *whlist, char *name, int nlen, ino_t ino,
 		       unsigned char shwh);
 void au_vdir_free(struct au_vdir *vdir);
 int au_vdir_init(struct file *file);
-int au_vdir_fill_de(struct file *file, void *dirent, filldir_t filldir);
+int au_vdir_fill_de(struct file *file, struct dir_context *ctx);
 
 /* ioctl.c */
 long aufs_ioctl_dir(struct file *file, unsigned int cmd, unsigned long arg);

@@ -5,7 +5,11 @@ obj-$(CONFIG_USB_DWC3)			+= dwc3.o
 
 dwc3-y					:= core.o
 
-ifneq ($(CONFIG_USB_GADGET_DWC3),)
+ifneq ($(filter y,$(CONFIG_USB_DWC3_HOST) $(CONFIG_USB_DWC3_DUAL_ROLE)),)
+	dwc3-y				+= host.o
+endif
+
+ifneq ($(filter y,$(CONFIG_USB_DWC3_GADGET) $(CONFIG_USB_DWC3_DUAL_ROLE)),)
 	dwc3-y				+= gadget.o ep0.o
 endif
 
@@ -29,6 +33,7 @@ endif
 ##
 
 obj-$(CONFIG_USB_DWC3)		+= dwc3-omap.o
+obj-$(CONFIG_USB_DWC3)		+= dwc3-exynos.o
 
 ifneq ($(CONFIG_PCI),)
 	obj-$(CONFIG_USB_DWC3)		+= dwc3-pci.o

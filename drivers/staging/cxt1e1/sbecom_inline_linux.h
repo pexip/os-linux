@@ -1,7 +1,3 @@
-/*
- * $Id: sbecom_inline_linux.h,v 1.2 2007/08/15 22:51:35 rickd PMCC4_3_1B $
- */
-
 #ifndef _INC_SBECOM_INLNX_H_
 #define _INC_SBECOM_INLNX_H_
 
@@ -23,22 +19,6 @@
  *
  * For further information, contact via email: support@onestopsystems.com
  * One Stop Systems, Inc.  Escondido, California  U.S.A.
- *-----------------------------------------------------------------------------
- * RCS info:
- * RCS revision: $Revision: 1.2 $
- * Last changed on $Date: 2007/08/15 22:51:35 $
- * Changed by $Author: rickd $
- *-----------------------------------------------------------------------------
- * $Log: sbecom_inline_linux.h,v $
- * Revision 1.2  2007/08/15 22:51:35  rickd
- * Remove duplicate version.h entry.
- *
- * Revision 1.1  2007/08/15 22:50:29  rickd
- * Update linux/config for 2.6.18 and later.
- *
- * Revision 1.0  2005/09/28 00:10:09  rickd
- * Initial revision
- *
  *-----------------------------------------------------------------------------
  */
 
@@ -197,7 +177,7 @@ struct watchdog
 
 
 static inline int
-OS_start_watchdog (struct watchdog * wd)
+OS_start_watchdog (struct watchdog *wd)
 {
     wd->h.expires = jiffies + wd->ticks;
     add_timer (&wd->h);
@@ -206,7 +186,7 @@ OS_start_watchdog (struct watchdog * wd)
 
 
 static inline int
-OS_stop_watchdog (struct watchdog * wd)
+OS_stop_watchdog (struct watchdog *wd)
 {
     del_timer_sync (&wd->h);
     return 0;
@@ -214,7 +194,7 @@ OS_stop_watchdog (struct watchdog * wd)
 
 
 static inline int
-OS_free_watchdog (struct watchdog * wd)
+OS_free_watchdog (struct watchdog *wd)
 {
     OS_stop_watchdog (wd);
     OS_kfree (wd);

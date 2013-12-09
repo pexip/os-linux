@@ -22,14 +22,27 @@
 #ifndef _LINUX_PSTORE_H
 #define _LINUX_PSTORE_H
 
+#include <linux/time.h>
 #include <linux/kmsg_dump.h>
+#include <linux/mutex.h>
+#include <linux/types.h>
+#include <linux/spinlock.h>
+#include <linux/errno.h>
 
 /* types */
 enum pstore_type_id {
 	PSTORE_TYPE_DMESG	= 0,
 	PSTORE_TYPE_MCE		= 1,
+	PSTORE_TYPE_CONSOLE	= 2,
+	PSTORE_TYPE_FTRACE	= 3,
+	/* PPC64 partition types */
+	PSTORE_TYPE_PPC_RTAS	= 4,
+	PSTORE_TYPE_PPC_OF	= 5,
+	PSTORE_TYPE_PPC_COMMON	= 6,
 	PSTORE_TYPE_UNKNOWN	= 255
 };
+
+struct module;
 
 struct pstore_info {
 	struct module	*owner;
@@ -41,11 +54,18 @@ struct pstore_info {
 	int		(*open)(struct pstore_info *psi);
 	int		(*close)(struct pstore_info *psi);
 	ssize_t		(*read)(u64 *id, enum pstore_type_id *type,
-			struct timespec *time, char **buf,
+			int *count, struct timespec *time, char **buf,
 			struct pstore_info *psi);
-	int		(*write)(enum pstore_type_id type, u64 *id,
-			unsigned int part, size_t size, struct pstore_info *psi);
+	int		(*write)(enum pstore_type_id type,
+			enum kmsg_dump_reason reason, u64 *id,
+			unsigned int part, int count, size_t hsize,
+			size_t size, struct pstore_info *psi);
+	int		(*write_buf)(enum pstore_type_id type,
+			enum kmsg_dump_reason reason, u64 *id,
+			unsigned int part, const char *buf, size_t hsize,
+			size_t size, struct pstore_info *psi);
 	int		(*erase)(enum pstore_type_id type, u64 id,
+			int count, struct timespec time,
 			struct pstore_info *psi);
 	void		*data;
 };
@@ -53,7 +73,6 @@ struct pstore_info {
 #ifdef CONFIG_PSTORE
 extern int pstore_register(struct pstore_info *);
 extern bool pstore_cannot_block_path(enum kmsg_dump_reason reason);
-extern int pstore_write(enum pstore_type_id type, char *buf, size_t size);
 #else
 static inline int
 pstore_register(struct pstore_info *psi)
@@ -64,11 +83,6 @@ static inline bool
 pstore_cannot_block_path(enum kmsg_dump_reason reason)
 {
 	return false;
-}
-static inline int
-pstore_write(enum pstore_type_id type, char *buf, size_t size)
-{
-	return -ENODEV;
 }
 #endif
 

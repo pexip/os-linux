@@ -344,6 +344,12 @@ typedef struct urb_priv {
  * a subset of what the full implementation needs. (Linus)
  */
 
+enum ohci_rh_state {
+	OHCI_RH_HALTED,
+	OHCI_RH_SUSPENDED,
+	OHCI_RH_RUNNING
+};
+
 struct ohci_hcd {
 	spinlock_t		lock;
 
@@ -366,11 +372,6 @@ struct ohci_hcd {
 	struct ed		*ed_controltail;	/* last in ctrl list */
 	struct ed		*periodic [NUM_INTS];	/* shadow int_table */
 
-	/*
-	 * OTG controllers and transceivers need software interaction;
-	 * other external transceivers should be software-transparent
-	 */
-	struct otg_transceiver	*transceiver;
 	void (*start_hnp)(struct ohci_hcd *ohci);
 
 	/*
@@ -384,6 +385,7 @@ struct ohci_hcd {
 	/*
 	 * driver state
 	 */
+	enum ohci_rh_state	rh_state;
 	int			num_ports;
 	int			load [NUM_INTS];
 	u32			hc_control;	/* copy of hc control reg */
@@ -419,6 +421,9 @@ struct ohci_hcd {
 	struct dentry		*debug_periodic;
 	struct dentry		*debug_registers;
 #endif
+	/* platform-specific data -- must come last */
+	unsigned long           priv[0] __aligned(sizeof(s64));
+
 };
 
 #ifdef CONFIG_PCI
@@ -679,11 +684,6 @@ static inline u16 ohci_hwPSW(const struct ohci_hcd *ohci,
 
 /*-------------------------------------------------------------------------*/
 
-static inline void disable (struct ohci_hcd *ohci)
-{
-	ohci_to_hcd(ohci)->state = HC_STATE_HALT;
-}
-
 #define	FI			0x2edf		/* 12000 bits per frame (-1) */
 #define	FSMP(fi)		(0x7fff & ((6 * ((fi) - 210)) / 7))
 #define	FIT			(1 << 31)
@@ -707,7 +707,7 @@ static inline void periodic_reinit (struct ohci_hcd *ohci)
 #define read_roothub(hc, register, mask) ({ \
 	u32 temp = ohci_readl (hc, &hc->regs->roothub.register); \
 	if (temp == -1) \
-		disable (hc); \
+		hc->rh_state = OHCI_RH_HALTED; \
 	else if (hc->flags & OHCI_QUIRK_AMD756) \
 		while (temp & mask) \
 			temp = ohci_readl (hc, &hc->regs->roothub.register); \
@@ -721,3 +721,20 @@ static inline u32 roothub_status (struct ohci_hcd *hc)
 	{ return ohci_readl (hc, &hc->regs->roothub.status); }
 static inline u32 roothub_portstatus (struct ohci_hcd *hc, int i)
 	{ return read_roothub (hc, portstatus [i], 0xffe0fce0); }
+
+/* Declarations of things exported for use by ohci platform drivers */
+
+struct ohci_driver_overrides {
+	const char	*product_desc;
+	size_t		extra_priv_size;
+	int		(*reset)(struct usb_hcd *hcd);
+};
+
+extern void	ohci_init_driver(struct hc_driver *drv,
+				const struct ohci_driver_overrides *over);
+extern int	ohci_restart(struct ohci_hcd *ohci);
+extern int	ohci_setup(struct usb_hcd *hcd);
+#ifdef CONFIG_PM
+extern int	ohci_suspend(struct usb_hcd *hcd, bool do_wakeup);
+extern int	ohci_resume(struct usb_hcd *hcd, bool hibernated);
+#endif

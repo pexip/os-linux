@@ -1,5 +1,6 @@
 # Check ABI for package against last release (if not same abinum)
 abi-check-%: $(stampdir)/stamp-build-%
+	@echo Debug: $@
 	install -d $(abidir)
 	sed -e 's/^\(.\+\)[[:space:]]\+\(.\+\)[[:space:]]\(.\+\)$$/\3 \2 \1/'	\
 		$(builddir)/build-$*/Module.symvers | sort > $(abidir)/$*
@@ -8,6 +9,7 @@ abi-check-%: $(stampdir)/stamp-build-%
 
 # Check the module list against the last release (always)
 module-check-%: $(stampdir)/stamp-build-%
+	@echo Debug: $@
 	install -d $(abidir)
 	find $(builddir)/build-$*/ -name \*.ko | \
 		sed -e 's/.*\/\([^\/]*\)\.ko/\1/' | sort > $(abidir)/$*.modules
@@ -15,10 +17,11 @@ module-check-%: $(stampdir)/stamp-build-%
 		"$(prev_abidir)" "$(abidir)" $(skipmodule)
 
 checks-%: module-check-% abi-check-%
-	@echo checks-$*
+	@echo Debug: $@
 
 # Check the config against the known options list.
 config-prepare-check-%: $(stampdir)/stamp-prepare-tree-%
+	@echo Debug: $@
 	@perl -f $(DROOT)/scripts/config-check \
 		$(builddir)/build-$*/.config "$(arch)" "$*" "$(sharedconfdir)" "$(skipconfig)"
 

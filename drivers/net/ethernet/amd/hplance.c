@@ -22,7 +22,6 @@
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
 
-#include <asm/system.h>
 #include <asm/io.h>
 #include <asm/pgtable.h>
 
@@ -47,11 +46,9 @@ struct hplance_private {
  * plus board-specific init, open and close actions.
  * Oh, and we need to tell the generic code how to read and write LANCE registers...
  */
-static int __devinit hplance_init_one(struct dio_dev *d,
-				const struct dio_device_id *ent);
-static void __devinit hplance_init(struct net_device *dev,
-				struct dio_dev *d);
-static void __devexit hplance_remove_one(struct dio_dev *d);
+static int hplance_init_one(struct dio_dev *d, const struct dio_device_id *ent);
+static void hplance_init(struct net_device *dev, struct dio_dev *d);
+static void hplance_remove_one(struct dio_dev *d);
 static void hplance_writerap(void *priv, unsigned short value);
 static void hplance_writerdp(void *priv, unsigned short value);
 static unsigned short hplance_readrdp(void *priv);
@@ -67,7 +64,7 @@ static struct dio_driver hplance_driver = {
 	.name      = "hplance",
 	.id_table  = hplance_dio_tbl,
 	.probe     = hplance_init_one,
-	.remove    = __devexit_p(hplance_remove_one),
+	.remove    = hplance_remove_one,
 };
 
 static const struct net_device_ops hplance_netdev_ops = {
@@ -84,12 +81,10 @@ static const struct net_device_ops hplance_netdev_ops = {
 };
 
 /* Find all the HP Lance boards and initialise them... */
-static int __devinit hplance_init_one(struct dio_dev *d,
-				const struct dio_device_id *ent)
+static int hplance_init_one(struct dio_dev *d, const struct dio_device_id *ent)
 {
 	struct net_device *dev;
 	int err = -ENOMEM;
-	int i;
 
 	dev = alloc_etherdev(sizeof(struct hplance_private));
 	if (!dev)
@@ -107,13 +102,8 @@ static int __devinit hplance_init_one(struct dio_dev *d,
 
 	dio_set_drvdata(d, dev);
 
-	printk(KERN_INFO "%s: %s; select code %d, addr %2.2x", dev->name, d->name, d->scode, dev->dev_addr[0]);
-
-	for (i=1; i<6; i++) {
-		printk(":%2.2x", dev->dev_addr[i]);
-	}
-
-	printk(", irq %d\n", d->ipl);
+	printk(KERN_INFO "%s: %s; select code %d, addr %pM, irq %d\n",
+	       dev->name, d->name, d->scode, dev->dev_addr, d->ipl);
 
 	return 0;
 
@@ -125,7 +115,7 @@ static int __devinit hplance_init_one(struct dio_dev *d,
 	return err;
 }
 
-static void __devexit hplance_remove_one(struct dio_dev *d)
+static void hplance_remove_one(struct dio_dev *d)
 {
 	struct net_device *dev = dio_get_drvdata(d);
 
@@ -135,7 +125,7 @@ static void __devexit hplance_remove_one(struct dio_dev *d)
 }
 
 /* Initialise a single lance board at the given DIO device */
-static void __devinit hplance_init(struct net_device *dev, struct dio_dev *d)
+static void hplance_init(struct net_device *dev, struct dio_dev *d)
 {
         unsigned long va = (d->resource.start + DIO_VIRADDRBASE);
         struct hplance_private *lp;

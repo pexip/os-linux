@@ -104,7 +104,7 @@ static int kvmppc_book3s_vec2irqprio(unsigned int vec)
 	return prio;
 }
 
-static void kvmppc_book3s_dequeue_irqprio(struct kvm_vcpu *vcpu,
+void kvmppc_book3s_dequeue_irqprio(struct kvm_vcpu *vcpu,
 					  unsigned int vec)
 {
 	unsigned long old_pending = vcpu->arch.pending_exceptions;
@@ -160,8 +160,7 @@ void kvmppc_core_queue_external(struct kvm_vcpu *vcpu,
 	kvmppc_book3s_queue_irqprio(vcpu, vec);
 }
 
-void kvmppc_core_dequeue_external(struct kvm_vcpu *vcpu,
-                                  struct kvm_interrupt *irq)
+void kvmppc_core_dequeue_external(struct kvm_vcpu *vcpu)
 {
 	kvmppc_book3s_dequeue_irqprio(vcpu, BOOK3S_INTERRUPT_EXTERNAL);
 	kvmppc_book3s_dequeue_irqprio(vcpu, BOOK3S_INTERRUPT_EXTERNAL_LEVEL);
@@ -258,7 +257,7 @@ static bool clear_irqprio(struct kvm_vcpu *vcpu, unsigned int priority)
 	return true;
 }
 
-void kvmppc_core_deliver_interrupts(struct kvm_vcpu *vcpu)
+int kvmppc_core_prepare_to_enter(struct kvm_vcpu *vcpu)
 {
 	unsigned long *pending = &vcpu->arch.pending_exceptions;
 	unsigned long old_pending = vcpu->arch.pending_exceptions;
@@ -283,11 +282,16 @@ void kvmppc_core_deliver_interrupts(struct kvm_vcpu *vcpu)
 
 	/* Tell the guest about our interrupt status */
 	kvmppc_update_int_pending(vcpu, *pending, old_pending);
+
+	return 0;
 }
 
 pfn_t kvmppc_gfn_to_pfn(struct kvm_vcpu *vcpu, gfn_t gfn)
 {
 	ulong mp_pa = vcpu->arch.magic_page_pa;
+
+	if (!(vcpu->arch.shared->msr & MSR_SF))
+		mp_pa = (uint32_t)mp_pa;
 
 	/* Magic page override */
 	if (unlikely(mp_pa) &&
@@ -406,6 +410,15 @@ int kvm_arch_vcpu_setup(struct kvm_vcpu *vcpu)
 	return 0;
 }
 
+int kvmppc_subarch_vcpu_init(struct kvm_vcpu *vcpu)
+{
+	return 0;
+}
+
+void kvmppc_subarch_vcpu_uninit(struct kvm_vcpu *vcpu)
+{
+}
+
 int kvm_arch_vcpu_ioctl_get_regs(struct kvm_vcpu *vcpu, struct kvm_regs *regs)
 {
 	int i;
@@ -423,10 +436,10 @@ int kvm_arch_vcpu_ioctl_get_regs(struct kvm_vcpu *vcpu, struct kvm_regs *regs)
 	regs->sprg1 = vcpu->arch.shared->sprg1;
 	regs->sprg2 = vcpu->arch.shared->sprg2;
 	regs->sprg3 = vcpu->arch.shared->sprg3;
-	regs->sprg4 = vcpu->arch.sprg4;
-	regs->sprg5 = vcpu->arch.sprg5;
-	regs->sprg6 = vcpu->arch.sprg6;
-	regs->sprg7 = vcpu->arch.sprg7;
+	regs->sprg4 = vcpu->arch.shared->sprg4;
+	regs->sprg5 = vcpu->arch.shared->sprg5;
+	regs->sprg6 = vcpu->arch.shared->sprg6;
+	regs->sprg7 = vcpu->arch.shared->sprg7;
 
 	for (i = 0; i < ARRAY_SIZE(regs->gpr); i++)
 		regs->gpr[i] = kvmppc_get_gpr(vcpu, i);
@@ -450,10 +463,10 @@ int kvm_arch_vcpu_ioctl_set_regs(struct kvm_vcpu *vcpu, struct kvm_regs *regs)
 	vcpu->arch.shared->sprg1 = regs->sprg1;
 	vcpu->arch.shared->sprg2 = regs->sprg2;
 	vcpu->arch.shared->sprg3 = regs->sprg3;
-	vcpu->arch.sprg4 = regs->sprg4;
-	vcpu->arch.sprg5 = regs->sprg5;
-	vcpu->arch.sprg6 = regs->sprg6;
-	vcpu->arch.sprg7 = regs->sprg7;
+	vcpu->arch.shared->sprg4 = regs->sprg4;
+	vcpu->arch.shared->sprg5 = regs->sprg5;
+	vcpu->arch.shared->sprg6 = regs->sprg6;
+	vcpu->arch.shared->sprg7 = regs->sprg7;
 
 	for (i = 0; i < ARRAY_SIZE(regs->gpr); i++)
 		kvmppc_set_gpr(vcpu, i, regs->gpr[i]);
@@ -471,47 +484,163 @@ int kvm_arch_vcpu_ioctl_set_fpu(struct kvm_vcpu *vcpu, struct kvm_fpu *fpu)
 	return -ENOTSUPP;
 }
 
+int kvm_vcpu_ioctl_get_one_reg(struct kvm_vcpu *vcpu, struct kvm_one_reg *reg)
+{
+	int r;
+	union kvmppc_one_reg val;
+	int size;
+	long int i;
+
+	size = one_reg_size(reg->id);
+	if (size > sizeof(val))
+		return -EINVAL;
+
+	r = kvmppc_get_one_reg(vcpu, reg->id, &val);
+
+	if (r == -EINVAL) {
+		r = 0;
+		switch (reg->id) {
+		case KVM_REG_PPC_DAR:
+			val = get_reg_val(reg->id, vcpu->arch.shared->dar);
+			break;
+		case KVM_REG_PPC_DSISR:
+			val = get_reg_val(reg->id, vcpu->arch.shared->dsisr);
+			break;
+		case KVM_REG_PPC_FPR0 ... KVM_REG_PPC_FPR31:
+			i = reg->id - KVM_REG_PPC_FPR0;
+			val = get_reg_val(reg->id, vcpu->arch.fpr[i]);
+			break;
+		case KVM_REG_PPC_FPSCR:
+			val = get_reg_val(reg->id, vcpu->arch.fpscr);
+			break;
+#ifdef CONFIG_ALTIVEC
+		case KVM_REG_PPC_VR0 ... KVM_REG_PPC_VR31:
+			if (!cpu_has_feature(CPU_FTR_ALTIVEC)) {
+				r = -ENXIO;
+				break;
+			}
+			val.vval = vcpu->arch.vr[reg->id - KVM_REG_PPC_VR0];
+			break;
+		case KVM_REG_PPC_VSCR:
+			if (!cpu_has_feature(CPU_FTR_ALTIVEC)) {
+				r = -ENXIO;
+				break;
+			}
+			val = get_reg_val(reg->id, vcpu->arch.vscr.u[3]);
+			break;
+#endif /* CONFIG_ALTIVEC */
+		case KVM_REG_PPC_DEBUG_INST: {
+			u32 opcode = INS_TW;
+			r = copy_to_user((u32 __user *)(long)reg->addr,
+					 &opcode, sizeof(u32));
+			break;
+		}
+#ifdef CONFIG_KVM_XICS
+		case KVM_REG_PPC_ICP_STATE:
+			if (!vcpu->arch.icp) {
+				r = -ENXIO;
+				break;
+			}
+			val = get_reg_val(reg->id, kvmppc_xics_get_icp(vcpu));
+			break;
+#endif /* CONFIG_KVM_XICS */
+		default:
+			r = -EINVAL;
+			break;
+		}
+	}
+	if (r)
+		return r;
+
+	if (copy_to_user((char __user *)(unsigned long)reg->addr, &val, size))
+		r = -EFAULT;
+
+	return r;
+}
+
+int kvm_vcpu_ioctl_set_one_reg(struct kvm_vcpu *vcpu, struct kvm_one_reg *reg)
+{
+	int r;
+	union kvmppc_one_reg val;
+	int size;
+	long int i;
+
+	size = one_reg_size(reg->id);
+	if (size > sizeof(val))
+		return -EINVAL;
+
+	if (copy_from_user(&val, (char __user *)(unsigned long)reg->addr, size))
+		return -EFAULT;
+
+	r = kvmppc_set_one_reg(vcpu, reg->id, &val);
+
+	if (r == -EINVAL) {
+		r = 0;
+		switch (reg->id) {
+		case KVM_REG_PPC_DAR:
+			vcpu->arch.shared->dar = set_reg_val(reg->id, val);
+			break;
+		case KVM_REG_PPC_DSISR:
+			vcpu->arch.shared->dsisr = set_reg_val(reg->id, val);
+			break;
+		case KVM_REG_PPC_FPR0 ... KVM_REG_PPC_FPR31:
+			i = reg->id - KVM_REG_PPC_FPR0;
+			vcpu->arch.fpr[i] = set_reg_val(reg->id, val);
+			break;
+		case KVM_REG_PPC_FPSCR:
+			vcpu->arch.fpscr = set_reg_val(reg->id, val);
+			break;
+#ifdef CONFIG_ALTIVEC
+		case KVM_REG_PPC_VR0 ... KVM_REG_PPC_VR31:
+			if (!cpu_has_feature(CPU_FTR_ALTIVEC)) {
+				r = -ENXIO;
+				break;
+			}
+			vcpu->arch.vr[reg->id - KVM_REG_PPC_VR0] = val.vval;
+			break;
+		case KVM_REG_PPC_VSCR:
+			if (!cpu_has_feature(CPU_FTR_ALTIVEC)) {
+				r = -ENXIO;
+				break;
+			}
+			vcpu->arch.vscr.u[3] = set_reg_val(reg->id, val);
+			break;
+#endif /* CONFIG_ALTIVEC */
+#ifdef CONFIG_KVM_XICS
+		case KVM_REG_PPC_ICP_STATE:
+			if (!vcpu->arch.icp) {
+				r = -ENXIO;
+				break;
+			}
+			r = kvmppc_xics_set_icp(vcpu,
+						set_reg_val(reg->id, val));
+			break;
+#endif /* CONFIG_KVM_XICS */
+		default:
+			r = -EINVAL;
+			break;
+		}
+	}
+
+	return r;
+}
+
 int kvm_arch_vcpu_ioctl_translate(struct kvm_vcpu *vcpu,
                                   struct kvm_translation *tr)
 {
 	return 0;
 }
 
-/*
- * Get (and clear) the dirty memory log for a memory slot.
- */
-int kvm_vm_ioctl_get_dirty_log(struct kvm *kvm,
-				      struct kvm_dirty_log *log)
+int kvm_arch_vcpu_ioctl_set_guest_debug(struct kvm_vcpu *vcpu,
+					struct kvm_guest_debug *dbg)
 {
-	struct kvm_memory_slot *memslot;
-	struct kvm_vcpu *vcpu;
-	ulong ga, ga_end;
-	int is_dirty = 0;
-	int r;
-	unsigned long n;
+	return -EINVAL;
+}
 
-	mutex_lock(&kvm->slots_lock);
+void kvmppc_decrementer_func(unsigned long data)
+{
+	struct kvm_vcpu *vcpu = (struct kvm_vcpu *)data;
 
-	r = kvm_get_dirty_log(kvm, log, &is_dirty);
-	if (r)
-		goto out;
-
-	/* If nothing is dirty, don't bother messing with page tables. */
-	if (is_dirty) {
-		memslot = &kvm->memslots->memslots[log->slot];
-
-		ga = memslot->base_gfn << PAGE_SHIFT;
-		ga_end = ga + (memslot->npages << PAGE_SHIFT);
-
-		kvm_for_each_vcpu(n, vcpu, kvm)
-			kvmppc_mmu_pte_pflush(vcpu, ga, ga_end);
-
-		n = kvm_dirty_bitmap_bytes(memslot);
-		memset(memslot->dirty_bitmap, 0, n);
-	}
-
-	r = 0;
-out:
-	mutex_unlock(&kvm->slots_lock);
-	return r;
+	kvmppc_core_queue_dec(vcpu);
+	kvm_vcpu_kick(vcpu);
 }

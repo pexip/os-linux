@@ -1,14 +1,12 @@
 #ifndef _NF_NAT_H
 #define _NF_NAT_H
 #include <linux/netfilter_ipv4.h>
-#include <linux/netfilter_ipv4/nf_nat.h>
+#include <linux/netfilter/nf_nat.h>
 #include <net/netfilter/nf_conntrack_tuple.h>
 
-#define NF_NAT_MAPPING_TYPE_MAX_NAMELEN 16
-
 enum nf_nat_manip_type {
-	IP_NAT_MANIP_SRC,
-	IP_NAT_MANIP_DST
+	NF_NAT_MANIP_SRC,
+	NF_NAT_MANIP_DST
 };
 
 /* SRC manip occurs POST_ROUTING or LOCAL_IN */
@@ -45,7 +43,9 @@ struct nf_conn_nat {
 	struct nf_conn *ct;
 	union nf_conntrack_nat_help help;
 #if defined(CONFIG_IP_NF_TARGET_MASQUERADE) || \
-    defined(CONFIG_IP_NF_TARGET_MASQUERADE_MODULE)
+    defined(CONFIG_IP_NF_TARGET_MASQUERADE_MODULE) || \
+    defined(CONFIG_IP6_NF_TARGET_MASQUERADE) || \
+    defined(CONFIG_IP6_NF_TARGET_MASQUERADE_MODULE)
 	int masq_index;
 #endif
 };
@@ -65,6 +65,21 @@ static inline struct nf_conn_nat *nfct_nat(const struct nf_conn *ct)
 	return nf_ct_ext_find(ct, NF_CT_EXT_NAT);
 #else
 	return NULL;
+#endif
+}
+
+static inline bool nf_nat_oif_changed(unsigned int hooknum,
+				      enum ip_conntrack_info ctinfo,
+				      struct nf_conn_nat *nat,
+				      const struct net_device *out)
+{
+#if IS_ENABLED(CONFIG_IP_NF_TARGET_MASQUERADE) || \
+    IS_ENABLED(CONFIG_IP6_NF_TARGET_MASQUERADE)
+	return nat->masq_index && hooknum == NF_INET_POST_ROUTING &&
+	       CTINFO2DIR(ctinfo) == IP_CT_DIR_ORIGINAL &&
+	       nat->masq_index != out->ifindex;
+#else
+	return false;
 #endif
 }
 

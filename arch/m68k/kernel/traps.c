@@ -32,7 +32,6 @@
 
 #include <asm/setup.h>
 #include <asm/fpu.h>
-#include <asm/system.h>
 #include <asm/uaccess.h>
 #include <asm/traps.h>
 #include <asm/pgalloc.h>
@@ -507,7 +506,7 @@ static inline void bus_error030 (struct frame *fp)
 		addr -= 2;
 
 	if (buserr_type & SUN3_BUSERR_INVALID) {
-		if (!mmu_emu_handle_fault (fp->un.fmtb.daddr, 1, 0))
+		if (!mmu_emu_handle_fault(addr, 1, 0))
 			do_page_fault (&fp->ptregs, addr, 0);
        } else {
 #ifdef DEBUG
@@ -704,6 +703,88 @@ create_atc_entry:
 #endif /* CPU_M68020_OR_M68030 */
 #endif /* !CONFIG_SUN3 */
 
+#if defined(CONFIG_COLDFIRE) && defined(CONFIG_MMU)
+#include <asm/mcfmmu.h>
+
+/*
+ *	The following table converts the FS encoding of a ColdFire
+ *	exception stack frame into the error_code value needed by
+ *	do_fault.
+*/
+static const unsigned char fs_err_code[] = {
+	0,  /* 0000 */
+	0,  /* 0001 */
+	0,  /* 0010 */
+	0,  /* 0011 */
+	1,  /* 0100 */
+	0,  /* 0101 */
+	0,  /* 0110 */
+	0,  /* 0111 */
+	2,  /* 1000 */
+	3,  /* 1001 */
+	2,  /* 1010 */
+	0,  /* 1011 */
+	1,  /* 1100 */
+	1,  /* 1101 */
+	0,  /* 1110 */
+	0   /* 1111 */
+};
+
+static inline void access_errorcf(unsigned int fs, struct frame *fp)
+{
+	unsigned long mmusr, addr;
+	unsigned int err_code;
+	int need_page_fault;
+
+	mmusr = mmu_read(MMUSR);
+	addr = mmu_read(MMUAR);
+
+	/*
+	 * error_code:
+	 *	bit 0 == 0 means no page found, 1 means protection fault
+	 *	bit 1 == 0 means read, 1 means write
+	 */
+	switch (fs) {
+	case  5:  /* 0101 TLB opword X miss */
+		need_page_fault = cf_tlb_miss(&fp->ptregs, 0, 0, 0);
+		addr = fp->ptregs.pc;
+		break;
+	case  6:  /* 0110 TLB extension word X miss */
+		need_page_fault = cf_tlb_miss(&fp->ptregs, 0, 0, 1);
+		addr = fp->ptregs.pc + sizeof(long);
+		break;
+	case 10:  /* 1010 TLB W miss */
+		need_page_fault = cf_tlb_miss(&fp->ptregs, 1, 1, 0);
+		break;
+	case 14: /* 1110 TLB R miss */
+		need_page_fault = cf_tlb_miss(&fp->ptregs, 0, 1, 0);
+		break;
+	default:
+		/* 0000 Normal  */
+		/* 0001 Reserved */
+		/* 0010 Interrupt during debug service routine */
+		/* 0011 Reserved */
+		/* 0100 X Protection */
+		/* 0111 IFP in emulator mode */
+		/* 1000 W Protection*/
+		/* 1001 Write error*/
+		/* 1011 Reserved*/
+		/* 1100 R Protection*/
+		/* 1101 R Protection*/
+		/* 1111 OEP in emulator mode*/
+		need_page_fault = 1;
+		break;
+	}
+
+	if (need_page_fault) {
+		err_code = fs_err_code[fs];
+		if ((fs == 13) && (mmusr & MMUSR_WF)) /* rd-mod-wr access */
+			err_code |= 2; /* bit1 - write, bit0 - protection */
+		do_page_fault(&fp->ptregs, addr, err_code);
+	}
+}
+#endif /* CONFIG_COLDFIRE CONFIG_MMU */
+
 asmlinkage void buserr_c(struct frame *fp)
 {
 	/* Only set esp0 if coming from user mode */
@@ -713,6 +794,28 @@ asmlinkage void buserr_c(struct frame *fp)
 #ifdef DEBUG
 	printk ("*** Bus Error *** Format is %x\n", fp->ptregs.format);
 #endif
+
+#if defined(CONFIG_COLDFIRE) && defined(CONFIG_MMU)
+	if (CPU_IS_COLDFIRE) {
+		unsigned int fs;
+		fs = (fp->ptregs.vector & 0x3) |
+			((fp->ptregs.vector & 0xc00) >> 8);
+		switch (fs) {
+		case 0x5:
+		case 0x6:
+		case 0x7:
+		case 0x9:
+		case 0xa:
+		case 0xd:
+		case 0xe:
+		case 0xf:
+			access_errorcf(fs, fp);
+			return;
+		default:
+			break;
+		}
+	}
+#endif /* CONFIG_COLDFIRE && CONFIG_MMU */
 
 	switch (fp->ptregs.format) {
 #if defined (CONFIG_M68060)
@@ -889,18 +992,6 @@ void show_stack(struct task_struct *task, unsigned long *stack)
 }
 
 /*
- * The architecture-independent backtrace generator
- */
-void dump_stack(void)
-{
-	unsigned long stack;
-
-	show_trace(&stack);
-}
-
-EXPORT_SYMBOL(dump_stack);
-
-/*
  * The vector number returned in the frame pointer may also contain
  * the "fs" (Fault Status) bits on ColdFire. These are in the bottom
  * 2 bits, and upper 2 bits. So we need to mask out the real vector
@@ -1073,7 +1164,7 @@ void die_if_kernel (char *str, struct pt_regs *fp, int nr)
 	console_verbose();
 	printk("%s: %08x\n",str,nr);
 	show_registers(fp);
-	add_taint(TAINT_DIE);
+	add_taint(TAINT_DIE, LOCKDEP_NOW_UNRELIABLE);
 	do_exit(SIGSEGV);
 }
 

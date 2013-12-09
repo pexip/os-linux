@@ -4,12 +4,13 @@
 src_pkg_name=$(shell sed -n '1s/^\(.*\) (.*).*$$/\1/p' $(DEBIAN)/changelog)
 
 # Get some version info
-series := oneiric
 release := $(shell sed -n '1s/^$(src_pkg_name).*(\(.*\)-.*).*$$/\1/p' $(DEBIAN)/changelog)
 revisions := $(shell sed -n 's/^$(src_pkg_name)\ .*($(release)-\(.*\)).*$$/\1/p' $(DEBIAN)/changelog | tac)
 revision ?= $(word $(words $(revisions)),$(revisions))
 prev_revisions := $(filter-out $(revision),0.0 $(revisions))
 prev_revision := $(word $(words $(prev_revisions)),$(prev_revisions))
+
+prev_fullver ?= $(shell dpkg-parsechangelog -l$(DEBIAN)/changelog -o1 -c1 | sed -ne 's/^Version: *//p')
 
 family=ubuntu
 
@@ -22,16 +23,6 @@ family=ubuntu
 # image, or rebuild the entire set of Ubuntu packages using custom patches
 # or configs.
 AUTOBUILD=
-
-#
-# This is a way to support some external variables. A good example is
-# a local setup for ccache and distcc See LOCAL_ENV_CC and
-# LOCAL_ENV_DISTCC_HOSTS in the definition of kmake.
-# For example:
-#      LOCAL_ENV_CC="ccache distcc"
-#      LOCAL_ENV_DISTCC_HOSTS="localhost 10.0.2.5 10.0.2.221"
-#
--include $(CURDIR)/../.$(series)-env
 
 ifneq ($(AUTOBUILD),)
 skipabi		= true
@@ -98,7 +89,7 @@ DEB_HOST_ARCH = $(shell dpkg-architecture -qDEB_HOST_ARCH)
 DEB_BUILD_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 
 #
-# Detect invocations of the form 'fakeroot debian/rules binary arch=armel'
+# Detect invocations of the form 'fakeroot debian/rules binary arch=armhf'
 # within an x86'en schroot. This only gets you part of the way since the
 # packaging phase fails, but you can at least compile the kernel quickly.
 #
@@ -108,7 +99,7 @@ ifneq ($(arch),$(DEB_HOST_ARCH))
 endif
 
 #
-# Detect invocations of the form 'dpkg-buildpackage -B -aarmel' within
+# Detect invocations of the form 'dpkg-buildpackage -B -aarmhf' within
 # an x86'en schroot. This is the only way to build all of the packages
 # (except for tools).
 #
@@ -132,6 +123,8 @@ stampdir	:= $(CURDIR)/debian/stamps
 bin_pkg_name=linux-image-$(abi_release)
 extra_pkg_name=linux-image-extra-$(abi_release)
 hdrs_pkg_name=linux-headers-$(abi_release)
+indep_hdrs_pkg_name=$(src_pkg_name)-headers-$(abi_release)
+
 #
 # The generation of content in the doc package depends on both 'AUTOBUILD=' and
 # 'do_doc_package_content=true'. There are usually build errors during the development
@@ -175,8 +168,10 @@ ifneq ($(wildcard $(CURDIR)/tools),)
 else
 	do_tools?=false
 endif
+do_tools_common?=false
 tools_pkg_name=$(src_pkg_name)-tools-$(abi_release)
 tools_common_pkg_name=$(src_pkg_name)-tools-common
+tools_flavour_pkg_name=linux-tools-$(abi_release)
 
 # The general flavour specific image package.
 do_flavour_image_package=true
@@ -220,7 +215,8 @@ kmake = make ARCH=$(build_arch) \
 	KERNELVERSION=$(abi_release)-$(target_flavour) \
 	CONFIG_DEBUG_SECTION_MISMATCH=y \
 	KBUILD_BUILD_VERSION="$(uploadnum)" \
-	LOCALVERSION= localver-extra=
+	LOCALVERSION= localver-extra= \
+	CFLAGS_MODULE="-DPKG_ABI=$(abinum)"
 ifneq ($(LOCAL_ENV_CC),)
 kmake += CC=$(LOCAL_ENV_CC) DISTCC_HOSTS=$(LOCAL_ENV_DISTCC_HOSTS)
 endif
@@ -230,3 +226,8 @@ endif
 lockme_file = $(CURDIR)/debian/.LOCK
 lockme_cmd = flock -w 60
 lockme = $(lockme_cmd) $(lockme_file)
+
+# Checks if a var is overriden by the custom rules. Called with var and
+# flavour as arguments.
+custom_override = \
+ $(shell if [ -n "$($(1)_$(2))" ]; then echo "$($(1)_$(2))"; else echo "$($(1))"; fi)

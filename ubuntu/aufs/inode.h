@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@ struct au_hnotify {
 #ifdef CONFIG_AUFS_HFSNOTIFY
 	/* never use fsnotify_add_vfsmount_mark() */
 	struct fsnotify_mark		hn_mark;
-	int				hn_mark_dead;
 #endif
 	struct inode			*hn_aufs_inode;	/* no get/put */
 #endif
@@ -52,9 +51,22 @@ struct au_hinode {
 	struct dentry		*hi_whdentry;
 };
 
+/* ig_flags */
+#define AuIG_HALF_REFRESHED		1
+#define au_ig_ftest(flags, name)	((flags) & AuIG_##name)
+#define au_ig_fset(flags, name) \
+	do { (flags) |= AuIG_##name; } while (0)
+#define au_ig_fclr(flags, name) \
+	do { (flags) &= ~AuIG_##name; } while (0)
+
+struct au_iigen {
+	__u32		ig_generation, ig_flags;
+};
+
 struct au_vdir;
 struct au_iinfo {
-	atomic_t		ii_generation;
+	spinlock_t		ii_genspin;
+	struct au_iigen		ii_generation;
 	struct super_block	*ii_hsb1;	/* no get/put */
 
 	struct au_rwsem		ii_rwsem;
@@ -89,7 +101,18 @@ struct au_pin {
 	struct dentry *parent;
 	struct au_hinode *hdir;
 	struct vfsmount *h_mnt;
+
+	/* temporary unlock/relock for copyup */
+	struct dentry *h_dentry, *h_parent;
+	struct au_branch *br;
+	struct task_struct *task;
 };
+
+void au_pin_hdir_unlock(struct au_pin *p);
+int au_pin_hdir_relock(struct au_pin *p);
+void au_pin_hdir_set_owner(struct au_pin *p, struct task_struct *task);
+void au_pin_hdir_acquire_nest(struct au_pin *p);
+void au_pin_hdir_release(struct au_pin *p);
 
 /* ---------------------------------------------------------------------- */
 
@@ -132,7 +155,8 @@ extern struct inode_operations aufs_iop, aufs_symlink_iop, aufs_dir_iop;
 
 /* au_wr_dir flags */
 #define AuWrDir_ADD_ENTRY	1
-#define AuWrDir_ISDIR		(1 << 1)
+#define AuWrDir_TMP_WHENTRY	(1 << 1)
+#define AuWrDir_ISDIR		(1 << 2)
 #define au_ftest_wrdir(flags, name)	((flags) & AuWrDir_##name)
 #define au_fset_wrdir(flags, name) \
 	do { (flags) |= AuWrDir_##name; } while (0)
@@ -158,13 +182,14 @@ void au_unpin(struct au_pin *pin);
 /* i_op_add.c */
 int au_may_add(struct dentry *dentry, aufs_bindex_t bindex,
 	       struct dentry *h_parent, int isdir);
-int aufs_mknod(struct inode *dir, struct dentry *dentry, int mode, dev_t dev);
+int aufs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
+	       dev_t dev);
 int aufs_symlink(struct inode *dir, struct dentry *dentry, const char *symname);
-int aufs_create(struct inode *dir, struct dentry *dentry, int mode,
-		struct nameidata *nd);
+int aufs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
+		bool want_excl);
 int aufs_link(struct dentry *src_dentry, struct inode *dir,
 	      struct dentry *dentry);
-int aufs_mkdir(struct inode *dir, struct dentry *dentry, int mode);
+int aufs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode);
 
 /* i_op_del.c */
 int au_wr_dir_need_wh(struct dentry *dentry, int isdir, aufs_bindex_t *bcpup);
@@ -202,7 +227,7 @@ unsigned int au_hi_flags(struct inode *inode, int isdir);
 void au_set_h_iptr(struct inode *inode, aufs_bindex_t bindex,
 		   struct inode *h_inode, unsigned int flags);
 
-void au_update_iigen(struct inode *inode);
+void au_update_iigen(struct inode *inode, int half);
 void au_update_ibrange(struct inode *inode, int do_put_zero);
 
 void au_icntnr_init_once(void *_c);
@@ -310,9 +335,19 @@ static inline void au_icntnr_init(struct au_icntnr *c)
 #endif
 }
 
-static inline unsigned int au_iigen(struct inode *inode)
+static inline unsigned int au_iigen(struct inode *inode, struct au_iigen *iigen)
 {
-	return atomic_read(&au_ii(inode)->ii_generation);
+	unsigned int gen;
+	struct au_iinfo *iinfo;
+
+	iinfo = au_ii(inode);
+	spin_lock(&iinfo->ii_genspin);
+	if (iigen)
+		*iigen = iinfo->ii_generation;
+	gen = iinfo->ii_generation.ig_generation;
+	spin_unlock(&iinfo->ii_genspin);
+
+	return gen;
 }
 
 /* tiny test for inode number */
@@ -329,7 +364,12 @@ static inline int au_test_higen(struct inode *inode, struct inode *h_inode)
 
 static inline void au_iigen_dec(struct inode *inode)
 {
-	atomic_dec(&au_ii(inode)->ii_generation);
+	struct au_iinfo *iinfo;
+
+	iinfo = au_ii(inode);
+	spin_lock(&iinfo->ii_genspin);
+	iinfo->ii_generation.ig_generation--;
+	spin_unlock(&iinfo->ii_genspin);
 }
 
 static inline int au_iigen_test(struct inode *inode, unsigned int sigen)
@@ -337,7 +377,7 @@ static inline int au_iigen_test(struct inode *inode, unsigned int sigen)
 	int err;
 
 	err = 0;
-	if (unlikely(inode && au_iigen(inode) != sigen))
+	if (unlikely(inode && au_iigen(inode, NULL) != sigen))
 		err = -EIO;
 
 	return err;
@@ -455,7 +495,13 @@ struct au_branch;
 struct au_hnotify_op {
 	void (*ctl)(struct au_hinode *hinode, int do_set);
 	int (*alloc)(struct au_hinode *hinode);
-	void (*free)(struct au_hinode *hinode);
+
+	/*
+	 * if it returns true, the the caller should free hinode->hi_notify,
+	 * otherwise ->free() frees it.
+	 */
+	int (*free)(struct au_hinode *hinode,
+		    struct au_hnotify *hn) __must_check;
 
 	void (*fin)(void);
 	int (*init)(void);

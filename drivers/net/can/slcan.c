@@ -1,7 +1,7 @@
 /*
  * slcan.c - serial line CAN interface driver (using tty line discipline)
  *
- * This file is derived from linux/drivers/net/slip.c
+ * This file is derived from linux/drivers/net/slip/slip.c
  *
  * slip.c Authors  : Laurence Culhane <loz@holmes.demon.co.uk>
  *                   Fred N. van Kempen <waltje@uwalt.nl.mugnet.org>
@@ -40,7 +40,6 @@
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 
-#include <asm/system.h>
 #include <linux/uaccess.h>
 #include <linux/bitops.h>
 #include <linux/string.h>
@@ -56,8 +55,9 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/can.h>
+#include <linux/can/skb.h>
 
-static __initdata const char banner[] =
+static __initconst const char banner[] =
 	KERN_INFO "slcan: serial line CAN interface driver\n";
 
 MODULE_ALIAS_LDISC(N_SLCAN);
@@ -161,7 +161,7 @@ static void slc_bump(struct slcan *sl)
 
 	sl->rbuff[dlc_pos] = 0; /* terminate can_id string */
 
-	if (strict_strtoul(sl->rbuff+1, 16, &ultmp))
+	if (kstrtoul(sl->rbuff+1, 16, &ultmp))
 		return;
 
 	cf.can_id = ultmp;
@@ -185,7 +185,8 @@ static void slc_bump(struct slcan *sl)
 		cf.data[i] |= tmp;
 	}
 
-	skb = dev_alloc_skb(sizeof(struct can_frame));
+	skb = dev_alloc_skb(sizeof(struct can_frame) +
+			    sizeof(struct can_skb_priv));
 	if (!skb)
 		return;
 
@@ -193,6 +194,10 @@ static void slc_bump(struct slcan *sl)
 	skb->protocol = htons(ETH_P_CAN);
 	skb->pkt_type = PACKET_BROADCAST;
 	skb->ip_summed = CHECKSUM_UNNECESSARY;
+
+	can_skb_reserve(skb);
+	can_skb_prv(skb)->ifindex = sl->dev->ifindex;
+
 	memcpy(skb_put(skb, sizeof(struct can_frame)),
 	       &cf, sizeof(struct can_frame));
 	netif_rx_ni(skb);
@@ -387,7 +392,7 @@ static void slc_setup(struct net_device *dev)
 
 	/* New-style flags. */
 	dev->flags		= IFF_NOARP;
-	dev->features           = NETIF_F_NO_CSUM;
+	dev->features           = NETIF_F_HW_CSUM;
 }
 
 /******************************************
@@ -639,10 +644,8 @@ static int __init slcan_init(void)
 	printk(KERN_INFO "slcan: %d dynamic interface channels.\n", maxdev);
 
 	slcan_devs = kzalloc(sizeof(struct net_device *)*maxdev, GFP_KERNEL);
-	if (!slcan_devs) {
-		printk(KERN_ERR "slcan: can't allocate slcan device array!\n");
+	if (!slcan_devs)
 		return -ENOMEM;
-	}
 
 	/* Fill in our line protocol discipline, and register it */
 	status = tty_register_ldisc(N_SLCAN, &slc_ldisc);

@@ -104,14 +104,8 @@ static void lpphy_read_band_sprom(struct b43_wldev *dev)
 		maxpwr = sprom->maxpwr_bg;
 		lpphy->max_tx_pwr_med_band = maxpwr;
 		cckpo = sprom->cck2gpo;
-		/*
-		 * We don't read SPROM's opo as specs say. On rev8 SPROMs
-		 * opo == ofdm2gpo and we don't know any SSB with LP-PHY
-		 * and SPROM rev below 8.
-		 */
-		B43_WARN_ON(sprom->revision < 8);
-		ofdmpo = sprom->ofdm2gpo;
 		if (cckpo) {
+			ofdmpo = sprom->ofdm2gpo;
 			for (i = 0; i < 4; i++) {
 				lpphy->tx_max_rate[i] =
 					maxpwr - (ofdmpo & 0xF) * 2;
@@ -124,11 +118,11 @@ static void lpphy_read_band_sprom(struct b43_wldev *dev)
 				ofdmpo >>= 4;
 			}
 		} else {
-			ofdmpo &= 0xFF;
+			u8 opo = sprom->opo;
 			for (i = 0; i < 4; i++)
 				lpphy->tx_max_rate[i] = maxpwr;
 			for (i = 4; i < 15; i++)
-				lpphy->tx_max_rate[i] = maxpwr - ofdmpo;
+				lpphy->tx_max_rate[i] = maxpwr - opo;
 		}
 	} else { /* 5GHz */
 		lpphy->tx_isolation_low_band = sprom->tri5gl;
@@ -287,8 +281,8 @@ static void lpphy_baseband_rev0_1_init(struct b43_wldev *dev)
 		b43_phy_maskset(dev, B43_LPPHY_TR_LOOKUP_8, 0xFFC0, 0x000A);
 		b43_phy_maskset(dev, B43_LPPHY_TR_LOOKUP_8, 0xC0FF, 0x0B00);
 	} else if (b43_current_band(dev->wl) == IEEE80211_BAND_5GHZ ||
-		  (dev->dev->board_type == 0x048A) || ((dev->phy.rev == 0) &&
-		  (sprom->boardflags_lo & B43_BFL_FEM))) {
+		   (dev->dev->board_type == SSB_BOARD_BU4312) ||
+		   (dev->phy.rev == 0 && (sprom->boardflags_lo & B43_BFL_FEM))) {
 		b43_phy_maskset(dev, B43_LPPHY_TR_LOOKUP_1, 0xFFC0, 0x0001);
 		b43_phy_maskset(dev, B43_LPPHY_TR_LOOKUP_1, 0xC0FF, 0x0400);
 		b43_phy_maskset(dev, B43_LPPHY_TR_LOOKUP_2, 0xFFC0, 0x0001);
@@ -736,9 +730,9 @@ static void lpphy_set_deaf(struct b43_wldev *dev, bool user)
 	struct b43_phy_lp *lpphy = dev->phy.lp;
 
 	if (user)
-		lpphy->crs_usr_disable = 1;
+		lpphy->crs_usr_disable = true;
 	else
-		lpphy->crs_sys_disable = 1;
+		lpphy->crs_sys_disable = true;
 	b43_phy_maskset(dev, B43_LPPHY_CRSGAIN_CTL, 0xFF1F, 0x80);
 }
 
@@ -747,9 +741,9 @@ static void lpphy_clear_deaf(struct b43_wldev *dev, bool user)
 	struct b43_phy_lp *lpphy = dev->phy.lp;
 
 	if (user)
-		lpphy->crs_usr_disable = 0;
+		lpphy->crs_usr_disable = false;
 	else
-		lpphy->crs_sys_disable = 0;
+		lpphy->crs_sys_disable = false;
 
 	if (!lpphy->crs_usr_disable && !lpphy->crs_sys_disable) {
 		if (b43_current_band(dev->wl) == IEEE80211_BAND_2GHZ)

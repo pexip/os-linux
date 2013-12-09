@@ -123,9 +123,9 @@ static void mma8450_poll(struct input_polled_dev *dev)
 	if (ret < 0)
 		return;
 
-	x = ((buf[1] << 4) & 0xff0) | (buf[0] & 0xf);
-	y = ((buf[3] << 4) & 0xff0) | (buf[2] & 0xf);
-	z = ((buf[5] << 4) & 0xff0) | (buf[4] & 0xf);
+	x = ((int)(s8)buf[1] << 4) | (buf[0] & 0xf);
+	y = ((int)(s8)buf[3] << 4) | (buf[2] & 0xf);
+	z = ((int)(s8)buf[5] << 4) | (buf[4] & 0xf);
 
 	input_report_abs(dev->input, ABS_X, x);
 	input_report_abs(dev->input, ABS_Y, y);
@@ -167,7 +167,7 @@ static void mma8450_close(struct input_polled_dev *dev)
 /*
  * I2C init/probing/exit functions
  */
-static int __devinit mma8450_probe(struct i2c_client *c,
+static int mma8450_probe(struct i2c_client *c,
 				   const struct i2c_device_id *id)
 {
 	struct input_polled_dev *idev;
@@ -212,7 +212,7 @@ err_free_mem:
 	return err;
 }
 
-static int __devexit mma8450_remove(struct i2c_client *c)
+static int mma8450_remove(struct i2c_client *c)
 {
 	struct mma8450 *m = i2c_get_clientdata(c);
 	struct input_polled_dev *idev = m->idev;
@@ -243,21 +243,11 @@ static struct i2c_driver mma8450_driver = {
 		.of_match_table = mma8450_dt_ids,
 	},
 	.probe		= mma8450_probe,
-	.remove		= __devexit_p(mma8450_remove),
+	.remove		= mma8450_remove,
 	.id_table	= mma8450_id,
 };
 
-static int __init mma8450_init(void)
-{
-	return i2c_add_driver(&mma8450_driver);
-}
-module_init(mma8450_init);
-
-static void __exit mma8450_exit(void)
-{
-	i2c_del_driver(&mma8450_driver);
-}
-module_exit(mma8450_exit);
+module_i2c_driver(mma8450_driver);
 
 MODULE_AUTHOR("Freescale Semiconductor, Inc.");
 MODULE_DESCRIPTION("MMA8450 3-Axis Accelerometer Driver");

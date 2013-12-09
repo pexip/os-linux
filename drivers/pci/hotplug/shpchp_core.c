@@ -36,8 +36,8 @@
 #include "shpchp.h"
 
 /* Global variables */
-int shpchp_debug;
-int shpchp_poll_mode;
+bool shpchp_debug;
+bool shpchp_poll_mode;
 int shpchp_poll_time;
 
 #define DRIVER_VERSION	"0.4"
@@ -97,22 +97,28 @@ static int init_slots(struct controller *ctrl)
 	struct hotplug_slot *hotplug_slot;
 	struct hotplug_slot_info *info;
 	char name[SLOT_NAME_SIZE];
-	int retval = -ENOMEM;
+	int retval;
 	int i;
 
 	for (i = 0; i < ctrl->num_slots; i++) {
 		slot = kzalloc(sizeof(*slot), GFP_KERNEL);
-		if (!slot)
+		if (!slot) {
+			retval = -ENOMEM;
 			goto error;
+		}
 
 		hotplug_slot = kzalloc(sizeof(*hotplug_slot), GFP_KERNEL);
-		if (!hotplug_slot)
+		if (!hotplug_slot) {
+			retval = -ENOMEM;
 			goto error_slot;
+		}
 		slot->hotplug_slot = hotplug_slot;
 
 		info = kzalloc(sizeof(*info), GFP_KERNEL);
-		if (!info)
+		if (!info) {
+			retval = -ENOMEM;
 			goto error_hpslot;
+		}
 		hotplug_slot->info = info;
 
 		slot->hp_slot = i;
@@ -122,8 +128,7 @@ static int init_slots(struct controller *ctrl)
 		slot->hpc_ops = ctrl->hpc_ops;
 		slot->number = ctrl->first_slot + (ctrl->slot_num_inc * i);
 
-		snprintf(name, sizeof(name), "shpchp-%d", slot->number);
-		slot->wq = alloc_workqueue(name, 0, 0);
+		slot->wq = alloc_workqueue("shpchp-%d", 0, 0, slot->number);
 		if (!slot->wq) {
 			retval = -ENOMEM;
 			goto error_info;

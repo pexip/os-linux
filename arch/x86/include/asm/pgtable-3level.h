@@ -9,13 +9,13 @@
  */
 
 #define pte_ERROR(e)							\
-	printk("%s:%d: bad pte %p(%08lx%08lx).\n",			\
+	pr_err("%s:%d: bad pte %p(%08lx%08lx)\n",			\
 	       __FILE__, __LINE__, &(e), (e).pte_high, (e).pte_low)
 #define pmd_ERROR(e)							\
-	printk("%s:%d: bad pmd %p(%016Lx).\n",				\
+	pr_err("%s:%d: bad pmd %p(%016Lx)\n",				\
 	       __FILE__, __LINE__, &(e), pmd_val(e))
 #define pgd_ERROR(e)							\
-	printk("%s:%d: bad pgd %p(%016Lx).\n",				\
+	pr_err("%s:%d: bad pgd %p(%016Lx)\n",				\
 	       __FILE__, __LINE__, &(e), pgd_val(e))
 
 /* Rules for using set_pte: the pte being assigned *must* be
@@ -179,6 +179,9 @@ static inline pmd_t native_pmdp_get_and_clear(pmd_t *pmdp)
 /*
  * Bits 0, 6 and 7 are taken in the low part of the pte,
  * put the 32 bits of offset into the high part.
+ *
+ * For soft-dirty tracking 11 bit is taken from
+ * the low part of pte as well.
  */
 #define pte_to_pgoff(pte) ((pte).pte_high)
 #define pgoff_to_pte(off)						\

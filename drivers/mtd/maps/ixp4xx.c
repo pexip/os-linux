@@ -148,7 +148,7 @@ struct ixp4xx_flash_info {
 	struct resource *res;
 };
 
-static const char *probes[] = { "RedBoot", "cmdlinepart", NULL };
+static const char * const probes[] = { "RedBoot", "cmdlinepart", NULL };
 
 static int ixp4xx_flash_remove(struct platform_device *dev)
 {
@@ -273,19 +273,7 @@ static struct platform_driver ixp4xx_flash_driver = {
 	},
 };
 
-static int __init ixp4xx_flash_init(void)
-{
-	return platform_driver_register(&ixp4xx_flash_driver);
-}
-
-static void __exit ixp4xx_flash_exit(void)
-{
-	platform_driver_unregister(&ixp4xx_flash_driver);
-}
-
-
-module_init(ixp4xx_flash_init);
-module_exit(ixp4xx_flash_exit);
+module_platform_driver(ixp4xx_flash_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("MTD map driver for Intel IXP4xx systems");

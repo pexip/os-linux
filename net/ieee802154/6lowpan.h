@@ -53,9 +53,6 @@
 #ifndef __6LOWPAN_H__
 #define __6LOWPAN_H__
 
-/* need to know address length to manipulate with it */
-#define IEEE802154_ALEN		8
-
 #define UIP_802154_SHORTADDR_LEN	2  /* compressed ipv6 address length */
 #define UIP_IPH_LEN			40 /* ipv6 fixed header size */
 #define UIP_PROTO_UDP			17 /* ipv6 next header value for UDP */
@@ -95,9 +92,10 @@
  */
 #define lowpan_is_iid_16_bit_compressable(a)	\
 	((((a)->s6_addr16[4]) == 0) &&		\
-	 (((a)->s6_addr16[5]) == 0) &&		\
-	 (((a)->s6_addr16[6]) == 0) &&		\
-	 ((((a)->s6_addr[14]) & 0x80) == 0))
+	 (((a)->s6_addr[10]) == 0) &&		\
+	 (((a)->s6_addr[11]) == 0xff) &&	\
+	 (((a)->s6_addr[12]) == 0xfe) &&	\
+	 (((a)->s6_addr[13]) == 0))
 
 /* multicast address */
 #define is_addr_mcast(a) (((a)->s6_addr[0]) == 0xFF)
@@ -159,6 +157,24 @@
 #define LOWPAN_DISPATCH_FRAG1	0xc0 /* 11000xxx */
 #define LOWPAN_DISPATCH_FRAGN	0xe0 /* 11100xxx */
 
+#define LOWPAN_DISPATCH_MASK	0xf8 /* 11111000 */
+
+#define LOWPAN_FRAG_TIMEOUT	(HZ * 60)	/* time-out 60 sec */
+
+#define LOWPAN_FRAG1_HEAD_SIZE	0x4
+#define LOWPAN_FRAGN_HEAD_SIZE	0x5
+
+/*
+ * According IEEE802.15.4 standard:
+ *   - MTU is 127 octets
+ *   - maximum MHR size is 37 octets
+ *   - MFR size is 2 octets
+ *
+ * so minimal payload size that we may guarantee is:
+ *   MTU - MHR - MFR = 88 octets
+ */
+#define LOWPAN_FRAG_SIZE	88
+
 /*
  * Values of fields within the IPHC encoding first byte
  * (C stands for compressed and I for inline)
@@ -200,6 +216,11 @@
 #define LOWPAN_NHC_UDP_ID		0xF0
 #define LOWPAN_NHC_UDP_CHECKSUMC	0x04
 #define LOWPAN_NHC_UDP_CHECKSUMI	0x00
+
+#define LOWPAN_NHC_UDP_4BIT_PORT	0xF0B0
+#define LOWPAN_NHC_UDP_4BIT_MASK	0xFFF0
+#define LOWPAN_NHC_UDP_8BIT_PORT	0xF000
+#define LOWPAN_NHC_UDP_8BIT_MASK	0xFF00
 
 /* values for port compression, _with checksum_ ie bit 5 set to 0 */
 #define LOWPAN_NHC_UDP_CS_P_00	0xF0 /* all inline */

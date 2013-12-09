@@ -4,20 +4,10 @@ obj-$(CONFIG_SECURITY_APPARMOR) += apparmor.o
 
 apparmor-y := apparmorfs.o audit.o capability.o context.o ipc.o lib.o match.o \
               path.o domain.o policy.o policy_unpack.o procattr.o lsm.o \
-              resource.o sid.o file.o mount.o net.o
+              resource.o sid.o file.o label.o net.o mount.o
+apparmor-$(CONFIG_SECURITY_APPARMOR_HASH) += crypto.o
 
-clean-files := capability_names.h rlim_names.h net_names.h
-
-# Build a lower case string table of capability names
-# Transforms lines from
-#    #define CAP_DAC_OVERRIDE     1
-# to
-#    [1] = "dac_override",
-quiet_cmd_make-caps = GEN     $@
-cmd_make-caps = echo "static const char *const capability_names[] = {" > $@ ;\
-	sed $< >>$@ -r -n -e '/CAP_FS_MASK/d' \
-	-e 's/^\#define[ \t]+CAP_([A-Z0-9_]+)[ \t]+([0-9]+)/[\2] = "\L\1",/p';\
-	echo "};" >> $@
+clean-files := capability_names.h rlim_names.h
 
 # Build a lower case string table of address family names
 # Transform lines from
@@ -51,6 +41,22 @@ cmd_make-sock = echo "static const char *sock_type_names[] = {" >> $@ ;\
 	sed $^ >>$@ -r -n \
 	-e 's/^\tSOCK_([A-Z0-9_]+)[\t]+=[ \t]+([0-9]+)(.*)/[\2] = "\L\1",/p';\
 	echo "};" >> $@
+
+# Build a lower case string table of capability names
+# Transforms lines from
+#    #define CAP_DAC_OVERRIDE     1
+# to
+#    [1] = "dac_override",
+quiet_cmd_make-caps = GEN     $@
+cmd_make-caps = echo "static const char *const capability_names[] = {" > $@ ;\
+	sed $< >>$@ -r -n -e '/CAP_FS_MASK/d' \
+	-e 's/^\#define[ \t]+CAP_([A-Z0-9_]+)[ \t]+([0-9]+)/[\2] = "\L\1",/p';\
+	echo "};" >> $@ ;\
+	echo -n '\#define AA_FS_CAPS_MASK "' >> $@ ;\
+	sed $< -r -n -e '/CAP_FS_MASK/d' \
+	    -e 's/^\#define[ \t]+CAP_([A-Z0-9_]+)[ \t]+([0-9]+)/\L\1/p' | \
+	     tr '\n' ' ' | sed -e 's/ $$/"\n/' >> $@
+
 
 # Build a lower case string table of rlimit names.
 # Transforms lines from
@@ -89,10 +95,10 @@ cmd_make-rlim = echo "static const char *const rlim_names[RLIM_NLIMITS] = {" \
 $(obj)/capability.o : $(obj)/capability_names.h
 $(obj)/net.o : $(obj)/net_names.h
 $(obj)/resource.o : $(obj)/rlim_names.h
-$(obj)/capability_names.h : $(srctree)/include/linux/capability.h \
+$(obj)/capability_names.h : $(srctree)/include/uapi/linux/capability.h \
 			    $(src)/Makefile
 	$(call cmd,make-caps)
-$(obj)/rlim_names.h : $(srctree)/include/asm-generic/resource.h \
+$(obj)/rlim_names.h : $(srctree)/include/uapi/asm-generic/resource.h \
 		      $(src)/Makefile
 	$(call cmd,make-rlim)
 $(obj)/net_names.h : $(srctree)/include/linux/socket.h \

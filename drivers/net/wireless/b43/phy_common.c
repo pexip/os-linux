@@ -145,7 +145,7 @@ void b43_radio_lock(struct b43_wldev *dev)
 
 #if B43_DEBUG
 	B43_WARN_ON(dev->phy.radio_locked);
-	dev->phy.radio_locked = 1;
+	dev->phy.radio_locked = true;
 #endif
 
 	macctl = b43_read32(dev, B43_MMIO_MACCTL);
@@ -163,7 +163,7 @@ void b43_radio_unlock(struct b43_wldev *dev)
 
 #if B43_DEBUG
 	B43_WARN_ON(!dev->phy.radio_locked);
-	dev->phy.radio_locked = 0;
+	dev->phy.radio_locked = false;
 #endif
 
 	/* Commit any write */
@@ -178,7 +178,7 @@ void b43_phy_lock(struct b43_wldev *dev)
 {
 #if B43_DEBUG
 	B43_WARN_ON(dev->phy.phy_locked);
-	dev->phy.phy_locked = 1;
+	dev->phy.phy_locked = true;
 #endif
 	B43_WARN_ON(dev->dev->core_rev < 3);
 
@@ -190,7 +190,7 @@ void b43_phy_unlock(struct b43_wldev *dev)
 {
 #if B43_DEBUG
 	B43_WARN_ON(!dev->phy.phy_locked);
-	dev->phy.phy_locked = 0;
+	dev->phy.phy_locked = false;
 #endif
 	B43_WARN_ON(dev->dev->core_rev < 3);
 
@@ -238,6 +238,21 @@ void b43_radio_maskset(struct b43_wldev *dev, u16 offset, u16 mask, u16 set)
 {
 	b43_radio_write16(dev, offset,
 			  (b43_radio_read16(dev, offset) & mask) | set);
+}
+
+bool b43_radio_wait_value(struct b43_wldev *dev, u16 offset, u16 mask,
+			  u16 value, int delay, int timeout)
+{
+	u16 val;
+	int i;
+
+	for (i = 0; i < timeout; i += delay) {
+		val = b43_radio_read(dev, offset);
+		if ((val & mask) == value)
+			return true;
+		udelay(delay);
+	}
+	return false;
 }
 
 u16 b43_phy_read(struct b43_wldev *dev, u16 reg)
@@ -428,7 +443,7 @@ int b43_phy_shm_tssi_read(struct b43_wldev *dev, u16 shm_offset)
 	average = (a + b + c + d + 2) / 4;
 	if (is_ofdm) {
 		/* Adjust for CCK-boost */
-		if (b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_HOSTFLO)
+		if (b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_HOSTF1)
 		    & B43_HF_CCKBOOST)
 			average = (average >= 13) ? (average - 13) : 0;
 	}

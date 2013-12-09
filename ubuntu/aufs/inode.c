@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ struct inode *au_igrab(struct inode *inode)
 static void au_refresh_hinode_attr(struct inode *inode, int do_version)
 {
 	au_cpup_attr_all(inode, /*force*/0);
-	au_update_iigen(inode);
+	au_update_iigen(inode, /*half*/1);
 	if (do_version)
 		inode->i_version++;
 }
@@ -253,6 +253,8 @@ out:
 static int reval_inode(struct inode *inode, struct dentry *dentry)
 {
 	int err;
+	unsigned int gen;
+	struct au_iigen iigen;
 	aufs_bindex_t bindex, bend;
 	struct inode *h_inode, *h_dinode;
 
@@ -271,12 +273,20 @@ static int reval_inode(struct inode *inode, struct dentry *dentry)
 	bend = au_ibend(inode);
 	for (bindex = au_ibstart(inode); bindex <= bend; bindex++) {
 		h_inode = au_h_iptr(inode, bindex);
-		if (h_inode && h_inode == h_dinode) {
-			err = 0;
-			if (au_iigen_test(inode, au_digen(dentry)))
-				err = au_refresh_hinode(inode, dentry);
+		if (!h_inode || h_inode != h_dinode)
+			continue;
+
+		err = 0;
+		gen = au_iigen(inode, &iigen);
+		if (gen == au_digen(dentry)
+		    && !au_ig_ftest(iigen.ig_flags, HALF_REFRESHED))
 			break;
-		}
+
+		/* fully refresh inode using dentry */
+		err = au_refresh_hinode(inode, dentry);
+		if (!err)
+			au_update_iigen(inode, /*half*/0);
+		break;
 	}
 
 	if (unlikely(err))
@@ -367,6 +377,17 @@ new_ino:
 
 	AuDbg("%lx, new %d\n", inode->i_state, !!(inode->i_state & I_NEW));
 	if (inode->i_state & I_NEW) {
+		/* verbose coding for lock class name */
+		if (unlikely(S_ISLNK(h_inode->i_mode)))
+			au_rw_class(&au_ii(inode)->ii_rwsem,
+				    au_lc_key + AuLcSymlink_IIINFO);
+		else if (unlikely(S_ISDIR(h_inode->i_mode)))
+			au_rw_class(&au_ii(inode)->ii_rwsem,
+				    au_lc_key + AuLcDir_IIINFO);
+		else /* likely */
+			au_rw_class(&au_ii(inode)->ii_rwsem,
+				    au_lc_key + AuLcNonDir_IIINFO);
+
 		ii_write_lock_new_child(inode);
 		err = set_inode(inode, dentry);
 		if (!err) {
@@ -456,7 +477,7 @@ int au_test_ro(struct super_block *sb, aufs_bindex_t bindex,
 
 int au_test_h_perm(struct inode *h_inode, int mask)
 {
-	if (!current_fsuid())
+	if (uid_eq(current_fsuid(), GLOBAL_ROOT_UID))
 		return 0;
 	return inode_permission(h_inode, mask);
 }

@@ -8,6 +8,7 @@
 #ifndef __LINUX_POSIX_ACL_H
 #define __LINUX_POSIX_ACL_H
 
+#include <linux/bug.h>
 #include <linux/slab.h>
 #include <linux/rcupdate.h>
 
@@ -35,7 +36,13 @@
 struct posix_acl_entry {
 	short			e_tag;
 	unsigned short		e_perm;
-	unsigned int		e_id;
+	union {
+		kuid_t		e_uid;
+		kgid_t		e_gid;
+#ifndef CONFIG_UIDGID_STRICT_TYPE_CHECKS
+		unsigned int	e_id;
+#endif
+	};
 };
 
 struct posix_acl {

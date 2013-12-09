@@ -4,7 +4,7 @@
  * s390 implementation of the AES Cipher Algorithm.
  *
  * s390 Version:
- *   Copyright IBM Corp. 2005,2007
+ *   Copyright IBM Corp. 2005, 2007
  *   Author(s): Jan Glauber (jang@de.ibm.com)
  *		Sebastian Siewior (sebastian@breakpoint.cc> SW-Fallback
  *
@@ -35,7 +35,6 @@ static u8 *ctrblk;
 static char keylen_flag;
 
 struct s390_aes_ctx {
-	u8 iv[AES_BLOCK_SIZE];
 	u8 key[AES_MAX_KEY_SIZE];
 	long enc;
 	long dec;
@@ -216,7 +215,6 @@ static struct crypto_alg aes_alg = {
 	.cra_blocksize		=	AES_BLOCK_SIZE,
 	.cra_ctxsize		=	sizeof(struct s390_aes_ctx),
 	.cra_module		=	THIS_MODULE,
-	.cra_list		=	LIST_HEAD_INIT(aes_alg.cra_list),
 	.cra_init               =       fallback_init_cip,
 	.cra_exit               =       fallback_exit_cip,
 	.cra_u			=	{
@@ -326,7 +324,8 @@ static int ecb_aes_crypt(struct blkcipher_desc *desc, long func, void *param,
 		u8 *in = walk->src.virt.addr;
 
 		ret = crypt_s390_km(func, param, out, in, n);
-		BUG_ON((ret < 0) || (ret != n));
+		if (ret < 0 || ret != n)
+			return -EIO;
 
 		nbytes &= AES_BLOCK_SIZE - 1;
 		ret = blkcipher_walk_done(desc, walk, nbytes);
@@ -398,7 +397,6 @@ static struct crypto_alg ecb_aes_alg = {
 	.cra_ctxsize		=	sizeof(struct s390_aes_ctx),
 	.cra_type		=	&crypto_blkcipher_type,
 	.cra_module		=	THIS_MODULE,
-	.cra_list		=	LIST_HEAD_INIT(ecb_aes_alg.cra_list),
 	.cra_init		=	fallback_init_blk,
 	.cra_exit		=	fallback_exit_blk,
 	.cra_u			=	{
@@ -442,29 +440,36 @@ static int cbc_aes_set_key(struct crypto_tfm *tfm, const u8 *in_key,
 	return aes_set_key(tfm, in_key, key_len);
 }
 
-static int cbc_aes_crypt(struct blkcipher_desc *desc, long func, void *param,
+static int cbc_aes_crypt(struct blkcipher_desc *desc, long func,
 			 struct blkcipher_walk *walk)
 {
+	struct s390_aes_ctx *sctx = crypto_blkcipher_ctx(desc->tfm);
 	int ret = blkcipher_walk_virt(desc, walk);
 	unsigned int nbytes = walk->nbytes;
+	struct {
+		u8 iv[AES_BLOCK_SIZE];
+		u8 key[AES_MAX_KEY_SIZE];
+	} param;
 
 	if (!nbytes)
 		goto out;
 
-	memcpy(param, walk->iv, AES_BLOCK_SIZE);
+	memcpy(param.iv, walk->iv, AES_BLOCK_SIZE);
+	memcpy(param.key, sctx->key, sctx->key_len);
 	do {
 		/* only use complete blocks */
 		unsigned int n = nbytes & ~(AES_BLOCK_SIZE - 1);
 		u8 *out = walk->dst.virt.addr;
 		u8 *in = walk->src.virt.addr;
 
-		ret = crypt_s390_kmc(func, param, out, in, n);
-		BUG_ON((ret < 0) || (ret != n));
+		ret = crypt_s390_kmc(func, &param, out, in, n);
+		if (ret < 0 || ret != n)
+			return -EIO;
 
 		nbytes &= AES_BLOCK_SIZE - 1;
 		ret = blkcipher_walk_done(desc, walk, nbytes);
 	} while ((nbytes = walk->nbytes));
-	memcpy(walk->iv, param, AES_BLOCK_SIZE);
+	memcpy(walk->iv, param.iv, AES_BLOCK_SIZE);
 
 out:
 	return ret;
@@ -481,7 +486,7 @@ static int cbc_aes_encrypt(struct blkcipher_desc *desc,
 		return fallback_blk_enc(desc, dst, src, nbytes);
 
 	blkcipher_walk_init(&walk, dst, src, nbytes);
-	return cbc_aes_crypt(desc, sctx->enc, sctx->iv, &walk);
+	return cbc_aes_crypt(desc, sctx->enc, &walk);
 }
 
 static int cbc_aes_decrypt(struct blkcipher_desc *desc,
@@ -495,7 +500,7 @@ static int cbc_aes_decrypt(struct blkcipher_desc *desc,
 		return fallback_blk_dec(desc, dst, src, nbytes);
 
 	blkcipher_walk_init(&walk, dst, src, nbytes);
-	return cbc_aes_crypt(desc, sctx->dec, sctx->iv, &walk);
+	return cbc_aes_crypt(desc, sctx->dec, &walk);
 }
 
 static struct crypto_alg cbc_aes_alg = {
@@ -508,7 +513,6 @@ static struct crypto_alg cbc_aes_alg = {
 	.cra_ctxsize		=	sizeof(struct s390_aes_ctx),
 	.cra_type		=	&crypto_blkcipher_type,
 	.cra_module		=	THIS_MODULE,
-	.cra_list		=	LIST_HEAD_INIT(cbc_aes_alg.cra_list),
 	.cra_init		=	fallback_init_blk,
 	.cra_exit		=	fallback_exit_blk,
 	.cra_u			=	{
@@ -628,7 +632,8 @@ static int xts_aes_crypt(struct blkcipher_desc *desc, long func,
 	memcpy(xts_ctx->pcc.tweak, walk->iv, sizeof(xts_ctx->pcc.tweak));
 	param = xts_ctx->pcc.key + offset;
 	ret = crypt_s390_pcc(func, param);
-	BUG_ON(ret < 0);
+	if (ret < 0)
+		return -EIO;
 
 	memcpy(xts_ctx->xts_param, xts_ctx->pcc.xts, 16);
 	param = xts_ctx->key + offset;
@@ -639,7 +644,8 @@ static int xts_aes_crypt(struct blkcipher_desc *desc, long func,
 		in = walk->src.virt.addr;
 
 		ret = crypt_s390_km(func, param, out, in, n);
-		BUG_ON(ret < 0 || ret != n);
+		if (ret < 0 || ret != n)
+			return -EIO;
 
 		nbytes &= AES_BLOCK_SIZE - 1;
 		ret = blkcipher_walk_done(desc, walk, nbytes);
@@ -710,7 +716,6 @@ static struct crypto_alg xts_aes_alg = {
 	.cra_ctxsize		=	sizeof(struct s390_xts_ctx),
 	.cra_type		=	&crypto_blkcipher_type,
 	.cra_module		=	THIS_MODULE,
-	.cra_list		=	LIST_HEAD_INIT(xts_aes_alg.cra_list),
 	.cra_init		=	xts_fallback_init,
 	.cra_exit		=	xts_fallback_exit,
 	.cra_u			=	{
@@ -773,7 +778,8 @@ static int ctr_aes_crypt(struct blkcipher_desc *desc, long func,
 				crypto_inc(ctrblk + i, AES_BLOCK_SIZE);
 			}
 			ret = crypt_s390_kmctr(func, sctx->key, out, in, n, ctrblk);
-			BUG_ON(ret < 0 || ret != n);
+			if (ret < 0 || ret != n)
+				return -EIO;
 			if (n > AES_BLOCK_SIZE)
 				memcpy(ctrblk, ctrblk + n - AES_BLOCK_SIZE,
 				       AES_BLOCK_SIZE);
@@ -792,7 +798,8 @@ static int ctr_aes_crypt(struct blkcipher_desc *desc, long func,
 		in = walk->src.virt.addr;
 		ret = crypt_s390_kmctr(func, sctx->key, buf, in,
 				       AES_BLOCK_SIZE, ctrblk);
-		BUG_ON(ret < 0 || ret != AES_BLOCK_SIZE);
+		if (ret < 0 || ret != AES_BLOCK_SIZE)
+			return -EIO;
 		memcpy(out, buf, nbytes);
 		crypto_inc(ctrblk, AES_BLOCK_SIZE);
 		ret = blkcipher_walk_done(desc, walk, 0);
@@ -832,7 +839,6 @@ static struct crypto_alg ctr_aes_alg = {
 	.cra_ctxsize		=	sizeof(struct s390_aes_ctx),
 	.cra_type		=	&crypto_blkcipher_type,
 	.cra_module		=	THIS_MODULE,
-	.cra_list		=	LIST_HEAD_INIT(ctr_aes_alg.cra_list),
 	.cra_u			=	{
 		.blkcipher = {
 			.min_keysize		=	AES_MIN_KEY_SIZE,

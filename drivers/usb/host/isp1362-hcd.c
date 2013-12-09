@@ -84,7 +84,6 @@
 #include <linux/prefetch.h>
 
 #include <asm/irq.h>
-#include <asm/system.h>
 #include <asm/byteorder.h>
 #include <asm/unaligned.h>
 
@@ -544,12 +543,12 @@ static void postproc_ep(struct isp1362_hcd *isp1362_hcd, struct isp1362_ep *ep)
 			    usb_pipein(urb->pipe) ? "IN" : "OUT", ep->nextpid,
 			    short_ok ? "" : "not_",
 			    PTD_GET_COUNT(ptd), ep->maxpacket, len);
+			/* save the data underrun error code for later and
+			 * proceed with the status stage
+			 */
+			urb->actual_length += PTD_GET_COUNT(ptd);
 			if (usb_pipecontrol(urb->pipe)) {
 				ep->nextpid = USB_PID_ACK;
-				/* save the data underrun error code for later and
-				 * proceed with the status stage
-				 */
-				urb->actual_length += PTD_GET_COUNT(ptd);
 				BUG_ON(urb->actual_length > urb->transfer_buffer_length);
 
 				if (urb->status == -EINPROGRESS)
@@ -2176,7 +2175,7 @@ static int proc_isp1362_show(struct seq_file *s, void *unused)
 
 static int proc_isp1362_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, proc_isp1362_show, PDE(inode)->data);
+	return single_open(file, proc_isp1362_show, PDE_DATA(inode));
 }
 
 static const struct file_operations proc_ops = {
@@ -2193,14 +2192,11 @@ static void create_debug_file(struct isp1362_hcd *isp1362_hcd)
 {
 	struct proc_dir_entry *pde;
 
-	pde = create_proc_entry(proc_filename, 0, NULL);
+	pde = proc_create_data(proc_filename, 0, NULL, &proc_ops, isp1362_hcd);
 	if (pde == NULL) {
 		pr_warning("%s: Failed to create debug file '%s'\n", __func__, proc_filename);
 		return;
 	}
-
-	pde->proc_fops = &proc_ops;
-	pde->data = isp1362_hcd;
 	isp1362_hcd->pde = pde;
 }
 
@@ -2646,7 +2642,7 @@ static struct hc_driver isp1362_hc_driver = {
 
 /*-------------------------------------------------------------------------*/
 
-static int __devexit isp1362_remove(struct platform_device *pdev)
+static int isp1362_remove(struct platform_device *pdev)
 {
 	struct usb_hcd *hcd = platform_get_drvdata(pdev);
 	struct isp1362_hcd *isp1362_hcd = hcd_to_isp1362_hcd(hcd);
@@ -2681,7 +2677,7 @@ static int __devexit isp1362_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static int __devinit isp1362_probe(struct platform_device *pdev)
+static int isp1362_probe(struct platform_device *pdev)
 {
 	struct usb_hcd *hcd;
 	struct isp1362_hcd *isp1362_hcd;
@@ -2692,6 +2688,9 @@ static int __devinit isp1362_probe(struct platform_device *pdev)
 	int retval = 0;
 	struct resource *irq_res;
 	unsigned int irq_flags = 0;
+
+	if (usb_disabled())
+		return -ENODEV;
 
 	/* basic sanity checks first.  board-specific init logic should
 	 * have initialized this the three resources and probably board
@@ -2854,7 +2853,7 @@ static int isp1362_resume(struct platform_device *pdev)
 
 static struct platform_driver isp1362_driver = {
 	.probe = isp1362_probe,
-	.remove = __devexit_p(isp1362_remove),
+	.remove = isp1362_remove,
 
 	.suspend = isp1362_suspend,
 	.resume = isp1362_resume,
@@ -2864,19 +2863,4 @@ static struct platform_driver isp1362_driver = {
 	},
 };
 
-/*-------------------------------------------------------------------------*/
-
-static int __init isp1362_init(void)
-{
-	if (usb_disabled())
-		return -ENODEV;
-	pr_info("driver %s, %s\n", hcd_name, DRIVER_VERSION);
-	return platform_driver_register(&isp1362_driver);
-}
-module_init(isp1362_init);
-
-static void __exit isp1362_cleanup(void)
-{
-	platform_driver_unregister(&isp1362_driver);
-}
-module_exit(isp1362_cleanup);
+module_platform_driver(isp1362_driver);

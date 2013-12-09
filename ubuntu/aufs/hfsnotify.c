@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,19 +26,22 @@
 static const __u32 AuHfsnMask = (FS_MOVED_TO | FS_MOVED_FROM | FS_DELETE
 				 | FS_CREATE | FS_EVENT_ON_CHILD);
 static DECLARE_WAIT_QUEUE_HEAD(au_hfsn_wq);
+static __cacheline_aligned_in_smp atomic64_t au_hfsn_ifree = ATOMIC64_INIT(0);
 
 static void au_hfsn_free_mark(struct fsnotify_mark *mark)
 {
 	struct au_hnotify *hn = container_of(mark, struct au_hnotify,
 					     hn_mark);
 	AuDbg("here\n");
-	hn->hn_mark_dead = 1;
-	smp_mb();
-	wake_up_all(&au_hfsn_wq);
+	au_cache_free_hnotify(hn);
+	smp_mb__before_atomic_dec();
+	if (atomic64_dec_and_test(&au_hfsn_ifree))
+		wake_up(&au_hfsn_wq);
 }
 
 static int au_hfsn_alloc(struct au_hinode *hinode)
 {
+	int err;
 	struct au_hnotify *hn;
 	struct super_block *sb;
 	struct au_branch *br;
@@ -49,7 +52,8 @@ static int au_hfsn_alloc(struct au_hinode *hinode)
 	sb = hn->hn_aufs_inode->i_sb;
 	bindex = au_br_index(sb, hinode->hi_id);
 	br = au_sbr(sb, bindex);
-	hn->hn_mark_dead = 0;
+	AuDebugOn(!br->br_hfsn);
+
 	mark = &hn->hn_mark;
 	fsnotify_init_mark(mark, au_hfsn_free_mark);
 	mark->mask = AuHfsnMask;
@@ -57,22 +61,33 @@ static int au_hfsn_alloc(struct au_hinode *hinode)
 	 * by udba rename or rmdir, aufs assign a new inode to the known
 	 * h_inode, so specify 1 to allow dups.
 	 */
-	return fsnotify_add_mark(mark, br->br_hfsn_group, hinode->hi_inode,
+	err = fsnotify_add_mark(mark, br->br_hfsn->hfsn_group, hinode->hi_inode,
 				 /*mnt*/NULL, /*allow_dups*/1);
-}
-
-static void au_hfsn_free(struct au_hinode *hinode)
-{
-	struct au_hnotify *hn;
-	struct fsnotify_mark *mark;
-
-	hn = hinode->hi_notify;
-	mark = &hn->hn_mark;
-	fsnotify_destroy_mark(mark);
+	/* even if err */
 	fsnotify_put_mark(mark);
 
-	/* TODO: bad approach */
-	wait_event(au_hfsn_wq, hn->hn_mark_dead);
+	return err;
+}
+
+static int au_hfsn_free(struct au_hinode *hinode, struct au_hnotify *hn)
+{
+	struct fsnotify_mark *mark;
+	unsigned long long ull;
+	struct fsnotify_group *group;
+
+	ull = atomic64_inc_return(&au_hfsn_ifree);
+	BUG_ON(!ull);
+
+	mark = &hn->hn_mark;
+	spin_lock(&mark->lock);
+	group = mark->group;
+	fsnotify_get_group(group);
+	spin_unlock(&mark->lock);
+	fsnotify_destroy_mark(mark, group);
+	fsnotify_put_group(group);
+
+	/* free hn by myself */
+	return 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -101,8 +116,11 @@ static void au_hfsn_ctl(struct au_hinode *hinode, int do_set)
 static char *au_hfsn_name(u32 mask)
 {
 #ifdef CONFIG_AUFS_DEBUG
-#define test_ret(flag)	if (mask & flag) \
-				return #flag;
+#define test_ret(flag)				\
+	do {					\
+		if (mask & flag)		\
+			return #flag;		\
+	} while (0)
 	test_ret(FS_ACCESS);
 	test_ret(FS_MODIFY);
 	test_ret(FS_ATTRIB);
@@ -131,6 +149,14 @@ static char *au_hfsn_name(u32 mask)
 
 /* ---------------------------------------------------------------------- */
 
+static void au_hfsn_free_group(struct fsnotify_group *group)
+{
+	struct au_br_hfsnotify *hfsn = group->private;
+
+	AuDbg("here\n");
+	kfree(hfsn);
+}
+
 static int au_hfsn_handle_event(struct fsnotify_group *group,
 				struct fsnotify_mark *inode_mark,
 				struct fsnotify_mark *vfsmount_mark,
@@ -140,10 +166,7 @@ static int au_hfsn_handle_event(struct fsnotify_group *group,
 	struct au_hnotify *hnotify;
 	struct inode *h_dir, *h_inode;
 	__u32 mask;
-	struct qstr h_child_qstr = {
-		.name	= event->file_name,
-		.len	= event->name_len
-	};
+	struct qstr h_child_qstr = QSTR_INIT(event->file_name, event->name_len);
 
 	AuDebugOn(event->data_type != FSNOTIFY_EVENT_INODE);
 
@@ -191,22 +214,54 @@ static bool au_hfsn_should_send_event(struct fsnotify_group *group,
 
 static struct fsnotify_ops au_hfsn_ops = {
 	.should_send_event	= au_hfsn_should_send_event,
-	.handle_event		= au_hfsn_handle_event
+	.handle_event		= au_hfsn_handle_event,
+	.free_group_priv	= au_hfsn_free_group
 };
 
 /* ---------------------------------------------------------------------- */
 
 static void au_hfsn_fin_br(struct au_branch *br)
 {
-	if (br->br_hfsn_group)
-		fsnotify_put_group(br->br_hfsn_group);
+	struct au_br_hfsnotify *hfsn;
+
+	hfsn = br->br_hfsn;
+	if (hfsn)
+		fsnotify_put_group(hfsn->hfsn_group);
 }
 
 static int au_hfsn_init_br(struct au_branch *br, int perm)
 {
-	br->br_hfsn_group = NULL;
-	br->br_hfsn_ops = au_hfsn_ops;
-	return 0;
+	int err;
+	struct fsnotify_group *group;
+	struct au_br_hfsnotify *hfsn;
+
+	err = 0;
+	br->br_hfsn = NULL;
+	if (!au_br_hnotifyable(perm))
+		goto out;
+
+	err = -ENOMEM;
+	hfsn = kmalloc(sizeof(*hfsn), GFP_NOFS);
+	if (unlikely(!hfsn))
+		goto out;
+
+	err = 0;
+	group = fsnotify_alloc_group(&au_hfsn_ops);
+	if (IS_ERR(group)) {
+		err = PTR_ERR(group);
+		pr_err("fsnotify_alloc_group() failed, %d\n", err);
+		goto out_hfsn;
+	}
+
+	group->private = hfsn;
+	hfsn->hfsn_group = group;
+	br->br_hfsn = hfsn;
+	goto out; /* success */
+
+out_hfsn:
+	kfree(hfsn);
+out:
+	return err;
 }
 
 static int au_hfsn_reset_br(unsigned int udba, struct au_branch *br, int perm)
@@ -214,32 +269,26 @@ static int au_hfsn_reset_br(unsigned int udba, struct au_branch *br, int perm)
 	int err;
 
 	err = 0;
-	if (udba != AuOpt_UDBA_HNOTIFY
-	    || !au_br_hnotifyable(perm)) {
-		au_hfsn_fin_br(br);
-		br->br_hfsn_group = NULL;
-		goto out;
-	}
+	if (!br->br_hfsn)
+		err = au_hfsn_init_br(br, perm);
 
-	if (br->br_hfsn_group)
-		goto out;
-
-	br->br_hfsn_group = fsnotify_alloc_group(&br->br_hfsn_ops);
-	if (IS_ERR(br->br_hfsn_group)) {
-		err = PTR_ERR(br->br_hfsn_group);
-		pr_err("fsnotify_alloc_group() failed, %d\n", err);
-		br->br_hfsn_group = NULL;
-	}
-
-out:
-	AuTraceErr(err);
 	return err;
+}
+
+/* ---------------------------------------------------------------------- */
+
+static void au_hfsn_fin(void)
+{
+	AuDbg("au_hfsn_ifree %lld\n", (long long)atomic64_read(&au_hfsn_ifree));
+	wait_event(au_hfsn_wq, !atomic64_read(&au_hfsn_ifree));
 }
 
 const struct au_hnotify_op au_hnotify_op = {
 	.ctl		= au_hfsn_ctl,
 	.alloc		= au_hfsn_alloc,
 	.free		= au_hfsn_free,
+
+	.fin		= au_hfsn_fin,
 
 	.reset_br	= au_hfsn_reset_br,
 	.fin_br		= au_hfsn_fin_br,

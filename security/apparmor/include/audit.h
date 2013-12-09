@@ -22,12 +22,10 @@
 #include <linux/slab.h>
 
 #include "file.h"
-
-struct aa_profile;
+#include "label.h"
 
 extern const char *const audit_mode_names[];
 #define AUDIT_MAX_INDEX 5
-
 enum audit_mode {
 	AUDIT_NORMAL,		/* follow normal auditing of accesses */
 	AUDIT_QUIET_DENIED,	/* quiet all denied access messages */
@@ -107,8 +105,47 @@ enum aa_ops {
 };
 
 
-/* define a short hand for apparmor_audit_data portion of common_audit_data */
-#define aad apparmor_audit_data
+struct apparmor_audit_data {
+	int error;
+	int op;
+	int type;
+	struct aa_label *label;
+	const char *name;
+	const char *info;
+	struct task_struct *tsk;
+	union {
+		void *target;
+		struct {
+			long pos;
+			void *target;
+		} iface;
+		struct {
+			int rlim;
+			unsigned long max;
+		} rlim;
+		struct {
+			const char *src_name;
+			const char *type;
+			const char *trans;
+			const char *data;
+			unsigned long flags;
+		} mnt;
+		struct {
+			const char *target;
+			u32 request;
+			u32 denied;
+			kuid_t ouid;
+		} fs;
+		struct {
+			int type, protocol;
+			struct sock *sk;
+		} net;
+	};
+};
+
+/* define a short hand for apparmor_audit_data structure */
+#define aad(SA) (SA)->apparmor_audit_data
+#define aad_set(SA, I) (SA)->apparmor_audit_data = (I)
 
 void aa_audit_msg(int type, struct common_audit_data *sa,
 		  void (*cb) (struct audit_buffer *, void *));

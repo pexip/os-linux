@@ -18,7 +18,6 @@
 #include <linux/delay.h>
 #include <linux/pm.h>
 #include <linux/i2c.h>
-#include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
@@ -770,8 +769,8 @@ static const struct snd_soc_dapm_widget wm8991_dapm_widgets[] = {
 		NULL, 0),
 
 	/* MICBIAS */
-	SND_SOC_DAPM_MICBIAS("MICBIAS", WM8991_POWER_MANAGEMENT_1,
-		WM8991_MICBIAS_ENA_BIT, 0),
+	SND_SOC_DAPM_SUPPLY("MICBIAS", WM8991_POWER_MANAGEMENT_1,
+			    WM8991_MICBIAS_ENA_BIT, 0, NULL, 0),
 
 	SND_SOC_DAPM_OUTPUT("LON"),
 	SND_SOC_DAPM_OUTPUT("LOP"),
@@ -1241,7 +1240,7 @@ static int wm8991_set_bias_level(struct snd_soc_codec *codec,
 	return 0;
 }
 
-static int wm8991_suspend(struct snd_soc_codec *codec, pm_message_t state)
+static int wm8991_suspend(struct snd_soc_codec *codec)
 {
 	wm8991_set_bias_level(codec, SND_SOC_BIAS_OFF);
 	return 0;
@@ -1298,7 +1297,7 @@ static int wm8991_probe(struct snd_soc_codec *codec)
 	snd_soc_write(codec, WM8991_LEFT_OUTPUT_VOLUME, 0x50 | (1<<8));
 	snd_soc_write(codec, WM8991_RIGHT_OUTPUT_VOLUME, 0x50 | (1<<8));
 
-	snd_soc_add_controls(codec, wm8991_snd_controls,
+	snd_soc_add_codec_controls(codec, wm8991_snd_controls,
 			     ARRAY_SIZE(wm8991_snd_controls));
 
 	snd_soc_dapm_new_controls(&codec->dapm, wm8991_dapm_widgets,
@@ -1311,7 +1310,7 @@ static int wm8991_probe(struct snd_soc_codec *codec)
 #define WM8991_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE |\
 			SNDRV_PCM_FMTBIT_S24_LE)
 
-static struct snd_soc_dai_ops wm8991_ops = {
+static const struct snd_soc_dai_ops wm8991_ops = {
 	.hw_params = wm8991_hw_params,
 	.digital_mute = wm8991_mute,
 	.set_fmt = wm8991_set_dai_fmt,
@@ -1358,13 +1357,13 @@ static struct snd_soc_codec_driver soc_codec_dev_wm8991 = {
 	.reg_cache_default = wm8991_reg_defs
 };
 
-static __devinit int wm8991_i2c_probe(struct i2c_client *i2c,
-				      const struct i2c_device_id *id)
+static int wm8991_i2c_probe(struct i2c_client *i2c,
+			    const struct i2c_device_id *id)
 {
 	struct wm8991_priv *wm8991;
 	int ret;
 
-	wm8991 = kzalloc(sizeof *wm8991, GFP_KERNEL);
+	wm8991 = devm_kzalloc(&i2c->dev, sizeof(*wm8991), GFP_KERNEL);
 	if (!wm8991)
 		return -ENOMEM;
 
@@ -1373,15 +1372,14 @@ static __devinit int wm8991_i2c_probe(struct i2c_client *i2c,
 
 	ret = snd_soc_register_codec(&i2c->dev,
 				     &soc_codec_dev_wm8991, &wm8991_dai, 1);
-	if (ret < 0)
-		kfree(wm8991);
+
 	return ret;
 }
 
-static __devexit int wm8991_i2c_remove(struct i2c_client *client)
+static int wm8991_i2c_remove(struct i2c_client *client)
 {
 	snd_soc_unregister_codec(&client->dev);
-	kfree(i2c_get_clientdata(client));
+
 	return 0;
 }
 
@@ -1397,27 +1395,11 @@ static struct i2c_driver wm8991_i2c_driver = {
 		.owner = THIS_MODULE,
 	},
 	.probe = wm8991_i2c_probe,
-	.remove = __devexit_p(wm8991_i2c_remove),
+	.remove = wm8991_i2c_remove,
 	.id_table = wm8991_i2c_id,
 };
 
-static int __init wm8991_modinit(void)
-{
-	int ret;
-	ret = i2c_add_driver(&wm8991_i2c_driver);
-	if (ret != 0) {
-		printk(KERN_ERR "Failed to register WM8991 I2C driver: %d\n",
-		       ret);
-	}
-	return 0;
-}
-module_init(wm8991_modinit);
-
-static void __exit wm8991_exit(void)
-{
-	i2c_del_driver(&wm8991_i2c_driver);
-}
-module_exit(wm8991_exit);
+module_i2c_driver(wm8991_i2c_driver);
 
 MODULE_DESCRIPTION("ASoC WM8991 driver");
 MODULE_AUTHOR("Graeme Gregory");

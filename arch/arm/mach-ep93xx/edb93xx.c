@@ -35,13 +35,14 @@
 #include <sound/cs4271.h>
 
 #include <mach/hardware.h>
-#include <mach/fb.h>
-#include <mach/ep93xx_spi.h>
+#include <linux/platform_data/video-ep93xx.h>
+#include <linux/platform_data/spi-ep93xx.h>
 #include <mach/gpio-ep93xx.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 
+#include "soc.h"
 
 static void __init edb93xx_register_flash(void)
 {
@@ -89,8 +90,8 @@ static void __init edb93xx_register_i2c(void)
 		ep93xx_register_i2c(&edb93xx_i2c_gpio_data,
 				    edb93xxa_i2c_board_info,
 				    ARRAY_SIZE(edb93xxa_i2c_board_info));
-	} else if (machine_is_edb9307() || machine_is_edb9312() ||
-		   machine_is_edb9315()) {
+	} else if (machine_is_edb9302() || machine_is_edb9307()
+		|| machine_is_edb9312() || machine_is_edb9315()) {
 		ep93xx_register_i2c(&edb93xx_i2c_gpio_data,
 				    edb93xx_i2c_board_info,
 				    ARRAY_SIZE(edb93xx_i2c_board_info));
@@ -231,6 +232,29 @@ static void __init edb93xx_register_fb(void)
 }
 
 
+/*************************************************************************
+ * EDB93xx IDE
+ *************************************************************************/
+static int __init edb93xx_has_ide(void)
+{
+	/*
+	 * Although EDB9312 and EDB9315 do have IDE capability, they have
+	 * INTRQ line wired as pull-up, which makes using IDE interface
+	 * problematic.
+	 */
+	return machine_is_edb9312() || machine_is_edb9315() ||
+	       machine_is_edb9315a();
+}
+
+static void __init edb93xx_register_ide(void)
+{
+	if (!edb93xx_has_ide())
+		return;
+
+	ep93xx_register_ide();
+}
+
+
 static void __init edb93xx_init_machine(void)
 {
 	ep93xx_init_devices();
@@ -241,6 +265,7 @@ static void __init edb93xx_init_machine(void)
 	edb93xx_register_i2s();
 	edb93xx_register_pwm();
 	edb93xx_register_fb();
+	edb93xx_register_ide();
 }
 
 
@@ -250,8 +275,10 @@ MACHINE_START(EDB9301, "Cirrus Logic EDB9301 Evaluation Board")
 	.atag_offset	= 0x100,
 	.map_io		= ep93xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.timer		= &ep93xx_timer,
+	.init_time	= ep93xx_timer_init,
 	.init_machine	= edb93xx_init_machine,
+	.init_late	= ep93xx_init_late,
+	.restart	= ep93xx_restart,
 MACHINE_END
 #endif
 
@@ -261,8 +288,10 @@ MACHINE_START(EDB9302, "Cirrus Logic EDB9302 Evaluation Board")
 	.atag_offset	= 0x100,
 	.map_io		= ep93xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.timer		= &ep93xx_timer,
+	.init_time	= ep93xx_timer_init,
 	.init_machine	= edb93xx_init_machine,
+	.init_late	= ep93xx_init_late,
+	.restart	= ep93xx_restart,
 MACHINE_END
 #endif
 
@@ -272,8 +301,10 @@ MACHINE_START(EDB9302A, "Cirrus Logic EDB9302A Evaluation Board")
 	.atag_offset	= 0x100,
 	.map_io		= ep93xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.timer		= &ep93xx_timer,
+	.init_time	= ep93xx_timer_init,
 	.init_machine	= edb93xx_init_machine,
+	.init_late	= ep93xx_init_late,
+	.restart	= ep93xx_restart,
 MACHINE_END
 #endif
 
@@ -283,8 +314,10 @@ MACHINE_START(EDB9307, "Cirrus Logic EDB9307 Evaluation Board")
 	.atag_offset	= 0x100,
 	.map_io		= ep93xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.timer		= &ep93xx_timer,
+	.init_time	= ep93xx_timer_init,
 	.init_machine	= edb93xx_init_machine,
+	.init_late	= ep93xx_init_late,
+	.restart	= ep93xx_restart,
 MACHINE_END
 #endif
 
@@ -294,8 +327,10 @@ MACHINE_START(EDB9307A, "Cirrus Logic EDB9307A Evaluation Board")
 	.atag_offset	= 0x100,
 	.map_io		= ep93xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.timer		= &ep93xx_timer,
+	.init_time	= ep93xx_timer_init,
 	.init_machine	= edb93xx_init_machine,
+	.init_late	= ep93xx_init_late,
+	.restart	= ep93xx_restart,
 MACHINE_END
 #endif
 
@@ -305,8 +340,10 @@ MACHINE_START(EDB9312, "Cirrus Logic EDB9312 Evaluation Board")
 	.atag_offset	= 0x100,
 	.map_io		= ep93xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.timer		= &ep93xx_timer,
+	.init_time	= ep93xx_timer_init,
 	.init_machine	= edb93xx_init_machine,
+	.init_late	= ep93xx_init_late,
+	.restart	= ep93xx_restart,
 MACHINE_END
 #endif
 
@@ -316,8 +353,10 @@ MACHINE_START(EDB9315, "Cirrus Logic EDB9315 Evaluation Board")
 	.atag_offset	= 0x100,
 	.map_io		= ep93xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.timer		= &ep93xx_timer,
+	.init_time	= ep93xx_timer_init,
 	.init_machine	= edb93xx_init_machine,
+	.init_late	= ep93xx_init_late,
+	.restart	= ep93xx_restart,
 MACHINE_END
 #endif
 
@@ -327,7 +366,9 @@ MACHINE_START(EDB9315A, "Cirrus Logic EDB9315A Evaluation Board")
 	.atag_offset	= 0x100,
 	.map_io		= ep93xx_map_io,
 	.init_irq	= ep93xx_init_irq,
-	.timer		= &ep93xx_timer,
+	.init_time	= ep93xx_timer_init,
 	.init_machine	= edb93xx_init_machine,
+	.init_late	= ep93xx_init_late,
+	.restart	= ep93xx_restart,
 MACHINE_END
 #endif

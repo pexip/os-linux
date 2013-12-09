@@ -14,6 +14,7 @@
 
 #include <asm/msr.h>
 #include <asm/processor.h>
+#include <asm/cpu_device_id.h>
 
 static struct cpufreq_driver	longrun_driver;
 
@@ -32,7 +33,7 @@ static unsigned int longrun_low_freq, longrun_high_freq;
  * Reads the current LongRun policy by access to MSR_TMTA_LONGRUN_FLAGS
  * and MSR_TMTA_LONGRUN_CTRL
  */
-static void __cpuinit longrun_get_policy(struct cpufreq_policy *policy)
+static void longrun_get_policy(struct cpufreq_policy *policy)
 {
 	u32 msr_lo, msr_hi;
 
@@ -162,7 +163,7 @@ static unsigned int longrun_get(unsigned int cpu)
  * TMTA rules:
  * performance_pctg = (target_freq - low_freq)/(high_freq - low_freq)
  */
-static int __cpuinit longrun_determine_freqs(unsigned int *low_freq,
+static int longrun_determine_freqs(unsigned int *low_freq,
 						      unsigned int *high_freq)
 {
 	u32 msr_lo, msr_hi;
@@ -255,7 +256,7 @@ static int __cpuinit longrun_determine_freqs(unsigned int *low_freq,
 }
 
 
-static int __cpuinit longrun_cpu_init(struct cpufreq_policy *policy)
+static int longrun_cpu_init(struct cpufreq_policy *policy)
 {
 	int result = 0;
 
@@ -288,6 +289,12 @@ static struct cpufreq_driver longrun_driver = {
 	.owner		= THIS_MODULE,
 };
 
+static const struct x86_cpu_id longrun_ids[] = {
+	{ X86_VENDOR_TRANSMETA, X86_FAMILY_ANY, X86_MODEL_ANY,
+	  X86_FEATURE_LONGRUN },
+	{}
+};
+MODULE_DEVICE_TABLE(x86cpu, longrun_ids);
 
 /**
  * longrun_init - initializes the Transmeta Crusoe LongRun CPUFreq driver
@@ -296,12 +303,8 @@ static struct cpufreq_driver longrun_driver = {
  */
 static int __init longrun_init(void)
 {
-	struct cpuinfo_x86 *c = &cpu_data(0);
-
-	if (c->x86_vendor != X86_VENDOR_TRANSMETA ||
-	    !cpu_has(c, X86_FEATURE_LONGRUN))
+	if (!x86_match_cpu(longrun_ids))
 		return -ENODEV;
-
 	return cpufreq_register_driver(&longrun_driver);
 }
 

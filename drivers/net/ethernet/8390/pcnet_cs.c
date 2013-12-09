@@ -49,7 +49,6 @@
 #include <pcmcia/cisreg.h>
 
 #include <asm/io.h>
-#include <asm/system.h>
 #include <asm/byteorder.h>
 #include <asm/uaccess.h>
 
@@ -326,7 +325,7 @@ static hw_info_t *get_prom(struct pcmcia_device *link)
     u_char prom[32];
     int i, j;
 
-    /* This is lifted straight from drivers/net/ne.c */
+    /* This is lifted straight from drivers/net/ethernet/8390/ne.c */
     struct {
 	u_char value, offset;
     } program_seq[] = {
@@ -1695,16 +1694,4 @@ static struct pcmcia_driver pcnet_driver = {
 	.suspend	= pcnet_suspend,
 	.resume		= pcnet_resume,
 };
-
-static int __init init_pcnet_cs(void)
-{
-    return pcmcia_register_driver(&pcnet_driver);
-}
-
-static void __exit exit_pcnet_cs(void)
-{
-    pcmcia_unregister_driver(&pcnet_driver);
-}
-
-module_init(init_pcnet_cs);
-module_exit(exit_pcnet_cs);
+module_pcmcia_driver(pcnet_driver);

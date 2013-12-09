@@ -35,11 +35,11 @@
 #include <linux/input/eeti_ts.h>
 #include <linux/slab.h>
 
-static int flip_x;
+static bool flip_x;
 module_param(flip_x, bool, 0644);
 MODULE_PARM_DESC(flip_x, "flip x coordinate");
 
-static int flip_y;
+static bool flip_y;
 module_param(flip_y, bool, 0644);
 MODULE_PARM_DESC(flip_y, "flip y coordinate");
 
@@ -154,7 +154,7 @@ static void eeti_ts_close(struct input_dev *dev)
 	eeti_ts_stop(priv);
 }
 
-static int __devinit eeti_ts_probe(struct i2c_client *client,
+static int eeti_ts_probe(struct i2c_client *client,
 				   const struct i2c_device_id *idp)
 {
 	struct eeti_ts_platform_data *pdata = client->dev.platform_data;
@@ -206,8 +206,7 @@ static int __devinit eeti_ts_probe(struct i2c_client *client,
 	if (err < 0)
 		goto err1;
 
-	if (pdata)
-		priv->irq_active_high = pdata->irq_active_high;
+	priv->irq_active_high = pdata->irq_active_high;
 
 	irq_flags = priv->irq_active_high ?
 		IRQF_TRIGGER_RISING : IRQF_TRIGGER_FALLING;
@@ -248,7 +247,7 @@ err0:
 	return err;
 }
 
-static int __devexit eeti_ts_remove(struct i2c_client *client)
+static int eeti_ts_remove(struct i2c_client *client)
 {
 	struct eeti_ts_priv *priv = i2c_get_clientdata(client);
 
@@ -321,24 +320,12 @@ static struct i2c_driver eeti_ts_driver = {
 #endif
 	},
 	.probe = eeti_ts_probe,
-	.remove = __devexit_p(eeti_ts_remove),
+	.remove = eeti_ts_remove,
 	.id_table = eeti_ts_id,
 };
 
-static int __init eeti_ts_init(void)
-{
-	return i2c_add_driver(&eeti_ts_driver);
-}
-
-static void __exit eeti_ts_exit(void)
-{
-	i2c_del_driver(&eeti_ts_driver);
-}
+module_i2c_driver(eeti_ts_driver);
 
 MODULE_DESCRIPTION("EETI Touchscreen driver");
 MODULE_AUTHOR("Daniel Mack <daniel@caiaq.de>");
 MODULE_LICENSE("GPL");
-
-module_init(eeti_ts_init);
-module_exit(eeti_ts_exit);
-

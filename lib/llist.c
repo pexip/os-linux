@@ -23,11 +23,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include <linux/kernel.h>
-#include <linux/module.h>
+#include <linux/export.h>
 #include <linux/interrupt.h>
 #include <linux/llist.h>
 
-#include <asm/system.h>
 
 /**
  * llist_add_batch - add several linked entries in batch
@@ -40,18 +39,13 @@
 bool llist_add_batch(struct llist_node *new_first, struct llist_node *new_last,
 		     struct llist_head *head)
 {
-	struct llist_node *entry, *old_entry;
+	struct llist_node *first;
 
-	entry = head->first;
-	for (;;) {
-		old_entry = entry;
-		new_last->next = entry;
-		entry = cmpxchg(&head->first, old_entry, new_first);
-		if (entry == old_entry)
-			break;
-	}
+	do {
+		new_last->next = first = ACCESS_ONCE(head->first);
+	} while (cmpxchg(&head->first, first, new_first) != first);
 
-	return old_entry == NULL;
+	return !first;
 }
 EXPORT_SYMBOL_GPL(llist_add_batch);
 

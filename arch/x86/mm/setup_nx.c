@@ -1,4 +1,3 @@
-#include <linux/sched.h>
 #include <linux/spinlock.h>
 #include <linux/errno.h>
 #include <linux/init.h>
@@ -6,11 +5,7 @@
 #include <asm/pgtable.h>
 #include <asm/proto.h>
 
-#ifdef CONFIG_X86_32
-int disable_nx; /* referenced by load_elf_binary() */
-#else
-int disable_nx __cpuinitdata;
-#endif
+static int disable_nx;
 
 /*
  * noexec = on|off
@@ -34,7 +29,7 @@ static int __init noexec_setup(char *str)
 }
 early_param("noexec", noexec_setup);
 
-void __cpuinit x86_configure_nx(void)
+void x86_configure_nx(void)
 {
 	if (cpu_has_nx && !disable_nx)
 		__supported_pte_mask |= _PAGE_NX;
@@ -44,12 +39,9 @@ void __cpuinit x86_configure_nx(void)
 
 void __init x86_report_nx(void)
 {
-	int nx_emulation = 0;
-
 	if (!cpu_has_nx) {
 		printk(KERN_NOTICE "Notice: NX (Execute Disable) protection "
 		       "missing in CPU!\n");
-		nx_emulation = 1;
 	} else {
 #if defined(CONFIG_X86_64) || defined(CONFIG_X86_PAE)
 		if (disable_nx) {
@@ -62,20 +54,7 @@ void __init x86_report_nx(void)
 #else
 		/* 32bit non-PAE kernel, NX cannot be used */
 		printk(KERN_NOTICE "Notice: NX (Execute Disable) protection "
-		       "cannot be enabled in hardware: non-PAE kernel!\n");
-		nx_emulation = 1;
-#endif
-	}
-
-	if (nx_emulation) {
-#ifdef CONFIG_X86_32
-		if (!disable_nx)
-			printk(KERN_INFO "NX (Execute Disable) protection: "
-			       "approximated by x86 segment limits\n");
-		else
-			printk(KERN_INFO "NX (Execute Disable) protection: "
-			       "approximation disabled by kernel command "
-			       "line option\n");
+		       "cannot be enabled: non-PAE kernel!\n");
 #endif
 	}
 }

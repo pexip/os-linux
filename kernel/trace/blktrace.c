@@ -72,7 +72,7 @@ static void trace_note(struct blk_trace *bt, pid_t pid, int action,
 	bool blk_tracer = blk_tracer_enabled;
 
 	if (blk_tracer) {
-		buffer = blk_tr->buffer;
+		buffer = blk_tr->trace_buffer.buffer;
 		pc = preempt_count();
 		event = trace_buffer_lock_reserve(buffer, TRACE_BLK,
 						  sizeof(*t) + len,
@@ -147,7 +147,7 @@ void __trace_note_message(struct blk_trace *bt, const char *fmt, ...)
 		return;
 
 	local_irq_save(flags);
-	buf = per_cpu_ptr(bt->msg_data, smp_processor_id());
+	buf = this_cpu_ptr(bt->msg_data);
 	va_start(args, fmt);
 	n = vscnprintf(buf, BLK_TN_MAX_MSG, fmt, args);
 	va_end(args);
@@ -218,7 +218,7 @@ static void __blk_add_trace(struct blk_trace *bt, sector_t sector, int bytes,
 	if (blk_tracer) {
 		tracing_record_cmdline(current);
 
-		buffer = blk_tr->buffer;
+		buffer = blk_tr->trace_buffer.buffer;
 		pc = preempt_count();
 		event = trace_buffer_lock_reserve(buffer, TRACE_BLK,
 						  sizeof(*t) + pdu_len,
@@ -311,13 +311,6 @@ int blk_trace_remove(struct request_queue *q)
 }
 EXPORT_SYMBOL_GPL(blk_trace_remove);
 
-static int blk_dropped_open(struct inode *inode, struct file *filp)
-{
-	filp->private_data = inode->i_private;
-
-	return 0;
-}
-
 static ssize_t blk_dropped_read(struct file *filp, char __user *buffer,
 				size_t count, loff_t *ppos)
 {
@@ -331,17 +324,10 @@ static ssize_t blk_dropped_read(struct file *filp, char __user *buffer,
 
 static const struct file_operations blk_dropped_fops = {
 	.owner =	THIS_MODULE,
-	.open =		blk_dropped_open,
+	.open =		simple_open,
 	.read =		blk_dropped_read,
 	.llseek =	default_llseek,
 };
-
-static int blk_msg_open(struct inode *inode, struct file *filp)
-{
-	filp->private_data = inode->i_private;
-
-	return 0;
-}
 
 static ssize_t blk_msg_write(struct file *filp, const char __user *buffer,
 				size_t count, loff_t *ppos)
@@ -371,7 +357,7 @@ static ssize_t blk_msg_write(struct file *filp, const char __user *buffer,
 
 static const struct file_operations blk_msg_fops = {
 	.owner =	THIS_MODULE,
-	.open =		blk_msg_open,
+	.open =		simple_open,
 	.write =	blk_msg_write,
 	.llseek =	noop_llseek,
 };
@@ -402,7 +388,7 @@ static int blk_remove_buf_file_callback(struct dentry *dentry)
 
 static struct dentry *blk_create_buf_file_callback(const char *filename,
 						   struct dentry *parent,
-						   int mode,
+						   umode_t mode,
 						   struct rchan_buf *buf,
 						   int *is_global)
 {
@@ -797,6 +783,7 @@ static void blk_add_trace_bio_complete(void *ignore,
 
 static void blk_add_trace_bio_backmerge(void *ignore,
 					struct request_queue *q,
+					struct request *rq,
 					struct bio *bio)
 {
 	blk_add_trace_bio(q, bio, BLK_TA_BACKMERGE, 0);
@@ -804,6 +791,7 @@ static void blk_add_trace_bio_backmerge(void *ignore,
 
 static void blk_add_trace_bio_frontmerge(void *ignore,
 					 struct request_queue *q,
+					 struct request *rq,
 					 struct bio *bio)
 {
 	blk_add_trace_bio(q, bio, BLK_TA_FRONTMERGE, 0);
@@ -1820,6 +1808,7 @@ void blk_fill_rwbs(char *rwbs, u32 rw, int bytes)
 
 	rwbs[i] = '\0';
 }
+EXPORT_SYMBOL_GPL(blk_fill_rwbs);
 
 #endif /* CONFIG_EVENT_TRACING */
 

@@ -396,7 +396,7 @@ static irqreturn_t bfin_spi_pio_irq_handler(int irq, void *dev_id)
 		/* last read */
 		if (drv_data->rx) {
 			dev_dbg(&drv_data->pdev->dev, "last read\n");
-			if (n_bytes % 2) {
+			if (!(n_bytes % 2)) {
 				u16 *buf = (u16 *)drv_data->rx;
 				for (loop = 0; loop < n_bytes / 2; loop++)
 					*buf++ = bfin_read(&drv_data->regs->rdbr);
@@ -424,7 +424,7 @@ static irqreturn_t bfin_spi_pio_irq_handler(int irq, void *dev_id)
 	if (drv_data->rx && drv_data->tx) {
 		/* duplex */
 		dev_dbg(&drv_data->pdev->dev, "duplex: write_TDBR\n");
-		if (n_bytes % 2) {
+		if (!(n_bytes % 2)) {
 			u16 *buf = (u16 *)drv_data->rx;
 			u16 *buf2 = (u16 *)drv_data->tx;
 			for (loop = 0; loop < n_bytes / 2; loop++) {
@@ -442,7 +442,7 @@ static irqreturn_t bfin_spi_pio_irq_handler(int irq, void *dev_id)
 	} else if (drv_data->rx) {
 		/* read */
 		dev_dbg(&drv_data->pdev->dev, "read: write_TDBR\n");
-		if (n_bytes % 2) {
+		if (!(n_bytes % 2)) {
 			u16 *buf = (u16 *)drv_data->rx;
 			for (loop = 0; loop < n_bytes / 2; loop++) {
 				*buf++ = bfin_read(&drv_data->regs->rdbr);
@@ -458,7 +458,7 @@ static irqreturn_t bfin_spi_pio_irq_handler(int irq, void *dev_id)
 	} else if (drv_data->tx) {
 		/* write */
 		dev_dbg(&drv_data->pdev->dev, "write: write_TDBR\n");
-		if (n_bytes % 2) {
+		if (!(n_bytes % 2)) {
 			u16 *buf = (u16 *)drv_data->tx;
 			for (loop = 0; loop < n_bytes / 2; loop++) {
 				bfin_read(&drv_data->regs->rdbr);
@@ -587,6 +587,7 @@ static void bfin_spi_pump_transfers(unsigned long data)
 	if (message->state == DONE_STATE) {
 		dev_dbg(&drv_data->pdev->dev, "transfer: all done!\n");
 		message->status = 0;
+		bfin_spi_flush(drv_data);
 		bfin_spi_giveback(drv_data);
 		return;
 	}
@@ -641,23 +642,17 @@ static void bfin_spi_pump_transfers(unsigned long data)
 	drv_data->cs_change = transfer->cs_change;
 
 	/* Bits per word setup */
-	bits_per_word = transfer->bits_per_word ? :
-		message->spi->bits_per_word ? : 8;
-	if (bits_per_word % 16 == 0) {
+	bits_per_word = transfer->bits_per_word;
+	if (bits_per_word == 16) {
 		drv_data->n_bytes = bits_per_word/8;
 		drv_data->len = (transfer->len) >> 1;
 		cr_width = BIT_CTL_WORDSIZE;
 		drv_data->ops = &bfin_bfin_spi_transfer_ops_u16;
-	} else if (bits_per_word % 8 == 0) {
+	} else if (bits_per_word == 8) {
 		drv_data->n_bytes = bits_per_word/8;
 		drv_data->len = transfer->len;
 		cr_width = 0;
 		drv_data->ops = &bfin_bfin_spi_transfer_ops_u8;
-	} else {
-		dev_err(&drv_data->pdev->dev, "transfer: unsupported bits_per_word\n");
-		message->status = -EINVAL;
-		bfin_spi_giveback(drv_data);
-		return;
 	}
 	cr = bfin_read(&drv_data->regs->ctl) & ~(BIT_CTL_TIMOD | BIT_CTL_WORDSIZE);
 	cr |= cr_width;
@@ -808,13 +803,13 @@ static void bfin_spi_pump_transfers(unsigned long data)
 			bfin_write(&drv_data->regs->tdbr, chip->idle_tx_val);
 		else {
 			int loop;
-			if (bits_per_word % 16 == 0) {
+			if (bits_per_word == 16) {
 				u16 *buf = (u16 *)drv_data->tx;
 				for (loop = 0; loop < bits_per_word / 16;
 						loop++) {
 					bfin_write(&drv_data->regs->tdbr, *buf++);
 				}
-			} else if (bits_per_word % 8 == 0) {
+			} else if (bits_per_word == 8) {
 				u8 *buf = (u8 *)drv_data->tx;
 				for (loop = 0; loop < bits_per_word / 8; loop++)
 					bfin_write(&drv_data->regs->tdbr, *buf++);
@@ -870,8 +865,10 @@ static void bfin_spi_pump_transfers(unsigned long data)
 		message->actual_length += drv_data->len_in_bytes;
 		/* Move to next transfer of this msg */
 		message->state = bfin_spi_next_transfer(drv_data);
-		if (drv_data->cs_change)
+		if (drv_data->cs_change && message->state != DONE_STATE) {
+			bfin_spi_flush(drv_data);
 			bfin_spi_cs_deactive(drv_data, chip);
+		}
 	}
 
 	/* Schedule next transfer tasklet */
@@ -1026,16 +1023,9 @@ static int bfin_spi_setup(struct spi_device *spi)
 		chip->cs_chg_udelay = chip_info->cs_chg_udelay;
 		chip->idle_tx_val = chip_info->idle_tx_val;
 		chip->pio_interrupt = chip_info->pio_interrupt;
-		spi->bits_per_word = chip_info->bits_per_word;
 	} else {
 		/* force a default base state */
 		chip->ctl_reg &= bfin_ctl_reg;
-	}
-
-	if (spi->bits_per_word % 8) {
-		dev_err(&spi->dev, "%d bits_per_word is not supported\n",
-				spi->bits_per_word);
-		goto error;
 	}
 
 	/* translate common spi framework into our register */
@@ -1272,7 +1262,7 @@ static int bfin_spi_destroy_queue(struct bfin_spi_master_data *drv_data)
 	return 0;
 }
 
-static int __init bfin_spi_probe(struct platform_device *pdev)
+static int bfin_spi_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct bfin5xx_spi_master *platform_info;
@@ -1298,7 +1288,7 @@ static int __init bfin_spi_probe(struct platform_device *pdev)
 
 	/* the spi->mode bits supported by this driver: */
 	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_LSB_FIRST;
-
+	master->bits_per_word_mask = SPI_BPW_MASK(8) | SPI_BPW_MASK(16);
 	master->bus_num = pdev->id;
 	master->num_chipselect = platform_info->num_chipselect;
 	master->cleanup = bfin_spi_cleanup;
@@ -1385,7 +1375,7 @@ out_error_get_res:
 }
 
 /* stop hardware and remove the driver */
-static int __devexit bfin_spi_remove(struct platform_device *pdev)
+static int bfin_spi_remove(struct platform_device *pdev)
 {
 	struct bfin_spi_master_data *drv_data = platform_get_drvdata(pdev);
 	int status = 0;
@@ -1416,9 +1406,6 @@ static int __devexit bfin_spi_remove(struct platform_device *pdev)
 	spi_unregister_master(drv_data->master);
 
 	peripheral_free_list(drv_data->pin_req);
-
-	/* Prevent double remove */
-	platform_set_drvdata(pdev, NULL);
 
 	return 0;
 }
@@ -1475,7 +1462,7 @@ static struct platform_driver bfin_spi_driver = {
 	},
 	.suspend	= bfin_spi_suspend,
 	.resume		= bfin_spi_resume,
-	.remove		= __devexit_p(bfin_spi_remove),
+	.remove		= bfin_spi_remove,
 };
 
 static int __init bfin_spi_init(void)

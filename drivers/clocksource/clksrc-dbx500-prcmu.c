@@ -10,15 +10,11 @@
  * DBx500-PRCMU Timer
  * The PRCMU has 5 timers which are available in a always-on
  * power domain.  We use the Timer 4 for our always-on clock
- * source on DB8500 and Timer 3 on DB5500.
+ * source on DB8500.
  */
 #include <linux/clockchips.h>
 #include <linux/clksrc-dbx500-prcmu.h>
-
-#include <asm/sched_clock.h>
-
-#include <mach/setup.h>
-#include <mach/hardware.h>
+#include <linux/sched_clock.h>
 
 #define RATE_32K		32768
 
@@ -33,15 +29,14 @@
 
 static void __iomem *clksrc_dbx500_timer_base;
 
-static cycle_t clksrc_dbx500_prcmu_read(struct clocksource *cs)
+static cycle_t notrace clksrc_dbx500_prcmu_read(struct clocksource *cs)
 {
+	void __iomem *base = clksrc_dbx500_timer_base;
 	u32 count, count2;
 
 	do {
-		count = readl(clksrc_dbx500_timer_base +
-			      PRCMU_TIMER_DOWNCOUNT);
-		count2 = readl(clksrc_dbx500_timer_base +
-			       PRCMU_TIMER_DOWNCOUNT);
+		count = readl_relaxed(base + PRCMU_TIMER_DOWNCOUNT);
+		count2 = readl_relaxed(base + PRCMU_TIMER_DOWNCOUNT);
 	} while (count2 != count);
 
 	/* Negate because the timer is a decrementing counter */
@@ -52,31 +47,20 @@ static struct clocksource clocksource_dbx500_prcmu = {
 	.name		= "dbx500-prcmu-timer",
 	.rating		= 300,
 	.read		= clksrc_dbx500_prcmu_read,
-	.shift		= 10,
 	.mask		= CLOCKSOURCE_MASK(32),
 	.flags		= CLOCK_SOURCE_IS_CONTINUOUS,
 };
 
 #ifdef CONFIG_CLKSRC_DBX500_PRCMU_SCHED_CLOCK
-static DEFINE_CLOCK_DATA(cd);
 
-unsigned long long notrace sched_clock(void)
+static u32 notrace dbx500_prcmu_sched_clock_read(void)
 {
-	u32 cyc;
-
 	if (unlikely(!clksrc_dbx500_timer_base))
 		return 0;
 
-	cyc = clksrc_dbx500_prcmu_read(&clocksource_dbx500_prcmu);
-
-	return cyc_to_sched_clock(&cd, cyc, (u32)~0);
+	return clksrc_dbx500_prcmu_read(&clocksource_dbx500_prcmu);
 }
 
-static void notrace clksrc_dbx500_prcmu_update_sched_clock(void)
-{
-	u32 cyc = clksrc_dbx500_prcmu_read(&clocksource_dbx500_prcmu);
-	update_sched_clock(&cd, cyc, (u32)~0);
-}
 #endif
 
 void __init clksrc_dbx500_prcmu_init(void __iomem *base)
@@ -97,10 +81,8 @@ void __init clksrc_dbx500_prcmu_init(void __iomem *base)
 		       clksrc_dbx500_timer_base + PRCMU_TIMER_REF);
 	}
 #ifdef CONFIG_CLKSRC_DBX500_PRCMU_SCHED_CLOCK
-	init_sched_clock(&cd, clksrc_dbx500_prcmu_update_sched_clock,
+	setup_sched_clock(dbx500_prcmu_sched_clock_read,
 			 32, RATE_32K);
 #endif
-	clocksource_calc_mult_shift(&clocksource_dbx500_prcmu,
-				    RATE_32K, SCHED_CLOCK_MIN_WRAP);
-	clocksource_register(&clocksource_dbx500_prcmu);
+	clocksource_register_hz(&clocksource_dbx500_prcmu, RATE_32K);
 }

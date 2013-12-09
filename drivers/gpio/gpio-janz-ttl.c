@@ -108,13 +108,13 @@ static void ttl_set_value(struct gpio_chip *gpio, unsigned offset, int value)
 	spin_unlock(&mod->lock);
 }
 
-static void __devinit ttl_write_reg(struct ttl_module *mod, u8 reg, u16 val)
+static void ttl_write_reg(struct ttl_module *mod, u8 reg, u16 val)
 {
 	iowrite16be(reg, &mod->regs->control);
 	iowrite16be(val, &mod->regs->control);
 }
 
-static void __devinit ttl_setup_device(struct ttl_module *mod)
+static void ttl_setup_device(struct ttl_module *mod)
 {
 	/* reset the device to a known state */
 	iowrite16be(0x0000, &mod->regs->control);
@@ -140,7 +140,7 @@ static void __devinit ttl_setup_device(struct ttl_module *mod)
 	ttl_write_reg(mod, MASTER_CONF_CTL, CONF_PAE | CONF_PBE | CONF_PCE);
 }
 
-static int __devinit ttl_probe(struct platform_device *pdev)
+static int ttl_probe(struct platform_device *pdev)
 {
 	struct janz_platform_data *pdata;
 	struct device *dev = &pdev->dev;
@@ -201,8 +201,6 @@ static int __devinit ttl_probe(struct platform_device *pdev)
 		goto out_iounmap_regs;
 	}
 
-	dev_info(&pdev->dev, "module %d: registered GPIO device\n",
-			     pdata->modno);
 	return 0;
 
 out_iounmap_regs:
@@ -213,7 +211,7 @@ out_return:
 	return ret;
 }
 
-static int __devexit ttl_remove(struct platform_device *pdev)
+static int ttl_remove(struct platform_device *pdev)
 {
 	struct ttl_module *mod = platform_get_drvdata(pdev);
 	struct device *dev = &pdev->dev;
@@ -236,23 +234,12 @@ static struct platform_driver ttl_driver = {
 		.owner	= THIS_MODULE,
 	},
 	.probe		= ttl_probe,
-	.remove		= __devexit_p(ttl_remove),
+	.remove		= ttl_remove,
 };
 
-static int __init ttl_init(void)
-{
-	return platform_driver_register(&ttl_driver);
-}
-
-static void __exit ttl_exit(void)
-{
-	platform_driver_unregister(&ttl_driver);
-}
+module_platform_driver(ttl_driver);
 
 MODULE_AUTHOR("Ira W. Snyder <iws@ovro.caltech.edu>");
 MODULE_DESCRIPTION("Janz MODULbus VMOD-TTL Driver");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("platform:janz-ttl");
-
-module_init(ttl_init);
-module_exit(ttl_exit);

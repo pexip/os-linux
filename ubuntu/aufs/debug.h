@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 
 #ifdef __KERNEL__
 
-#include <asm/system.h>
 #include <linux/module.h>
 #include <linux/kallsyms.h>
 #include <linux/sysrq.h>
@@ -64,7 +63,7 @@ AuStubInt0(au_debug_test, void)
 #define AuWarn1(fmt, ...) do { \
 	static unsigned char _c; \
 	if (!_c++) \
-		pr_warning(fmt, ##__VA_ARGS__); \
+		pr_warn(fmt, ##__VA_ARGS__); \
 } while (0)
 
 #define AuErr1(fmt, ...) do { \

@@ -52,7 +52,7 @@ MODULE_SUPPORTED_DEVICE("{{Edirol,UA-101},{Edirol,UA-1000}}");
 
 static int index[SNDRV_CARDS] = SNDRV_DEFAULT_IDX;
 static char *id[SNDRV_CARDS] = SNDRV_DEFAULT_STR;
-static int enable[SNDRV_CARDS] = SNDRV_DEFAULT_ENABLE_PNP;
+static bool enable[SNDRV_CARDS] = SNDRV_DEFAULT_ENABLE_PNP;
 static unsigned int queue_length = 21;
 
 module_param_array(index, int, NULL, 0444);
@@ -1130,8 +1130,7 @@ static int alloc_stream_urbs(struct ua101 *ua, struct ua101_stream *stream,
 			usb_init_urb(&urb->urb);
 			urb->urb.dev = ua->dev;
 			urb->urb.pipe = stream->usb_pipe;
-			urb->urb.transfer_flags = URB_ISO_ASAP |
-					URB_NO_TRANSFER_DMA_MAP;
+			urb->urb.transfer_flags = URB_NO_TRANSFER_DMA_MAP;
 			urb->urb.transfer_buffer = addr;
 			urb->urb.transfer_dma = dma;
 			urb->urb.transfer_buffer_length = max_packet_size;
@@ -1360,7 +1359,7 @@ static void ua101_disconnect(struct usb_interface *interface)
 	snd_card_disconnect(ua->card);
 
 	/* make sure that there are no pending USB requests */
-	__list_for_each(midi, &ua->midi_list)
+	list_for_each(midi, &ua->midi_list)
 		snd_usbmidi_disconnect(midi);
 	abort_alsa_playback(ua);
 	abort_alsa_capture(ua);
@@ -1397,16 +1396,4 @@ static struct usb_driver ua101_driver = {
 #endif
 };
 
-static int __init alsa_card_ua101_init(void)
-{
-	return usb_register(&ua101_driver);
-}
-
-static void __exit alsa_card_ua101_exit(void)
-{
-	usb_deregister(&ua101_driver);
-	mutex_destroy(&devices_mutex);
-}
-
-module_init(alsa_card_ua101_init);
-module_exit(alsa_card_ua101_exit);
+module_usb_driver(ua101_driver);

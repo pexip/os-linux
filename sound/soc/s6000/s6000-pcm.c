@@ -437,7 +437,8 @@ static void s6000_pcm_free(struct snd_pcm *pcm)
 {
 	struct snd_soc_pcm_runtime *runtime = pcm->private_data;
 	struct s6000_pcm_dma_params *params =
-		snd_soc_dai_get_dma_data(runtime->cpu_dai, pcm->streams[0].substream);
+		snd_soc_dai_get_dma_data(runtime->cpu_dai,
+			pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream);
 
 	free_irq(params->irq, pcm);
 	snd_pcm_lib_preallocate_free_for_all(pcm);
@@ -453,7 +454,7 @@ static int s6000_pcm_new(struct snd_soc_pcm_runtime *runtime)
 	int res;
 
 	params = snd_soc_dai_get_dma_data(runtime->cpu_dai,
-			pcm->streams[0].substream);
+			pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream);
 
 	if (!card->dev->dma_mask)
 		card->dev->dma_mask = &s6000_pcm_dmamask;
@@ -501,12 +502,12 @@ static struct snd_soc_platform_driver s6000_soc_platform = {
 	.pcm_free = 	s6000_pcm_free,
 };
 
-static int __devinit s6000_soc_platform_probe(struct platform_device *pdev)
+static int s6000_soc_platform_probe(struct platform_device *pdev)
 {
 	return snd_soc_register_platform(&pdev->dev, &s6000_soc_platform);
 }
 
-static int __devexit s6000_soc_platform_remove(struct platform_device *pdev)
+static int s6000_soc_platform_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_platform(&pdev->dev);
 	return 0;
@@ -519,20 +520,10 @@ static struct platform_driver s6000_pcm_driver = {
 	},
 
 	.probe = s6000_soc_platform_probe,
-	.remove = __devexit_p(s6000_soc_platform_remove),
+	.remove = s6000_soc_platform_remove,
 };
 
-static int __init snd_s6000_pcm_init(void)
-{
-	return platform_driver_register(&s6000_pcm_driver);
-}
-module_init(snd_s6000_pcm_init);
-
-static void __exit snd_s6000_pcm_exit(void)
-{
-	platform_driver_unregister(&s6000_pcm_driver);
-}
-module_exit(snd_s6000_pcm_exit);
+module_platform_driver(s6000_pcm_driver);
 
 MODULE_AUTHOR("Daniel Gloeckner");
 MODULE_DESCRIPTION("Stretch s6000 family PCM DMA module");

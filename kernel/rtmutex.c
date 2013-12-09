@@ -13,6 +13,7 @@
 #include <linux/spinlock.h>
 #include <linux/export.h>
 #include <linux/sched.h>
+#include <linux/sched/rt.h>
 #include <linux/timer.h>
 
 #include "rtmutex_common.h"
@@ -144,6 +145,19 @@ int max_lock_depth = 1024;
 /*
  * Adjust the priority chain. Also used for deadlock detection.
  * Decreases task's usage by one - may thus free the task.
+ *
+ * @task: the task owning the mutex (owner) for which a chain walk is probably
+ *	  needed
+ * @deadlock_detect: do we have to carry out deadlock detection?
+ * @orig_lock: the mutex (can be NULL if we are walking the chain to recheck
+ * 	       things for a task that has just got its priority adjusted, and
+ *	       is waiting on a mutex)
+ * @orig_waiter: rt_mutex_waiter struct for the task that has just donated
+ *		 its priority to the mutex owner (can be NULL in the case
+ *		 depicted above or if the top waiter is gone away and we are
+ *		 actually deboosting the owner)
+ * @top_task: the current top waiter
+ *
  * Returns 0 or -EDEADLK.
  */
 static int rt_mutex_adjust_prio_chain(struct task_struct *task,
@@ -579,7 +593,6 @@ __rt_mutex_slowlock(struct rt_mutex *lock, int state,
 		    struct rt_mutex_waiter *waiter)
 {
 	int ret = 0;
-	int was_disabled;
 
 	for (;;) {
 		/* Try to acquire the lock: */
@@ -602,16 +615,9 @@ __rt_mutex_slowlock(struct rt_mutex *lock, int state,
 
 		raw_spin_unlock(&lock->wait_lock);
 
-		was_disabled = irqs_disabled();
-		if (was_disabled)
-			local_irq_enable();
-
 		debug_rt_mutex_print_deadlock(waiter);
 
 		schedule_rt_mutex(lock);
-
-		if (was_disabled)
-			local_irq_disable();
 
 		raw_spin_lock(&lock->wait_lock);
 		set_current_state(state);

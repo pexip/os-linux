@@ -11,7 +11,7 @@
  *
  *------------------------------------------------------------------------------
  *
- *   Header for defintions and macros internal to the drvier.
+ *   Header for definitions and macros internal to the drvier.
  *
  *------------------------------------------------------------------------------
  *
@@ -22,7 +22,7 @@
  * software indicates your acceptance of these terms and conditions.  If you do
  * not agree with these terms and conditions, do not use the software.
  *
- * Copyright © 2003 Agere Systems Inc.
+ * Copyright Â© 2003 Agere Systems Inc.
  * All rights reserved.
  *
  * Redistribution and use in source or binary forms, with or without
@@ -43,7 +43,7 @@
  *
  * Disclaimer
  *
- * THIS SOFTWARE IS PROVIDED “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * THIS SOFTWARE IS PROVIDED Â“AS ISÂ” AND ANY EXPRESS OR IMPLIED WARRANTIES,
  * INCLUDING, BUT NOT LIMITED TO, INFRINGEMENT AND THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  ANY
  * USE, MODIFICATION OR DISTRIBUTION OF THIS SOFTWARE IS SOLELY AT THE USERS OWN
@@ -838,7 +838,7 @@ typedef struct dma_strct
 	DESC_STRCT  *rx_packet[NUM_RX_DESC];
 	DESC_STRCT  *rx_reclaim_desc, *tx_reclaim_desc; // Descriptors for host-reclaim purposes (see HCF)
 	int         tx_rsc_ind; // DMA Tx resource indicator is maintained in the MSF, not in the HCF
-	int         rx_rsc_ind; // Also added rx rsource indicator so that cleanup can be performed if alloc fails
+	int         rx_rsc_ind; // Also added rx resource indicator so that cleanup can be performed if alloc fails
 	int         status;
 } DMA_STRCT;
 

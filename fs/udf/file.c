@@ -110,12 +110,20 @@ static int udf_adinicb_write_end(struct file *file,
 	char *kaddr;
 	struct udf_inode_info *iinfo = UDF_I(inode);
 
-	kaddr = kmap_atomic(page, KM_USER0);
+	kaddr = kmap_atomic(page);
 	memcpy(iinfo->i_ext.i_data + iinfo->i_lenEAttr + offset,
 		kaddr + offset, copied);
-	kunmap_atomic(kaddr, KM_USER0);
+	kunmap_atomic(kaddr);
 
 	return simple_write_end(file, mapping, pos, len, copied, page, fsdata);
+}
+
+static ssize_t udf_adinicb_direct_IO(int rw, struct kiocb *iocb,
+				     const struct iovec *iov,
+				     loff_t offset, unsigned long nr_segs)
+{
+	/* Fallback to buffered I/O. */
+	return 0;
 }
 
 const struct address_space_operations udf_adinicb_aops = {
@@ -123,6 +131,7 @@ const struct address_space_operations udf_adinicb_aops = {
 	.writepage	= udf_adinicb_writepage,
 	.write_begin	= udf_adinicb_write_begin,
 	.write_end	= udf_adinicb_write_end,
+	.direct_IO	= udf_adinicb_direct_IO,
 };
 
 static ssize_t udf_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
@@ -130,7 +139,7 @@ static ssize_t udf_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
 {
 	ssize_t retval;
 	struct file *file = iocb->ki_filp;
-	struct inode *inode = file->f_path.dentry->d_inode;
+	struct inode *inode = file_inode(file);
 	int err, pos;
 	size_t count = iocb->ki_left;
 	struct udf_inode_info *iinfo = UDF_I(inode);
@@ -169,7 +178,7 @@ static ssize_t udf_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
 
 long udf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	struct inode *inode = filp->f_dentry->d_inode;
+	struct inode *inode = file_inode(filp);
 	long old_block, new_block;
 	int result = -EINVAL;
 
@@ -195,7 +204,7 @@ long udf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		goto out;
 	case UDF_RELOCATE_BLOCKS:
 		if (!capable(CAP_SYS_ADMIN)) {
-			result = -EACCES;
+			result = -EPERM;
 			goto out;
 		}
 		if (get_user(old_block, (long __user *)arg)) {

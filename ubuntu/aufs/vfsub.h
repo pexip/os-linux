@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,16 +27,17 @@
 
 #include <linux/fs.h>
 #include <linux/lglock.h>
+#include <linux/mount.h>
 #include "debug.h"
 
 /* copied from linux/fs/internal.h */
 /* todo: BAD approach!! */
-DECLARE_BRLOCK(vfsmount_lock);
-extern void file_sb_list_del(struct file *f);
+extern struct lglock vfsmount_lock;
+extern void __mnt_drop_write(struct vfsmount *);
 extern spinlock_t inode_sb_list_lock;
 
 /* copied from linux/fs/file_table.c */
-DECLARE_LGLOCK(files_lglock);
+extern struct lglock files_lglock;
 #ifdef CONFIG_SMP
 /*
  * These macros iterate all files on all CPUs for a given superblock.
@@ -100,16 +101,62 @@ static inline void vfsub_dead_dir(struct inode *inode)
 	clear_nlink(inode);
 }
 
+static inline int vfsub_native_ro(struct inode *inode)
+{
+	return (inode->i_sb->s_flags & MS_RDONLY)
+		|| IS_RDONLY(inode)
+		/* || IS_APPEND(inode) */
+		|| IS_IMMUTABLE(inode);
+}
+
 /* ---------------------------------------------------------------------- */
 
 int vfsub_update_h_iattr(struct path *h_path, int *did);
 struct file *vfsub_dentry_open(struct path *path, int flags);
 struct file *vfsub_filp_open(const char *path, int oflags, int mode);
 int vfsub_kern_path(const char *name, unsigned int flags, struct path *path);
+
 struct dentry *vfsub_lookup_one_len(const char *name, struct dentry *parent,
 				    int len);
-struct dentry *vfsub_lookup_hash(struct nameidata *nd);
-int vfsub_name_hash(const char *name, struct qstr *this, int len);
+
+struct vfsub_lkup_one_args {
+	struct dentry **errp;
+	struct qstr *name;
+	struct dentry *parent;
+};
+
+static inline struct dentry *vfsub_lkup_one(struct qstr *name,
+					    struct dentry *parent)
+{
+	return vfsub_lookup_one_len(name->name, parent, name->len);
+}
+
+void vfsub_call_lkup_one(void *args);
+
+/* ---------------------------------------------------------------------- */
+
+static inline int vfsub_mnt_want_write(struct vfsmount *mnt)
+{
+	int err;
+	lockdep_off();
+	err = mnt_want_write(mnt);
+	lockdep_on();
+	return err;
+}
+
+static inline void vfsub_mnt_drop_write(struct vfsmount *mnt)
+{
+	lockdep_off();
+	mnt_drop_write(mnt);
+	lockdep_on();
+}
+
+static inline void vfsub_mnt_drop_write_file(struct file *file)
+{
+	lockdep_off();
+	mnt_drop_write_file(file);
+	lockdep_on();
+}
 
 /* ---------------------------------------------------------------------- */
 
@@ -119,7 +166,8 @@ struct dentry *vfsub_lock_rename(struct dentry *d1, struct au_hinode *hdir1,
 void vfsub_unlock_rename(struct dentry *d1, struct au_hinode *hdir1,
 			 struct dentry *d2, struct au_hinode *hdir2);
 
-int vfsub_create(struct inode *dir, struct path *path, int mode);
+int vfsub_create(struct inode *dir, struct path *path, int mode,
+		 bool want_excl);
 int vfsub_symlink(struct inode *dir, struct path *path,
 		  const char *symname);
 int vfsub_mknod(struct inode *dir, struct path *path, int mode, dev_t dev);
@@ -141,7 +189,21 @@ ssize_t vfsub_write_u(struct file *file, const char __user *ubuf, size_t count,
 ssize_t vfsub_write_k(struct file *file, void *kbuf, size_t count,
 		      loff_t *ppos);
 int vfsub_flush(struct file *file, fl_owner_t id);
-int vfsub_readdir(struct file *file, filldir_t filldir, void *arg);
+int vfsub_iterate_dir(struct file *file, struct dir_context *ctx);
+
+/* just for type-check */
+static inline filldir_t au_diractor(int (*func)(struct dir_context *,
+						const char *, int, loff_t, u64,
+						unsigned))
+{
+	return (filldir_t)func;
+}
+
+
+static inline loff_t vfsub_f_size_read(struct file *file)
+{
+	return i_size_read(file_inode(file));
+}
 
 static inline unsigned int vfsub_file_flags(struct file *file)
 {
@@ -167,8 +229,15 @@ static inline void vfsub_touch_atime(struct vfsmount *h_mnt,
 		.dentry	= h_dentry,
 		.mnt	= h_mnt
 	};
-	touch_atime(h_mnt, h_dentry);
+	touch_atime(&h_path);
 	vfsub_update_h_iattr(&h_path, /*did*/NULL); /*ignore*/
+}
+
+static inline int vfsub_update_time(struct inode *h_inode, struct timespec *ts,
+				    int flags)
+{
+	return update_time(h_inode, ts, flags);
+	/* no vfsub_update_h_iattr() since we don't have struct path */
 }
 
 long vfsub_splice_to(struct file *in, loff_t *ppos,
@@ -176,6 +245,16 @@ long vfsub_splice_to(struct file *in, loff_t *ppos,
 		     unsigned int flags);
 long vfsub_splice_from(struct pipe_inode_info *pipe, struct file *out,
 		       loff_t *ppos, size_t len, unsigned int flags);
+
+static inline long vfsub_truncate(struct path *path, loff_t length)
+{
+	long err;
+	lockdep_off();
+	err = vfs_truncate(path, length);
+	lockdep_on();
+	return err;
+}
+
 int vfsub_trunc(struct path *h_path, loff_t length, unsigned int attr,
 		struct file *h_file);
 int vfsub_fsync(struct file *file, struct path *path, int datasync);

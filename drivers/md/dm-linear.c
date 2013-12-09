@@ -29,6 +29,7 @@ static int linear_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 {
 	struct linear_c *lc;
 	unsigned long long tmp;
+	char dummy;
 
 	if (argc != 2) {
 		ti->error = "Invalid argument count";
@@ -41,7 +42,7 @@ static int linear_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 		return -ENOMEM;
 	}
 
-	if (sscanf(argv[1], "%llu", &tmp) != 1) {
+	if (sscanf(argv[1], "%llu%c", &tmp, &dummy) != 1) {
 		ti->error = "dm-linear: Invalid device sector";
 		goto bad;
 	}
@@ -52,8 +53,9 @@ static int linear_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 		goto bad;
 	}
 
-	ti->num_flush_requests = 1;
-	ti->num_discard_requests = 1;
+	ti->num_flush_bios = 1;
+	ti->num_discard_bios = 1;
+	ti->num_write_same_bios = 1;
 	ti->private = lc;
 	return 0;
 
@@ -86,8 +88,7 @@ static void linear_map_bio(struct dm_target *ti, struct bio *bio)
 		bio->bi_sector = linear_map_sector(ti, bio->bi_sector);
 }
 
-static int linear_map(struct dm_target *ti, struct bio *bio,
-		      union map_info *map_context)
+static int linear_map(struct dm_target *ti, struct bio *bio)
 {
 	linear_map_bio(ti, bio);
 
@@ -95,7 +96,7 @@ static int linear_map(struct dm_target *ti, struct bio *bio,
 }
 
 static void linear_status(struct dm_target *ti, status_type_t type,
-			  char *result, unsigned maxlen)
+			  unsigned status_flags, char *result, unsigned maxlen)
 {
 	struct linear_c *lc = (struct linear_c *) ti->private;
 
@@ -153,7 +154,7 @@ static int linear_iterate_devices(struct dm_target *ti,
 
 static struct target_type linear_target = {
 	.name   = "linear",
-	.version = {1, 1, 1},
+	.version = {1, 2, 1},
 	.module = THIS_MODULE,
 	.ctr    = linear_ctr,
 	.dtr    = linear_dtr,

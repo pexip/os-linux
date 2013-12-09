@@ -42,8 +42,7 @@
 #include <asm/div64.h>
 #include <asm/sizes.h>
 
-#include <mach/mmc.h>
-#include <mach/msm_iomap.h>
+#include <linux/platform_data/mmc-msm_sdcc.h>
 #include <mach/dma.h>
 #include <mach/clk.h>
 
@@ -689,8 +688,8 @@ msmsdcc_pio_irq(int irq, void *dev_id)
 
 		/* Map the current scatter buffer */
 		local_irq_save(flags);
-		buffer = kmap_atomic(sg_page(host->pio.sg),
-				     KM_BIO_SRC_IRQ) + host->pio.sg->offset;
+		buffer = kmap_atomic(sg_page(host->pio.sg))
+				     + host->pio.sg->offset;
 		buffer += host->pio.sg_off;
 		remain = host->pio.sg->length - host->pio.sg_off;
 		len = 0;
@@ -700,7 +699,7 @@ msmsdcc_pio_irq(int irq, void *dev_id)
 			len = msmsdcc_pio_write(host, buffer, remain, status);
 
 		/* Unmap the buffer */
-		kunmap_atomic(buffer, KM_BIO_SRC_IRQ);
+		kunmap_atomic(buffer);
 		local_irq_restore(flags);
 
 		host->pio.sg_off += len;
@@ -1269,10 +1268,18 @@ msmsdcc_probe(struct platform_device *pdev)
 		goto clk_put;
 	}
 
+	ret = clk_prepare(host->pclk);
+	if (ret)
+		goto clk_put;
+
+	ret = clk_prepare(host->clk);
+	if (ret)
+		goto clk_unprepare_p;
+
 	/* Enable clocks */
 	ret = msmsdcc_enable_clocks(host);
 	if (ret)
-		goto clk_put;
+		goto clk_unprepare;
 
 	host->pclk_rate = clk_get_rate(host->pclk);
 	host->clk_rate = clk_get_rate(host->clk);
@@ -1387,6 +1394,10 @@ msmsdcc_probe(struct platform_device *pdev)
 		free_irq(host->stat_irq, host);
  clk_disable:
 	msmsdcc_disable_clocks(host, 0);
+ clk_unprepare:
+	clk_unprepare(host->clk);
+ clk_unprepare_p:
+	clk_unprepare(host->pclk);
  clk_put:
 	clk_put(host->clk);
  pclk_put:
@@ -1480,18 +1491,7 @@ static struct platform_driver msmsdcc_driver = {
 	},
 };
 
-static int __init msmsdcc_init(void)
-{
-	return platform_driver_register(&msmsdcc_driver);
-}
-
-static void __exit msmsdcc_exit(void)
-{
-	platform_driver_unregister(&msmsdcc_driver);
-}
-
-module_init(msmsdcc_init);
-module_exit(msmsdcc_exit);
+module_platform_driver(msmsdcc_driver);
 
 MODULE_DESCRIPTION("Qualcomm MSM 7X00A Multimedia Card Interface driver");
 MODULE_LICENSE("GPL");

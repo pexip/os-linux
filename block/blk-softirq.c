@@ -8,6 +8,7 @@
 #include <linux/blkdev.h>
 #include <linux/interrupt.h>
 #include <linux/cpu.h>
+#include <linux/sched.h>
 
 #include "blk.h"
 
@@ -77,8 +78,8 @@ static int raise_blk_irq(int cpu, struct request *rq)
 }
 #endif
 
-static int __cpuinit blk_cpu_notify(struct notifier_block *self,
-				    unsigned long action, void *hcpu)
+static int blk_cpu_notify(struct notifier_block *self, unsigned long action,
+			  void *hcpu)
 {
 	/*
 	 * If a CPU goes away, splice its entries to the current CPU
@@ -97,15 +98,16 @@ static int __cpuinit blk_cpu_notify(struct notifier_block *self,
 	return NOTIFY_OK;
 }
 
-static struct notifier_block __cpuinitdata blk_cpu_notifier = {
+static struct notifier_block blk_cpu_notifier = {
 	.notifier_call	= blk_cpu_notify,
 };
 
 void __blk_complete_request(struct request *req)
 {
-	int ccpu, cpu, group_cpu = NR_CPUS;
+	int ccpu, cpu;
 	struct request_queue *q = req->q;
 	unsigned long flags;
+	bool shared = false;
 
 	BUG_ON(!q->softirq_done_fn);
 
@@ -117,22 +119,20 @@ void __blk_complete_request(struct request *req)
 	 */
 	if (req->cpu != -1) {
 		ccpu = req->cpu;
-		if (!test_bit(QUEUE_FLAG_SAME_FORCE, &q->queue_flags)) {
-			ccpu = blk_cpu_to_group(ccpu);
-			group_cpu = blk_cpu_to_group(cpu);
-		}
+		if (!test_bit(QUEUE_FLAG_SAME_FORCE, &q->queue_flags))
+			shared = cpus_share_cache(cpu, ccpu);
 	} else
 		ccpu = cpu;
 
 	/*
-	 * If current CPU and requested CPU are in the same group, running
-	 * softirq in current CPU. One might concern this is just like
+	 * If current CPU and requested CPU share a cache, run the softirq on
+	 * the current CPU. One might concern this is just like
 	 * QUEUE_FLAG_SAME_FORCE, but actually not. blk_complete_request() is
 	 * running in interrupt handler, and currently I/O controller doesn't
 	 * support multiple interrupts, so current CPU is unique actually. This
 	 * avoids IPI sending from current CPU to the first CPU of a group.
 	 */
-	if (ccpu == cpu || ccpu == group_cpu) {
+	if (ccpu == cpu || shared) {
 		struct list_head *list;
 do_local:
 		list = &__get_cpu_var(blk_cpu_done);

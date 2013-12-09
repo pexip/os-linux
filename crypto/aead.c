@@ -124,9 +124,9 @@ static int crypto_aead_report(struct sk_buff *skb, struct crypto_alg *alg)
 	raead.maxauthsize = aead->maxauthsize;
 	raead.ivsize = aead->ivsize;
 
-	NLA_PUT(skb, CRYPTOCFGA_REPORT_AEAD,
-		sizeof(struct crypto_report_aead), &raead);
-
+	if (nla_put(skb, CRYPTOCFGA_REPORT_AEAD,
+		    sizeof(struct crypto_report_aead), &raead))
+		goto nla_put_failure;
 	return 0;
 
 nla_put_failure:
@@ -209,9 +209,9 @@ static int crypto_nivaead_report(struct sk_buff *skb, struct crypto_alg *alg)
 	raead.maxauthsize = aead->maxauthsize;
 	raead.ivsize = aead->ivsize;
 
-	NLA_PUT(skb, CRYPTOCFGA_REPORT_AEAD,
-		sizeof(struct crypto_report_aead), &raead);
-
+	if (nla_put(skb, CRYPTOCFGA_REPORT_AEAD,
+		    sizeof(struct crypto_report_aead), &raead))
+		goto nla_put_failure;
 	return 0;
 
 nla_put_failure:
@@ -281,18 +281,16 @@ struct crypto_instance *aead_geniv_alloc(struct crypto_template *tmpl,
 	int err;
 
 	algt = crypto_get_attr_type(tb);
-	err = PTR_ERR(algt);
 	if (IS_ERR(algt))
-		return ERR_PTR(err);
+		return ERR_CAST(algt);
 
 	if ((algt->type ^ (CRYPTO_ALG_TYPE_AEAD | CRYPTO_ALG_GENIV)) &
 	    algt->mask)
 		return ERR_PTR(-EINVAL);
 
 	name = crypto_attr_alg_name(tb[1]);
-	err = PTR_ERR(name);
 	if (IS_ERR(name))
-		return ERR_PTR(err);
+		return ERR_CAST(name);
 
 	inst = kzalloc(sizeof(*inst) + sizeof(*spawn), GFP_KERNEL);
 	if (!inst)
@@ -469,8 +467,7 @@ out:
 	return err;
 }
 
-static struct crypto_alg *crypto_lookup_aead(const char *name, u32 type,
-					     u32 mask)
+struct crypto_alg *crypto_lookup_aead(const char *name, u32 type, u32 mask)
 {
 	struct crypto_alg *alg;
 
@@ -502,6 +499,7 @@ static struct crypto_alg *crypto_lookup_aead(const char *name, u32 type,
 
 	return ERR_PTR(crypto_nivaead_default(alg, type, mask));
 }
+EXPORT_SYMBOL_GPL(crypto_lookup_aead);
 
 int crypto_grab_aead(struct crypto_aead_spawn *spawn, const char *name,
 		     u32 type, u32 mask)

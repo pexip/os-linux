@@ -54,7 +54,7 @@ static struct severity {
 #define  MASK(x, y)	.mask = x, .result = y
 #define MCI_UC_S (MCI_STATUS_UC|MCI_STATUS_S)
 #define MCI_UC_SAR (MCI_STATUS_UC|MCI_STATUS_S|MCI_STATUS_AR)
-#define MCACOD 0xffff
+#define	MCI_ADDR (MCI_STATUS_ADDRV|MCI_STATUS_MISCV)
 
 	MCESEV(
 		NO, "Invalid",
@@ -102,11 +102,29 @@ static struct severity {
 		SER, BITCLR(MCI_STATUS_S)
 		),
 
-	/* AR add known MCACODs here */
 	MCESEV(
 		PANIC, "Action required with lost events",
 		SER, BITSET(MCI_STATUS_OVER|MCI_UC_SAR)
 		),
+
+	/* known AR MCACODs: */
+#ifdef	CONFIG_MEMORY_FAILURE
+	MCESEV(
+		KEEP, "Action required but unaffected thread is continuable",
+		SER, MASK(MCI_STATUS_OVER|MCI_UC_SAR|MCI_ADDR, MCI_UC_SAR|MCI_ADDR),
+		MCGMASK(MCG_STATUS_RIPV|MCG_STATUS_EIPV, MCG_STATUS_RIPV)
+		),
+	MCESEV(
+		AR, "Action required: data load error in a user process",
+		SER, MASK(MCI_STATUS_OVER|MCI_UC_SAR|MCI_ADDR|MCACOD, MCI_UC_SAR|MCI_ADDR|MCACOD_DATA),
+		USER
+		),
+	MCESEV(
+		AR, "Action required: instruction fetch error in a user process",
+		SER, MASK(MCI_STATUS_OVER|MCI_UC_SAR|MCI_ADDR|MCACOD, MCI_UC_SAR|MCI_ADDR|MCACOD_INSTR),
+		USER
+		),
+#endif
 	MCESEV(
 		PANIC, "Action required: unknown MCACOD",
 		SER, MASK(MCI_STATUS_OVER|MCI_UC_SAR, MCI_UC_SAR)
@@ -115,11 +133,11 @@ static struct severity {
 	/* known AO MCACODs: */
 	MCESEV(
 		AO, "Action optional: memory scrubbing error",
-		SER, MASK(MCI_STATUS_OVER|MCI_UC_SAR|0xfff0, MCI_UC_S|0x00c0)
+		SER, MASK(MCI_STATUS_OVER|MCI_UC_SAR|MCACOD_SCRUBMSK, MCI_UC_S|MCACOD_SCRUB)
 		),
 	MCESEV(
 		AO, "Action optional: last level cache writeback error",
-		SER, MASK(MCI_STATUS_OVER|MCI_UC_SAR|MCACOD, MCI_UC_S|0x017a)
+		SER, MASK(MCI_STATUS_OVER|MCI_UC_SAR|MCACOD, MCI_UC_S|MCACOD_L3WB)
 		),
 	MCESEV(
 		SOME, "Action optional: unknown MCACOD",
@@ -170,9 +188,9 @@ int mce_severity(struct mce *m, int tolerant, char **msg)
 			continue;
 		if ((m->mcgstatus & s->mcgmask) != s->mcgres)
 			continue;
-		if (s->ser == SER_REQUIRED && !mce_ser)
+		if (s->ser == SER_REQUIRED && !mca_cfg.ser)
 			continue;
-		if (s->ser == NO_SER && mce_ser)
+		if (s->ser == NO_SER && mca_cfg.ser)
 			continue;
 		if (s->context && ctx != s->context)
 			continue;

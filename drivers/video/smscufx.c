@@ -1,7 +1,7 @@
 /*
  * smscufx.c -- Framebuffer driver for SMSC UFX USB controller
  *
- * Copyright (C) 2011 Steve Glendinning <steve.glendinning@smsc.com>
+ * Copyright (C) 2011 Steve Glendinning <steve.glendinning@shawell.net>
  * Copyright (C) 2009 Roberto De Ioris <roberto@unbit.it>
  * Copyright (C) 2009 Jaya Kumar <jayakumar.lkml@gmail.com>
  * Copyright (C) 2009 Bernie Thompson <bernie@plugable.com>
@@ -130,8 +130,8 @@ static struct usb_device_id id_table[] = {
 MODULE_DEVICE_TABLE(usb, id_table);
 
 /* module options */
-static int console;   /* Optionally allow fbcon to consume first framebuffer */
-static int fb_defio = true;  /* Optionally enable fb_defio mmap support */
+static bool console;   /* Optionally allow fbcon to consume first framebuffer */
+static bool fb_defio = true;  /* Optionally enable fb_defio mmap support */
 
 /* ufx keeps a list of urbs for efficient bulk transfers */
 static void ufx_urb_completion(struct urb *urb);
@@ -782,7 +782,11 @@ static int ufx_ops_mmap(struct fb_info *info, struct vm_area_struct *vma)
 	unsigned long offset = vma->vm_pgoff << PAGE_SHIFT;
 	unsigned long page, pos;
 
-	if (offset + size > info->fix.smem_len)
+	if (vma->vm_pgoff > (~0UL >> PAGE_SHIFT))
+		return -EINVAL;
+	if (size > info->fix.smem_len)
+		return -EINVAL;
+	if (offset > info->fix.smem_len - size)
 		return -EINVAL;
 
 	pos = (unsigned long)info->fix.smem_start + offset;
@@ -803,7 +807,6 @@ static int ufx_ops_mmap(struct fb_info *info, struct vm_area_struct *vma)
 			size = 0;
 	}
 
-	vma->vm_flags |= VM_RESERVED;	/* avoid to swap out this VMA */
 	return 0;
 }
 
@@ -846,7 +849,7 @@ static void ufx_raw_rect(struct ufx_data *dev, u16 *cmd, int x, int y,
 	}
 }
 
-int ufx_handle_damage(struct ufx_data *dev, int x, int y,
+static int ufx_handle_damage(struct ufx_data *dev, int x, int y,
 	int width, int height)
 {
 	size_t packed_line_len = ALIGN((width * 2), 4);
@@ -1002,7 +1005,7 @@ static int ufx_ops_ioctl(struct fb_info *info, unsigned int cmd,
 	/* TODO: Help propose a standard fb.h ioctl to report mmap damage */
 	if (cmd == UFX_IOCTL_REPORT_DAMAGE) {
 		/* If we have a damage-aware client, turn fb_defio "off"
-		 * To avoid perf imact of unecessary page fault handling.
+		 * To avoid perf imact of unnecessary page fault handling.
 		 * Done by resetting the delay for this fb_info to a very
 		 * long period. Pages will become writable and stay that way.
 		 * Reset to normal value when all clients have closed this fb.
@@ -1083,7 +1086,7 @@ static int ufx_ops_open(struct fb_info *info, int user)
 
 		struct fb_deferred_io *fbdefio;
 
-		fbdefio = kmalloc(sizeof(struct fb_deferred_io), GFP_KERNEL);
+		fbdefio = kzalloc(sizeof(struct fb_deferred_io), GFP_KERNEL);
 
 		if (fbdefio) {
 			fbdefio->delay = UFX_DEFIO_WRITE_DELAY;
@@ -1466,7 +1469,7 @@ static int ufx_read_edid(struct ufx_data *dev, u8 *edid, int edid_len)
 	/* all FF's in the first 16 bytes indicates nothing is connected */
 	for (i = 0; i < 16; i++) {
 		if (edid[i] != 0xFF) {
-			pr_debug("edid data read succesfully");
+			pr_debug("edid data read successfully");
 			return EDID_LENGTH;
 		}
 	}
@@ -1619,7 +1622,7 @@ static int ufx_usb_probe(struct usb_interface *interface,
 {
 	struct usb_device *usbdev;
 	struct ufx_data *dev;
-	struct fb_info *info = 0;
+	struct fb_info *info = NULL;
 	int retval = -ENOMEM;
 	u32 id_rev, fpga_rev;
 
@@ -1792,24 +1795,7 @@ static struct usb_driver ufx_driver = {
 	.id_table = id_table,
 };
 
-static int __init ufx_module_init(void)
-{
-	int res;
-
-	res = usb_register(&ufx_driver);
-	if (res)
-		err("usb_register failed. Error number %d", res);
-
-	return res;
-}
-
-static void __exit ufx_module_exit(void)
-{
-	usb_deregister(&ufx_driver);
-}
-
-module_init(ufx_module_init);
-module_exit(ufx_module_exit);
+module_usb_driver(ufx_driver);
 
 static void ufx_urb_completion(struct urb *urb)
 {
@@ -1989,6 +1975,6 @@ MODULE_PARM_DESC(console, "Allow fbcon to be used on this display");
 module_param(fb_defio, bool, S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP);
 MODULE_PARM_DESC(fb_defio, "Enable fb_defio mmap support");
 
-MODULE_AUTHOR("Steve Glendinning <steve.glendinning@smsc.com>");
+MODULE_AUTHOR("Steve Glendinning <steve.glendinning@shawell.net>");
 MODULE_DESCRIPTION("SMSC UFX kernel framebuffer driver");
 MODULE_LICENSE("GPL");

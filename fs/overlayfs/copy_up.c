@@ -14,6 +14,7 @@
 #include <linux/xattr.h>
 #include <linux/security.h>
 #include <linux/uaccess.h>
+#include <linux/sched.h>
 #include "overlayfs.h"
 
 #define OVL_COPY_UP_CHUNK_SIZE (1 << 20)
@@ -72,6 +73,8 @@ static int ovl_copy_up_data(struct path *old, struct path *new, loff_t len)
 {
 	struct file *old_file;
 	struct file *new_file;
+	loff_t old_pos = 0;
+	loff_t new_pos = 0;
 	int error = 0;
 
 	if (len == 0)
@@ -89,7 +92,6 @@ static int ovl_copy_up_data(struct path *old, struct path *new, loff_t len)
 
 	/* FIXME: copy up sparse files efficiently */
 	while (len) {
-		loff_t offset = new_file->f_pos;
 		size_t this_len = OVL_COPY_UP_CHUNK_SIZE;
 		long bytes;
 
@@ -101,12 +103,14 @@ static int ovl_copy_up_data(struct path *old, struct path *new, loff_t len)
 			break;
 		}
 
-		bytes = do_splice_direct(old_file, &offset, new_file, this_len,
-				 SPLICE_F_MOVE);
+		bytes = do_splice_direct(old_file, &old_pos,
+					 new_file, &new_pos,
+					 this_len, SPLICE_F_MOVE);
 		if (bytes <= 0) {
 			error = bytes;
 			break;
 		}
+		WARN_ON(old_pos != new_pos);
 
 		len -= bytes;
 	}
@@ -261,7 +265,7 @@ static int ovl_copy_up_one(struct dentry *parent, struct dentry *dentry,
 	ovl_path_upper(parent, &parentpath);
 	upperdir = parentpath.dentry;
 
-	err = vfs_getattr(parentpath.mnt, parentpath.dentry, &pstat);
+	err = vfs_getattr(&parentpath, &pstat);
 	if (err)
 		return err;
 
@@ -345,7 +349,7 @@ int ovl_copy_up(struct dentry *dentry)
 		}
 
 		ovl_path_lower(next, &lowerpath);
-		err = vfs_getattr(lowerpath.mnt, lowerpath.dentry, &stat);
+		err = vfs_getattr(&lowerpath, &stat);
 		if (!err)
 			err = ovl_copy_up_one(parent, next, &lowerpath, &stat);
 
@@ -369,7 +373,7 @@ int ovl_copy_up_truncate(struct dentry *dentry, loff_t size)
 		goto out_dput_parent;
 
 	ovl_path_lower(dentry, &lowerpath);
-	err = vfs_getattr(lowerpath.mnt, lowerpath.dentry, &stat);
+	err = vfs_getattr(&lowerpath, &stat);
 	if (err)
 		goto out_dput_parent;
 

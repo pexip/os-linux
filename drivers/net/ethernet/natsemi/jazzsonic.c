@@ -38,7 +38,6 @@
 #include <linux/slab.h>
 
 #include <asm/bootinfo.h>
-#include <asm/system.h>
 #include <asm/pgtable.h>
 #include <asm/io.h>
 #include <asm/dma.h>
@@ -118,7 +117,7 @@ static const struct net_device_ops sonic_netdev_ops = {
 	.ndo_set_mac_address	= eth_mac_addr,
 };
 
-static int __devinit sonic_probe1(struct net_device *dev)
+static int sonic_probe1(struct net_device *dev)
 {
 	static unsigned version_printed;
 	unsigned int silicon_revision;
@@ -176,13 +175,13 @@ static int __devinit sonic_probe1(struct net_device *dev)
 
 	/* Allocate the entire chunk of memory for the descriptors.
            Note that this cannot cross a 64K boundary. */
-	if ((lp->descriptors = dma_alloc_coherent(lp->device,
-				SIZEOF_SONIC_DESC * SONIC_BUS_SCALE(lp->dma_bitmode),
-				&lp->descriptors_laddr, GFP_KERNEL)) == NULL) {
-		printk(KERN_ERR "%s: couldn't alloc DMA memory for descriptors.\n",
-		       dev_name(lp->device));
+	lp->descriptors = dma_alloc_coherent(lp->device,
+					     SIZEOF_SONIC_DESC *
+					     SONIC_BUS_SCALE(lp->dma_bitmode),
+					     &lp->descriptors_laddr,
+					     GFP_KERNEL);
+	if (lp->descriptors == NULL)
 		goto out;
-	}
 
 	/* Now set up the pointers to point to the appropriate places */
 	lp->cda = lp->descriptors;
@@ -221,7 +220,7 @@ out:
  * Probe for a SONIC ethernet controller on a Mips Jazz board.
  * Actually probing is superfluous but we're paranoid.
  */
-static int __devinit jazz_sonic_probe(struct platform_device *pdev)
+static int jazz_sonic_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct sonic_local *lp;
@@ -271,7 +270,7 @@ MODULE_ALIAS("platform:jazzsonic");
 
 #include "sonic.c"
 
-static int __devexit jazz_sonic_device_remove (struct platform_device *pdev)
+static int jazz_sonic_device_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct sonic_local* lp = netdev_priv(dev);
@@ -287,22 +286,11 @@ static int __devexit jazz_sonic_device_remove (struct platform_device *pdev)
 
 static struct platform_driver jazz_sonic_driver = {
 	.probe	= jazz_sonic_probe,
-	.remove	= __devexit_p(jazz_sonic_device_remove),
+	.remove	= jazz_sonic_device_remove,
 	.driver	= {
 		.name	= jazz_sonic_string,
 		.owner	= THIS_MODULE,
 	},
 };
 
-static int __init jazz_sonic_init_module(void)
-{
-	return platform_driver_register(&jazz_sonic_driver);
-}
-
-static void __exit jazz_sonic_cleanup_module(void)
-{
-	platform_driver_unregister(&jazz_sonic_driver);
-}
-
-module_init(jazz_sonic_init_module);
-module_exit(jazz_sonic_cleanup_module);
+module_platform_driver(jazz_sonic_driver);

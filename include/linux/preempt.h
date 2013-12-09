@@ -33,9 +33,25 @@ do { \
 		preempt_schedule(); \
 } while (0)
 
+#ifdef CONFIG_CONTEXT_TRACKING
+
+void preempt_schedule_context(void);
+
+#define preempt_check_resched_context() \
+do { \
+	if (unlikely(test_thread_flag(TIF_NEED_RESCHED))) \
+		preempt_schedule_context(); \
+} while (0)
+#else
+
+#define preempt_check_resched_context() preempt_check_resched()
+
+#endif /* CONFIG_CONTEXT_TRACKING */
+
 #else /* !CONFIG_PREEMPT */
 
 #define preempt_check_resched()		do { } while (0)
+#define preempt_check_resched_context()	do { } while (0)
 
 #endif /* CONFIG_PREEMPT */
 
@@ -48,11 +64,13 @@ do { \
 	barrier(); \
 } while (0)
 
-#define preempt_enable_no_resched() \
+#define sched_preempt_enable_no_resched() \
 do { \
 	barrier(); \
 	dec_preempt_count(); \
 } while (0)
+
+#define preempt_enable_no_resched()	sched_preempt_enable_no_resched()
 
 #define preempt_enable() \
 do { \
@@ -86,7 +104,7 @@ do { \
 do { \
 	preempt_enable_no_resched_notrace(); \
 	barrier(); \
-	preempt_check_resched(); \
+	preempt_check_resched_context(); \
 } while (0)
 
 #else /* !CONFIG_PREEMPT_COUNT */
@@ -98,6 +116,7 @@ do { \
  * region.
  */
 #define preempt_disable()		barrier()
+#define sched_preempt_enable_no_resched()	barrier()
 #define preempt_enable_no_resched()	barrier()
 #define preempt_enable()		barrier()
 

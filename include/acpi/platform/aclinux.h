@@ -5,7 +5,7 @@
  *****************************************************************************/
 
 /*
- * Copyright (C) 2000 - 2011, Intel Corp.
+ * Copyright (C) 2000 - 2013, Intel Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,6 @@
 #include <linux/kernel.h>
 #include <linux/ctype.h>
 #include <linux/sched.h>
-#include <asm/system.h>
 #include <linux/atomic.h>
 #include <asm/div64.h>
 #include <asm/acpi.h>
@@ -107,8 +106,7 @@
 
 /* Linux uses GCC */
 
-#include "acgcc.h"
-
+#include <acpi/platform/acgcc.h>
 
 #ifdef __KERNEL__
 #include <acpi/actypes.h>

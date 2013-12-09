@@ -35,7 +35,7 @@ struct onenand_info {
 	struct onenand_chip	onenand;
 };
 
-static int __devinit generic_onenand_probe(struct platform_device *pdev)
+static int generic_onenand_probe(struct platform_device *pdev)
 {
 	struct onenand_info *info;
 	struct onenand_platform_data *pdata = pdev->dev.platform_data;
@@ -70,9 +70,9 @@ static int __devinit generic_onenand_probe(struct platform_device *pdev)
 		goto out_iounmap;
 	}
 
-	err = mtd_device_parse_register(&info->mtd, NULL, 0,
-			pdata ? pdata->parts : NULL,
-			pdata ? pdata->nr_parts : 0);
+	err = mtd_device_parse_register(&info->mtd, NULL, NULL,
+					pdata ? pdata->parts : NULL,
+					pdata ? pdata->nr_parts : 0);
 
 	platform_set_drvdata(pdev, info);
 
@@ -88,7 +88,7 @@ out_free_info:
 	return err;
 }
 
-static int __devexit generic_onenand_remove(struct platform_device *pdev)
+static int generic_onenand_remove(struct platform_device *pdev)
 {
 	struct onenand_info *info = platform_get_drvdata(pdev);
 	struct resource *res = pdev->resource;
@@ -112,24 +112,12 @@ static struct platform_driver generic_onenand_driver = {
 		.owner		= THIS_MODULE,
 	},
 	.probe		= generic_onenand_probe,
-	.remove		= __devexit_p(generic_onenand_remove),
+	.remove		= generic_onenand_remove,
 };
 
-MODULE_ALIAS("platform:" DRIVER_NAME);
-
-static int __init generic_onenand_init(void)
-{
-	return platform_driver_register(&generic_onenand_driver);
-}
-
-static void __exit generic_onenand_exit(void)
-{
-	platform_driver_unregister(&generic_onenand_driver);
-}
-
-module_init(generic_onenand_init);
-module_exit(generic_onenand_exit);
+module_platform_driver(generic_onenand_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Kyungmin Park <kyungmin.park@samsung.com>");
 MODULE_DESCRIPTION("Glue layer for OneNAND flash on generic boards");
+MODULE_ALIAS("platform:" DRIVER_NAME);

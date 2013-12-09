@@ -88,10 +88,9 @@ printenv:
 	@echo "arch                      = $(arch)"
 	@echo "kmake                     = $(kmake)"
 
-prev_release="$(release)-$(prev_revision)"
 printchanges:
 	@baseCommit=$$(git log --pretty=format:'%H %s' | \
-		awk '/UBUNTU: '".*Ubuntu-$(prev_release)"'$$/ { print $$1; exit }'); \
+		gawk '/UBUNTU: '".*Ubuntu-$(prev_fullver)"'$$/ { print $$1; exit }'); \
 		git log "$$baseCommit"..HEAD | \
 		perl -w -f $(DROOT)/scripts/misc/git-ubuntu-log $(ubuntu_log_opts)
 
@@ -103,7 +102,7 @@ diffupstream:
 
 startnewrelease:
 	dh_testdir
-	@nextminor=$(shell expr `echo $(revision) | awk -F. '{print $$2}'` + 1); \
+	@nextminor=$(shell expr `echo $(revision) | gawk -F. '{print $$2}'` + 1); \
 	nextmajor=$(shell expr `echo $(revision) | awk -F. '{print $$1}'` + 1); \
 	now="$(shell date -R)"; \
 	echo "Creating new changelog set for $(release)-$$nextmajor.$$nextminor..."; \

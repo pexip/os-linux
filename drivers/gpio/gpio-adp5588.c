@@ -252,7 +252,7 @@ static irqreturn_t adp5588_irq_handler(int irq, void *devid)
 		if (ret < 0)
 			memset(dev->irq_stat, 0, ARRAY_SIZE(dev->irq_stat));
 
-		for (bank = 0; bank <= ADP5588_BANK(ADP5588_MAXGPIO);
+		for (bank = 0, bit = 0; bank <= ADP5588_BANK(ADP5588_MAXGPIO);
 			bank++, bit = 0) {
 			pending = dev->irq_stat[bank] & dev->irq_mask[bank];
 
@@ -346,7 +346,7 @@ static void adp5588_irq_teardown(struct adp5588_gpio *dev)
 }
 #endif /* CONFIG_GPIO_ADP5588_IRQ */
 
-static int __devinit adp5588_gpio_probe(struct i2c_client *client,
+static int adp5588_gpio_probe(struct i2c_client *client,
 					const struct i2c_device_id *id)
 {
 	struct adp5588_gpio_platform_data *pdata = client->dev.platform_data;
@@ -418,9 +418,8 @@ static int __devinit adp5588_gpio_probe(struct i2c_client *client,
 	if (ret)
 		goto err_irq;
 
-	dev_info(&client->dev, "gpios %d..%d (IRQ Base %d) on a %s Rev. %d\n",
-			gc->base, gc->base + gc->ngpio - 1,
-			pdata->irq_base, client->name, revid);
+	dev_info(&client->dev, "IRQ Base: %d Rev.: %d\n",
+			pdata->irq_base, revid);
 
 	if (pdata->setup) {
 		ret = pdata->setup(client, gc->base, gc->ngpio, pdata->context);
@@ -439,7 +438,7 @@ err:
 	return ret;
 }
 
-static int __devexit adp5588_gpio_remove(struct i2c_client *client)
+static int adp5588_gpio_remove(struct i2c_client *client)
 {
 	struct adp5588_gpio_platform_data *pdata = client->dev.platform_data;
 	struct adp5588_gpio *dev = i2c_get_clientdata(client);
@@ -480,23 +479,11 @@ static struct i2c_driver adp5588_gpio_driver = {
 		   .name = DRV_NAME,
 		   },
 	.probe = adp5588_gpio_probe,
-	.remove = __devexit_p(adp5588_gpio_remove),
+	.remove = adp5588_gpio_remove,
 	.id_table = adp5588_gpio_id,
 };
 
-static int __init adp5588_gpio_init(void)
-{
-	return i2c_add_driver(&adp5588_gpio_driver);
-}
-
-module_init(adp5588_gpio_init);
-
-static void __exit adp5588_gpio_exit(void)
-{
-	i2c_del_driver(&adp5588_gpio_driver);
-}
-
-module_exit(adp5588_gpio_exit);
+module_i2c_driver(adp5588_gpio_driver);
 
 MODULE_AUTHOR("Michael Hennerich <hennerich@blackfin.uclinux.org>");
 MODULE_DESCRIPTION("GPIO ADP5588 Driver");

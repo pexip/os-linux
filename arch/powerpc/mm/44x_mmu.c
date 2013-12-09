@@ -27,7 +27,6 @@
 #include <linux/memblock.h>
 
 #include <asm/mmu.h>
-#include <asm/system.h>
 #include <asm/page.h>
 #include <asm/cacheflush.h>
 
@@ -42,7 +41,7 @@ int icache_44x_need_flush;
 
 unsigned long tlb_47x_boltmap[1024/8];
 
-static void __cpuinit ppc44x_update_tlb_hwater(void)
+static void ppc44x_update_tlb_hwater(void)
 {
 	extern unsigned int tlb_44x_patch_hwater_D[];
 	extern unsigned int tlb_44x_patch_hwater_I[];
@@ -78,11 +77,7 @@ static void __init ppc44x_pin_tlb(unsigned int virt, unsigned int phys)
 		"tlbwe	%1,%3,%5\n"
 		"tlbwe	%0,%3,%6\n"
 	:
-#ifdef CONFIG_PPC47x
-	: "r" (PPC47x_TLB2_S_RWX),
-#else
 	: "r" (PPC44x_TLB_SW | PPC44x_TLB_SR | PPC44x_TLB_SX | PPC44x_TLB_G),
-#endif
 	  "r" (phys),
 	  "r" (virt | PPC44x_TLB_VALID | PPC44x_TLB_256M),
 	  "r" (entry),
@@ -139,7 +134,7 @@ static void __init ppc47x_update_boltmap(void)
 /*
  * "Pins" a 256MB TLB entry in AS0 for kernel lowmem for 47x type MMU
  */
-static void __cpuinit ppc47x_pin_tlb(unsigned int virt, unsigned int phys)
+static void ppc47x_pin_tlb(unsigned int virt, unsigned int phys)
 {
 	unsigned int rA;
 	int bolted;
@@ -221,7 +216,7 @@ void setup_initial_memory_limit(phys_addr_t first_memblock_base,
 {
 	u64 size;
 
-#ifndef CONFIG_RELOCATABLE
+#ifndef CONFIG_NONSTATIC_KERNEL
 	/* We don't currently support the first MEMBLOCK not mapping 0
 	 * physical on those processors
 	 */
@@ -234,7 +229,7 @@ void setup_initial_memory_limit(phys_addr_t first_memblock_base,
 }
 
 #ifdef CONFIG_SMP
-void __cpuinit mmu_init_secondary(int cpu)
+void mmu_init_secondary(int cpu)
 {
 	unsigned long addr;
 	unsigned long memstart = memstart_addr & ~(PPC_PIN_SIZE - 1);

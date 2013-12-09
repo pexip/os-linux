@@ -78,6 +78,8 @@
 #include <asm/processor.h>
 #include "intel_ips.h"
 
+#include <asm-generic/io-64-nonatomic-lo-hi.h>
+
 #define PCI_DEVICE_ID_INTEL_THERMAL_SENSOR 0x3b32
 
 /*
@@ -345,19 +347,6 @@ struct ips_driver {
 static bool
 ips_gpu_turbo_enabled(struct ips_driver *ips);
 
-#ifndef readq
-static inline __u64 readq(const volatile void __iomem *addr)
-{
-	const volatile u32 __iomem *p = addr;
-	u32 low, high;
-
-	low = readl(p);
-	high = readl(p + 1);
-
-	return low + ((u64)high << 32);
-}
-#endif
-
 /**
  * ips_cpu_busy - is CPU busy?
  * @ips: IPS driver struct
@@ -621,25 +610,16 @@ static bool mcp_exceeded(struct ips_driver *ips)
 	bool ret = false;
 	u32 temp_limit;
 	u32 avg_power;
-	const char *msg = "MCP limit exceeded: ";
 
 	spin_lock_irqsave(&ips->turbo_status_lock, flags);
 
 	temp_limit = ips->mcp_temp_limit * 100;
-	if (ips->mcp_avg_temp > temp_limit) {
-		dev_info(&ips->dev->dev,
-			"%sAvg temp %u, limit %u\n", msg, ips->mcp_avg_temp,
-			temp_limit);
+	if (ips->mcp_avg_temp > temp_limit)
 		ret = true;
-	}
 
 	avg_power = ips->cpu_avg_power + ips->mch_avg_power;
-	if (avg_power > ips->mcp_power_limit) {
-		dev_info(&ips->dev->dev,
-			"%sAvg power %u, limit %u\n", msg, avg_power,
-			ips->mcp_power_limit);
+	if (avg_power > ips->mcp_power_limit)
 		ret = true;
-	}
 
 	spin_unlock_irqrestore(&ips->turbo_status_lock, flags);
 
@@ -1615,7 +1595,7 @@ static int ips_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		ips->poll_turbo_status = true;
 
 	if (!ips_get_i915_syms(ips)) {
-		dev_err(&dev->dev, "failed to get i915 symbols, graphics turbo disabled\n");
+		dev_info(&dev->dev, "failed to get i915 symbols, graphics turbo disabled until i915 loads\n");
 		ips->gpu_turbo_enabled = false;
 	} else {
 		dev_dbg(&dev->dev, "graphics turbo enabled\n");
@@ -1747,21 +1727,6 @@ static void ips_remove(struct pci_dev *dev)
 	dev_dbg(&dev->dev, "IPS driver removed\n");
 }
 
-#ifdef CONFIG_PM
-static int ips_suspend(struct pci_dev *dev, pm_message_t state)
-{
-	return 0;
-}
-
-static int ips_resume(struct pci_dev *dev)
-{
-	return 0;
-}
-#else
-#define ips_suspend NULL
-#define ips_resume NULL
-#endif /* CONFIG_PM */
-
 static void ips_shutdown(struct pci_dev *dev)
 {
 }
@@ -1771,23 +1736,10 @@ static struct pci_driver ips_pci_driver = {
 	.id_table = ips_id_table,
 	.probe = ips_probe,
 	.remove = ips_remove,
-	.suspend = ips_suspend,
-	.resume = ips_resume,
 	.shutdown = ips_shutdown,
 };
 
-static int __init ips_init(void)
-{
-	return pci_register_driver(&ips_pci_driver);
-}
-module_init(ips_init);
-
-static void ips_exit(void)
-{
-	pci_unregister_driver(&ips_pci_driver);
-	return;
-}
-module_exit(ips_exit);
+module_pci_driver(ips_pci_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Jesse Barnes <jbarnes@virtuousgeek.org>");

@@ -1,19 +1,12 @@
-human_arch	= PowerPC (32 bit userspace)
+human_arch	= PowerPC
 build_arch	= powerpc
 header_arch	= $(build_arch)
 defconfig	= pmac32_defconfig
-flavours	= powerpc-smp powerpc64-smp
+flavours	=
 build_image	= vmlinux
 kernel_file	= $(build_image)
 install_file	= $(build_image)
-
+no_dumpfile	= true
+do_tools	= false
 loader		= yaboot
-
-custom_flavours	=
-
-no_dumpfile = true
-skipdbg		= true
-skipabi		= true
-skipmodule	= true
-
-family=ubuntu
+do_flavour_image_package = false

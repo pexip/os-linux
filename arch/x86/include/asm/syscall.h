@@ -16,6 +16,9 @@
 #include <linux/audit.h>
 #include <linux/sched.h>
 #include <linux/err.h>
+#include <asm/asm-offsets.h>	/* For NR_syscalls */
+#include <asm/thread_info.h>	/* for TS_COMPAT */
+#include <asm/unistd.h>
 
 extern const unsigned long sys_call_table[];
 
@@ -222,15 +225,18 @@ static inline int syscall_get_arch(struct task_struct *task,
 {
 #ifdef CONFIG_IA32_EMULATION
 	/*
-	 * TS_COMPAT is set for 32-bit syscall entries and then
+	 * TS_COMPAT is set for 32-bit syscall entry and then
 	 * remains set until we return to user mode.
 	 *
 	 * TIF_IA32 tasks should always have TS_COMPAT set at
 	 * system call time.
+	 *
+	 * x32 tasks should be considered AUDIT_ARCH_X86_64.
 	 */
 	if (task_thread_info(task)->status & TS_COMPAT)
 		return AUDIT_ARCH_I386;
 #endif
+	/* Both x32 and x86_64 are considered "64-bit". */
 	return AUDIT_ARCH_X86_64;
 }
 #endif	/* CONFIG_X86_32 */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ int vfsub_update_h_iattr(struct path *h_path, int *did)
 	h_sb = h_path->dentry->d_sb;
 	*did = (!au_test_fs_remote(h_sb) && au_test_fs_refresh_iattr(h_sb));
 	if (*did)
-		err = vfs_getattr(h_path->mnt, h_path->dentry, &st);
+		err = vfs_getattr(h_path, &st);
 
 	return err;
 }
@@ -52,9 +52,7 @@ struct file *vfsub_dentry_open(struct path *path, int flags)
 {
 	struct file *file;
 
-	path_get(path);
-	file = dentry_open(path->dentry, path->mnt,
-			   flags /* | __FMODE_NONOTIFY */,
+	file = dentry_open(path, flags /* | __FMODE_NONOTIFY */,
 			   current_cred());
 	if (!IS_ERR_OR_NULL(file)
 	    && (file->f_mode & (FMODE_READ | FMODE_WRITE)) == FMODE_READ)
@@ -111,51 +109,10 @@ out:
 	return path.dentry;
 }
 
-struct dentry *vfsub_lookup_hash(struct nameidata *nd)
+void vfsub_call_lkup_one(void *args)
 {
-	struct path path = {
-		.mnt = nd->path.mnt
-	};
-
-	IMustLock(nd->path.dentry->d_inode);
-
-	path.dentry = lookup_hash(nd);
-	if (IS_ERR(path.dentry))
-		goto out;
-	if (path.dentry->d_inode)
-		vfsub_update_h_iattr(&path, /*did*/NULL); /*ignore*/
-
-out:
-	AuTraceErrPtr(path.dentry);
-	return path.dentry;
-}
-
-/*
- * this is "VFS:__lookup_one_len()" which was removed and merged into
- * VFS:lookup_one_len() by the commit.
- *	6a96ba5 2011-03-14 kill __lookup_one_len()
- * this function should always be equivalent to the corresponding part in
- * VFS:lookup_one_len().
- */
-int vfsub_name_hash(const char *name, struct qstr *this, int len)
-{
-	unsigned long hash;
-	unsigned int c;
-
-	this->name = name;
-	this->len = len;
-	if (!len)
-		return -EACCES;
-
-	hash = init_name_hash();
-	while (len--) {
-		c = *(const unsigned char *)name++;
-		if (c == '/' || c == '\0')
-			return -EACCES;
-		hash = partial_name_hash(c, hash);
-	}
-	this->hash = end_name_hash(hash);
-	return 0;
+	struct vfsub_lkup_one_args *a = args;
+	*a->errp = vfsub_lkup_one(a->name, a->parent);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -188,7 +145,7 @@ void vfsub_unlock_rename(struct dentry *d1, struct au_hinode *hdir1,
 
 /* ---------------------------------------------------------------------- */
 
-int vfsub_create(struct inode *dir, struct path *path, int mode)
+int vfsub_create(struct inode *dir, struct path *path, int mode, bool want_excl)
 {
 	int err;
 	struct dentry *d;
@@ -202,23 +159,7 @@ int vfsub_create(struct inode *dir, struct path *path, int mode)
 	if (unlikely(err))
 		goto out;
 
-	if (au_test_fs_null_nd(dir->i_sb))
-		err = vfs_create(dir, path->dentry, mode, NULL);
-	else {
-		struct nameidata h_nd;
-
-		memset(&h_nd, 0, sizeof(h_nd));
-		h_nd.flags = LOOKUP_CREATE;
-		h_nd.intent.open.flags = O_CREAT
-			| vfsub_fmode_to_uint(FMODE_READ);
-		h_nd.intent.open.create_mode = mode;
-		h_nd.path.dentry = path->dentry->d_parent;
-		h_nd.path.mnt = path->mnt;
-		path_get(&h_nd.path);
-		err = vfs_create(dir, path->dentry, mode, &h_nd);
-		path_put(&h_nd.path);
-	}
-
+	err = vfs_create(dir, path->dentry, mode, want_excl);
 	if (!err) {
 		struct path tmp = *path;
 		int did;
@@ -318,6 +259,7 @@ int vfsub_link(struct dentry *src_dentry, struct inode *dir, struct path *path)
 	if (unlikely(err))
 		return err;
 
+	/* we don't call may_linkat() */
 	d = path->dentry;
 	path->dentry = d->d_parent;
 	err = security_path_link(src_dentry, path, d);
@@ -534,12 +476,15 @@ int vfsub_flush(struct file *file, fl_owner_t id)
 	return err;
 }
 
-int vfsub_readdir(struct file *file, filldir_t filldir, void *arg)
+int vfsub_iterate_dir(struct file *file, struct dir_context *ctx)
 {
 	int err;
 
+	AuDbg("%.*s, ctx{%pf, %llu}\n",
+	      AuDLNPair(file->f_dentry), ctx->actor, ctx->pos);
+
 	lockdep_off();
-	err = vfs_readdir(file, filldir, arg);
+	err = iterate_dir(file, ctx);
 	lockdep_on();
 	if (err >= 0)
 		vfsub_update_h_iattr(&file->f_path, /*did*/NULL); /*ignore*/
@@ -598,23 +543,18 @@ int vfsub_trunc(struct path *h_path, loff_t length, unsigned int attr,
 {
 	int err;
 	struct inode *h_inode;
+	struct super_block *h_sb;
 
-	h_inode = h_path->dentry->d_inode;
 	if (!h_file) {
-		err = mnt_want_write(h_path->mnt);
-		if (err)
-			goto out;
-		err = inode_permission(h_inode, MAY_WRITE);
-		if (err)
-			goto out_mnt;
-		err = get_write_access(h_inode);
-		if (err)
-			goto out_mnt;
-		err = break_lease(h_inode, O_WRONLY);
-		if (err)
-			goto out_inode;
+		err = vfsub_truncate(h_path, length);
+		goto out;
 	}
 
+	h_inode = h_path->dentry->d_inode;
+	h_sb = h_inode->i_sb;
+	lockdep_off();
+	sb_start_write(h_sb);
+	lockdep_on();
 	err = locks_verify_truncate(h_inode, h_file, length);
 	if (!err)
 		err = security_path_truncate(h_path);
@@ -623,13 +563,10 @@ int vfsub_trunc(struct path *h_path, loff_t length, unsigned int attr,
 		err = do_truncate(h_path->dentry, length, attr, h_file);
 		lockdep_on();
 	}
+	lockdep_off();
+	sb_end_write(h_sb);
+	lockdep_on();
 
-out_inode:
-	if (!h_file)
-		put_write_access(h_inode);
-out_mnt:
-	if (!h_file)
-		mnt_drop_write(h_path->mnt);
 out:
 	return err;
 }
@@ -773,7 +710,7 @@ static void call_unlink(void *args)
 	struct dentry *d = a->path->dentry;
 	struct inode *h_inode;
 	const int stop_sillyrename = (au_test_nfs(d->d_sb)
-				      && d->d_count == 1);
+				      && d_count(d) == 1);
 
 	IMustLock(a->dir);
 

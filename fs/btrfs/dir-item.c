@@ -21,6 +21,10 @@
 #include "hash.h"
 #include "transaction.h"
 
+static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
+			      struct btrfs_path *path,
+			      const char *name, int name_len);
+
 /*
  * insert a name into a directory, doing overflow properly if there is a hash
  * collision.  data_size indicates how big the item inserted should be.  On
@@ -49,9 +53,8 @@ static struct btrfs_dir_item *insert_with_overflow(struct btrfs_trans_handle
 		di = btrfs_match_dir_item_name(root, path, name, name_len);
 		if (di)
 			return ERR_PTR(-EEXIST);
-		ret = btrfs_extend_item(trans, root, path, data_size);
-	}
-	if (ret < 0)
+		btrfs_extend_item(root, path, data_size);
+	} else if (ret < 0)
 		return ERR_PTR(ret);
 	WARN_ON(ret > 0);
 	leaf = path->nodes[0];
@@ -116,6 +119,7 @@ int btrfs_insert_xattr_item(struct btrfs_trans_handle *trans,
  * 'location' is the key to stuff into the directory item, 'type' is the
  * type of the inode we're pointing to, and 'index' is the sequence number
  * to use for the second index (if one is created).
+ * Will return 0 or -ENOMEM
  */
 int btrfs_insert_dir_item(struct btrfs_trans_handle *trans, struct btrfs_root
 			  *root, const char *name, int name_len,
@@ -379,7 +383,7 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
  * this walks through all the entries in a dir item and finds one
  * for a specific name.
  */
-struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
+static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
 			      struct btrfs_path *path,
 			      const char *name, int name_len)
 {
@@ -442,8 +446,7 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
 		start = btrfs_item_ptr_offset(leaf, path->slots[0]);
 		memmove_extent_buffer(leaf, ptr, ptr + sub_item_len,
 			item_len - (ptr + sub_item_len - start));
-		ret = btrfs_truncate_item(trans, root, path,
-					  item_len - sub_item_len, 1);
+		btrfs_truncate_item(root, path, item_len - sub_item_len, 1);
 	}
 	return ret;
 }

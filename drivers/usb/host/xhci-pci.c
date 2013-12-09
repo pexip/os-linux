@@ -87,6 +87,10 @@ static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
 	/* AMD PLL quirk */
 	if (pdev->vendor == PCI_VENDOR_ID_AMD && usb_amd_find_chipset_info())
 		xhci->quirks |= XHCI_AMD_PLL_FIX;
+	if (pdev->vendor == PCI_VENDOR_ID_INTEL) {
+		xhci->quirks |= XHCI_LPM_SUPPORT;
+		xhci->quirks |= XHCI_INTEL_HOST;
+	}
 	if (pdev->vendor == PCI_VENDOR_ID_INTEL &&
 			pdev->device == PCI_DEVICE_ID_INTEL_PANTHERPOINT_XHCI) {
 		xhci->quirks |= XHCI_EP_LIMIT_QUIRK;
@@ -183,6 +187,13 @@ static int xhci_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	if (retval)
 		goto put_usb3_hcd;
 	/* Roothub already marked as USB 3.0 speed */
+
+	/* We know the LPM timeout algorithms for this host, let the USB core
+	 * enable and disable LPM for devices under the USB 3.0 roothub.
+	 */
+	if (xhci->quirks & XHCI_LPM_SUPPORT)
+		hcd_to_bus(xhci->shared_hcd)->root_hub->lpm_capable = 1;
+
 	return 0;
 
 put_usb3_hcd:
@@ -209,15 +220,16 @@ static void xhci_pci_remove(struct pci_dev *dev)
 static int xhci_pci_suspend(struct usb_hcd *hcd, bool do_wakeup)
 {
 	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
-	int	retval = 0;
+	struct pci_dev		*pdev = to_pci_dev(hcd->self.controller);
 
-	if (hcd->state != HC_STATE_SUSPENDED ||
-			xhci->shared_hcd->state != HC_STATE_SUSPENDED)
-		return -EINVAL;
+	/*
+	 * Systems with the TI redriver that loses port status change events
+	 * need to have the registers polled during D3, so avoid D3cold.
+	 */
+	if (xhci_compliance_mode_recovery_timer_quirk_check())
+		pdev->no_d3cold = true;
 
-	retval = xhci_suspend(xhci);
-
-	return retval;
+	return xhci_suspend(xhci);
 }
 
 static int xhci_pci_resume(struct usb_hcd *hcd, bool hibernated)
@@ -237,13 +249,15 @@ static int xhci_pci_resume(struct usb_hcd *hcd, bool hibernated)
 	 * writers.
 	 *
 	 * Unconditionally switch the ports back to xHCI after a system resume.
-	 * We can't tell whether the EHCI or xHCI controller will be resumed
-	 * first, so we have to do the port switchover in both drivers.  Writing
-	 * a '1' to the port switchover registers should have no effect if the
-	 * port was already switched over.
+	 * It should not matter whether the EHCI or xHCI controller is
+	 * resumed first. It's enough to do the switchover in xHCI because
+	 * USB core won't notice anything as the hub driver doesn't start
+	 * running again until after all the devices (including both EHCI and
+	 * xHCI host controllers) have been resumed.
 	 */
-	if (usb_is_intel_switchable_xhci(pdev))
-		usb_enable_xhci_ports(pdev);
+
+	if (pdev->vendor == PCI_VENDOR_ID_INTEL)
+		usb_enable_intel_xhci_ports(pdev);
 
 	retval = xhci_resume(xhci, hibernated);
 	return retval;
@@ -306,6 +320,9 @@ static const struct hc_driver xhci_pci_hc_driver = {
 	 */
 	.update_device =        xhci_update_device,
 	.set_usb2_hw_lpm =	xhci_set_usb2_hardware_lpm,
+	.enable_usb3_lpm_timeout =	xhci_enable_usb3_lpm_timeout,
+	.disable_usb3_lpm_timeout =	xhci_disable_usb3_lpm_timeout,
+	.find_raw_port_number =	xhci_find_raw_port_number,
 };
 
 /*-------------------------------------------------------------------------*/
@@ -342,7 +359,7 @@ int __init xhci_register_pci(void)
 	return pci_register_driver(&xhci_pci_driver);
 }
 
-void __exit xhci_unregister_pci(void)
+void xhci_unregister_pci(void)
 {
 	pci_unregister_driver(&xhci_pci_driver);
 }

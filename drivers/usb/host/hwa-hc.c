@@ -481,7 +481,7 @@ static int __hwahc_op_set_ptk(struct wusbhc *wusbhc, u8 port_idx, u32 tkid,
 		encryption_value = 0;
 	}
 
-	/* Set the encryption type for commmunicating with the device */
+	/* Set the encryption type for communicating with the device */
 	result = usb_control_msg(wa->usb_dev, usb_sndctrlpipe(wa->usb_dev, 0),
 			USB_REQ_SET_ENCRYPTION,
 			USB_DIR_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE,
@@ -577,7 +577,7 @@ static struct hc_driver hwahc_hc_driver = {
 	.product_desc = "Wireless USB HWA host controller",
 	.hcd_priv_size = sizeof(struct hwahc) - sizeof(struct usb_hcd),
 	.irq = NULL,			/* FIXME */
-	.flags = HCD_USB2,		/* FIXME */
+	.flags = HCD_USB25,
 	.reset = hwahc_op_reset,
 	.start = hwahc_op_start,
 	.stop = hwahc_op_stop,
@@ -588,8 +588,6 @@ static struct hc_driver hwahc_hc_driver = {
 
 	.hub_status_data = wusbhc_rh_status_data,
 	.hub_control = wusbhc_rh_control,
-	.bus_suspend = wusbhc_rh_suspend,
-	.bus_resume = wusbhc_rh_resume,
 	.start_port_reset = wusbhc_rh_start_port_reset,
 };
 
@@ -685,12 +683,9 @@ static int hwahc_create(struct hwahc *hwahc, struct usb_interface *iface)
 	wa->usb_dev = usb_get_dev(usb_dev);	/* bind the USB device */
 	wa->usb_iface = usb_get_intf(iface);
 	wusbhc->dev = dev;
-	wusbhc->uwb_rc = uwb_rc_get_by_grandpa(iface->dev.parent);
-	if (wusbhc->uwb_rc == NULL) {
-		result = -ENODEV;
-		dev_err(dev, "Cannot get associated UWB Host Controller\n");
-		goto error_rc_get;
-	}
+	/* defer getting the uwb_rc handle until it is needed since it
+	 * may not have been registered by the hwa_rc driver yet. */
+	wusbhc->uwb_rc = NULL;
 	result = wa_fill_descr(wa);	/* Get the device descriptor */
 	if (result < 0)
 		goto error_fill_descriptor;
@@ -733,8 +728,6 @@ error_wusbhc_create:
 	/* WA Descr fill allocs no resources */
 error_security_create:
 error_fill_descriptor:
-	uwb_rc_put(wusbhc->uwb_rc);
-error_rc_get:
 	usb_put_intf(iface);
 	usb_put_dev(usb_dev);
 	return result;
@@ -776,7 +769,7 @@ static int hwahc_probe(struct usb_interface *usb_iface,
 		goto error_alloc;
 	}
 	usb_hcd->wireless = 1;
-	set_bit(HCD_FLAG_SAW_IRQ, &usb_hcd->flags);
+	usb_hcd->self.sg_tablesize = ~0;
 	wusbhc = usb_hcd_to_wusbhc(usb_hcd);
 	hwahc = container_of(wusbhc, struct hwahc, wusbhc);
 	hwahc_init(hwahc);
@@ -837,18 +830,7 @@ static struct usb_driver hwahc_driver = {
 	.id_table =	hwahc_id_table,
 };
 
-static int __init hwahc_driver_init(void)
-{
-	return usb_register(&hwahc_driver);
-}
-module_init(hwahc_driver_init);
-
-static void __exit hwahc_driver_exit(void)
-{
-	usb_deregister(&hwahc_driver);
-}
-module_exit(hwahc_driver_exit);
-
+module_usb_driver(hwahc_driver);
 
 MODULE_AUTHOR("Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>");
 MODULE_DESCRIPTION("Host Wired Adapter USB Host Control Driver");

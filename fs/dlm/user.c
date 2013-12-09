@@ -392,8 +392,9 @@ static int device_create_lockspace(struct dlm_lspace_params *params)
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
 
-	error = dlm_new_lockspace(params->name, strlen(params->name),
-				  &lockspace, params->flags, DLM_USER_LVB_LEN);
+	error = dlm_new_lockspace(params->name, NULL, params->flags,
+				  DLM_USER_LVB_LEN, NULL, NULL, NULL,
+				  &lockspace);
 	if (error)
 		return error;
 
@@ -500,6 +501,13 @@ static ssize_t device_write(struct file *file, const char __user *buf,
 #else
 	if (count < sizeof(struct dlm_write_request))
 #endif
+		return -EINVAL;
+
+	/*
+	 * can't compare against COMPAT/dlm_write_request32 because
+	 * we don't yet know if is64bit is zero
+	 */
+	if (count > sizeof(struct dlm_write_request) + DLM_RESNAME_MAXLEN)
 		return -EINVAL;
 
 	kbuf = kzalloc(count + 1, GFP_NOFS);
@@ -678,7 +686,6 @@ static int device_close(struct inode *inode, struct file *file)
 	   device_remove_lockspace() */
 
 	sigprocmask(SIG_SETMASK, &tmpsig, NULL);
-	recalc_sigpending();
 
 	return 0;
 }

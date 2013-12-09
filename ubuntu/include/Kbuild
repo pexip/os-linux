@@ -1,1 +1,2 @@
 header-y += linux/
+header-y += uapi/

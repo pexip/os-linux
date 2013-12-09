@@ -13,6 +13,7 @@
 
 #include <linux/ssb/ssb.h>
 #include <linux/ssb/ssb_driver_chipcommon.h>
+#include <linux/completion.h>
 
 #include <net/mac80211.h>
 
@@ -560,7 +561,15 @@ struct b43legacy_key {
 	u8 algorithm;
 };
 
+#define B43legacy_QOS_QUEUE_NUM	4
+
 struct b43legacy_wldev;
+
+/* QOS parameters for a queue. */
+struct b43legacy_qos_params {
+	/* The QOS parameters */
+	struct ieee80211_tx_queue_params p;
+};
 
 /* Data structure for the WLAN parts (802.11 cores) of the b43legacy chip. */
 struct b43legacy_wl {
@@ -572,6 +581,9 @@ struct b43legacy_wl {
 	spinlock_t irq_lock;		/* locks IRQ */
 	struct mutex mutex;		/* locks wireless core state */
 	spinlock_t leds_lock;		/* lock for leds */
+
+	/* firmware loading work */
+	struct work_struct firmware_load;
 
 	/* We can only have one operating interface (802.11 core)
 	 * at a time. General information about this interface follows.
@@ -611,6 +623,18 @@ struct b43legacy_wl {
 	bool beacon1_uploaded;
 	bool beacon_templates_virgin; /* Never wrote the templates? */
 	struct work_struct beacon_update_trigger;
+	/* The current QOS parameters for the 4 queues. */
+	struct b43legacy_qos_params qos_params[B43legacy_QOS_QUEUE_NUM];
+
+	/* Packet transmit work */
+	struct work_struct tx_work;
+
+	/* Queue of packets to be transmitted. */
+	struct sk_buff_head tx_queue[B43legacy_QOS_QUEUE_NUM];
+
+	/* Flag that implement the queues stopping. */
+	bool tx_queue_stopped[B43legacy_QOS_QUEUE_NUM];
+
 };
 
 /* Pointers to the firmware data and meta information about it. */
@@ -710,6 +734,10 @@ struct b43legacy_wldev {
 
 	/* Firmware data */
 	struct b43legacy_firmware fw;
+	const struct firmware *fwp;	/* needed to pass fw pointer */
+
+	/* completion struct for firmware loading */
+	struct completion fw_load_complete;
 
 	/* Devicelist in struct b43legacy_wl (all 802.11 cores) */
 	struct list_head list;

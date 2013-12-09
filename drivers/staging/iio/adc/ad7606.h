@@ -51,7 +51,7 @@ struct ad7606_platform_data {
 struct ad7606_chip_info {
 	const char			*name;
 	u16				int_vref_mv;
-	struct iio_chan_spec		*channels;
+	const struct iio_chan_spec	*channels;
 	unsigned			num_channels;
 };
 
@@ -99,7 +99,6 @@ enum ad7606_supported_device_ids {
 	ID_AD7606_4
 };
 
-int ad7606_scan_from_ring(struct iio_dev *indio_dev, unsigned ch);
 int ad7606_register_ring_funcs_and_init(struct iio_dev *indio_dev);
 void ad7606_ring_cleanup(struct iio_dev *indio_dev);
 #endif /* IIO_ADC_AD7606_H_ */

@@ -98,6 +98,7 @@ struct ltq_etop_chan {
 
 struct ltq_etop_priv {
 	struct net_device *netdev;
+	struct platform_device *pdev;
 	struct ltq_eth_data *pldata;
 	struct resource *res;
 
@@ -113,7 +114,7 @@ struct ltq_etop_priv {
 static int
 ltq_etop_alloc_skb(struct ltq_etop_chan *ch)
 {
-	ch->skb[ch->dma.desc] = dev_alloc_skb(MAX_DMA_DATA_LEN);
+	ch->skb[ch->dma.desc] = netdev_alloc_skb(ch->netdev, MAX_DMA_DATA_LEN);
 	if (!ch->skb[ch->dma.desc])
 		return -ENOMEM;
 	ch->dma.desc_base[ch->dma.desc].addr = dma_map_single(NULL,
@@ -148,7 +149,6 @@ ltq_etop_hw_receive(struct ltq_etop_chan *ch)
 	spin_unlock_irqrestore(&priv->lock, flags);
 
 	skb_put(skb, len);
-	skb->dev = ch->netdev;
 	skb->protocol = eth_type_trans(skb, ch->netdev);
 	netif_receive_skb(skb);
 }
@@ -302,9 +302,9 @@ ltq_etop_hw_init(struct net_device *dev)
 static void
 ltq_etop_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info)
 {
-	strcpy(info->driver, "Lantiq ETOP");
-	strcpy(info->bus_info, "internal");
-	strcpy(info->version, DRV_VERSION);
+	strlcpy(info->driver, "Lantiq ETOP", sizeof(info->driver));
+	strlcpy(info->bus_info, "internal", sizeof(info->bus_info));
+	strlcpy(info->version, DRV_VERSION, sizeof(info->version));
 }
 
 static int
@@ -393,8 +393,8 @@ ltq_etop_mdio_probe(struct net_device *dev)
 		return -ENODEV;
 	}
 
-	phydev = phy_connect(dev, dev_name(&phydev->dev), &ltq_etop_mdio_link,
-			0, priv->pldata->mii_mode);
+	phydev = phy_connect(dev, dev_name(&phydev->dev),
+			     &ltq_etop_mdio_link, priv->pldata->mii_mode);
 
 	if (IS_ERR(phydev)) {
 		netdev_err(dev, "Could not attach to PHY\n");
@@ -436,7 +436,8 @@ ltq_etop_mdio_init(struct net_device *dev)
 	priv->mii_bus->read = ltq_etop_mdio_rd;
 	priv->mii_bus->write = ltq_etop_mdio_wr;
 	priv->mii_bus->name = "ltq_mii";
-	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%x", 0);
+	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
+		priv->pdev->name, priv->pdev->id);
 	priv->mii_bus->irq = kmalloc(sizeof(int) * PHY_MAX_ADDR, GFP_KERNEL);
 	if (!priv->mii_bus->irq) {
 		err = -ENOMEM;
@@ -632,6 +633,7 @@ ltq_etop_init(struct net_device *dev)
 	struct ltq_etop_priv *priv = netdev_priv(dev);
 	struct sockaddr mac;
 	int err;
+	bool random_mac = false;
 
 	ether_setup(dev);
 	dev->watchdog_timeo = 10 * HZ;
@@ -643,12 +645,18 @@ ltq_etop_init(struct net_device *dev)
 	memcpy(&mac, &priv->pldata->mac, sizeof(struct sockaddr));
 	if (!is_valid_ether_addr(mac.sa_data)) {
 		pr_warn("etop: invalid MAC, using random\n");
-		random_ether_addr(mac.sa_data);
+		eth_random_addr(mac.sa_data);
+		random_mac = true;
 	}
 
 	err = ltq_etop_set_mac_address(dev, &mac);
 	if (err)
 		goto err_netdev;
+
+	/* Set addr_assign_type here, ltq_etop_set_mac_address would reset it. */
+	if (random_mac)
+		dev->addr_assign_type = NET_ADDR_RANDOM;
+
 	ltq_etop_set_multicast_list(dev);
 	err = ltq_etop_mdio_init(dev);
 	if (err)
@@ -729,11 +737,16 @@ ltq_etop_probe(struct platform_device *pdev)
 	}
 
 	dev = alloc_etherdev_mq(sizeof(struct ltq_etop_priv), 4);
+	if (!dev) {
+		err = -ENOMEM;
+		goto err_out;
+	}
 	strcpy(dev->name, "eth%d");
 	dev->netdev_ops = &ltq_eth_netdev_ops;
 	dev->ethtool_ops = &ltq_etop_ethtool_ops;
 	priv = netdev_priv(dev);
 	priv->res = res;
+	priv->pdev = pdev;
 	priv->pldata = dev_get_platdata(&pdev->dev);
 	priv->netdev = dev;
 	spin_lock_init(&priv->lock);
@@ -756,12 +769,12 @@ ltq_etop_probe(struct platform_device *pdev)
 	return 0;
 
 err_free:
-	kfree(dev);
+	free_netdev(dev);
 err_out:
 	return err;
 }
 
-static int __devexit
+static int
 ltq_etop_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
@@ -776,7 +789,7 @@ ltq_etop_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver ltq_mii_driver = {
-	.remove = __devexit_p(ltq_etop_remove),
+	.remove = ltq_etop_remove,
 	.driver = {
 		.name = "ltq_etop",
 		.owner = THIS_MODULE,
@@ -789,7 +802,7 @@ init_ltq_etop(void)
 	int ret = platform_driver_probe(&ltq_mii_driver, ltq_etop_probe);
 
 	if (ret)
-		pr_err("ltq_etop: Error registering platfom driver!");
+		pr_err("ltq_etop: Error registering platform driver!");
 	return ret;
 }
 

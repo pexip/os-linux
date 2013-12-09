@@ -237,10 +237,10 @@ static int __init cs553x_init_one(int cs, int mmio, unsigned long adr)
 	this->ecc.hwctl  = cs_enable_hwecc;
 	this->ecc.calculate = cs_calculate_ecc;
 	this->ecc.correct  = nand_correct_data;
+	this->ecc.strength = 1;
 
 	/* Enable the following for a flash based bad block table */
 	this->bbt_options = NAND_BBT_USE_FLASH;
-	this->options = NAND_NO_AUTOINCR;
 
 	/* Scan to find existence of the device */
 	if (nand_scan(new_mtd, 1)) {
@@ -313,7 +313,7 @@ static int __init cs553x_init(void)
 	for (i = 0; i < NR_CS553X_CONTROLLERS; i++) {
 		if (cs553x_mtd[i]) {
 			/* If any devices registered, return success. Else the last error. */
-			mtd_device_parse_register(cs553x_mtd[i], NULL, 0,
+			mtd_device_parse_register(cs553x_mtd[i], NULL, NULL,
 						  NULL, 0);
 			err = 0;
 		}

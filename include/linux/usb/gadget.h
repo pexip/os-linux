@@ -20,6 +20,7 @@
 #include <linux/init.h>
 #include <linux/list.h>
 #include <linux/slab.h>
+#include <linux/scatterlist.h>
 #include <linux/types.h>
 #include <linux/usb/ch9.h>
 
@@ -32,6 +33,9 @@ struct usb_ep;
  * @dma: DMA address corresponding to 'buf'.  If you don't set this
  *	field, and the usb controller needs one, it is responsible
  *	for mapping and unmapping the buffer.
+ * @sg: a scatterlist for SG-capable controllers.
+ * @num_sgs: number of SG entries
+ * @num_mapped_sgs: number of SG entries mapped to DMA (internal)
  * @length: Length of that data
  * @stream_id: The stream id, when USB3.0 bulk streams are being used
  * @no_interrupt: If true, hints that no completion irq is needed.
@@ -87,6 +91,10 @@ struct usb_request {
 	void			*buf;
 	unsigned		length;
 	dma_addr_t		dma;
+
+	struct scatterlist	*sg;
+	unsigned		num_sgs;
+	unsigned		num_mapped_sgs;
 
 	unsigned		stream_id:16;
 	unsigned		no_interrupt:1;
@@ -164,7 +172,7 @@ struct usb_ep {
 	unsigned		maxpacket:16;
 	unsigned		max_streams:16;
 	unsigned		mult:2;
-	unsigned		maxburst:4;
+	unsigned		maxburst:5;
 	u8			address;
 	const struct usb_endpoint_descriptor	*desc;
 	const struct usb_ss_ep_comp_descriptor	*comp_desc;
@@ -463,11 +471,6 @@ struct usb_gadget_ops {
 			struct usb_gadget_driver *);
 	int	(*udc_stop)(struct usb_gadget *,
 			struct usb_gadget_driver *);
-
-	/* Those two are deprecated */
-	int	(*start)(struct usb_gadget_driver *,
-			int (*bind)(struct usb_gadget *));
-	int	(*stop)(struct usb_gadget_driver *);
 };
 
 /**
@@ -477,8 +480,10 @@ struct usb_gadget_ops {
  *	driver setup() requests
  * @ep_list: List of other endpoints supported by the device.
  * @speed: Speed of current connection to USB host.
- * @is_dualspeed: True if the controller supports both high and full speed
- *	operation.  If it does, the gadget driver must also support both.
+ * @max_speed: Maximal speed the UDC can handle.  UDC must support this
+ *      and all slower speeds.
+ * @state: the state we are now (attached, suspended, configured, etc)
+ * @sg_supported: true if we can handle scatter-gather
  * @is_otg: True if the USB device port uses a Mini-AB jack, so that the
  *	gadget driver must provide a USB OTG descriptor.
  * @is_a_peripheral: False unless is_otg, the "A" end of a USB cable
@@ -493,6 +498,8 @@ struct usb_gadget_ops {
  * @name: Identifies the controller hardware type.  Used in diagnostics
  *	and sometimes configuration.
  * @dev: Driver model state for this abstract device.
+ * @out_epnum: last used out ep number
+ * @in_epnum: last used in ep number
  *
  * Gadgets have a mostly-portable "gadget driver" implementing device
  * functions, handling all usb configurations and interfaces.  Gadget
@@ -518,7 +525,9 @@ struct usb_gadget {
 	struct usb_ep			*ep0;
 	struct list_head		ep_list;	/* of usb_ep */
 	enum usb_device_speed		speed;
-	unsigned			is_dualspeed:1;
+	enum usb_device_speed		max_speed;
+	enum usb_device_state		state;
+	unsigned			sg_supported:1;
 	unsigned			is_otg:1;
 	unsigned			is_a_peripheral:1;
 	unsigned			b_hnp_enable:1;
@@ -526,6 +535,8 @@ struct usb_gadget {
 	unsigned			a_alt_hnp_support:1;
 	const char			*name;
 	struct device			dev;
+	unsigned			out_epnum;
+	unsigned			in_epnum;
 };
 
 static inline void set_gadget_data(struct usb_gadget *gadget, void *data)
@@ -548,32 +559,16 @@ static inline struct usb_gadget *dev_to_usb_gadget(struct device *dev)
  */
 static inline int gadget_is_dualspeed(struct usb_gadget *g)
 {
-#ifdef CONFIG_USB_GADGET_DUALSPEED
-	/* runtime test would check "g->is_dualspeed" ... that might be
-	 * useful to work around hardware bugs, but is mostly pointless
-	 */
-	return 1;
-#else
-	return 0;
-#endif
+	return g->max_speed >= USB_SPEED_HIGH;
 }
 
 /**
- * gadget_is_superspeed() - return true if the hardware handles
- * supperspeed
- * @g: controller that might support supper speed
+ * gadget_is_superspeed() - return true if the hardware handles superspeed
+ * @g: controller that might support superspeed
  */
 static inline int gadget_is_superspeed(struct usb_gadget *g)
 {
-#ifdef CONFIG_USB_GADGET_SUPERSPEED
-	/*
-	 * runtime test would check "g->is_superspeed" ... that might be
-	 * useful to work around hardware bugs, but is mostly pointless
-	 */
-	return 1;
-#else
-	return 0;
-#endif
+	return g->max_speed >= USB_SPEED_SUPER;
 }
 
 /**
@@ -760,7 +755,7 @@ static inline int usb_gadget_disconnect(struct usb_gadget *gadget)
 /**
  * struct usb_gadget_driver - driver for usb 'slave' devices
  * @function: String describing the gadget's function
- * @speed: Highest speed the driver handles.
+ * @max_speed: Highest speed the driver handles.
  * @setup: Invoked for ep0 control requests that aren't handled by
  *	the hardware level driver. Most calls must be handled by
  *	the gadget driver, including descriptor and configuration
@@ -771,6 +766,7 @@ static inline int usb_gadget_disconnect(struct usb_gadget *gadget)
  *	when the host is disconnected.  May be called in_interrupt; this
  *	may not sleep.  Some devices can't detect disconnect, so this might
  *	not be called except as part of controller shutdown.
+ * @bind: the driver's bind callback
  * @unbind: Invoked when the driver is unbound from a gadget,
  *	usually from rmmod (after a disconnect is reported).
  *	Called in a context that permits sleeping.
@@ -824,7 +820,9 @@ static inline int usb_gadget_disconnect(struct usb_gadget *gadget)
  */
 struct usb_gadget_driver {
 	char			*function;
-	enum usb_device_speed	speed;
+	enum usb_device_speed	max_speed;
+	int			(*bind)(struct usb_gadget *gadget,
+					struct usb_gadget_driver *driver);
 	void			(*unbind)(struct usb_gadget *);
 	int			(*setup)(struct usb_gadget *,
 					const struct usb_ctrlrequest *);
@@ -850,7 +848,6 @@ struct usb_gadget_driver {
 /**
  * usb_gadget_probe_driver - probe a gadget driver
  * @driver: the driver being registered
- * @bind: the driver's bind callback
  * Context: can sleep
  *
  * Call this in your gadget driver's module initialization function,
@@ -859,8 +856,7 @@ struct usb_gadget_driver {
  * registration call returns.  It's expected that the @bind() function will
  * be in init sections.
  */
-int usb_gadget_probe_driver(struct usb_gadget_driver *driver,
-		int (*bind)(struct usb_gadget *));
+int usb_gadget_probe_driver(struct usb_gadget_driver *driver);
 
 /**
  * usb_gadget_unregister_driver - unregister a gadget driver
@@ -877,8 +873,12 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver,
  */
 int usb_gadget_unregister_driver(struct usb_gadget_driver *driver);
 
+extern int usb_add_gadget_udc_release(struct device *parent,
+		struct usb_gadget *gadget, void (*release)(struct device *dev));
 extern int usb_add_gadget_udc(struct device *parent, struct usb_gadget *gadget);
 extern void usb_del_gadget_udc(struct usb_gadget *gadget);
+extern int udc_attach_driver(const char *name,
+		struct usb_gadget_driver *driver);
 
 /*-------------------------------------------------------------------------*/
 
@@ -910,6 +910,11 @@ struct usb_gadget_strings {
 	struct usb_string	*strings;
 };
 
+struct usb_gadget_string_container {
+	struct list_head        list;
+	u8                      *stash[0];
+};
+
 /* put descriptor for string with that id into buf (buflen >= 256) */
 int usb_gadget_get_string(struct usb_gadget_strings *table, int id, u8 *buf);
 
@@ -937,6 +942,30 @@ static inline void usb_free_descriptors(struct usb_descriptor_header **v)
 {
 	kfree(v);
 }
+
+struct usb_function;
+int usb_assign_descriptors(struct usb_function *f,
+		struct usb_descriptor_header **fs,
+		struct usb_descriptor_header **hs,
+		struct usb_descriptor_header **ss);
+void usb_free_all_descriptors(struct usb_function *f);
+
+/*-------------------------------------------------------------------------*/
+
+/* utility to simplify map/unmap of usb_requests to/from DMA */
+
+extern int usb_gadget_map_request(struct usb_gadget *gadget,
+		struct usb_request *req, int is_in);
+
+extern void usb_gadget_unmap_request(struct usb_gadget *gadget,
+		struct usb_request *req, int is_in);
+
+/*-------------------------------------------------------------------------*/
+
+/* utility to set gadget state properly */
+
+extern void usb_gadget_set_state(struct usb_gadget *gadget,
+		enum usb_device_state state);
 
 /*-------------------------------------------------------------------------*/
 

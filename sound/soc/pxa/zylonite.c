@@ -249,13 +249,13 @@ static int zylonite_resume_pre(struct snd_soc_card *card)
 
 static struct snd_soc_card zylonite = {
 	.name = "Zylonite",
+	.owner = THIS_MODULE,
 	.probe = &zylonite_probe,
 	.remove = &zylonite_remove,
 	.suspend_post = &zylonite_suspend_post,
 	.resume_pre = &zylonite_resume_pre,
 	.dai_link = zylonite_dai,
 	.num_links = ARRAY_SIZE(zylonite_dai),
-	.owner = THIS_MODULE,
 };
 
 static struct platform_device *zylonite_snd_ac97_device;

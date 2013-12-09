@@ -13,6 +13,8 @@
 #include <asm/cacheflush.h>
 #include <linux/netdevice.h>
 #include <linux/filter.h>
+#include <linux/if_vlan.h>
+
 #include "bpf_jit.h"
 
 #ifndef __BIG_ENDIAN
@@ -39,7 +41,7 @@ static void bpf_jit_build_prologue(struct sk_filter *fp, u32 *image,
 		/* Make stackframe */
 		if (ctx->seen & SEEN_DATAREF) {
 			/* If we call any helpers (for loads), save LR */
-			EMIT(PPC_INST_MFLR | __PPC_RT(0));
+			EMIT(PPC_INST_MFLR | __PPC_RT(R0));
 			PPC_STD(0, 1, 16);
 
 			/* Back up non-volatile regs. */
@@ -56,7 +58,7 @@ static void bpf_jit_build_prologue(struct sk_filter *fp, u32 *image,
 					PPC_STD(i, 1, -(8*(32-i)));
 			}
 		}
-		EMIT(PPC_INST_STDU | __PPC_RS(1) | __PPC_RA(1) |
+		EMIT(PPC_INST_STDU | __PPC_RS(R1) | __PPC_RA(R1) |
 		     (-BPF_PPC_STACKFRAME & 0xfffc));
 	}
 
@@ -89,6 +91,8 @@ static void bpf_jit_build_prologue(struct sk_filter *fp, u32 *image,
 	case BPF_S_ANC_IFINDEX:
 	case BPF_S_ANC_MARK:
 	case BPF_S_ANC_RXHASH:
+	case BPF_S_ANC_VLAN_TAG:
+	case BPF_S_ANC_VLAN_TAG_PRESENT:
 	case BPF_S_ANC_CPU:
 	case BPF_S_ANC_QUEUE:
 	case BPF_S_LD_W_ABS:
@@ -126,6 +130,9 @@ static void bpf_jit_build_epilogue(u32 *image, struct codegen_context *ctx)
 
 	PPC_BLR();
 }
+
+#define CHOOSE_LOAD_FUNC(K, func) \
+	((int)K < 0 ? ((int)K >= SKF_LL_OFF ? func##_negative_offset : func) : func##_positive_offset)
 
 /* Assemble the body code between the prologue & epilogue. */
 static int bpf_jit_build_body(struct sk_filter *fp, u32 *image,
@@ -228,6 +235,17 @@ static int bpf_jit_build_body(struct sk_filter *fp, u32 *image,
 				PPC_ORI(r_A, r_A, IMM_L(K));
 			if (K >= 65536)
 				PPC_ORIS(r_A, r_A, IMM_H(K));
+			break;
+		case BPF_S_ANC_ALU_XOR_X:
+		case BPF_S_ALU_XOR_X: /* A ^= X */
+			ctx->seen |= SEEN_XREG;
+			PPC_XOR(r_A, r_A, r_X);
+			break;
+		case BPF_S_ALU_XOR_K: /* A ^= K */
+			if (IMM_L(K))
+				PPC_XORI(r_A, r_A, IMM_L(K));
+			if (K >= 65536)
+				PPC_XORIS(r_A, r_A, IMM_H(K));
 			break;
 		case BPF_S_ALU_LSH_X: /* A <<= X; */
 			ctx->seen |= SEEN_XREG;
@@ -368,6 +386,16 @@ static int bpf_jit_build_body(struct sk_filter *fp, u32 *image,
 			PPC_LWZ_OFFS(r_A, r_skb, offsetof(struct sk_buff,
 							  rxhash));
 			break;
+		case BPF_S_ANC_VLAN_TAG:
+		case BPF_S_ANC_VLAN_TAG_PRESENT:
+			BUILD_BUG_ON(FIELD_SIZEOF(struct sk_buff, vlan_tci) != 2);
+			PPC_LHZ_OFFS(r_A, r_skb, offsetof(struct sk_buff,
+							  vlan_tci));
+			if (filter[i].code == BPF_S_ANC_VLAN_TAG)
+				PPC_ANDI(r_A, r_A, VLAN_VID_MASK);
+			else
+				PPC_ANDI(r_A, r_A, VLAN_TAG_PRESENT);
+			break;
 		case BPF_S_ANC_QUEUE:
 			BUILD_BUG_ON(FIELD_SIZEOF(struct sk_buff,
 						  queue_mapping) != 2);
@@ -391,21 +419,16 @@ static int bpf_jit_build_body(struct sk_filter *fp, u32 *image,
 
 			/*** Absolute loads from packet header/data ***/
 		case BPF_S_LD_W_ABS:
-			func = sk_load_word;
+			func = CHOOSE_LOAD_FUNC(K, sk_load_word);
 			goto common_load;
 		case BPF_S_LD_H_ABS:
-			func = sk_load_half;
+			func = CHOOSE_LOAD_FUNC(K, sk_load_half);
 			goto common_load;
 		case BPF_S_LD_B_ABS:
-			func = sk_load_byte;
+			func = CHOOSE_LOAD_FUNC(K, sk_load_byte);
 		common_load:
-			/*
-			 * Load from [K].  Reference with the (negative)
-			 * SKF_NET_OFF/SKF_LL_OFF offsets is unsupported.
-			 */
+			/* Load from [K]. */
 			ctx->seen |= SEEN_DATAREF;
-			if ((int)K < 0)
-				return -ENOTSUPP;
 			PPC_LI64(r_scratch1, func);
 			PPC_MTLR(r_scratch1);
 			PPC_LI32(r_addr, K);
@@ -429,7 +452,7 @@ static int bpf_jit_build_body(struct sk_filter *fp, u32 *image,
 		common_load_ind:
 			/*
 			 * Load from [X + K].  Negative offsets are tested for
-			 * in the helper functions, and result in a 'ret 0'.
+			 * in the helper functions.
 			 */
 			ctx->seen |= SEEN_DATAREF | SEEN_XREG;
 			PPC_LI64(r_scratch1, func);
@@ -443,13 +466,7 @@ static int bpf_jit_build_body(struct sk_filter *fp, u32 *image,
 			break;
 
 		case BPF_S_LDX_B_MSH:
-			/*
-			 * x86 version drops packet (RET 0) when K<0, whereas
-			 * interpreter does allow K<0 (__load_pointer, special
-			 * ancillary data).  common_load returns ENOTSUPP if K<0,
-			 * so we fall back to interpreter & filter works.
-			 */
-			func = sk_load_byte_msh;
+			func = CHOOSE_LOAD_FUNC(K, sk_load_byte_msh);
 			goto common_load;
 			break;
 
@@ -633,8 +650,7 @@ void bpf_jit_compile(struct sk_filter *fp)
 
 	proglen = cgctx.idx * 4;
 	alloclen = proglen + FUNCTION_DESCR_SIZE;
-	image = module_alloc(max_t(unsigned int, alloclen,
-				   sizeof(struct work_struct)));
+	image = module_alloc(alloclen);
 	if (!image)
 		goto out;
 
@@ -654,16 +670,12 @@ void bpf_jit_compile(struct sk_filter *fp)
 	}
 
 	if (bpf_jit_enable > 1)
-		pr_info("flen=%d proglen=%u pass=%d image=%p\n",
-		       flen, proglen, pass, image);
+		/* Note that we output the base address of the code_base
+		 * rather than image, since opcodes are in code_base.
+		 */
+		bpf_jit_dump(flen, proglen, pass, code_base);
 
 	if (image) {
-		if (bpf_jit_enable > 1)
-			print_hex_dump(KERN_ERR, "JIT code: ",
-				       DUMP_PREFIX_ADDRESS,
-				       16, 1, code_base,
-				       proglen, false);
-
 		bpf_flush_icache(code_base, code_base + (proglen/4));
 		/* Function descriptor nastiness: Address + TOC */
 		((u64 *)image)[0] = (u64)code_base;
@@ -675,20 +687,8 @@ out:
 	return;
 }
 
-static void jit_free_defer(struct work_struct *arg)
-{
-	module_free(NULL, arg);
-}
-
-/* run from softirq, we must use a work_struct to call
- * module_free() from process context
- */
 void bpf_jit_free(struct sk_filter *fp)
 {
-	if (fp->bpf_func != sk_run_filter) {
-		struct work_struct *work = (struct work_struct *)fp->bpf_func;
-
-		INIT_WORK(work, jit_free_defer);
-		schedule_work(work);
-	}
+	if (fp->bpf_func != sk_run_filter)
+		module_free(NULL, fp->bpf_func);
 }

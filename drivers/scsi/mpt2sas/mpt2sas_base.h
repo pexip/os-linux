@@ -3,7 +3,7 @@
  * for access to MPT (Message Passing Technology) firmware.
  *
  * This code is based on drivers/scsi/mpt2sas/mpt2_base.h
- * Copyright (C) 2007-2010  LSI Corporation
+ * Copyright (C) 2007-2012  LSI Corporation
  *  (mailto:DL-MPTFusionLinux@lsi.com)
  *
  * This program is free software; you can redistribute it and/or
@@ -69,8 +69,8 @@
 #define MPT2SAS_DRIVER_NAME		"mpt2sas"
 #define MPT2SAS_AUTHOR	"LSI Corporation <DL-MPTFusionLinux@lsi.com>"
 #define MPT2SAS_DESCRIPTION	"LSI MPT Fusion SAS 2.0 Device Driver"
-#define MPT2SAS_DRIVER_VERSION		"10.100.00.00"
-#define MPT2SAS_MAJOR_VERSION		10
+#define MPT2SAS_DRIVER_VERSION		"15.100.00.00"
+#define MPT2SAS_MAJOR_VERSION		15
 #define MPT2SAS_MINOR_VERSION		100
 #define MPT2SAS_BUILD_VERSION		00
 #define MPT2SAS_RELEASE_VERSION		00
@@ -157,20 +157,39 @@
 /*
  * Intel HBA branding
  */
+#define MPT2SAS_INTEL_RMS25JB080_BRANDING    \
+				"Intel(R) Integrated RAID Module RMS25JB080"
+#define MPT2SAS_INTEL_RMS25JB040_BRANDING    \
+				"Intel(R) Integrated RAID Module RMS25JB040"
+#define MPT2SAS_INTEL_RMS25KB080_BRANDING    \
+				"Intel(R) Integrated RAID Module RMS25KB080"
+#define MPT2SAS_INTEL_RMS25KB040_BRANDING    \
+				"Intel(R) Integrated RAID Module RMS25KB040"
+#define MPT2SAS_INTEL_RMS25LB040_BRANDING	\
+				"Intel(R) Integrated RAID Module RMS25LB040"
+#define MPT2SAS_INTEL_RMS25LB080_BRANDING	\
+				"Intel(R) Integrated RAID Module RMS25LB080"
 #define MPT2SAS_INTEL_RMS2LL080_BRANDING	\
 				"Intel Integrated RAID Module RMS2LL080"
 #define MPT2SAS_INTEL_RMS2LL040_BRANDING	\
 				"Intel Integrated RAID Module RMS2LL040"
 #define MPT2SAS_INTEL_RS25GB008_BRANDING       \
 				"Intel(R) RAID Controller RS25GB008"
-
+#define MPT2SAS_INTEL_SSD910_BRANDING          \
+				"Intel(R) SSD 910 Series"
 /*
  * Intel HBA SSDIDs
  */
+#define MPT2SAS_INTEL_RMS25JB080_SSDID         0x3516
+#define MPT2SAS_INTEL_RMS25JB040_SSDID         0x3517
+#define MPT2SAS_INTEL_RMS25KB080_SSDID         0x3518
+#define MPT2SAS_INTEL_RMS25KB040_SSDID         0x3519
+#define MPT2SAS_INTEL_RMS25LB040_SSDID         0x351A
+#define MPT2SAS_INTEL_RMS25LB080_SSDID         0x351B
 #define MPT2SAS_INTEL_RMS2LL080_SSDID          0x350E
 #define MPT2SAS_INTEL_RMS2LL040_SSDID          0x350F
 #define MPT2SAS_INTEL_RS25GB008_SSDID          0x3000
-
+#define MPT2SAS_INTEL_SSD910_SSDID             0x3700
 
 /*
  * HP HBA branding
@@ -373,6 +392,7 @@ struct _sas_device {
  * @percent_complete: resync percent complete
  * @direct_io_enabled: Whether direct io to PDs are allowed or not
  * @stripe_exponent: X where 2powX is the stripe sz in blocks
+ * @block_exponent: X where 2powX is the block sz in bytes
  * @max_lba: Maximum number of LBA in the volume
  * @stripe_sz: Stripe Size of the volume
  * @device_info: Device info of the volume member disk
@@ -394,6 +414,7 @@ struct _raid_device {
 	u8	percent_complete;
 	u8	direct_io_enabled;
 	u8	stripe_exponent;
+	u8	block_exponent;
 	u64	max_lba;
 	u32	stripe_sz;
 	u32	device_info;
@@ -623,6 +644,7 @@ enum mutex_type {
 	TM_MUTEX_ON = 1,
 };
 
+typedef void (*MPT2SAS_FLUSH_RUNNING_CMDS)(struct MPT2SAS_ADAPTER *ioc);
 /**
  * struct MPT2SAS_ADAPTER - per adapter struct
  * @list: ioc_list
@@ -665,6 +687,7 @@ enum mutex_type {
  * @msix_vector_count: number msix vectors
  * @cpu_msix_table: table for mapping cpus to msix index
  * @cpu_msix_table_sz: table size
+ * @schedule_dead_ioc_flush_running_cmds: callback to flush pending commands
  * @scsi_io_cb_idx: shost generated commands
  * @tm_cb_idx: task management commands
  * @scsih_cb_idx: scsih internal commands
@@ -703,6 +726,7 @@ enum mutex_type {
  * @io_missing_delay: time for IO completed by fw when PDR enabled
  * @device_missing_delay: time for device missing by fw when PDR enabled
  * @sas_id : used for setting volume target IDs
+ * @blocking_handles: bitmask used to identify which devices need blocking
  * @pd_handles : bitmask for PD handles
  * @pd_handles_sz : size of pd_handle bitmask
  * @config_page_sz: config page size
@@ -816,6 +840,8 @@ struct MPT2SAS_ADAPTER {
 	resource_size_t	**reply_post_host_index;
 	u16		cpu_msix_table_sz;
 	u32		ioc_reset_count;
+	MPT2SAS_FLUSH_RUNNING_CMDS schedule_dead_ioc_flush_running_cmds;
+	u32             non_operational_loop;
 
 	/* internal commands, callback index */
 	u8		scsi_io_cb_idx;
@@ -871,7 +897,7 @@ struct MPT2SAS_ADAPTER {
 	u8		io_missing_delay;
 	u16		device_missing_delay;
 	int		sas_id;
-
+	void		*blocking_handles;
 	void		*pd_handles;
 	u16		pd_handles_sz;
 
@@ -1043,7 +1069,8 @@ int mpt2sas_scsih_issue_tm(struct MPT2SAS_ADAPTER *ioc, u16 handle,
 void mpt2sas_scsih_set_tm_flag(struct MPT2SAS_ADAPTER *ioc, u16 handle);
 void mpt2sas_scsih_clear_tm_flag(struct MPT2SAS_ADAPTER *ioc, u16 handle);
 void mpt2sas_expander_remove(struct MPT2SAS_ADAPTER *ioc, u64 sas_address);
-void mpt2sas_device_remove(struct MPT2SAS_ADAPTER *ioc, u64 sas_address);
+void mpt2sas_device_remove_by_sas_address(struct MPT2SAS_ADAPTER *ioc,
+		u64 sas_address);
 struct _sas_node *mpt2sas_scsih_expander_find_by_handle(struct MPT2SAS_ADAPTER *ioc,
     u16 handle);
 struct _sas_node *mpt2sas_scsih_expander_find_by_sas_address(struct MPT2SAS_ADAPTER
@@ -1079,6 +1106,8 @@ int mpt2sas_config_get_iounit_pg1(struct MPT2SAS_ADAPTER *ioc, Mpi2ConfigReply_t
     *mpi_reply, Mpi2IOUnitPage1_t *config_page);
 int mpt2sas_config_set_iounit_pg1(struct MPT2SAS_ADAPTER *ioc, Mpi2ConfigReply_t
     *mpi_reply, Mpi2IOUnitPage1_t *config_page);
+int mpt2sas_config_get_iounit_pg3(struct MPT2SAS_ADAPTER *ioc,
+	Mpi2ConfigReply_t *mpi_reply, Mpi2IOUnitPage3_t *config_page, u16 sz);
 int mpt2sas_config_get_sas_iounit_pg1(struct MPT2SAS_ADAPTER *ioc, Mpi2ConfigReply_t
     *mpi_reply, Mpi2SasIOUnitPage1_t *config_page, u16 sz);
 int mpt2sas_config_set_sas_iounit_pg1(struct MPT2SAS_ADAPTER *ioc,
@@ -1141,6 +1170,7 @@ extern struct scsi_transport_template *mpt2sas_transport_template;
 extern int scsi_internal_device_block(struct scsi_device *sdev);
 extern u8 mpt2sas_stm_zero_smid_handler(struct MPT2SAS_ADAPTER *ioc,
     u8 msix_index, u32 reply);
-extern int scsi_internal_device_unblock(struct scsi_device *sdev);
+extern int scsi_internal_device_unblock(struct scsi_device *sdev,
+					enum scsi_device_state new_state);
 
 #endif /* MPT2SAS_BASE_H_INCLUDED */

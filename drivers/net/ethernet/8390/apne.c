@@ -39,7 +39,6 @@
 #include <linux/interrupt.h>
 #include <linux/jiffies.h>
 
-#include <asm/system.h>
 #include <asm/io.h>
 #include <asm/setup.h>
 #include <asm/amigaints.h>
@@ -318,7 +317,7 @@ static int __init apne_probe1(struct net_device *dev, int ioaddr)
     i = request_irq(dev->irq, apne_interrupt, IRQF_SHARED, DRV_NAME, dev);
     if (i) return i;
 
-    for(i = 0; i < ETHER_ADDR_LEN; i++)
+    for (i = 0; i < ETH_ALEN; i++)
 	dev->dev_addr[i] = SA_prom[i];
 
     printk(" %pM\n", dev->dev_addr);
@@ -455,7 +454,7 @@ apne_block_input(struct net_device *dev, int count, struct sk_buff *skb, int rin
 	buf[count-1] = inb(NE_BASE + NE_DATAPORT);
       }
     } else {
-      ptrc = (char*)buf;
+      ptrc = buf;
       for (cnt = 0; cnt < count; cnt++)
         *ptrc++ = inb(NE_BASE + NE_DATAPORT);
     }

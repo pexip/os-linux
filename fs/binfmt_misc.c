@@ -19,9 +19,11 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/sched.h>
+#include <linux/magic.h>
 #include <linux/binfmts.h>
 #include <linux/slab.h>
 #include <linux/ctype.h>
+#include <linux/string_helpers.h>
 #include <linux/file.h>
 #include <linux/pagemap.h>
 #include <linux/namei.h>
@@ -103,7 +105,7 @@ static Node *check_file(struct linux_binprm *bprm)
 /*
  * the loader itself
  */
-static int load_misc_binary(struct linux_binprm *bprm, struct pt_regs *regs)
+static int load_misc_binary(struct linux_binprm *bprm)
 {
 	Node *fmt;
 	struct file * interp_file = NULL;
@@ -195,7 +197,7 @@ static int load_misc_binary(struct linux_binprm *bprm, struct pt_regs *regs)
 	if (retval < 0)
 		goto _error;
 
-	retval = search_binary_handler(bprm, regs);
+	retval = search_binary_handler(bprm);
 	if (retval < 0)
 		goto _error;
 
@@ -231,24 +233,6 @@ static char *scanarg(char *s, char del)
 		}
 	}
 	return s;
-}
-
-static int unquote(char *from)
-{
-	char c = 0, *s = from, *p = from;
-
-	while ((c = *s++) != '\0') {
-		if (c == '\\' && *s == 'x') {
-			s++;
-			c = toupper(*s++);
-			*p = (c - (isdigit(c) ? '0' : 'A' - 10)) << 4;
-			c = toupper(*s++);
-			*p++ |= c - (isdigit(c) ? '0' : 'A' - 10);
-			continue;
-		}
-		*p++ = c;
-	}
-	return p - from;
 }
 
 static char * check_special_flags (char * sfs, Node * e)
@@ -353,8 +337,9 @@ static Node *create_entry(const char __user *buffer, size_t count)
 		p[-1] = '\0';
 		if (!e->mask[0])
 			e->mask = NULL;
-		e->size = unquote(e->magic);
-		if (e->mask && unquote(e->mask) != e->size)
+		e->size = string_unescape_inplace(e->magic, UNESCAPE_HEX);
+		if (e->mask &&
+		    string_unescape_inplace(e->mask, UNESCAPE_HEX) != e->size)
 			goto Einval;
 		if (e->size + e->offset > BINPRM_BUF_SIZE)
 			goto Einval;
@@ -501,7 +486,7 @@ static struct inode *bm_get_inode(struct super_block *sb, int mode)
 
 static void bm_evict_inode(struct inode *inode)
 {
-	end_writeback(inode);
+	clear_inode(inode);
 	kfree(inode->i_private);
 }
 
@@ -530,7 +515,7 @@ static void kill_node(Node *e)
 static ssize_t
 bm_entry_read(struct file * file, char __user * buf, size_t nbytes, loff_t *ppos)
 {
-	Node *e = file->f_path.dentry->d_inode->i_private;
+	Node *e = file_inode(file)->i_private;
 	ssize_t res;
 	char *page;
 
@@ -549,7 +534,7 @@ static ssize_t bm_entry_write(struct file *file, const char __user *buffer,
 				size_t count, loff_t *ppos)
 {
 	struct dentry *root;
-	Node *e = file->f_path.dentry->d_inode->i_private;
+	Node *e = file_inode(file)->i_private;
 	int res = parse_command(buffer, count);
 
 	switch (res) {
@@ -557,7 +542,7 @@ static ssize_t bm_entry_write(struct file *file, const char __user *buffer,
 			break;
 		case 2: set_bit(Enabled, &e->flags);
 			break;
-		case 3: root = dget(file->f_path.mnt->mnt_sb->s_root);
+		case 3: root = dget(file->f_path.dentry->d_sb->s_root);
 			mutex_lock(&root->d_inode->i_mutex);
 
 			kill_node(e);
@@ -584,7 +569,7 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
 	Node *e;
 	struct inode *inode;
 	struct dentry *root, *dentry;
-	struct super_block *sb = file->f_path.mnt->mnt_sb;
+	struct super_block *sb = file->f_path.dentry->d_sb;
 	int err = 0;
 
 	e = create_entry(buffer, count);
@@ -663,7 +648,7 @@ static ssize_t bm_status_write(struct file * file, const char __user * buffer,
 	switch (res) {
 		case 1: enabled = 0; break;
 		case 2: enabled = 1; break;
-		case 3: root = dget(file->f_path.mnt->mnt_sb->s_root);
+		case 3: root = dget(file->f_path.dentry->d_sb->s_root);
 			mutex_lock(&root->d_inode->i_mutex);
 
 			while (!list_empty(&entries))
@@ -696,7 +681,7 @@ static int bm_fill_super(struct super_block * sb, void * data, int silent)
 		[3] = {"register", &bm_register_operations, S_IWUSR},
 		/* last one */ {""}
 	};
-	int err = simple_fill_super(sb, 0x42494e4d, bm_files);
+	int err = simple_fill_super(sb, BINFMTFS_MAGIC, bm_files);
 	if (!err)
 		sb->s_op = &s_ops;
 	return err;
@@ -719,15 +704,13 @@ static struct file_system_type bm_fs_type = {
 	.mount		= bm_mount,
 	.kill_sb	= kill_litter_super,
 };
+MODULE_ALIAS_FS("binfmt_misc");
 
 static int __init init_misc_binfmt(void)
 {
 	int err = register_filesystem(&bm_fs_type);
-	if (!err) {
-		err = insert_binfmt(&misc_format);
-		if (err)
-			unregister_filesystem(&bm_fs_type);
-	}
+	if (!err)
+		insert_binfmt(&misc_format);
 	return err;
 }
 

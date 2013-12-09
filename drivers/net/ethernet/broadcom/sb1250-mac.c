@@ -163,7 +163,6 @@ enum sbmac_state {
 #define SBMAC_MAX_TXDESCR	256
 #define SBMAC_MAX_RXDESCR	256
 
-#define ETHER_ADDR_LEN		6
 #define ENET_PACKET_SIZE	1518
 /*#define ENET_PACKET_SIZE	9216 */
 
@@ -266,7 +265,7 @@ struct sbmac_softc {
 	int			sbm_pause;	/* current pause setting */
 	int			sbm_link;	/* current link state */
 
-	unsigned char		sbm_hwaddr[ETHER_ADDR_LEN];
+	unsigned char		sbm_hwaddr[ETH_ALEN];
 
 	struct sbmacdma		sbm_txdma;	/* only channel 0 for now */
 	struct sbmacdma		sbm_rxdma;
@@ -832,11 +831,8 @@ static int sbdma_add_rcvbuffer(struct sbmac_softc *sc, struct sbmacdma *d,
 		sb_new = netdev_alloc_skb(dev, ENET_PACKET_SIZE +
 					       SMP_CACHE_BYTES * 2 +
 					       NET_IP_ALIGN);
-		if (sb_new == NULL) {
-			pr_info("%s: sk_buff allocation failed\n",
-			       d->sbdma_eth->sbm_dev->name);
+		if (sb_new == NULL)
 			return -ENOBUFS;
-		}
 
 		sbdma_align_skb(sb_new, SMP_CACHE_BYTES, NET_IP_ALIGN);
 	}
@@ -2201,7 +2197,7 @@ static const struct net_device_ops sbmac_netdev_ops = {
 
 static int sbmac_init(struct platform_device *pldev, long long base)
 {
-	struct net_device *dev = dev_get_drvdata(&pldev->dev);
+	struct net_device *dev = platform_get_drvdata(pldev);
 	int idx = pldev->id;
 	struct sbmac_softc *sc = netdev_priv(dev);
 	unsigned char *eaddr;
@@ -2260,7 +2256,8 @@ static int sbmac_init(struct platform_device *pldev, long long base)
 	}
 
 	sc->mii_bus->name = sbmac_mdio_string;
-	snprintf(sc->mii_bus->id, MII_BUS_ID_SIZE, "%x", idx);
+	snprintf(sc->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
+		pldev->name, idx);
 	sc->mii_bus->priv = sc;
 	sc->mii_bus->read = sbmac_mii_read;
 	sc->mii_bus->write = sbmac_mii_write;
@@ -2278,7 +2275,7 @@ static int sbmac_init(struct platform_device *pldev, long long base)
 		       dev->name);
 		goto free_mdio;
 	}
-	dev_set_drvdata(&pldev->dev, sc->mii_bus);
+	platform_set_drvdata(pldev, sc->mii_bus);
 
 	err = register_netdev(dev);
 	if (err) {
@@ -2303,7 +2300,6 @@ static int sbmac_init(struct platform_device *pldev, long long base)
 	return 0;
 unreg_mdio:
 	mdiobus_unregister(sc->mii_bus);
-	dev_set_drvdata(&pldev->dev, NULL);
 free_mdio:
 	mdiobus_free(sc->mii_bus);
 uninit_ctx:
@@ -2385,7 +2381,7 @@ static int sbmac_mii_probe(struct net_device *dev)
 		return -ENXIO;
 	}
 
-	phy_dev = phy_connect(dev, dev_name(&phy_dev->dev), &sbmac_mii_poll, 0,
+	phy_dev = phy_connect(dev, dev_name(&phy_dev->dev), &sbmac_mii_poll,
 			      PHY_INTERFACE_MODE_GMII);
 	if (IS_ERR(phy_dev)) {
 		printk(KERN_ERR "%s: could not attach to PHY\n", dev->name);
@@ -2586,7 +2582,7 @@ static int sbmac_poll(struct napi_struct *napi, int budget)
 }
 
 
-static int __devinit sbmac_probe(struct platform_device *pldev)
+static int sbmac_probe(struct platform_device *pldev)
 {
 	struct net_device *dev;
 	struct sbmac_softc *sc;
@@ -2623,13 +2619,11 @@ static int __devinit sbmac_probe(struct platform_device *pldev)
 	 */
 	dev = alloc_etherdev(sizeof(struct sbmac_softc));
 	if (!dev) {
-		printk(KERN_ERR "%s: unable to allocate etherdev\n",
-		       dev_name(&pldev->dev));
 		err = -ENOMEM;
 		goto out_unmap;
 	}
 
-	dev_set_drvdata(&pldev->dev, dev);
+	platform_set_drvdata(pldev, dev);
 	SET_NETDEV_DEV(dev, &pldev->dev);
 
 	sc = netdev_priv(dev);
@@ -2654,7 +2648,7 @@ out_out:
 
 static int __exit sbmac_remove(struct platform_device *pldev)
 {
-	struct net_device *dev = dev_get_drvdata(&pldev->dev);
+	struct net_device *dev = platform_get_drvdata(pldev);
 	struct sbmac_softc *sc = netdev_priv(dev);
 
 	unregister_netdev(dev);
@@ -2676,15 +2670,4 @@ static struct platform_driver sbmac_driver = {
 	},
 };
 
-static int __init sbmac_init_module(void)
-{
-	return platform_driver_register(&sbmac_driver);
-}
-
-static void __exit sbmac_cleanup_module(void)
-{
-	platform_driver_unregister(&sbmac_driver);
-}
-
-module_init(sbmac_init_module);
-module_exit(sbmac_cleanup_module);
+module_platform_driver(sbmac_driver);

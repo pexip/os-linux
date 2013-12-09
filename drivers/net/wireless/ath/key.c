@@ -45,7 +45,8 @@ bool ath_hw_keyreset(struct ath_common *common, u16 entry)
 	void *ah = common->ah;
 
 	if (entry >= common->keymax) {
-		ath_err(common, "keycache entry %u out of range\n", entry);
+		ath_err(common, "keyreset: keycache entry %u out of range\n",
+			entry);
 		return false;
 	}
 
@@ -91,7 +92,8 @@ static bool ath_hw_keysetmac(struct ath_common *common,
 	void *ah = common->ah;
 
 	if (entry >= common->keymax) {
-		ath_err(common, "keycache entry %u out of range\n", entry);
+		ath_err(common, "keysetmac: keycache entry %u out of range\n",
+			entry);
 		return false;
 	}
 
@@ -133,7 +135,8 @@ static bool ath_hw_set_keycache_entry(struct ath_common *common, u16 entry,
 	u32 keyType;
 
 	if (entry >= common->keymax) {
-		ath_err(common, "keycache entry %u out of range\n", entry);
+		ath_err(common, "set-entry: keycache entry %u out of range\n",
+			entry);
 		return false;
 	}
 
@@ -143,7 +146,7 @@ static bool ath_hw_set_keycache_entry(struct ath_common *common, u16 entry,
 		break;
 	case ATH_CIPHER_AES_CCM:
 		if (!(common->crypt_caps & ATH_CRYPT_CAP_CIPHER_AESCCM)) {
-			ath_dbg(common, ATH_DBG_ANY,
+			ath_dbg(common, ANY,
 				"AES-CCM not supported by this mac rev\n");
 			return false;
 		}
@@ -152,15 +155,15 @@ static bool ath_hw_set_keycache_entry(struct ath_common *common, u16 entry,
 	case ATH_CIPHER_TKIP:
 		keyType = AR_KEYTABLE_TYPE_TKIP;
 		if (entry + 64 >= common->keymax) {
-			ath_dbg(common, ATH_DBG_ANY,
+			ath_dbg(common, ANY,
 				"entry %u inappropriate for TKIP\n", entry);
 			return false;
 		}
 		break;
 	case ATH_CIPHER_WEP:
 		if (k->kv_len < WLAN_KEY_LEN_WEP40) {
-			ath_dbg(common, ATH_DBG_ANY,
-				"WEP key length %u too small\n", k->kv_len);
+			ath_dbg(common, ANY, "WEP key length %u too small\n",
+				k->kv_len);
 			return false;
 		}
 		if (k->kv_len <= WLAN_KEY_LEN_WEP40)
