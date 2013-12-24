@@ -1,3 +1,9 @@
+linux (3.2.0-57.87pexip1) pexip; urgency=low
+
+  * Prepare Pexip packaging
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 24 Dec 2013 22:36:11 +0000
+
 linux (3.2.0-57.87) precise; urgency=low
 
   [Steve Conklin]
