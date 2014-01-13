@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006 - 2009 Intel Corporation.  All rights reserved.
+ * Copyright (c) 2006 - 2011 Intel Corporation.  All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -1528,7 +1528,7 @@ int nes_init_phy(struct nes_device *nesdev)
 	} else {
 		/* setup 10G MDIO operation */
 		tx_config &= 0xFFFFFFE3;
-		tx_config |= 0x15;
+		tx_config |= 0x1D;
 	}
 	nes_write_indexed(nesdev, NES_IDX_MAC_TX_CONFIG, tx_config);
 
@@ -2678,11 +2678,9 @@ static void nes_process_mac_intr(struct nes_device *nesdev, u32 mac_number)
 			}
 		}
 		if (nesadapter->phy_type[mac_index] == NES_PHY_TYPE_SFP_D) {
-			if (nesdev->link_recheck)
-				cancel_delayed_work(&nesdev->work);
 			nesdev->link_recheck = 1;
-			schedule_delayed_work(&nesdev->work,
-					      NES_LINK_RECHECK_DELAY);
+			mod_delayed_work(system_wq, &nesdev->work,
+					 NES_LINK_RECHECK_DELAY);
 		}
 	}
 
@@ -2950,7 +2948,7 @@ void nes_nic_ce_handler(struct nes_device *nesdev, struct nes_hw_nic_cq *cq)
 					nes_debug(NES_DBG_CQ, "%s: Reporting stripped VLAN packet. Tag = 0x%04X\n",
 							nesvnic->netdev->name, vlan_tag);
 
-					__vlan_hwaccel_put_tag(rx_skb, vlan_tag);
+					__vlan_hwaccel_put_tag(rx_skb, htons(ETH_P_8021Q), vlan_tag);
 				}
 				if (nes_use_lro)
 					lro_receive_skb(&nesvnic->lro_mgr, rx_skb, NULL);
@@ -3614,10 +3612,6 @@ static void nes_process_iwarp_aeqe(struct nes_device *nesdev,
 			}
 			break;
 		case NES_AEQE_AEID_LLP_CLOSE_COMPLETE:
-			if (nesqp->term_flags) {
-				nes_terminate_done(nesqp, 0);
-				return;
-			}
 			spin_lock_irqsave(&nesqp->lock, flags);
 			nesqp->hw_iwarp_state = iwarp_state;
 			nesqp->hw_tcp_state = tcp_state;

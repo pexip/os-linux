@@ -18,6 +18,15 @@
 #include <net/sock.h>
 
 #include "apparmorfs.h"
+#include "label.h"
+
+struct aa_sk_cxt {
+	struct aa_label *label;
+	struct aa_label *peer;
+};
+
+#define SK_CXT(X) (X)->sk_security
+#define SOCK_CXT(X) SOCK_INODE(X)->i_security
 
 /* struct aa_net - network confinement data
  * @allowed: basic network families permissions
@@ -30,9 +39,10 @@ struct aa_net {
 	u16 quiet[AF_MAX];
 };
 
+
 extern struct aa_fs_entry aa_fs_entry_network[];
 
-extern int aa_net_perm(int op, struct aa_profile *profile, u16 family,
+extern int aa_net_perm(int op, struct aa_label *label, u16 family,
 		       int type, int protocol, struct sock *sk);
 extern int aa_revalidate_sk(int op, struct sock *sk);
 

@@ -20,8 +20,10 @@
 #include <linux/timer.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
+#include <linux/leds.h>
 
 #include "ucode_loader.h"
+#include "led.h"
 /*
  * Starting index for 5G rates in the
  * legacy rate table.
@@ -40,7 +42,7 @@ struct brcms_timer {
 	bool periodic;
 	bool set;		/* indicates if timer is active */
 	struct brcms_timer *next;	/* for freeing on unload */
-#ifdef BCMDBG
+#ifdef DEBUG
 	char *name;		/* Description of the timer */
 #endif
 };
@@ -68,8 +70,8 @@ struct brcms_info {
 	spinlock_t lock;	/* per-device perimeter lock */
 	spinlock_t isr_lock;	/* per-device ISR synchronization lock */
 
-	/* regsva for unmap in brcms_free() */
-	void __iomem *regsva;	/* opaque chip registers virtual address */
+	/* tx flush */
+	wait_queue_head_t tx_flush_wq;
 
 	/* timer related fields */
 	atomic_t callbacks;	/* # outstanding callback functions */
@@ -80,6 +82,9 @@ struct brcms_info {
 	struct brcms_firmware fw;
 	struct wiphy *wiphy;
 	struct brcms_ucode ucode;
+	bool mute_tx;
+	struct brcms_led radio_led;
+	struct led_classdev led_dev;
 };
 
 /* misc callbacks */
@@ -101,8 +106,8 @@ extern struct brcms_timer *brcms_init_timer(struct brcms_info *wl,
 extern void brcms_free_timer(struct brcms_timer *timer);
 extern void brcms_add_timer(struct brcms_timer *timer, uint ms, int periodic);
 extern bool brcms_del_timer(struct brcms_timer *timer);
-extern void brcms_msleep(struct brcms_info *wl, uint ms);
 extern void brcms_dpc(unsigned long data);
 extern void brcms_timer(struct brcms_timer *t);
+extern void brcms_fatal_error(struct brcms_info *wl);
 
 #endif				/* _BRCM_MAC80211_IF_H_ */

@@ -28,13 +28,13 @@
 #include <asm/cacheflush.h>
 #include <asm/cpu.h>
 #include <asm/processor.h>
-#include <asm/system.h>
 #include <asm/hardirq.h>
 #include <asm/mmu_context.h>
 #include <asm/time.h>
 #include <asm/mipsregs.h>
 #include <asm/mipsmtregs.h>
 #include <asm/mips_mt.h>
+#include <asm/gic.h>
 
 static void __init smvp_copy_vpe_config(void)
 {
@@ -72,7 +72,7 @@ static unsigned int __init smvp_vpe_init(unsigned int tc, unsigned int mvpconf0,
 		/* Record this as available CPU */
 		set_cpu_possible(tc, true);
 		__cpu_number_map[tc]	= ++ncpu;
-		__cpu_logical_map[ncpu]	= tc;
+		__cpu_logical_map[ncpu] = tc;
 	}
 
 	/* Disable multi-threading with TC's */
@@ -149,20 +149,20 @@ static void vsmp_send_ipi_mask(const struct cpumask *mask, unsigned int action)
 		vsmp_send_ipi_single(i, action);
 }
 
-static void __cpuinit vsmp_init_secondary(void)
+static void vsmp_init_secondary(void)
 {
-	extern int gic_present;
-
+#ifdef CONFIG_IRQ_GIC
 	/* This is Malta specific: IPI,performance and timer interrupts */
 	if (gic_present)
 		change_c0_status(ST0_IM, STATUSF_IP3 | STATUSF_IP4 |
 					 STATUSF_IP6 | STATUSF_IP7);
 	else
+#endif
 		change_c0_status(ST0_IM, STATUSF_IP0 | STATUSF_IP1 |
 					 STATUSF_IP6 | STATUSF_IP7);
 }
 
-static void __cpuinit vsmp_smp_finish(void)
+static void vsmp_smp_finish(void)
 {
 	/* CDFIXME: remove this? */
 	write_c0_compare(read_c0_count() + (8* mips_hpt_frequency/HZ));
@@ -188,7 +188,7 @@ static void vsmp_cpus_done(void)
  * (unsigned long)idle->thread_info the gp
  * assumes a 1:1 mapping of TC => VPE
  */
-static void __cpuinit vsmp_boot_secondary(int cpu, struct task_struct *idle)
+static void vsmp_boot_secondary(int cpu, struct task_struct *idle)
 {
 	struct thread_info *gp = task_thread_info(idle);
 	dvpe();
@@ -214,7 +214,7 @@ static void __cpuinit vsmp_boot_secondary(int cpu, struct task_struct *idle)
 	write_tc_gpr_gp((unsigned long)gp);
 
 	flush_icache_range((unsigned long)gp,
-	                   (unsigned long)(gp + sizeof(struct thread_info)));
+			   (unsigned long)(gp + sizeof(struct thread_info)));
 
 	/* finally out of configuration and into chaos */
 	clear_c0_mvpcontrol(MVPCONTROL_VPC);

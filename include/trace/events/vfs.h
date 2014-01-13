@@ -1,6 +1,8 @@
 #undef TRACE_SYSTEM
 #define TRACE_SYSTEM vfs
 
+#include <linux/module.h>
+
 #if !defined(_TRACE_VFS_H) || defined(TRACE_HEADER_MULTI_READ)
 #define _TRACE_VFS_H
 

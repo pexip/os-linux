@@ -556,11 +556,9 @@ static int ibmveth_open(struct net_device *netdev)
 	adapter->rx_queue.queue_len = sizeof(struct ibmveth_rx_q_entry) *
 						rxq_entries;
 	adapter->rx_queue.queue_addr =
-	    dma_alloc_coherent(dev, adapter->rx_queue.queue_len,
-			       &adapter->rx_queue.queue_dma, GFP_KERNEL);
-
+		dma_alloc_coherent(dev, adapter->rx_queue.queue_len,
+				   &adapter->rx_queue.queue_dma, GFP_KERNEL);
 	if (!adapter->rx_queue.queue_addr) {
-		netdev_err(netdev, "unable to allocate rx queue pages\n");
 		rc = -ENOMEM;
 		goto err_out;
 	}
@@ -637,7 +635,6 @@ static int ibmveth_open(struct net_device *netdev)
 	adapter->bounce_buffer =
 	    kmalloc(netdev->mtu + IBMVETH_BUFF_OH, GFP_KERNEL);
 	if (!adapter->bounce_buffer) {
-		netdev_err(netdev, "unable to allocate bounce buffer\n");
 		rc = -ENOMEM;
 		goto err_out_free_irq;
 	}
@@ -722,12 +719,12 @@ static int netdev_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 static void netdev_get_drvinfo(struct net_device *dev,
 			       struct ethtool_drvinfo *info)
 {
-	strncpy(info->driver, ibmveth_driver_name, sizeof(info->driver) - 1);
-	strncpy(info->version, ibmveth_driver_version,
-		sizeof(info->version) - 1);
+	strlcpy(info->driver, ibmveth_driver_name, sizeof(info->driver));
+	strlcpy(info->version, ibmveth_driver_version, sizeof(info->version));
 }
 
-static u32 ibmveth_fix_features(struct net_device *dev, u32 features)
+static netdev_features_t ibmveth_fix_features(struct net_device *dev,
+	netdev_features_t features)
 {
 	/*
 	 * Since the ibmveth firmware interface does not have the
@@ -830,7 +827,8 @@ static int ibmveth_set_csum_offload(struct net_device *dev, u32 data)
 	return rc1 ? rc1 : rc2;
 }
 
-static int ibmveth_set_features(struct net_device *dev, u32 features)
+static int ibmveth_set_features(struct net_device *dev,
+	netdev_features_t features)
 {
 	struct ibmveth_adapter *adapter = netdev_priv(dev);
 	int rx_csum = !!(features & NETIF_F_RXCSUM);
@@ -1322,8 +1320,7 @@ static const struct net_device_ops ibmveth_netdev_ops = {
 #endif
 };
 
-static int __devinit ibmveth_probe(struct vio_dev *dev,
-				   const struct vio_device_id *id)
+static int ibmveth_probe(struct vio_dev *dev, const struct vio_device_id *id)
 {
 	int rc, i, mac_len;
 	struct net_device *netdev;
@@ -1421,7 +1418,7 @@ static int __devinit ibmveth_probe(struct vio_dev *dev,
 	return 0;
 }
 
-static int __devexit ibmveth_remove(struct vio_dev *dev)
+static int ibmveth_remove(struct vio_dev *dev)
 {
 	struct net_device *netdev = dev_get_drvdata(&dev->dev);
 	struct ibmveth_adapter *adapter = netdev_priv(netdev);
@@ -1588,7 +1585,7 @@ static int ibmveth_resume(struct device *dev)
 	return 0;
 }
 
-static struct vio_device_id ibmveth_device_table[] __devinitdata = {
+static struct vio_device_id ibmveth_device_table[] = {
 	{ "network", "IBM,l-lan"},
 	{ "", "" }
 };
@@ -1603,11 +1600,8 @@ static struct vio_driver ibmveth_driver = {
 	.probe		= ibmveth_probe,
 	.remove		= ibmveth_remove,
 	.get_desired_dma = ibmveth_get_desired_dma,
-	.driver		= {
-		.name	= ibmveth_driver_name,
-		.owner	= THIS_MODULE,
-		.pm = &ibmveth_pm_ops,
-	}
+	.name		= ibmveth_driver_name,
+	.pm		= &ibmveth_pm_ops,
 };
 
 static int __init ibmveth_module_init(void)

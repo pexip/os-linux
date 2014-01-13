@@ -5,6 +5,7 @@
 #include <linux/module.h>
 #include <linux/bio.h>
 #include <linux/blkdev.h>
+#include <linux/sched/sysctl.h>
 
 #include "blk.h"
 
@@ -43,6 +44,9 @@ static void blk_end_sync_rq(struct request *rq, int error)
  * Description:
  *    Insert a fully prepared request at the back of the I/O scheduler queue
  *    for execution.  Don't wait for completion.
+ *
+ * Note:
+ *    This function will invoke @done directly if the queue is dead.
  */
 void blk_execute_rq_nowait(struct request_queue *q, struct gendisk *bd_disk,
 			   struct request *rq, int at_head,
@@ -51,12 +55,7 @@ void blk_execute_rq_nowait(struct request_queue *q, struct gendisk *bd_disk,
 	int where = at_head ? ELEVATOR_INSERT_FRONT : ELEVATOR_INSERT_BACK;
 	bool is_pm_resume;
 
-	if (unlikely(blk_queue_dead(q))) {
-		rq->errors = -ENXIO;
-		if (rq->end_io)
-			rq->end_io(rq, rq->errors);
-		return;
-	}
+	WARN_ON(irqs_disabled());
 
 	rq->rq_disk = bd_disk;
 	rq->end_io = done;
@@ -66,13 +65,21 @@ void blk_execute_rq_nowait(struct request_queue *q, struct gendisk *bd_disk,
 	 */
 	is_pm_resume = rq->cmd_type == REQ_TYPE_PM_RESUME;
 
-	WARN_ON(irqs_disabled());
 	spin_lock_irq(q->queue_lock);
+
+	if (unlikely(blk_queue_dying(q))) {
+		rq->errors = -ENXIO;
+		if (rq->end_io)
+			rq->end_io(rq, rq->errors);
+		spin_unlock_irq(q->queue_lock);
+		return;
+	}
+
 	__elv_add_request(q, rq, where);
 	__blk_run_queue(q);
 	/* the queue is stopped so it won't be run */
 	if (is_pm_resume)
-		q->request_fn(q);
+		__blk_run_queue_uncond(q);
 	spin_unlock_irq(q->queue_lock);
 }
 EXPORT_SYMBOL_GPL(blk_execute_rq_nowait);
@@ -114,9 +121,9 @@ int blk_execute_rq(struct request_queue *q, struct gendisk *bd_disk,
 	/* Prevent hang_check timer from firing at us during very long I/O */
 	hang_check = sysctl_hung_task_timeout_secs;
 	if (hang_check)
-		while (!wait_for_completion_timeout(&wait, hang_check * (HZ/2)));
+		while (!wait_for_completion_io_timeout(&wait, hang_check * (HZ/2)));
 	else
-		wait_for_completion(&wait);
+		wait_for_completion_io(&wait);
 
 	if (rq->errors)
 		err = -EIO;

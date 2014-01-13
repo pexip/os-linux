@@ -300,7 +300,7 @@ static struct cs5535_gpio_chip cs5535_gpio_chip = {
 	},
 };
 
-static int __devinit cs5535_gpio_probe(struct platform_device *pdev)
+static int cs5535_gpio_probe(struct platform_device *pdev)
 {
 	struct resource *res;
 	int err = -EIO;
@@ -347,7 +347,6 @@ static int __devinit cs5535_gpio_probe(struct platform_device *pdev)
 	if (err)
 		goto release_region;
 
-	dev_info(&pdev->dev, "GPIO support successfully loaded.\n");
 	return 0;
 
 release_region:
@@ -356,7 +355,7 @@ done:
 	return err;
 }
 
-static int __devexit cs5535_gpio_remove(struct platform_device *pdev)
+static int cs5535_gpio_remove(struct platform_device *pdev)
 {
 	struct resource *r;
 	int err;
@@ -379,21 +378,10 @@ static struct platform_driver cs5535_gpio_driver = {
 		.owner = THIS_MODULE,
 	},
 	.probe = cs5535_gpio_probe,
-	.remove = __devexit_p(cs5535_gpio_remove),
+	.remove = cs5535_gpio_remove,
 };
 
-static int __init cs5535_gpio_init(void)
-{
-	return platform_driver_register(&cs5535_gpio_driver);
-}
-
-static void __exit cs5535_gpio_exit(void)
-{
-	platform_driver_unregister(&cs5535_gpio_driver);
-}
-
-module_init(cs5535_gpio_init);
-module_exit(cs5535_gpio_exit);
+module_platform_driver(cs5535_gpio_driver);
 
 MODULE_AUTHOR("Andres Salomon <dilinger@queued.net>");
 MODULE_DESCRIPTION("AMD CS5535/CS5536 GPIO driver");

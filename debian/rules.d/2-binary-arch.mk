@@ -10,11 +10,17 @@ build_cd =
 build_O  = O=$(builddir)/build-$*
 endif
 
+# Typically supplied from the arch makefile, e.g., debian.master/control.d/armhf.mk
+ifneq ($(gcc),)
+kmake += CC=$(CROSS_COMPILE)$(gcc)
+endif
+
 $(stampdir)/stamp-prepare-%: config-prepare-check-%
+	@echo Debug: $@
 	@touch $@
 $(stampdir)/stamp-prepare-tree-%: target_flavour = $*
 $(stampdir)/stamp-prepare-tree-%: $(commonconfdir)/config.common.$(family) $(archconfdir)/config.common.$(arch) $(archconfdir)/config.flavour.%
-	@echo "Preparing $*..."
+	@echo Debug: $@
 	install -d $(builddir)/build-$*
 	touch $(builddir)/build-$*/ubuntu-build
 	[ "$(do_full_source)" != 'true' ] && true || \
@@ -26,17 +32,18 @@ $(stampdir)/stamp-prepare-tree-%: $(commonconfdir)/config.common.$(family) $(arc
 
 # Used by developers as a shortcut to prepare a tree for compilation.
 prepare-%: $(stampdir)/stamp-prepare-%
-	@echo Prepared $* for $(arch)
+	@echo Debug: $@
 # Used by developers to allow efficient pre-building without fakeroot.
 build-%: $(stampdir)/stamp-build-%
-	@echo Built $* for $(arch)
+	@echo Debug: $@
 
 # Do the actual build, including image and modules
 $(stampdir)/stamp-build-%: target_flavour = $*
-$(stampdir)/stamp-build-%: dtb_target = $(notdir $(dtb_file_$*))
+$(stampdir)/stamp-build-%: bldimg = $(call custom_override,build_image,$*)
+$(stampdir)/stamp-build-%: dtb_target = $(dtb_files_$*)
 $(stampdir)/stamp-build-%: $(stampdir)/stamp-prepare-%
-	@echo "Building $*..."
-	$(build_cd) $(kmake) $(build_O) $(conc_level) $(build_image) modules $(dtb_target)
+	@echo Debug: $@ build_image $(build_image) bldimg $(bldimg)
+	$(build_cd) $(kmake) $(build_O) $(conc_level) $(bldimg) modules $(dtb_target)
 	@touch $@
 
 # Install the finished build
@@ -44,29 +51,52 @@ install-%: pkgdir = $(CURDIR)/debian/$(bin_pkg_name)-$*
 install-%: pkgdir_ex = $(CURDIR)/debian/$(extra_pkg_name)-$*
 install-%: bindoc = $(pkgdir)/usr/share/doc/$(bin_pkg_name)-$*
 install-%: dbgpkgdir = $(CURDIR)/debian/$(bin_pkg_name)-$*-dbgsym
+install-%: signed = $(CURDIR)/debian/$(bin_pkg_name)-signed
+install-%: toolspkgdir = $(CURDIR)/debian/$(tools_flavour_pkg_name)-$*
 install-%: basepkg = $(hdrs_pkg_name)
+install-%: indeppkg = $(indep_hdrs_pkg_name)
+install-%: kernfile = $(call custom_override,kernel_file,$*)
+install-%: instfile = $(call custom_override,install_file,$*)
 install-%: hdrdir = $(CURDIR)/debian/$(basepkg)-$*/usr/src/$(basepkg)-$*
 install-%: target_flavour = $*
-install-%: dtb_file=$(dtb_file_$*)
-install-%: dtb_target=$(notdir $(dtb_file_$*))
+install-%: dtb_files = $(dtb_files_$*)
+install-%: CONFIG_MODULE_SIG_HASH=sha512
+install-%: MODSECKEY=$(builddir)/build-$*/signing_key.priv
+install-%: MODPUBKEY=$(builddir)/build-$*/signing_key.x509
 install-%: checks-%
+	@echo Debug: $@ kernel_file $(kernel_file) kernfile $(kernfile) install_file $(install_file) instfile $(instfile)
 	dh_testdir
 	dh_testroot
 	dh_clean -k -p$(bin_pkg_name)-$*
 	dh_clean -k -p$(hdrs_pkg_name)-$*
+ifneq ($(skipdbg),true)
 	dh_clean -k -p$(dbg_pkg_name)-$*
+endif
 
 	# The main image
 	# compress_file logic required because not all architectures
 	# generate a zImage automatically out of the box
 ifeq ($(compress_file),)
-	install -m600 -D $(builddir)/build-$*/$(kernel_file) \
-		$(pkgdir)/boot/$(install_file)-$(abi_release)-$*
+	install -m600 -D $(builddir)/build-$*/$(kernfile) \
+		$(pkgdir)/boot/$(instfile)-$(abi_release)-$*
 else
 	install -d $(pkgdir)/boot
-	gzip -c9v $(builddir)/build-$*/$(kernel_file) > \
-		$(pkgdir)/boot/$(install_file)-$(abi_release)-$*
-	chmod 600 $(pkgdir)/boot/$(install_file)-$(abi_release)-$*
+	gzip -c9v $(builddir)/build-$*/$(kernfile) > \
+		$(pkgdir)/boot/$(instfile)-$(abi_release)-$*
+	chmod 600 $(pkgdir)/boot/$(instfile)-$(abi_release)-$*
+endif
+
+ifeq ($(arch),amd64)
+ifeq ($(uefi_signed),true)
+	install -d $(signed)/$(release)-$(revision)
+	# Check to see if this supports handoff, if not do not sign it.
+	# Check the identification area magic and version >= 0x020b
+	handoff=`dd if="$(pkgdir)/boot/$(instfile)-$(abi_release)-$*" bs=1 skip=514 count=6 2>/dev/null | od -s | gawk '($$1 == 0 && $$2 == 25672 && $$3 == 21362 && $$4 >= 523) { print "GOOD" }'`; \
+	if [ "$$handoff" = "GOOD" ]; then \
+		cp -p $(pkgdir)/boot/$(instfile)-$(abi_release)-$* \
+			$(signed)/$(release)-$(revision)/$(instfile)-$(abi_release)-$*.efi; \
+	fi
+endif
 endif
 
 	install -m644 $(builddir)/build-$*/.config \
@@ -75,10 +105,12 @@ endif
 		$(pkgdir)/boot/abi-$(abi_release)-$*
 	install -m600 $(builddir)/build-$*/System.map \
 		$(pkgdir)/boot/System.map-$(abi_release)-$*
-	if [ "$(dtb_target)" ]; then \
+	if [ "$(dtb_files)" ]; then \
 		install -d $(pkgdir)/lib/firmware/$(abi_release)-$*/device-tree; \
-		install -m644 $(builddir)/build-$*/$(dtb_file) \
-			$(pkgdir)/lib/firmware/$(abi_release)-$*/device-tree/$(dtb_target); \
+		for dtb_file in $(dtb_files); do \
+			install -m644 $(builddir)/build-$*/arch/$(build_arch)/boot/dts/$$dtb_file \
+				$(pkgdir)/lib/firmware/$(abi_release)-$*/device-tree/$$dtb_file; \
+		done \
 	fi
 ifeq ($(no_dumpfile),)
 	makedumpfile -g $(pkgdir)/boot/vmcoreinfo-$(abi_release)-$* \
@@ -90,6 +122,7 @@ endif
 		INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=$(pkgdir)/ \
 		INSTALL_FW_PATH=$(pkgdir)/lib/firmware/$(abi_release)-$*
 
+ifeq ($(do_extras_package),true)
 	#
 	# Remove all modules not in the inclusion list.
 	#
@@ -104,11 +137,12 @@ endif
 				tee $(target_flavour).inclusion-list.log; \
 		/sbin/depmod -b $(pkgdir) -ea -F $(pkgdir)/boot/System.map-$(abi_release)-$* \
 			$(abi_release)-$* 2>&1 |tee $(target_flavour).depmod.log; \
-		if grep unknown $(target_flavour).depmod.log; then \
-			echo "Error: Missing inclusion module dependencies"; \
-			exit 1;\
-		fi;\
+		if [ `grep -c 'unknown symbol' $(target_flavour).depmod.log` -gt 0 ]; then \
+			echo "EE: Unresolved module dependencies in base package!"; \
+			exit 1; \
+		fi \
 	fi
+endif
 
 ifeq ($(no_dumpfile),)
 	makedumpfile -g $(pkgdir)/boot/vmcoreinfo-$(abi_release)-$* \
@@ -128,20 +162,23 @@ endif
 	# Now the image scripts
 	install -d $(pkgdir)/DEBIAN
 	for script in postinst postrm preinst prerm; do				\
-	  sed -e 's/=V/$(abi_release)-$*/g' -e 's/=K/$(install_file)/g'		\
+	  sed -e 's/=V/$(abi_release)-$*/g' -e 's/=K/$(instfile)/g'		\
 	      -e 's/=L/$(loader)/g'         -e 's@=B@$(build_arch)@g'		\
 	       $(DROOT)/control-scripts/$$script > $(pkgdir)/DEBIAN/$$script;	\
 	  chmod 755 $(pkgdir)/DEBIAN/$$script;					\
 	done
+ifeq ($(do_extras_package),true)
 	# Install the postinit/postrm scripts in the extras package.
 	if [ -f $(DEBIAN)/control.d/$(target_flavour).inclusion-list ] ; then	\
 		install -d $(pkgdir_ex)/DEBIAN;					\
 		for script in postinst postrm ; do				\
-			sed -e 's/@@KVER@@/$(release)-$(abinum)-$(target_flavour)/g' \
-				debian/control-scripts/$$script.extra > $(pkgdir_ex)/DEBIAN/$$script; \
+			sed -e 's/=V/$(abi_release)-$*/g' -e 's/=K/$(instfile)/g'		\
+			    -e 's/=L/$(loader)/g'         -e 's@=B@$(build_arch)@g'		\
+			    debian/control-scripts/$$script > $(pkgdir_ex)/DEBIAN/$$script; \
 			chmod 755 $(pkgdir_ex)/DEBIAN/$$script;			\
 		done;								\
 	fi
+endif
 
 	# Install the full changelog.
 ifeq ($(do_doc_package),true)
@@ -161,7 +198,7 @@ ifneq ($(skipsub),true)
 		install -d debian/$(bin_pkg_name)-$$sub/DEBIAN;	\
 		for script in postinst postrm preinst prerm; do			\
 			sed -e 's/=V/$(abi_release)-$*/g'			\
-			    -e 's/=K/$(install_file)/g'				\
+			    -e 's/=K/$(instfile)/g'				\
 			    -e 's/=L/$(loader)/g'				\
 			    -e 's@=B@$(build_arch)@g'				\
 				$(DROOT)/control-scripts/$$script >		\
@@ -183,6 +220,8 @@ ifneq ($(skipdbg),true)
 		if [[ -f "$(dbgpkgdir)/usr/lib/debug/$$module" ]] ; then \
 			$(CROSS_COMPILE)objcopy \
 				--add-gnu-debuglink=$(dbgpkgdir)/usr/lib/debug/$$module \
+				$(pkgdir)/$$module; \
+			scripts/sign-file $(CONFIG_MODULE_SIG_HASH) $(MODSECKEY) $(MODPUBKEY) \
 				$(pkgdir)/$$module; \
 		fi; \
 	done
@@ -212,7 +251,7 @@ ifeq ($(arch),powerpc)
 	cp $(builddir)/build-$*/arch/powerpc/lib/*.o $(hdrdir)/arch/powerpc/lib
 endif
 	# Script to symlink everything up
-	$(SHELL) $(DROOT)/scripts/link-headers "$(hdrdir)" "$(basepkg)" "$*"
+	$(SHELL) $(DROOT)/scripts/link-headers "$(hdrdir)" "$(indeppkg)" "$*"
 	# The build symlink
 	install -d debian/$(basepkg)-$*/lib/modules/$(abi_release)-$*
 	ln -s /usr/src/$(basepkg)-$* \
@@ -224,7 +263,7 @@ endif
 	# Now the header scripts
 	install -d $(CURDIR)/debian/$(basepkg)-$*/DEBIAN
 	for script in postinst; do						\
-	  sed -e 's/=V/$(abi_release)-$*/g' -e 's/=K/$(install_file)/g'	\
+	  sed -e 's/=V/$(abi_release)-$*/g' -e 's/=K/$(instfile)/g'	\
 		$(DROOT)/control-scripts/headers-$$script > 			\
 			$(CURDIR)/debian/$(basepkg)-$*/DEBIAN/$$script;		\
 	  chmod 755 $(CURDIR)/debian/$(basepkg)-$*/DEBIAN/$$script;		\
@@ -236,7 +275,7 @@ endif
 	 PREV_REVISION="$(prev_revision)" ABI_NUM="$(abinum)"		\
 	 PREV_ABI_NUM="$(prev_abinum)" BUILD_DIR="$(builddir)/build-$*"	\
 	 INSTALL_DIR="$(pkgdir)" SOURCE_DIR="$(CURDIR)"			\
-	 run-parts -v $(DROOT)/tests
+	 run-parts -v $(DROOT)/tests-build
 
 	#
 	# Remove files which are generated at installation by postinst,
@@ -256,6 +295,12 @@ endif
 		$(pkgdir)/lib/modules/$(abi_release)-$*
 	rmdir $(pkgdir)/lib/modules/$(abi_release)-$*/_
 
+ifeq ($(do_tools),true)
+	# Create the linux-tools version-flavour link
+	install -d $(toolspkgdir)/usr/lib/linux-tools
+	ln -s ../$(src_pkg_name)-tools-$(abi_release) $(toolspkgdir)/usr/lib/linux-tools/$(abi_release)-$*
+endif
+
 headers_tmp := $(CURDIR)/debian/tmp-headers
 headers_dir := $(CURDIR)/debian/linux-libc-dev
 
@@ -264,6 +309,7 @@ hmake := $(MAKE) -C $(CURDIR) O=$(headers_tmp) \
 	SHELL="$(SHELL)" ARCH=$(header_arch)
 
 install-arch-headers:
+	@echo Debug: $@
 	dh_testdir
 	dh_testroot
 	dh_clean -k -plinux-libc-dev
@@ -277,7 +323,7 @@ install-arch-headers:
 	  -e 's/.*CONFIG_LOCALVERSION_AUTO.*/# CONFIG_LOCALVERSION_AUTO is not set/' \
 	  $(headers_tmp)/.config.old > $(headers_tmp)/.config
 	$(hmake) silentoldconfig
-	$(hmake) $(conc_level) headers_install
+	$(hmake) headers_install
 
 	( cd $(headers_tmp)/install/include/ && \
 		find . -name '.' -o -name '.*' -prune -o -print | \
@@ -289,6 +335,7 @@ install-arch-headers:
 	rm -rf $(headers_tmp)
 
 binary-arch-headers: install-arch-headers
+	@echo Debug: $@
 	dh_testdir
 	dh_testroot
 ifeq ($(do_libc_dev_package),true)
@@ -311,8 +358,10 @@ binary-%: pkgimg_ex = $(extra_pkg_name)-$*
 binary-%: pkghdr = $(hdrs_pkg_name)-$*
 binary-%: dbgpkg = $(bin_pkg_name)-$*-dbgsym
 binary-%: dbgpkgdir = $(CURDIR)/debian/$(bin_pkg_name)-$*-dbgsym
+binary-%: pkgtools = $(tools_flavour_pkg_name)-$*
 binary-%: target_flavour = $*
 binary-%: install-%
+	@echo Debug: $@
 	dh_testdir
 	dh_testroot
 
@@ -326,6 +375,7 @@ binary-%: install-%
 	dh_md5sums -p$(pkgimg)
 	dh_builddeb -p$(pkgimg) -- -Zbzip2 -z9
 
+ifeq ($(do_extras_package),true)
 	if [ -f $(DEBIAN)/control.d/$(target_flavour).inclusion-list ] ; then \
 		dh_installchangelogs -p$(pkgimg_ex); \
 		dh_installdocs -p$(pkgimg_ex); \
@@ -337,6 +387,7 @@ binary-%: install-%
 		dh_md5sums -p$(pkgimg_ex); \
 		dh_builddeb -p$(pkgimg_ex) -- -Zbzip2 -z9; \
 	fi
+endif
 
 	dh_installchangelogs -p$(pkghdr)
 	dh_installdocs -p$(pkghdr)
@@ -394,6 +445,19 @@ ifneq ($(skipdbg),true)
 	# Now, the package wont get into the archive, but it will get put
 	# into the debug system.
 endif
+
+ifeq ($(do_tools),true)
+	dh_installchangelogs -p$(pkgtools)
+	dh_installdocs -p$(pkgtools)
+	dh_compress -p$(pkgtools)
+	dh_fixperms -p$(pkgtools)
+	dh_shlibdeps -p$(pkgtools)
+	dh_installdeb -p$(pkgtools)
+	$(lockme) dh_gencontrol -p$(pkgtools)
+	dh_md5sums -p$(pkgtools)
+	dh_builddeb -p$(pkgtools)
+endif
+
 ifneq ($(full_build),false)
 	# Clean out this flavours build directory.
 	rm -rf $(builddir)/build-$*
@@ -407,50 +471,83 @@ endif
 builddirpa = $(builddir)/tools-perarch
 
 $(stampdir)/stamp-prepare-perarch:
-	@echo "Preparing perarch ..."
+	@echo Debug: $@
 ifeq ($(do_tools),true)
-	rm -rf $(builddirpa)/tools
-	install -d $(builddirpa)/tools
-	for i in *; do ln -s $(CURDIR)/$$i $(builddirpa)/tools/; done
-	rm $(builddirpa)/tools/tools
-	rsync -a tools/ $(builddirpa)/tools/tools/
+	rm -rf $(builddirpa)
+	install -d $(builddirpa)
+	for i in *; do ln -s $(CURDIR)/$$i $(builddirpa); done
+	rm $(builddirpa)/tools
+	rsync -a tools/ $(builddirpa)/tools/
 endif
 	touch $@
 
 $(stampdir)/stamp-build-perarch: $(stampdir)/stamp-prepare-perarch
+	@echo Debug: $@
 ifeq ($(do_tools),true)
-	cd $(builddirpa)/tools/tools/perf && \
-		make prefix=/usr HAVE_CPLUS_DEMANGLE=1 CROSS_COMPILE=$(CROSS_COMPILE) $(conc_level)
-	if [ "$(arch)" = "amd64" ] || [ "$(arch)" = "i386" ]; then \
-		cd $(builddirpa)/tools/tools/power/x86/x86_energy_perf_policy && make CROSS_COMPILE=$(CROSS_COMPILE); \
-		cd $(builddirpa)/tools/tools/power/x86/turbostat && make CROSS_COMPILE=$(CROSS_COMPILE); \
-		cd $(builddirpa)/tools/tools/hv && make CROSS_COMPILE=$(CROSS_COMPILE) CFLAGS=-I../../include; \
-	fi
+
+ifeq ($(do_tools_cpupower),true)
+	# Allow for multiple installed versions of cpupower and libcpupower.so:
+	# Override LIB_MIN in order to to generate a versioned .so named
+	# libcpupower.so.$(abi_release) and link cpupower with that.
+	make -C $(builddirpa)/tools/power/cpupower \
+		ARCH=$(arch) \
+		CROSS=$(CROSS_COMPILE) \
+		LIB_MIN=$(abi_release) CPUFREQ_BENCH=false
+endif
+
+ifeq ($(do_tools_perf),true)
+	cd $(builddirpa)/tools/perf && \
+		make prefix=/usr ARCH=$(arch) HAVE_CPLUS_DEMANGLE=1 CROSS_COMPILE=$(CROSS_COMPILE) NO_LIBPYTHON=1 NO_LIBPERL=1 PYTHON=python2.7
+endif
+ifeq ($(do_tools_x86),true)
+	cd $(builddirpa)/tools/power/x86/x86_energy_perf_policy && make ARCH=$(arch) CROSS_COMPILE=$(CROSS_COMPILE)
+	cd $(builddirpa)/tools/power/x86/turbostat && make ARCH=$(arch) CROSS_COMPILE=$(CROSS_COMPILE)
+endif
+ifeq ($(do_tools_hyperv),true)
+	cd $(builddirpa)/tools/hv && make ARCH=$(arch) CROSS_COMPILE=$(CROSS_COMPILE)
+endif
 endif
 	@touch $@
 
 install-perarch: toolspkgdir = $(CURDIR)/debian/$(tools_pkg_name)
 install-perarch: $(stampdir)/stamp-build-perarch
+	@echo Debug: $@
 	# Add the tools.
 ifeq ($(do_tools),true)
-	install -d $(toolspkgdir)/usr/bin
-	install -s -m755 $(builddirpa)/tools/tools/perf/perf \
-		$(toolspkgdir)/usr/bin/perf_$(abi_release)
-	if [ "$(arch)" = "amd64" ] || [ "$(arch)" = "i386" ]; then \
-		install -s -m755 $(builddirpa)/tools/tools/power/x86/x86_energy_perf_policy/x86_energy_perf_policy \
-			$(toolspkgdir)/usr/bin/x86_energy_perf_policy_$(abi_release); \
-		install -s -m755 $(builddirpa)/tools/tools/power/x86/turbostat/turbostat \
-			$(toolspkgdir)/usr/bin/turbostat_$(abi_release); \
-		install -d $(toolspkgdir)/usr/sbin; \
-		install -s -m755 $(builddirpa)/tools/tools/hv/hv_kvp_daemon \
-			$(toolspkgdir)/usr/sbin/hv_kvp_daemon_$(abi_release); \
-	fi
+	install -d $(toolspkgdir)/usr/lib
+	install -d $(toolspkgdir)/usr/lib/$(src_pkg_name)-tools-$(abi_release)
+
+ifeq ($(do_tools_cpupower),true)
+	install -m755 $(builddirpa)/tools/power/cpupower/cpupower \
+		$(toolspkgdir)/usr/lib/$(src_pkg_name)-tools-$(abi_release)
+	# Install only the full versioned libcpupower.so.$(abi_release), not
+	# the usual symlinks to it.
+	install -m644 $(builddirpa)/tools/power/cpupower/libcpupower.so.$(abi_release) \
+		$(toolspkgdir)/usr/lib/
+endif
+
+ifeq ($(do_tools_perf),true)
+	install -m755 $(builddirpa)/tools/perf/perf $(toolspkgdir)/usr/lib/$(src_pkg_name)-tools-$(abi_release)
+endif
+ifeq ($(do_tools_x86),true)
+	install -m755 $(builddirpa)/tools/power/x86/x86_energy_perf_policy/x86_energy_perf_policy \
+		$(toolspkgdir)/usr/lib/$(src_pkg_name)-tools-$(abi_release)
+	install -m755 $(builddirpa)/tools/power/x86/turbostat/turbostat \
+		$(toolspkgdir)/usr/lib/$(src_pkg_name)-tools-$(abi_release)
+endif
+ifeq ($(do_tools_hyperv),true)
+	install -m755 $(builddirpa)/tools/hv/hv_kvp_daemon \
+		$(toolspkgdir)/usr/lib/$(src_pkg_name)-tools-$(abi_release)
+	install -m755 $(builddirpa)/tools/hv/hv_vss_daemon \
+		$(toolspkgdir)/usr/lib/$(src_pkg_name)-tools-$(abi_release)
+endif
 endif
 
 binary-perarch: toolspkg = $(tools_pkg_name)
 binary-perarch: install-perarch
-	@# Empty for make to be happy
+	@echo Debug: $@
 ifeq ($(do_tools),true)
+	dh_strip -p$(toolspkg)
 	dh_installchangelogs -p$(toolspkg)
 	dh_installdocs -p$(toolspkg)
 	dh_compress -p$(toolspkg)
@@ -462,10 +559,23 @@ ifeq ($(do_tools),true)
 	dh_builddeb -p$(toolspkg)
 endif
 
+binary-debs: signed = $(CURDIR)/debian/$(bin_pkg_name)-signed
+binary-debs: signedv = $(CURDIR)/debian/$(bin_pkg_name)-signed/$(release)-$(revision)
+binary-debs: signed_tar = $(src_pkg_name)_$(release)-$(revision)_$(arch).tar.gz
 binary-debs: binary-perarch $(addprefix binary-,$(flavours))
+	@echo Debug: $@
+ifeq ($(arch),amd64)
+ifeq ($(uefi_signed),true)
+	echo $(release)-$(revision) > $(signedv)/version
+	cd $(signedv) && ls *.efi >flavours
+	cd $(signed) && tar czvf ../../../$(signed_tar) .
+	dpkg-distaddfile $(signed_tar) raw-uefi -
+endif
+endif
 
 build-arch-deps-$(do_flavour_image_package) += $(addprefix $(stampdir)/stamp-build-,$(flavours))
 build-arch: $(build-arch-deps-true)
+	@echo Debug: $@
 
 ifeq ($(AUTOBUILD),)
 binary-arch-deps-$(do_flavour_image_package) += binary-udebs
@@ -477,3 +587,5 @@ ifneq ($(do_common_headers_indep),true)
 binary-arch-deps-$(do_flavour_header_package) += binary-headers
 endif
 binary-arch: $(binary-arch-deps-true)
+	@echo Debug: $@
+

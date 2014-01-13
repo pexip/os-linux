@@ -57,8 +57,8 @@
  *	Note that *all* calls to CMOS_READ and CMOS_WRITE are done with
  *	interrupts disabled. Due to the index-port/data-port (0x70/0x71)
  *	design of the RTC, we don't want two different things trying to
- *	get to it at once. (e.g. the periodic 11 min sync from time.c vs.
- *	this driver.)
+ *	get to it at once. (e.g. the periodic 11 min sync from
+ *      kernel/time/ntp.c vs. this driver.)
  */
 
 #include <linux/interrupt.h>
@@ -83,7 +83,6 @@
 #include <linux/ratelimit.h>
 
 #include <asm/current.h>
-#include <asm/system.h>
 
 #ifdef CONFIG_X86
 #include <asm/hpet.h>
@@ -281,7 +280,7 @@ static irqreturn_t rtc_interrupt(int irq, void *dev_id)
 /*
  * sysctl-tuning infrastructure.
  */
-static ctl_table rtc_table[] = {
+static struct ctl_table rtc_table[] = {
 	{
 		.procname	= "max-user-freq",
 		.data		= &rtc_max_user_freq,
@@ -292,7 +291,7 @@ static ctl_table rtc_table[] = {
 	{ }
 };
 
-static ctl_table rtc_root[] = {
+static struct ctl_table rtc_root[] = {
 	{
 		.procname	= "rtc",
 		.mode		= 0555,
@@ -301,7 +300,7 @@ static ctl_table rtc_root[] = {
 	{ }
 };
 
-static ctl_table dev_root[] = {
+static struct ctl_table dev_root[] = {
 	{
 		.procname	= "dev",
 		.mode		= 0555,
@@ -412,7 +411,7 @@ static int rtc_do_ioctl(unsigned int cmd, unsigned long arg, int kernel)
 		case RTC_IRQP_READ:
 		case RTC_IRQP_SET:
 			return -EINVAL;
-		};
+		}
 	}
 #endif
 

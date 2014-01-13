@@ -14,6 +14,7 @@
  */
 
 #include <stdarg.h>
+#include <linux/export.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/init.h>
@@ -25,7 +26,6 @@
 #include <linux/delay.h>
 #include <linux/initrd.h>
 #include <linux/bitops.h>
-#include <linux/module.h>
 #include <linux/kexec.h>
 #include <linux/debugfs.h>
 #include <linux/irq.h>
@@ -36,7 +36,6 @@
 #include <asm/processor.h>
 #include <asm/irq.h>
 #include <linux/io.h>
-#include <asm/system.h>
 #include <asm/mmu.h>
 #include <asm/pgtable.h>
 #include <asm/sections.h>
@@ -53,9 +52,9 @@ void * __init early_init_dt_alloc_memory_arch(u64 size, u64 align)
 }
 
 #ifdef CONFIG_EARLY_PRINTK
-char *stdout;
+static char *stdout;
 
-int __init early_init_dt_scan_chosen_serial(unsigned long node,
+static int __init early_init_dt_scan_chosen_serial(unsigned long node,
 				const char *uname, int depth, void *data)
 {
 	unsigned long l;
@@ -122,7 +121,6 @@ void __init early_init_devtree(void *params)
 	of_scan_flat_dt(early_init_dt_scan_chosen, cmd_line);
 
 	/* Scan memory nodes and rebuild MEMBLOCKs */
-	memblock_init();
 	of_scan_flat_dt(early_init_dt_scan_root, NULL);
 	of_scan_flat_dt(early_init_dt_scan_memory, NULL);
 
@@ -130,7 +128,7 @@ void __init early_init_devtree(void *params)
 	strlcpy(boot_command_line, cmd_line, COMMAND_LINE_SIZE);
 	parse_early_param();
 
-	memblock_analyze();
+	memblock_allow_resize();
 
 	pr_debug("Phys. mem: %lx\n", (unsigned long) memblock_phys_mem_size());
 

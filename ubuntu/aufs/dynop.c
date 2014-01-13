@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2012 Junjiro R. Okajima
+ * Copyright (C) 2010-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -193,7 +193,10 @@ static void dy_aop(struct au_dykey *key, const void *h_op,
 	DySetAop(migratepage);
 	DySetAop(launder_page);
 	DySetAop(is_partially_uptodate);
+	DySetAop(is_dirty_writeback);
 	DySetAop(error_remove_page);
+	DySetAop(swap_activate);
+	DySetAop(swap_deactivate);
 
 	DyDbgSize(cnt, *h_aop);
 	dyaop->da_get_xip_mem = h_aop->get_xip_mem;
@@ -237,7 +240,7 @@ static struct au_dykey *dy_get(struct au_dynop *op, struct au_branch *br)
 
 	key->dk_op.dy_hop = op->dy_hop;
 	kref_init(&key->dk_kref);
-	p->set(key, op->dy_hop, br->br_mnt->mnt_sb);
+	p->set(key, op->dy_hop, au_br_sb(br));
 	old = dy_gadd(spl, key);
 	if (old) {
 		kfree(key);

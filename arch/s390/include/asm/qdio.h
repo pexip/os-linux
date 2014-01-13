@@ -1,7 +1,5 @@
 /*
- * linux/include/asm-s390/qdio.h
- *
- * Copyright 2000,2008 IBM Corp.
+ * Copyright IBM Corp. 2000, 2008
  * Author(s): Utz Bacher <utz.bacher@de.ibm.com>
  *	      Jan Glauber <jang@linux.vnet.ibm.com>
  *
@@ -258,11 +256,6 @@ struct slsb {
 	u8 val[QDIO_MAX_BUFFERS_PER_Q];
 } __attribute__ ((packed, aligned(256)));
 
-#define CHSC_AC2_MULTI_BUFFER_AVAILABLE	0x0080
-#define CHSC_AC2_MULTI_BUFFER_ENABLED	0x0040
-#define CHSC_AC2_DATA_DIV_AVAILABLE	0x0010
-#define CHSC_AC2_DATA_DIV_ENABLED	0x0002
-
 /**
  * struct qdio_outbuf_state - SBAL related asynchronous operation information
  *   (for communication with upper layer programs)
@@ -293,6 +286,8 @@ struct qdio_outbuf_state {
 #define AC1_SC_QEBSM_AVAILABLE		0x02	/* available for subchannel */
 #define AC1_SC_QEBSM_ENABLED		0x01	/* enabled for subchannel */
 
+#define CHSC_AC2_MULTI_BUFFER_AVAILABLE	0x0080
+#define CHSC_AC2_MULTI_BUFFER_ENABLED	0x0040
 #define CHSC_AC2_DATA_DIV_AVAILABLE	0x0010
 #define CHSC_AC2_DATA_DIV_ENABLED	0x0002
 
@@ -328,11 +323,13 @@ typedef void qdio_handler_t(struct ccw_device *, unsigned int, int,
 			    int, int, unsigned long);
 
 /* qdio errors reported to the upper-layer program */
-#define QDIO_ERROR_SIGA_TARGET			0x02
-#define QDIO_ERROR_SIGA_ACCESS_EXCEPTION	0x10
-#define QDIO_ERROR_SIGA_BUSY			0x20
-#define QDIO_ERROR_ACTIVATE_CHECK_CONDITION	0x40
-#define QDIO_ERROR_SLSB_STATE			0x80
+#define QDIO_ERROR_ACTIVATE			0x0001
+#define QDIO_ERROR_GET_BUF_STATE		0x0002
+#define QDIO_ERROR_SET_BUF_STATE		0x0004
+#define QDIO_ERROR_SLSB_STATE			0x0100
+
+#define QDIO_ERROR_FATAL			0x00ff
+#define QDIO_ERROR_TEMPORARY			0xff00
 
 /* for qdio_cleanup */
 #define QDIO_FLAG_CLEANUP_USING_CLEAR		0x01
@@ -352,7 +349,7 @@ typedef void qdio_handler_t(struct ccw_device *, unsigned int, int,
  * @no_output_qs: number of output queues
  * @input_handler: handler to be called for input queues
  * @output_handler: handler to be called for output queues
- * @queue_start_poll: polling handlers (one per input queue or NULL)
+ * @queue_start_poll_array: polling handlers (one per input queue or NULL)
  * @int_parm: interruption parameter
  * @input_sbal_addr_array:  address of no_input_qs * 128 pointers
  * @output_sbal_addr_array: address of no_output_qs * 128 pointers
@@ -372,7 +369,8 @@ struct qdio_initialize {
 	unsigned int no_output_qs;
 	qdio_handler_t *input_handler;
 	qdio_handler_t *output_handler;
-	void (**queue_start_poll) (struct ccw_device *, int, unsigned long);
+	void (**queue_start_poll_array) (struct ccw_device *, int,
+					  unsigned long);
 	int scan_threshold;
 	unsigned long int_parm;
 	void **input_sbal_addr_array;

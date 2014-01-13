@@ -189,7 +189,7 @@ static struct snd_soc_dai_link smartq_dai[] = {
 		.stream_name	= "SmartQ Hi-Fi",
 		.cpu_dai_name	= "samsung-i2s.0",
 		.codec_dai_name	= "wm8750-hifi",
-		.platform_name	= "samsung-audio",
+		.platform_name	= "samsung-i2s.0",
 		.codec_name	= "wm8750.0-0x1a",
 		.init		= smartq_wm8987_init,
 		.ops		= &smartq_hifi_ops,
@@ -198,6 +198,7 @@ static struct snd_soc_dai_link smartq_dai[] = {
 
 static struct snd_soc_card snd_soc_smartq = {
 	.name = "SmartQ",
+	.owner = THIS_MODULE,
 	.dai_link = smartq_dai,
 	.num_links = ARRAY_SIZE(smartq_dai),
 

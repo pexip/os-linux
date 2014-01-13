@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006 - 2009 Intel Corporation.  All rights reserved.
+ * Copyright (c) 2006 - 2011 Intel Corporation.  All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -233,6 +233,7 @@ static int send_mpa_reject(struct nes_cm_node *cm_node)
 	u8 *start_ptr = &start_addr;
 	u8 **start_buff = &start_ptr;
 	u16 buff_len = 0;
+	struct ietf_mpa_v1 *mpa_frame;
 
 	skb = dev_alloc_skb(MAX_CM_BUFFER);
 	if (!skb) {
@@ -242,6 +243,8 @@ static int send_mpa_reject(struct nes_cm_node *cm_node)
 
 	/* send an MPA reject frame */
 	cm_build_mpa_frame(cm_node, start_buff, &buff_len, NULL, MPA_KEY_REPLY);
+	mpa_frame = (struct ietf_mpa_v1 *)*start_buff;
+	mpa_frame->flags |= IETF_MPA_FLAGS_REJECT;
 	form_cm_frame(skb, cm_node, NULL, 0, *start_buff, buff_len, SET_ACK | SET_FIN);
 
 	cm_node->state = NES_CM_STATE_FIN_WAIT1;
@@ -335,18 +338,21 @@ static int parse_mpa(struct nes_cm_node *cm_node, u8 *buffer, u32 *type,
 	case IETF_MPA_V2: {
 		u16 ird_size;
 		u16 ord_size;
+		u16 rtr_ctrl_ird;
+		u16 rtr_ctrl_ord;
+
 		mpa_v2_frame = (struct ietf_mpa_v2 *)buffer;
 		mpa_hdr_len += IETF_RTR_MSG_SIZE;
 		cm_node->mpa_frame_size -= IETF_RTR_MSG_SIZE;
 		rtr_msg = &mpa_v2_frame->rtr_msg;
 
 		/* parse rtr message */
-		rtr_msg->ctrl_ird = ntohs(rtr_msg->ctrl_ird);
-		rtr_msg->ctrl_ord = ntohs(rtr_msg->ctrl_ord);
-		ird_size = rtr_msg->ctrl_ird & IETF_NO_IRD_ORD;
-		ord_size = rtr_msg->ctrl_ord & IETF_NO_IRD_ORD;
+		rtr_ctrl_ird = ntohs(rtr_msg->ctrl_ird);
+		rtr_ctrl_ord = ntohs(rtr_msg->ctrl_ord);
+		ird_size = rtr_ctrl_ird & IETF_NO_IRD_ORD;
+		ord_size = rtr_ctrl_ord & IETF_NO_IRD_ORD;
 
-		if (!(rtr_msg->ctrl_ird & IETF_PEER_TO_PEER)) {
+		if (!(rtr_ctrl_ird & IETF_PEER_TO_PEER)) {
 			/* send reset */
 			return -EINVAL;
 		}
@@ -367,9 +373,9 @@ static int parse_mpa(struct nes_cm_node *cm_node, u8 *buffer, u32 *type,
 			}
 		}
 
-		if (rtr_msg->ctrl_ord & IETF_RDMA0_READ) {
+		if (rtr_ctrl_ord & IETF_RDMA0_READ) {
 			cm_node->send_rdma0_op = SEND_RDMA_READ_ZERO;
-		} else if (rtr_msg->ctrl_ord & IETF_RDMA0_WRITE) {
+		} else if (rtr_ctrl_ord & IETF_RDMA0_WRITE) {
 			cm_node->send_rdma0_op = SEND_RDMA_WRITE_ZERO;
 		} else {        /* Not supported RDMA0 operation */
 			return -EINVAL;
@@ -424,6 +430,8 @@ static void form_cm_frame(struct sk_buff *skb,
 	buf += sizeof(*tcph);
 
 	skb->ip_summed = CHECKSUM_PARTIAL;
+	if (!(cm_node->netdev->features & NETIF_F_IP_CSUM))
+		skb->ip_summed = CHECKSUM_NONE;
 	skb->protocol = htons(0x800);
 	skb->data_len = 0;
 	skb->mac_len = ETH_HLEN;
@@ -540,6 +548,8 @@ static void build_mpa_v2(struct nes_cm_node *cm_node,
 {
 	struct ietf_mpa_v2 *mpa_frame = (struct ietf_mpa_v2 *)start_addr;
 	struct ietf_rtr_msg *rtr_msg = &mpa_frame->rtr_msg;
+	u16 ctrl_ird;
+	u16 ctrl_ord;
 
 	/* initialize the upper 5 bytes of the frame */
 	build_mpa_v1(cm_node, start_addr, mpa_key);
@@ -547,31 +557,31 @@ static void build_mpa_v2(struct nes_cm_node *cm_node,
 	mpa_frame->priv_data_len += htons(IETF_RTR_MSG_SIZE);
 
 	/* initialize RTR msg */
-	rtr_msg->ctrl_ird = (cm_node->ird_size > IETF_NO_IRD_ORD) ?
+	ctrl_ird = (cm_node->ird_size > IETF_NO_IRD_ORD) ?
 			    IETF_NO_IRD_ORD : cm_node->ird_size;
-	rtr_msg->ctrl_ord = (cm_node->ord_size > IETF_NO_IRD_ORD) ?
+	ctrl_ord = (cm_node->ord_size > IETF_NO_IRD_ORD) ?
 			    IETF_NO_IRD_ORD : cm_node->ord_size;
 
-	rtr_msg->ctrl_ird |= IETF_PEER_TO_PEER;
-	rtr_msg->ctrl_ird |= IETF_FLPDU_ZERO_LEN;
+	ctrl_ird |= IETF_PEER_TO_PEER;
+	ctrl_ird |= IETF_FLPDU_ZERO_LEN;
 
 	switch (mpa_key) {
 	case MPA_KEY_REQUEST:
-		rtr_msg->ctrl_ord |= IETF_RDMA0_WRITE;
-		rtr_msg->ctrl_ord |= IETF_RDMA0_READ;
+		ctrl_ord |= IETF_RDMA0_WRITE;
+		ctrl_ord |= IETF_RDMA0_READ;
 		break;
 	case MPA_KEY_REPLY:
 		switch (cm_node->send_rdma0_op) {
 		case SEND_RDMA_WRITE_ZERO:
-			rtr_msg->ctrl_ord |= IETF_RDMA0_WRITE;
+			ctrl_ord |= IETF_RDMA0_WRITE;
 			break;
 		case SEND_RDMA_READ_ZERO:
-			rtr_msg->ctrl_ord |= IETF_RDMA0_READ;
+			ctrl_ord |= IETF_RDMA0_READ;
 			break;
 		}
 	}
-	rtr_msg->ctrl_ird = htons(rtr_msg->ctrl_ird);
-	rtr_msg->ctrl_ord = htons(rtr_msg->ctrl_ord);
+	rtr_msg->ctrl_ird = htons(ctrl_ird);
+	rtr_msg->ctrl_ord = htons(ctrl_ord);
 }
 
 /**
@@ -619,11 +629,9 @@ static void build_rdma0_msg(struct nes_cm_node *cm_node, struct nes_qp **nesqp_a
 
 	case SEND_RDMA_READ_ZERO:
 	default:
-		if (cm_node->send_rdma0_op != SEND_RDMA_READ_ZERO) {
-			printk(KERN_ERR "%s[%u]: Unsupported RDMA0 len operation=%u\n",
-				 __func__, __LINE__, cm_node->send_rdma0_op);
-			WARN_ON(1);
-		}
+		if (cm_node->send_rdma0_op != SEND_RDMA_READ_ZERO)
+			WARN(1, "Unsupported RDMA0 len operation=%u\n",
+			     cm_node->send_rdma0_op);
 		nes_debug(NES_DBG_CM, "Sending first rdma operation.\n");
 		wqe->wqe_words[NES_IWARP_SQ_WQE_MISC_IDX] =
 			cpu_to_le32(NES_IWARP_SQ_OP_RDMAR);
@@ -661,7 +669,6 @@ int schedule_nes_timer(struct nes_cm_node *cm_node, struct sk_buff *skb,
 	struct nes_cm_core *cm_core = cm_node->cm_core;
 	struct nes_timer_entry *new_send;
 	int ret = 0;
-	u32 was_timer_set;
 
 	new_send = kzalloc(sizeof(*new_send), GFP_ATOMIC);
 	if (!new_send)
@@ -713,12 +720,8 @@ int schedule_nes_timer(struct nes_cm_node *cm_node, struct sk_buff *skb,
 		}
 	}
 
-	was_timer_set = timer_pending(&cm_core->tcp_timer);
-
-	if (!was_timer_set) {
-		cm_core->tcp_timer.expires = new_send->timetosend;
-		add_timer(&cm_core->tcp_timer);
-	}
+	if (!timer_pending(&cm_core->tcp_timer))
+		mod_timer(&cm_core->tcp_timer, new_send->timetosend);
 
 	return ret;
 }
@@ -936,10 +939,8 @@ static void nes_cm_timer_tick(unsigned long pass)
 	}
 
 	if (settimer) {
-		if (!timer_pending(&cm_core->tcp_timer)) {
-			cm_core->tcp_timer.expires = nexttimeout;
-			add_timer(&cm_core->tcp_timer);
-		}
+		if (!timer_pending(&cm_core->tcp_timer))
+			mod_timer(&cm_core->tcp_timer, nexttimeout);
 	}
 }
 
@@ -1304,8 +1305,6 @@ static int mini_cm_del_listen(struct nes_cm_core *cm_core,
 static inline int mini_cm_accelerated(struct nes_cm_core *cm_core,
 				      struct nes_cm_node *cm_node)
 {
-	u32 was_timer_set;
-
 	cm_node->accelerated = 1;
 
 	if (cm_node->accept_pend) {
@@ -1315,11 +1314,8 @@ static inline int mini_cm_accelerated(struct nes_cm_core *cm_core,
 		BUG_ON(atomic_read(&cm_node->listener->pend_accepts_cnt) < 0);
 	}
 
-	was_timer_set = timer_pending(&cm_core->tcp_timer);
-	if (!was_timer_set) {
-		cm_core->tcp_timer.expires = jiffies + NES_SHORT_TIME;
-		add_timer(&cm_core->tcp_timer);
-	}
+	if (!timer_pending(&cm_core->tcp_timer))
+		mod_timer(&cm_core->tcp_timer, (jiffies + NES_SHORT_TIME));
 
 	return 0;
 }
@@ -1344,11 +1340,13 @@ static int nes_addr_resolve_neigh(struct nes_vnic *nesvnic, u32 dst_ip, int arpi
 	}
 
 	if (netif_is_bond_slave(nesvnic->netdev))
-		netdev = nesvnic->netdev->master;
+		netdev = netdev_master_upper_dev_get(nesvnic->netdev);
 	else
 		netdev = nesvnic->netdev;
 
 	neigh = neigh_lookup(&arp_tbl, &rt->rt_gateway, netdev);
+
+	rcu_read_lock();
 	if (neigh) {
 		if (neigh->nud_state & NUD_VALID) {
 			nes_debug(NES_DBG_CM, "Neighbor MAC address for 0x%08X"
@@ -1359,9 +1357,7 @@ static int nes_addr_resolve_neigh(struct nes_vnic *nesvnic, u32 dst_ip, int arpi
 				if (!memcmp(nesadapter->arp_table[arpindex].mac_addr,
 					    neigh->ha, ETH_ALEN)) {
 					/* Mac address same as in nes_arp_table */
-					neigh_release(neigh);
-					ip_rt_put(rt);
-					return rc;
+					goto out;
 				}
 
 				nes_manage_arp_cache(nesvnic->netdev,
@@ -1373,15 +1369,16 @@ static int nes_addr_resolve_neigh(struct nes_vnic *nesvnic, u32 dst_ip, int arpi
 					     dst_ip, NES_ARP_ADD);
 			rc = nes_arp_table(nesvnic->nesdev, dst_ip, NULL,
 					   NES_ARP_RESOLVE);
+		} else {
+			neigh_event_send(neigh, NULL);
 		}
-		neigh_release(neigh);
 	}
+out:
+	rcu_read_unlock();
 
-	if ((neigh == NULL) || (!(neigh->nud_state & NUD_VALID))) {
-		rcu_read_lock();
-		neigh_event_send(dst_get_neighbour(&rt->dst), NULL);
-		rcu_read_unlock();
-	}
+	if (neigh)
+		neigh_release(neigh);
+
 	ip_rt_put(rt);
 	return rc;
 }
@@ -1456,12 +1453,8 @@ static struct nes_cm_node *make_cm_node(struct nes_cm_core *cm_core,
 	cm_node->loopbackpartner = NULL;
 
 	/* get the mac addr for the remote node */
-	if (ipv4_is_loopback(htonl(cm_node->rem_addr))) {
-		arpindex = nes_arp_table(nesdev, ntohl(nesvnic->local_ipaddr), NULL, NES_ARP_RESOLVE);
-	} else {
-		oldarpindex = nes_arp_table(nesdev, cm_node->rem_addr, NULL, NES_ARP_RESOLVE);
-		arpindex = nes_addr_resolve_neigh(nesvnic, cm_info->rem_addr, oldarpindex);
-	}
+	oldarpindex = nes_arp_table(nesdev, cm_node->rem_addr, NULL, NES_ARP_RESOLVE);
+	arpindex = nes_addr_resolve_neigh(nesvnic, cm_info->rem_addr, oldarpindex);
 	if (arpindex < 0) {
 		kfree(cm_node);
 		return NULL;
@@ -2838,6 +2831,7 @@ static int nes_cm_disconn_true(struct nes_qp *nesqp)
 		issue_disconn = 1;
 		issue_close = 1;
 		nesqp->cm_id = NULL;
+		del_timer(&nesqp->terminate_timer);
 		if (nesqp->flush_issued == 0) {
 			nesqp->flush_issued = 1;
 			issue_flush = 1;
@@ -2874,7 +2868,8 @@ static int nes_cm_disconn_true(struct nes_qp *nesqp)
 			ibevent.device = nesqp->ibqp.device;
 			ibevent.event = nesqp->terminate_eventtype;
 			ibevent.element.qp = &nesqp->ibqp;
-			nesqp->ibqp.event_handler(&ibevent, nesqp->ibqp.qp_context);
+			if (nesqp->ibqp.event_handler)
+				nesqp->ibqp.event_handler(&ibevent, nesqp->ibqp.qp_context);
 		}
 	}
 
@@ -3142,11 +3137,7 @@ int nes_accept(struct iw_cm_id *cm_id, struct iw_cm_conn_param *conn_param)
 	nesqp->nesqp_context->tcpPorts[1] =
 		cpu_to_le16(ntohs(cm_id->remote_addr.sin_port));
 
-	if (ipv4_is_loopback(cm_id->remote_addr.sin_addr.s_addr))
-		nesqp->nesqp_context->ip0 =
-			cpu_to_le32(ntohl(nesvnic->local_ipaddr));
-	else
-		nesqp->nesqp_context->ip0 =
+	nesqp->nesqp_context->ip0 =
 			cpu_to_le32(ntohl(cm_id->remote_addr.sin_addr.s_addr));
 
 	nesqp->nesqp_context->misc2 |= cpu_to_le32(
@@ -3171,10 +3162,7 @@ int nes_accept(struct iw_cm_id *cm_id, struct iw_cm_conn_param *conn_param)
 	memset(&nes_quad, 0, sizeof(nes_quad));
 	nes_quad.DstIpAdrIndex =
 		cpu_to_le32((u32)PCI_FUNC(nesdev->pcidev->devfn) << 24);
-	if (ipv4_is_loopback(cm_id->remote_addr.sin_addr.s_addr))
-		nes_quad.SrcIpadr = nesvnic->local_ipaddr;
-	else
-		nes_quad.SrcIpadr = cm_id->remote_addr.sin_addr.s_addr;
+	nes_quad.SrcIpadr = cm_id->remote_addr.sin_addr.s_addr;
 	nes_quad.TcpPorts[0] = cm_id->remote_addr.sin_port;
 	nes_quad.TcpPorts[1] = cm_id->local_addr.sin_port;
 
@@ -3310,6 +3298,10 @@ int nes_connect(struct iw_cm_id *cm_id, struct iw_cm_conn_param *conn_param)
 
 	nesqp->private_data_len = conn_param->private_data_len;
 	nesqp->nesqp_context->ird_ord_sizes |= cpu_to_le32((u32)conn_param->ord);
+	/* space for rdma0 read msg */
+	if (conn_param->ord == 0)
+		nesqp->nesqp_context->ird_ord_sizes |= cpu_to_le32(1);
+
 	nes_debug(NES_DBG_CM, "requested ord = 0x%08X.\n", (u32)conn_param->ord);
 	nes_debug(NES_DBG_CM, "mpa private data len =%u\n",
 		  conn_param->private_data_len);
@@ -3523,11 +3515,7 @@ static void cm_event_connected(struct nes_cm_event *event)
 		cpu_to_le16(ntohs(cm_id->local_addr.sin_port));
 	nesqp->nesqp_context->tcpPorts[1] =
 		cpu_to_le16(ntohs(cm_id->remote_addr.sin_port));
-	if (ipv4_is_loopback(cm_id->remote_addr.sin_addr.s_addr))
-		nesqp->nesqp_context->ip0 =
-			cpu_to_le32(ntohl(nesvnic->local_ipaddr));
-	else
-		nesqp->nesqp_context->ip0 =
+	nesqp->nesqp_context->ip0 =
 			cpu_to_le32(ntohl(cm_id->remote_addr.sin_addr.s_addr));
 
 	nesqp->nesqp_context->misc2 |= cpu_to_le32(
@@ -3556,10 +3544,7 @@ static void cm_event_connected(struct nes_cm_event *event)
 
 	nes_quad.DstIpAdrIndex =
 		cpu_to_le32((u32)PCI_FUNC(nesdev->pcidev->devfn) << 24);
-	if (ipv4_is_loopback(cm_id->remote_addr.sin_addr.s_addr))
-		nes_quad.SrcIpadr = nesvnic->local_ipaddr;
-	else
-		nes_quad.SrcIpadr = cm_id->remote_addr.sin_addr.s_addr;
+	nes_quad.SrcIpadr = cm_id->remote_addr.sin_addr.s_addr;
 	nes_quad.TcpPorts[0] = cm_id->remote_addr.sin_port;
 	nes_quad.TcpPorts[1] = cm_id->local_addr.sin_port;
 

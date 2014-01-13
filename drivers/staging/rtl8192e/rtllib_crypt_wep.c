@@ -9,7 +9,6 @@
  * more details.
  */
 
-#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
@@ -38,10 +37,9 @@ static void *prism2_wep_init(int keyidx)
 {
 	struct prism2_wep_data *priv;
 
-	priv = kmalloc(sizeof(*priv), GFP_ATOMIC);
+	priv = kzalloc(sizeof(*priv), GFP_ATOMIC);
 	if (priv == NULL)
 		goto fail;
-	memset(priv, 0, sizeof(*priv));
 	priv->key_idx = keyidx;
 
 	priv->tx_tfm = crypto_alloc_blkcipher("ecb(arc4)", 0, CRYPTO_ALG_ASYNC);
@@ -249,17 +247,14 @@ static int prism2_wep_get_key(void *key, int len, u8 *seq, void *priv)
 }
 
 
-static char *prism2_wep_print_stats(char *p, void *priv)
+static void prism2_wep_print_stats(struct seq_file *m, void *priv)
 {
 	struct prism2_wep_data *wep = priv;
-	p += sprintf(p, "key[%d] alg=WEP len=%d\n",
-		     wep->key_idx, wep->key_len);
-	return p;
+	seq_printf(m, "key[%d] alg=WEP len=%d\n", wep->key_idx, wep->key_len);
 }
 
-
-static struct rtllib_crypto_ops rtllib_crypt_wep = {
-	.name			= "WEP",
+static struct lib80211_crypto_ops rtllib_crypt_wep = {
+	.name			= "R-WEP",
 	.init			= prism2_wep_init,
 	.deinit			= prism2_wep_deinit,
 	.encrypt_mpdu		= prism2_wep_encrypt,
@@ -269,24 +264,24 @@ static struct rtllib_crypto_ops rtllib_crypt_wep = {
 	.set_key		= prism2_wep_set_key,
 	.get_key		= prism2_wep_get_key,
 	.print_stats		= prism2_wep_print_stats,
-	.extra_prefix_len	= 4, /* IV */
-	.extra_postfix_len	= 4, /* ICV */
+	.extra_mpdu_prefix_len  = 4,	/* IV */
+	.extra_mpdu_postfix_len = 4,	/* ICV */
 	.owner			= THIS_MODULE,
 };
 
 
 int __init rtllib_crypto_wep_init(void)
 {
-	return rtllib_register_crypto_ops(&rtllib_crypt_wep);
+	return lib80211_register_crypto_ops(&rtllib_crypt_wep);
 }
 
 
 void __exit rtllib_crypto_wep_exit(void)
 {
-	rtllib_unregister_crypto_ops(&rtllib_crypt_wep);
+	lib80211_unregister_crypto_ops(&rtllib_crypt_wep);
 }
 
-void rtllib_wep_null(void)
-{
-	return;
-}
+module_init(rtllib_crypto_wep_init);
+module_exit(rtllib_crypto_wep_exit);
+
+MODULE_LICENSE("GPL");

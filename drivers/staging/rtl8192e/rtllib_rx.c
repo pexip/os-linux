@@ -36,7 +36,6 @@
 #include <linux/slab.h>
 #include <linux/tcp.h>
 #include <linux/types.h>
-#include <linux/version.h>
 #include <linux/wireless.h>
 #include <linux/etherdevice.h>
 #include <linux/uaccess.h>
@@ -281,7 +280,7 @@ static int rtllib_is_eapol_frame(struct rtllib_device *ieee,
 /* Called only as a tasklet (software IRQ), by rtllib_rx */
 static inline int
 rtllib_rx_frame_decrypt(struct rtllib_device *ieee, struct sk_buff *skb,
-			struct rtllib_crypt_data *crypt)
+			struct lib80211_crypt_data *crypt)
 {
 	struct rtllib_hdr_4addr *hdr;
 	int res, hdrlen;
@@ -322,7 +321,7 @@ rtllib_rx_frame_decrypt(struct rtllib_device *ieee, struct sk_buff *skb,
 /* Called only as a tasklet (software IRQ), by rtllib_rx */
 static inline int
 rtllib_rx_frame_decrypt_msdu(struct rtllib_device *ieee, struct sk_buff *skb,
-			     int keyidx, struct rtllib_crypt_data *crypt)
+			     int keyidx, struct lib80211_crypt_data *crypt)
 {
 	struct rtllib_hdr_4addr *hdr;
 	int res, hdrlen;
@@ -341,7 +340,7 @@ rtllib_rx_frame_decrypt_msdu(struct rtllib_device *ieee, struct sk_buff *skb,
 	hdrlen = rtllib_get_hdrlen(le16_to_cpu(hdr->frame_ctl));
 
 	atomic_inc(&crypt->refcnt);
-	res = crypt->ops->decrypt_msdu(skb, keyidx, hdrlen, crypt->priv, ieee);
+	res = crypt->ops->decrypt_msdu(skb, keyidx, hdrlen, crypt->priv);
 	atomic_dec(&crypt->refcnt);
 	if (res < 0) {
 		printk(KERN_DEBUG "%s: MSDU decryption/MIC verification failed"
@@ -497,7 +496,7 @@ void rtllib_indicate_packets(struct rtllib_device *ieee, struct rtllib_rxb **prx
 				memcpy(skb_push(sub_skb, ETH_ALEN), prxb->dst, ETH_ALEN);
 			}
 
-			/* Indicat the packets to upper layer */
+			/* Indicate the packets to upper layer */
 			if (sub_skb) {
 				stats->rx_packets++;
 				stats->rx_bytes += sub_skb->len;
@@ -1001,7 +1000,7 @@ static int rtllib_rx_data_filter(struct rtllib_device *ieee, u16 fc,
 			return -1;
 
 		/* {broad,multi}cast packets to our BSS go through */
-		if (is_multicast_ether_addr(dst) || is_broadcast_ether_addr(dst)) {
+		if (is_multicast_ether_addr(dst)) {
 			if (memcmp(bssid, ieee->current_network.bssid, ETH_ALEN))
 				return -1;
 		}
@@ -1010,7 +1009,7 @@ static int rtllib_rx_data_filter(struct rtllib_device *ieee, u16 fc,
 }
 
 static int rtllib_rx_get_crypt(struct rtllib_device *ieee, struct sk_buff *skb,
-			struct rtllib_crypt_data **crypt, size_t hdrlen)
+			struct lib80211_crypt_data **crypt, size_t hdrlen)
 {
 	struct rtllib_hdr_4addr *hdr = (struct rtllib_hdr_4addr *)skb->data;
 	u16 fc = le16_to_cpu(hdr->frame_ctl);
@@ -1020,7 +1019,7 @@ static int rtllib_rx_get_crypt(struct rtllib_device *ieee, struct sk_buff *skb,
 		if (skb->len >= hdrlen + 3)
 			idx = skb->data[hdrlen + 3] >> 6;
 
-		*crypt = ieee->crypt[idx];
+		*crypt = ieee->crypt_info.crypt[idx];
 		/* allow NULL decrypt to indicate an station specific override
 		 * for default encryption */
 		if (*crypt && ((*crypt)->ops == NULL ||
@@ -1045,7 +1044,7 @@ static int rtllib_rx_get_crypt(struct rtllib_device *ieee, struct sk_buff *skb,
 
 static int rtllib_rx_decrypt(struct rtllib_device *ieee, struct sk_buff *skb,
 		      struct rtllib_rx_stats *rx_stats,
-		      struct rtllib_crypt_data *crypt, size_t hdrlen)
+		      struct lib80211_crypt_data *crypt, size_t hdrlen)
 {
 	struct rtllib_hdr_4addr *hdr;
 	int keyidx = 0;
@@ -1234,7 +1233,7 @@ static void rtllib_rx_indicate_pkt_legacy(struct rtllib_device *ieee,
 			if (is_multicast_ether_addr(dst))
 				ieee->stats.multicast++;
 
-			/* Indicat the packets to upper layer */
+			/* Indicate the packets to upper layer */
 			memset(sub_skb->cb, 0, sizeof(sub_skb->cb));
 			sub_skb->protocol = eth_type_trans(sub_skb, dev);
 			sub_skb->dev = dev;
@@ -1253,7 +1252,7 @@ static int rtllib_rx_InfraAdhoc(struct rtllib_device *ieee, struct sk_buff *skb,
 {
 	struct net_device *dev = ieee->dev;
 	struct rtllib_hdr_4addr *hdr = (struct rtllib_hdr_4addr *)skb->data;
-	struct rtllib_crypt_data *crypt = NULL;
+	struct lib80211_crypt_data *crypt = NULL;
 	struct rtllib_rxb *rxb = NULL;
 	struct rx_ts_record *pTS = NULL;
 	u16 fc, sc, SeqNum = 0;
@@ -1270,7 +1269,7 @@ static int rtllib_rx_InfraAdhoc(struct rtllib_device *ieee, struct sk_buff *skb,
 	sc = le16_to_cpu(hdr->seq_ctl);
 
 	/*Filter pkt not to me*/
-	multicast = is_multicast_ether_addr(hdr->addr1)|is_broadcast_ether_addr(hdr->addr1);
+	multicast = is_multicast_ether_addr(hdr->addr1);
 	unicast = !multicast;
 	if (unicast && (compare_ether_addr(dev->dev_addr, hdr->addr1) != 0)) {
 		if (ieee->bNetPromiscuousMode)
@@ -1351,7 +1350,7 @@ static int rtllib_rx_InfraAdhoc(struct rtllib_device *ieee, struct sk_buff *skb,
 	/* Get TS for Rx Reorder  */
 	hdr = (struct rtllib_hdr_4addr *) skb->data;
 	if (ieee->current_network.qos_data.active && IsQoSDataFrame(skb->data)
-		&& !is_multicast_ether_addr(hdr->addr1) && !is_broadcast_ether_addr(hdr->addr1)
+		&& !is_multicast_ether_addr(hdr->addr1)
 		&& (!bToOtherSTA)) {
 		TID = Frame_QoSTID(skb->data);
 		SeqNum = WLAN_GET_SEQ_SEQ(sc);
@@ -1497,6 +1496,7 @@ int rtllib_rx(struct rtllib_device *ieee, struct sk_buff *skb,
 	ieee->stats.rx_dropped++;
 	return 0;
 }
+EXPORT_SYMBOL(rtllib_rx);
 
 static u8 qos_oui[QOS_OUI_LEN] = { 0x00, 0x50, 0xF2 };
 
@@ -1822,7 +1822,7 @@ int rtllib_parse_info_param(struct rtllib_device *ieee,
 				network->rates_ex[i] = info_element->data[i];
 				p += snprintf(p, sizeof(rates_str) -
 					      (p - rates_str), "%02X ",
-					      network->rates[i]);
+					      network->rates_ex[i]);
 				if (rtllib_is_ofdm_rate
 				    (info_element->data[i])) {
 					network->flags |= NETWORK_HAS_OFDM;
@@ -2453,7 +2453,7 @@ static inline void update_network(struct rtllib_network *dst,
 	if (src->wmm_param[0].ac_aci_acm_aifsn ||
 	   src->wmm_param[1].ac_aci_acm_aifsn ||
 	   src->wmm_param[2].ac_aci_acm_aifsn ||
-	   src->wmm_param[1].ac_aci_acm_aifsn)
+	   src->wmm_param[3].ac_aci_acm_aifsn)
 		memcpy(dst->wmm_param, src->wmm_param, WME_AC_PRAM_LEN);
 
 	dst->SignalStrength = src->SignalStrength;
@@ -2492,7 +2492,7 @@ static int IsPassiveChannel(struct rtllib_device *rtllib, u8 channel)
 	return 0;
 }
 
-int IsLegalChannel(struct rtllib_device *rtllib, u8 channel)
+int rtllib_legal_channel(struct rtllib_device *rtllib, u8 channel)
 {
 	if (MAX_CHANNEL_NUMBER < channel) {
 		printk(KERN_INFO "%s(): Invalid Channel\n", __func__);
@@ -2503,6 +2503,7 @@ int IsLegalChannel(struct rtllib_device *rtllib, u8 channel)
 
 	return 0;
 }
+EXPORT_SYMBOL(rtllib_legal_channel);
 
 static inline void rtllib_process_probe_response(
 	struct rtllib_device *ieee,
@@ -2553,7 +2554,7 @@ static inline void rtllib_process_probe_response(
 	}
 
 
-	if (!IsLegalChannel(ieee, network->channel))
+	if (!rtllib_legal_channel(ieee, network->channel))
 		goto free_network;
 
 	if (WLAN_FC_GET_STYPE(beacon->header.frame_ctl) ==

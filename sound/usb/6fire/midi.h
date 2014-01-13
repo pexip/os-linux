@@ -3,7 +3,6 @@
  *
  * Author:	Torsten Schenk <torsten.schenk@zoho.com>
  * Created:	Jan 01, 2011
- * Version:	0.3.0
  * Copyright:	(C) Torsten Schenk
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,7 +34,7 @@ struct midi_runtime {
 	void (*in_received)(struct midi_runtime *rt, u8 *data, int length);
 };
 
-int __devinit usb6fire_midi_init(struct sfire_chip *chip);
+int usb6fire_midi_init(struct sfire_chip *chip);
 void usb6fire_midi_abort(struct sfire_chip *chip);
 void usb6fire_midi_destroy(struct sfire_chip *chip);
 #endif /* USB6FIRE_MIDI_H */

@@ -23,7 +23,7 @@
  * Depending on whether ACPI graphics extensions (cmp. ACPI spec Appendix B)
  * are available, video.ko should be used to handle the device.
  *
- * Otherwise vendor specific drivers like thinkpad_acpi, asus_acpi,
+ * Otherwise vendor specific drivers like thinkpad_acpi, asus-laptop,
  * sony_acpi,... can take care about backlight brightness.
  *
  * If CONFIG_ACPI_VIDEO is neither set as "compiled in" (y) nor as a module (m)
@@ -37,6 +37,8 @@
 #include <linux/acpi.h>
 #include <linux/dmi.h>
 #include <linux/pci.h>
+
+#include "internal.h"
 
 #define PREFIX "ACPI: "
 
@@ -67,40 +69,37 @@ acpi_backlight_cap_match(acpi_handle handle, u32 level, void *context,
 	return 0;
 }
 
-/* Returns true if the device is a video device which can be handled by
- * video.ko.
+/* Returns true if the ACPI object is a video device which can be
+ * handled by video.ko.
  * The device will get a Linux specific CID added in scan.c to
  * identify the device as an ACPI graphics device
  * Be aware that the graphics device may not be physically present
  * Use acpi_video_get_capabilities() to detect general ACPI video
  * capabilities of present cards
  */
-long acpi_is_video_device(struct acpi_device *device)
+long acpi_is_video_device(acpi_handle handle)
 {
 	acpi_handle h_dummy;
 	long video_caps = 0;
 
-	if (!device)
-		return 0;
-
 	/* Is this device able to support video switching ? */
-	if (ACPI_SUCCESS(acpi_get_handle(device->handle, "_DOD", &h_dummy)) ||
-	    ACPI_SUCCESS(acpi_get_handle(device->handle, "_DOS", &h_dummy)))
+	if (ACPI_SUCCESS(acpi_get_handle(handle, "_DOD", &h_dummy)) ||
+	    ACPI_SUCCESS(acpi_get_handle(handle, "_DOS", &h_dummy)))
 		video_caps |= ACPI_VIDEO_OUTPUT_SWITCHING;
 
 	/* Is this device able to retrieve a video ROM ? */
-	if (ACPI_SUCCESS(acpi_get_handle(device->handle, "_ROM", &h_dummy)))
+	if (ACPI_SUCCESS(acpi_get_handle(handle, "_ROM", &h_dummy)))
 		video_caps |= ACPI_VIDEO_ROM_AVAILABLE;
 
 	/* Is this device able to configure which video head to be POSTed ? */
-	if (ACPI_SUCCESS(acpi_get_handle(device->handle, "_VPO", &h_dummy)) &&
-	    ACPI_SUCCESS(acpi_get_handle(device->handle, "_GPD", &h_dummy)) &&
-	    ACPI_SUCCESS(acpi_get_handle(device->handle, "_SPD", &h_dummy)))
+	if (ACPI_SUCCESS(acpi_get_handle(handle, "_VPO", &h_dummy)) &&
+	    ACPI_SUCCESS(acpi_get_handle(handle, "_GPD", &h_dummy)) &&
+	    ACPI_SUCCESS(acpi_get_handle(handle, "_SPD", &h_dummy)))
 		video_caps |= ACPI_VIDEO_DEVICE_POSTING;
 
 	/* Only check for backlight functionality if one of the above hit. */
 	if (video_caps)
-		acpi_walk_namespace(ACPI_TYPE_DEVICE, device->handle,
+		acpi_walk_namespace(ACPI_TYPE_DEVICE, handle,
 				    ACPI_UINT32_MAX, acpi_backlight_cap_match, NULL,
 				    &video_caps, NULL);
 
@@ -127,7 +126,7 @@ find_video(acpi_handle handle, u32 lvl, void *context, void **rv)
 		if (!dev)
 			return AE_OK;
 		pci_dev_put(dev);
-		*cap |= acpi_is_video_device(acpi_dev);
+		*cap |= acpi_is_video_device(handle);
 	}
 	return AE_OK;
 }
@@ -227,8 +226,7 @@ long acpi_video_get_capabilities(acpi_handle graphics_handle)
 }
 EXPORT_SYMBOL(acpi_video_get_capabilities);
 
-/* Returns true if video.ko can do backlight switching */
-int acpi_video_backlight_support(void)
+static void acpi_video_caps_check(void)
 {
 	/*
 	 * We must check whether the ACPI graphics device is physically plugged
@@ -236,6 +234,40 @@ int acpi_video_backlight_support(void)
 	 */
 	if (!acpi_video_caps_checked)
 		acpi_video_get_capabilities(NULL);
+}
+
+bool acpi_video_backlight_quirks(void)
+{
+	return acpi_gbl_osi_data >= ACPI_OSI_WIN_8;
+}
+EXPORT_SYMBOL(acpi_video_backlight_quirks);
+
+/* Promote the vendor interface instead of the generic video module.
+ * This function allow DMI blacklists to be implemented by externals
+ * platform drivers instead of putting a big blacklist in video_detect.c
+ * After calling this function you will probably want to call
+ * acpi_video_unregister() to make sure the video module is not loaded
+ */
+void acpi_video_dmi_promote_vendor(void)
+{
+	acpi_video_caps_check();
+	acpi_video_support |= ACPI_VIDEO_BACKLIGHT_DMI_VENDOR;
+}
+EXPORT_SYMBOL(acpi_video_dmi_promote_vendor);
+
+/* To be called when a driver who previously promoted the vendor
+ * interface */
+void acpi_video_dmi_demote_vendor(void)
+{
+	acpi_video_caps_check();
+	acpi_video_support &= ~ACPI_VIDEO_BACKLIGHT_DMI_VENDOR;
+}
+EXPORT_SYMBOL(acpi_video_dmi_demote_vendor);
+
+/* Returns true if video.ko can do backlight switching */
+int acpi_video_backlight_support(void)
+{
+	acpi_video_caps_check();
 
 	/* First check for boot param -> highest prio */
 	if (acpi_video_support & ACPI_VIDEO_BACKLIGHT_FORCE_VENDOR)

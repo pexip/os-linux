@@ -20,7 +20,7 @@
 #include "bpf-helper.h"
 
 #ifndef PR_SET_NO_NEW_PRIVS
-#define PR_SET_NO_NEW_PRIVS 36
+#define PR_SET_NO_NEW_PRIVS 38
 #endif
 
 int main(int argc, char **argv)

@@ -31,6 +31,7 @@
  * SOFTWARE.
  */
 
+#include <linux/init.h>
 #include <linux/errno.h>
 #include <linux/export.h>
 #include <linux/io-mapping.h>
@@ -62,7 +63,7 @@ void mlx4_pd_free(struct mlx4_dev *dev, u32 pdn)
 }
 EXPORT_SYMBOL_GPL(mlx4_pd_free);
 
-int mlx4_xrcd_alloc(struct mlx4_dev *dev, u32 *xrcdn)
+int __mlx4_xrcd_alloc(struct mlx4_dev *dev, u32 *xrcdn)
 {
 	struct mlx4_priv *priv = mlx4_priv(dev);
 
@@ -72,11 +73,46 @@ int mlx4_xrcd_alloc(struct mlx4_dev *dev, u32 *xrcdn)
 
 	return 0;
 }
+
+int mlx4_xrcd_alloc(struct mlx4_dev *dev, u32 *xrcdn)
+{
+	u64 out_param;
+	int err;
+
+	if (mlx4_is_mfunc(dev)) {
+		err = mlx4_cmd_imm(dev, 0, &out_param,
+				   RES_XRCD, RES_OP_RESERVE,
+				   MLX4_CMD_ALLOC_RES,
+				   MLX4_CMD_TIME_CLASS_A, MLX4_CMD_WRAPPED);
+		if (err)
+			return err;
+
+		*xrcdn = get_param_l(&out_param);
+		return 0;
+	}
+	return __mlx4_xrcd_alloc(dev, xrcdn);
+}
 EXPORT_SYMBOL_GPL(mlx4_xrcd_alloc);
+
+void __mlx4_xrcd_free(struct mlx4_dev *dev, u32 xrcdn)
+{
+	mlx4_bitmap_free(&mlx4_priv(dev)->xrcd_bitmap, xrcdn);
+}
 
 void mlx4_xrcd_free(struct mlx4_dev *dev, u32 xrcdn)
 {
-	mlx4_bitmap_free(&mlx4_priv(dev)->xrcd_bitmap, xrcdn);
+	u64 in_param = 0;
+	int err;
+
+	if (mlx4_is_mfunc(dev)) {
+		set_param_l(&in_param, xrcdn);
+		err = mlx4_cmd(dev, in_param, RES_XRCD,
+			       RES_OP_RESERVE, MLX4_CMD_FREE_RES,
+			       MLX4_CMD_TIME_CLASS_A, MLX4_CMD_WRAPPED);
+		if (err)
+			mlx4_warn(dev, "Failed to release xrcdn %d\n", xrcdn);
+	} else
+		__mlx4_xrcd_free(dev, xrcdn);
 }
 EXPORT_SYMBOL_GPL(mlx4_xrcd_free);
 
@@ -85,7 +121,8 @@ int mlx4_init_pd_table(struct mlx4_dev *dev)
 	struct mlx4_priv *priv = mlx4_priv(dev);
 
 	return mlx4_bitmap_init(&priv->pd_bitmap, dev->caps.num_pds,
-				(1 << 24) - 1, dev->caps.reserved_pds, 0);
+				(1 << NOT_MASKED_PD_BITS) - 1,
+				 dev->caps.reserved_pds, 0);
 }
 
 void mlx4_cleanup_pd_table(struct mlx4_dev *dev)
@@ -108,13 +145,19 @@ void mlx4_cleanup_xrcd_table(struct mlx4_dev *dev)
 
 int mlx4_uar_alloc(struct mlx4_dev *dev, struct mlx4_uar *uar)
 {
+	int offset;
+
 	uar->index = mlx4_bitmap_alloc(&mlx4_priv(dev)->uar_table.bitmap);
 	if (uar->index == -1)
 		return -ENOMEM;
 
-	uar->pfn = (pci_resource_start(dev->pdev, 2) >> PAGE_SHIFT) + uar->index;
+	if (mlx4_is_slave(dev))
+		offset = uar->index % ((int) pci_resource_len(dev->pdev, 2) /
+				       dev->caps.uar_page_size);
+	else
+		offset = uar->index;
+	uar->pfn = (pci_resource_start(dev->pdev, 2) >> PAGE_SHIFT) + offset;
 	uar->map = NULL;
-
 	return 0;
 }
 EXPORT_SYMBOL_GPL(mlx4_uar_alloc);
@@ -232,7 +275,7 @@ int mlx4_init_uar_table(struct mlx4_dev *dev)
 
 	return mlx4_bitmap_init(&mlx4_priv(dev)->uar_table.bitmap,
 				dev->caps.num_uars, dev->caps.num_uars - 1,
-				max(128, dev->caps.reserved_uars), 0);
+				dev->caps.reserved_uars, 0);
 }
 
 void mlx4_cleanup_uar_table(struct mlx4_dev *dev)

@@ -50,7 +50,6 @@
 #include <linux/platform_device.h>
 #include <linux/gfp.h>
 
-#include <asm/system.h>
 #include <asm/io.h>
 #include <asm/tsi108.h>
 
@@ -1148,7 +1147,7 @@ static int tsi108_set_mac(struct net_device *dev, void *addr)
 	int i;
 
 	if (!is_valid_ether_addr(addr))
-		return -EINVAL;
+		return -EADDRNOTAVAIL;
 
 	for (i = 0; i < 6; i++)
 		/* +2 is for the offset of the HW addr type */
@@ -1309,27 +1308,16 @@ static int tsi108_open(struct net_device *dev)
 		       data->id, dev->irq, dev->name);
 	}
 
-	data->rxring = dma_alloc_coherent(NULL, rxring_size,
-			&data->rxdma, GFP_KERNEL);
-
-	if (!data->rxring) {
-		printk(KERN_DEBUG
-		       "TSI108_ETH: failed to allocate memory for rxring!\n");
+	data->rxring = dma_alloc_coherent(NULL, rxring_size, &data->rxdma,
+					  GFP_KERNEL | __GFP_ZERO);
+	if (!data->rxring)
 		return -ENOMEM;
-	} else {
-		memset(data->rxring, 0, rxring_size);
-	}
 
-	data->txring = dma_alloc_coherent(NULL, txring_size,
-			&data->txdma, GFP_KERNEL);
-
+	data->txring = dma_alloc_coherent(NULL, txring_size, &data->txdma,
+					  GFP_KERNEL | __GFP_ZERO);
 	if (!data->txring) {
-		printk(KERN_DEBUG
-		       "TSI108_ETH: failed to allocate memory for txring!\n");
 		pci_free_consistent(0, rxring_size, data->rxring, data->rxdma);
 		return -ENOMEM;
-	} else {
-		memset(data->txring, 0, txring_size);
 	}
 
 	for (i = 0; i < TSI108_RXRING_LEN; i++) {
@@ -1359,7 +1347,6 @@ static int tsi108_open(struct net_device *dev)
 			break;
 		}
 
-		data->rxskbs[i] = skb;
 		data->rxskbs[i] = skb;
 		data->rxring[i].buf0 = virt_to_phys(data->rxskbs[i]->data);
 		data->rxring[i].misc = TSI108_RX_OWN | TSI108_RX_INT;
@@ -1582,10 +1569,8 @@ tsi108_init_one(struct platform_device *pdev)
 	/* Create an ethernet device instance */
 
 	dev = alloc_etherdev(sizeof(struct tsi108_prv_data));
-	if (!dev) {
-		printk("tsi108_eth: Could not allocate a device structure\n");
+	if (!dev)
 		return -ENOMEM;
-	}
 
 	printk("tsi108_eth%d: probe...\n", pdev->id);
 	data = netdev_priv(dev);
@@ -1604,7 +1589,7 @@ tsi108_init_one(struct platform_device *pdev)
 	data->phyregs = ioremap(einfo->phyregs, 0x400);
 	if (NULL == data->phyregs) {
 		err = -ENOMEM;
-		goto regs_fail;
+		goto phyregs_fail;
 	}
 /* MII setup */
 	data->mii_if.dev = dev;
@@ -1663,8 +1648,10 @@ tsi108_init_one(struct platform_device *pdev)
 	return 0;
 
 register_fail:
-	iounmap(data->regs);
 	iounmap(data->phyregs);
+
+phyregs_fail:
+	iounmap(data->regs);
 
 regs_fail:
 	free_netdev(dev);
@@ -1688,18 +1675,6 @@ static void tsi108_timed_checker(unsigned long dev_ptr)
 	mod_timer(&data->timer, jiffies + CHECK_PHY_INTERVAL);
 }
 
-static int tsi108_ether_init(void)
-{
-	int ret;
-	ret = platform_driver_register (&tsi_eth_driver);
-	if (ret < 0){
-		printk("tsi108_ether_init: error initializing ethernet "
-		       "device\n");
-		return ret;
-	}
-	return 0;
-}
-
 static int tsi108_ether_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
@@ -1707,20 +1682,13 @@ static int tsi108_ether_remove(struct platform_device *pdev)
 
 	unregister_netdev(dev);
 	tsi108_stop_ethernet(dev);
-	platform_set_drvdata(pdev, NULL);
 	iounmap(priv->regs);
 	iounmap(priv->phyregs);
 	free_netdev(dev);
 
 	return 0;
 }
-static void tsi108_ether_exit(void)
-{
-	platform_driver_unregister(&tsi_eth_driver);
-}
-
-module_init(tsi108_ether_init);
-module_exit(tsi108_ether_exit);
+module_platform_driver(tsi_eth_driver);
 
 MODULE_AUTHOR("Tundra Semiconductor Corporation");
 MODULE_DESCRIPTION("Tsi108 Gigabit Ethernet driver");

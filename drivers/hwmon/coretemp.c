@@ -34,11 +34,11 @@
 #include <linux/list.h>
 #include <linux/platform_device.h>
 #include <linux/cpu.h>
-#include <linux/pci.h>
 #include <linux/smp.h>
 #include <linux/moduleparam.h>
 #include <asm/msr.h>
 #include <asm/processor.h>
+#include <asm/cpu_device_id.h>
 
 #define DRVNAME	"coretemp"
 
@@ -57,8 +57,8 @@ MODULE_PARM_DESC(tjmax, "TjMax value in degrees Celsius");
 #define TOTAL_ATTRS		(MAX_CORE_ATTRS + 1)
 #define MAX_CORE_DATA		(NUM_REAL_CORES + BASE_SYSFS_ATTR_NO)
 
-#define TO_PHYS_ID(cpu)		cpu_data(cpu).phys_proc_id
-#define TO_CORE_ID(cpu)		cpu_data(cpu).cpu_core_id
+#define TO_PHYS_ID(cpu)		(cpu_data(cpu).phys_proc_id)
+#define TO_CORE_ID(cpu)		(cpu_data(cpu).cpu_core_id)
 #define TO_ATTR_NO(cpu)		(TO_CORE_ID(cpu) + BASE_SYSFS_ATTR_NO)
 
 #ifdef CONFIG_SMP
@@ -195,20 +195,35 @@ struct tjmax {
 	int tjmax;
 };
 
-static struct tjmax __cpuinitconst tjmax_table[] = {
-	{ "CPU D410", 100000 },
-	{ "CPU D425", 100000 },
-	{ "CPU D510", 100000 },
-	{ "CPU D525", 100000 },
-	{ "CPU N450", 100000 },
-	{ "CPU N455", 100000 },
-	{ "CPU N470", 100000 },
-	{ "CPU N475", 100000 },
+static const struct tjmax tjmax_table[] = {
 	{ "CPU  230", 100000 },		/* Model 0x1c, stepping 2	*/
 	{ "CPU  330", 125000 },		/* Model 0x1c, stepping 2	*/
-	{ "CPU CE4110", 110000 },	/* Model 0x1c, stepping 10	*/
+	{ "CPU CE4110", 110000 },	/* Model 0x1c, stepping 10 Sodaville */
 	{ "CPU CE4150", 110000 },	/* Model 0x1c, stepping 10	*/
 	{ "CPU CE4170", 110000 },	/* Model 0x1c, stepping 10	*/
+};
+
+struct tjmax_model {
+	u8 model;
+	u8 mask;
+	int tjmax;
+};
+
+#define ANY 0xff
+
+static const struct tjmax_model tjmax_model_table[] = {
+	{ 0x1c, 10, 100000 },	/* D4xx, K4xx, N4xx, D5xx, K5xx, N5xx */
+	{ 0x1c, ANY, 90000 },	/* Z5xx, N2xx, possibly others
+				 * Note: Also matches 230 and 330,
+				 * which are covered by tjmax_table
+				 */
+	{ 0x26, ANY, 90000 },	/* Atom Tunnel Creek (Exx), Lincroft (Z6xx)
+				 * Note: TjMax for E6xxT is 110C, but CPU type
+				 * is undetectable by software
+				 */
+	{ 0x27, ANY, 90000 },	/* Atom Medfield (Z2460) */
+	{ 0x35, ANY, 90000 },	/* Atom Clover Trail/Cloverview (Z2760) */
+	{ 0x36, ANY, 100000 },	/* Atom Cedar Trail/Cedarview (N2xxx, D2xxx) */
 };
 
 static int adjust_tjmax(struct cpuinfo_x86 *c, u32 id, struct device *dev)
@@ -220,7 +235,6 @@ static int adjust_tjmax(struct cpuinfo_x86 *c, u32 id, struct device *dev)
 	int usemsr_ee = 1;
 	int err;
 	u32 eax, edx;
-	struct pci_dev *host_bridge;
 	int i;
 
 	/* explicit tjmax table entries override heuristics */
@@ -229,31 +243,17 @@ static int adjust_tjmax(struct cpuinfo_x86 *c, u32 id, struct device *dev)
 			return tjmax_table[i].tjmax;
 	}
 
+	for (i = 0; i < ARRAY_SIZE(tjmax_model_table); i++) {
+		const struct tjmax_model *tm = &tjmax_model_table[i];
+		if (c->x86_model == tm->model &&
+		    (tm->mask == ANY || c->x86_mask == tm->mask))
+			return tm->tjmax;
+	}
+
 	/* Early chips have no MSR for TjMax */
 
 	if (c->x86_model == 0xf && c->x86_mask < 4)
 		usemsr_ee = 0;
-
-	/* Atom CPUs */
-
-	if (c->x86_model == 0x1c || c->x86_model == 0x26
-	    || c->x86_model == 0x27) {
-		usemsr_ee = 0;
-
-		host_bridge = pci_get_bus_and_slot(0, PCI_DEVFN(0, 0));
-
-		if (host_bridge && host_bridge->vendor == PCI_VENDOR_ID_INTEL
-		    && (host_bridge->device == 0xa000	/* NM10 based nettop */
-		    || host_bridge->device == 0xa010))	/* NM10 based netbook */
-			tjmax = 100000;
-		else
-			tjmax = 90000;
-
-		pci_dev_put(host_bridge);
-	} else if (c->x86_model == 0x36) {
-		usemsr_ee = 0;
-		tjmax = 100000;
-	}
 
 	if (c->x86_model > 0xe && usemsr_ee) {
 		u8 platform_id;
@@ -355,7 +355,8 @@ static int get_tjmax(struct cpuinfo_x86 *c, u32 id, struct device *dev)
 	return adjust_tjmax(c, id, dev);
 }
 
-static int create_name_attr(struct platform_data *pdata, struct device *dev)
+static int create_name_attr(struct platform_data *pdata,
+				      struct device *dev)
 {
 	sysfs_attr_init(&pdata->name_attr.attr);
 	pdata->name_attr.attr.name = "name";
@@ -365,7 +366,7 @@ static int create_name_attr(struct platform_data *pdata, struct device *dev)
 }
 
 static int create_core_attrs(struct temp_data *tdata, struct device *dev,
-				int attr_no)
+			     int attr_no)
 {
 	int err, i;
 	static ssize_t (*const rd_ptr[TOTAL_ATTRS]) (struct device *dev,
@@ -398,7 +399,7 @@ exit_free:
 }
 
 
-static int __cpuinit chk_ucode_version(unsigned int cpu)
+static int chk_ucode_version(unsigned int cpu)
 {
 	struct cpuinfo_x86 *c = &cpu_data(cpu);
 
@@ -408,8 +409,7 @@ static int __cpuinit chk_ucode_version(unsigned int cpu)
 	 * fixed for stepping D0 (6EC).
 	 */
 	if (c->x86_model == 0xe && c->x86_mask < 0xc && c->microcode < 0x39) {
-		pr_err("Errata AE18 not fixed, update BIOS or "
-		       "microcode of the CPU!\n");
+		pr_err("Errata AE18 not fixed, update BIOS or microcode of the CPU!\n");
 		return -ENODEV;
 	}
 	return 0;
@@ -450,8 +450,8 @@ static struct temp_data *init_temp_data(unsigned int cpu, int pkg_flag)
 	return tdata;
 }
 
-static int create_core_data(struct platform_device *pdev,
-				unsigned int cpu, int pkg_flag)
+static int create_core_data(struct platform_device *pdev, unsigned int cpu,
+			    int pkg_flag)
 {
 	struct temp_data *tdata;
 	struct platform_data *pdata = platform_get_drvdata(pdev);
@@ -548,7 +548,7 @@ static void coretemp_remove_core(struct platform_data *pdata,
 	pdata->core_data[indx] = NULL;
 }
 
-static int __devinit coretemp_probe(struct platform_device *pdev)
+static int coretemp_probe(struct platform_device *pdev)
 {
 	struct platform_data *pdata;
 	int err;
@@ -575,13 +575,12 @@ static int __devinit coretemp_probe(struct platform_device *pdev)
 
 exit_name:
 	device_remove_file(&pdev->dev, &pdata->name_attr);
-	platform_set_drvdata(pdev, NULL);
 exit_free:
 	kfree(pdata);
 	return err;
 }
 
-static int __devexit coretemp_remove(struct platform_device *pdev)
+static int coretemp_remove(struct platform_device *pdev)
 {
 	struct platform_data *pdata = platform_get_drvdata(pdev);
 	int i;
@@ -592,7 +591,6 @@ static int __devexit coretemp_remove(struct platform_device *pdev)
 
 	device_remove_file(&pdev->dev, &pdata->name_attr);
 	hwmon_device_unregister(pdata->hwmon_dev);
-	platform_set_drvdata(pdev, NULL);
 	kfree(pdata);
 	return 0;
 }
@@ -603,10 +601,10 @@ static struct platform_driver coretemp_driver = {
 		.name = DRVNAME,
 	},
 	.probe = coretemp_probe,
-	.remove = __devexit_p(coretemp_remove),
+	.remove = coretemp_remove,
 };
 
-static int __cpuinit coretemp_device_add(unsigned int cpu)
+static int coretemp_device_add(unsigned int cpu)
 {
 	int err;
 	struct platform_device *pdev;
@@ -680,7 +678,7 @@ static bool is_any_core_online(struct platform_data *pdata)
 	return false;
 }
 
-static void __cpuinit get_core_online(unsigned int cpu)
+static void get_core_online(unsigned int cpu)
 {
 	struct cpuinfo_x86 *c = &cpu_data(cpu);
 	struct platform_device *pdev = coretemp_get_pdev(cpu);
@@ -722,7 +720,7 @@ static void __cpuinit get_core_online(unsigned int cpu)
 	coretemp_add_core(cpu, 0);
 }
 
-static void __cpuinit put_core_offline(unsigned int cpu)
+static void put_core_offline(unsigned int cpu)
 {
 	int i, indx;
 	struct platform_data *pdata;
@@ -770,7 +768,7 @@ static void __cpuinit put_core_offline(unsigned int cpu)
 		coretemp_device_remove(cpu);
 }
 
-static int __cpuinit coretemp_cpu_callback(struct notifier_block *nfb,
+static int coretemp_cpu_callback(struct notifier_block *nfb,
 				 unsigned long action, void *hcpu)
 {
 	unsigned int cpu = (unsigned long) hcpu;
@@ -791,29 +789,42 @@ static struct notifier_block coretemp_cpu_notifier __refdata = {
 	.notifier_call = coretemp_cpu_callback,
 };
 
+static const struct x86_cpu_id __initconst coretemp_ids[] = {
+	{ X86_VENDOR_INTEL, X86_FAMILY_ANY, X86_MODEL_ANY, X86_FEATURE_DTHERM },
+	{}
+};
+MODULE_DEVICE_TABLE(x86cpu, coretemp_ids);
+
 static int __init coretemp_init(void)
 {
-	int i, err = -ENODEV;
+	int i, err;
 
-	/* quick check if we run Intel */
-	if (cpu_data(0).x86_vendor != X86_VENDOR_INTEL)
-		goto exit;
+	/*
+	 * CPUID.06H.EAX[0] indicates whether the CPU has thermal
+	 * sensors. We check this bit only, all the early CPUs
+	 * without thermal sensors will be filtered out.
+	 */
+	if (!x86_match_cpu(coretemp_ids))
+		return -ENODEV;
 
 	err = platform_driver_register(&coretemp_driver);
 	if (err)
 		goto exit;
 
+	get_online_cpus();
 	for_each_online_cpu(i)
 		get_core_online(i);
 
 #ifndef CONFIG_HOTPLUG_CPU
 	if (list_empty(&pdev_list)) {
+		put_online_cpus();
 		err = -ENODEV;
 		goto exit_driver_unreg;
 	}
 #endif
 
 	register_hotcpu_notifier(&coretemp_cpu_notifier);
+	put_online_cpus();
 	return 0;
 
 #ifndef CONFIG_HOTPLUG_CPU
@@ -828,6 +839,7 @@ static void __exit coretemp_exit(void)
 {
 	struct pdev_entry *p, *n;
 
+	get_online_cpus();
 	unregister_hotcpu_notifier(&coretemp_cpu_notifier);
 	mutex_lock(&pdev_list_mutex);
 	list_for_each_entry_safe(p, n, &pdev_list, list) {
@@ -836,6 +848,7 @@ static void __exit coretemp_exit(void)
 		kfree(p);
 	}
 	mutex_unlock(&pdev_list_mutex);
+	put_online_cpus();
 	platform_driver_unregister(&coretemp_driver);
 }
 

@@ -1,6 +1,6 @@
 /* bnx2x_dcb.h: Broadcom Everest network driver.
  *
- * Copyright 2009-2011 Broadcom Corporation
+ * Copyright 2009-2013 Broadcom Corporation
  *
  * Unless you and Broadcom execute a separate written software license
  * agreement governing use of this software, this software is licensed to you
@@ -90,6 +90,7 @@ struct bnx2x_admin_priority_app_table {
 		u32 app_id;
 };
 
+#define DCBX_CONFIG_MAX_APP_PROTOCOL 4
 struct bnx2x_config_dcbx_params {
 	u32 overwrite_settings;
 	u32 admin_dcbx_version;
@@ -109,7 +110,8 @@ struct bnx2x_config_dcbx_params {
 	u32 admin_recommendation_bw_precentage[8];
 	u32 admin_recommendation_ets_pg[8];
 	u32 admin_pfc_bitmap;
-	struct bnx2x_admin_priority_app_table admin_priority_app_table[4];
+	struct bnx2x_admin_priority_app_table
+		admin_priority_app_table[DCBX_CONFIG_MAX_APP_PROTOCOL];
 	u32 admin_default_priority;
 };
 
@@ -131,8 +133,6 @@ enum {
 
 #define PFC_BRB1_REG_HIGH_LLFC_LOW_THRESHOLD			130
 #define PFC_BRB1_REG_HIGH_LLFC_HIGH_THRESHOLD			170
-
-
 
 struct cos_entry_help_data {
 	u32			pri_join_mask;
@@ -168,7 +168,6 @@ struct cos_help_data {
 			(!(IS_DCBX_PFC_PRI_ONLY_NON_PAUSE((bp), (pg_pri)) || \
 			 IS_DCBX_PFC_PRI_ONLY_PAUSE((bp), (pg_pri))))
 
-
 struct pg_entry_help_data {
 	u8	num_of_dif_pri;
 	u8	pg;
@@ -199,5 +198,8 @@ void bnx2x_dcbx_pmf_update(struct bnx2x *bp);
 extern const struct dcbnl_rtnl_ops bnx2x_dcbnl_ops;
 int bnx2x_dcbnl_update_applist(struct bnx2x *bp, bool delall);
 #endif /* BCM_DCBNL */
+
+int bnx2x_dcbx_stop_hw_tx(struct bnx2x *bp);
+int bnx2x_dcbx_resume_hw_tx(struct bnx2x *bp);
 
 #endif /* BNX2X_DCB_H */

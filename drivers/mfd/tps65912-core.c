@@ -146,12 +146,12 @@ int tps65912_device_init(struct tps65912 *tps65912)
 
 	ret = mfd_add_devices(tps65912->dev, -1,
 			      tps65912s, ARRAY_SIZE(tps65912s),
-			      NULL, 0);
+			      NULL, 0, NULL);
 	if (ret < 0)
 		goto err;
 
 	init_data->irq = pmic_plat_data->irq;
-	init_data->irq_base = pmic_plat_data->irq;
+	init_data->irq_base = pmic_plat_data->irq_base;
 	ret = tps65912_irq_init(tps65912, init_data->irq, init_data);
 	if (ret < 0)
 		goto err;
@@ -162,14 +162,13 @@ int tps65912_device_init(struct tps65912 *tps65912)
 err:
 	kfree(init_data);
 	mfd_remove_devices(tps65912->dev);
-	kfree(tps65912);
 	return ret;
 }
 
 void tps65912_device_exit(struct tps65912 *tps65912)
 {
 	mfd_remove_devices(tps65912->dev);
-	kfree(tps65912);
+	tps65912_irq_exit(tps65912);
 }
 
 MODULE_AUTHOR("Margarita Olaya	<magi@slimlogic.co.uk>");

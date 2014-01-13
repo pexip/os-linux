@@ -13,6 +13,12 @@
 
 /*-------------------------------------------------------------------------*/
 
+static int override_alt = -1;
+module_param_named(alt, override_alt, int, 0644);
+MODULE_PARM_DESC(alt, ">= 0 to override altsetting selection");
+
+/*-------------------------------------------------------------------------*/
+
 /* FIXME make these public somewhere; usbdevfs.h? */
 struct usbtest_param {
 	/* inputs */
@@ -103,6 +109,10 @@ get_endpoints(struct usbtest_dev *dev, struct usb_interface *intf)
 		iso_in = iso_out = NULL;
 		alt = intf->altsetting + tmp;
 
+		if (override_alt >= 0 &&
+				override_alt != alt->desc.bAlternateSetting)
+			continue;
+
 		/* take the first altsetting with in-bulk + out-bulk;
 		 * ignore other endpoints and altsettings.
 		 */
@@ -144,6 +154,7 @@ try_iso:
 
 found:
 	udev = testdev_to_usbdev(dev);
+	dev->info->alt = alt->desc.bAlternateSetting;
 	if (alt->desc.bAlternateSetting != 0) {
 		tmp = usb_set_interface(udev,
 				alt->desc.bInterfaceNumber,
@@ -423,7 +434,10 @@ alloc_sglist(int nents, int max, int vary)
 	unsigned		i;
 	unsigned		size = max;
 
-	sg = kmalloc(nents * sizeof *sg, GFP_KERNEL);
+	if (max == 0)
+		return NULL;
+
+	sg = kmalloc_array(nents, sizeof *sg, GFP_KERNEL);
 	if (!sg)
 		return NULL;
 	sg_init_table(sg, nents);
@@ -903,6 +917,9 @@ test_ctrl_queue(struct usbtest_dev *dev, struct usbtest_param *param)
 	struct urb		**urb;
 	struct ctrl_ctx		context;
 	int			i;
+
+	if (param->sglen == 0 || param->iterations > UINT_MAX / param->sglen)
+		return -EOPNOTSUPP;
 
 	spin_lock_init(&context.lock);
 	context.dev = dev;
@@ -1772,7 +1789,6 @@ static int test_unaligned_bulk(
  * off just killing the userspace task and waiting for it to exit.
  */
 
-/* No BKL needed */
 static int
 usbtest_ioctl(struct usb_interface *intf, unsigned int code, void *buf)
 {
@@ -1989,8 +2005,6 @@ usbtest_ioctl(struct usb_interface *intf, unsigned int code, void *buf)
 
 	/* queued control messaging */
 	case 10:
-		if (param->sglen == 0)
-			break;
 		retval = 0;
 		dev_info(&intf->dev,
 				"TEST 10:  queue %d control calls, %d times\n",
@@ -2176,7 +2190,7 @@ usbtest_ioctl(struct usb_interface *intf, unsigned int code, void *buf)
 		if (dev->out_pipe == 0 || !param->length || param->sglen < 4)
 			break;
 		retval = 0;
-		dev_info(&intf->dev, "TEST 17:  unlink from %d queues of "
+		dev_info(&intf->dev, "TEST 24:  unlink from %d queues of "
 				"%d %d-byte writes\n",
 				param->iterations, param->sglen, param->length);
 		for (i = param->iterations; retval == 0 && i > 0; --i) {
@@ -2277,13 +2291,15 @@ usbtest_probe(struct usb_interface *intf, const struct usb_device_id *id)
 			wtest = " intr-out";
 		}
 	} else {
-		if (info->autoconf) {
+		if (override_alt >= 0 || info->autoconf) {
 			int status;
 
 			status = get_endpoints(dev, intf);
 			if (status < 0) {
 				WARNING(dev, "couldn't get endpoints, %d\n",
 						status);
+				kfree(dev->buf);
+				kfree(dev);
 				return status;
 			}
 			/* may find bulk or ISO pipes */
@@ -2384,6 +2400,7 @@ static struct usbtest_info gz_info = {
 	.name		= "Linux gadget zero",
 	.autoconf	= 1,
 	.ctrl_out	= 1,
+	.iso		= 1,
 	.alt		= 0,
 };
 

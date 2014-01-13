@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ static void aufs_destroy_inode_cb(struct rcu_head *head)
 {
 	struct inode *inode = container_of(head, struct inode, i_rcu);
 
-	INIT_LIST_HEAD(&inode->i_dentry);
+	INIT_HLIST_HEAD(&inode->i_dentry);
 	au_cache_free_icntnr(container_of(inode, struct au_icntnr, vfs_inode));
 }
 
@@ -104,7 +104,7 @@ static int au_show_brs(struct seq_file *seq, struct super_block *sb)
 	hdp = au_di(sb->s_root)->di_hdentry;
 	for (bindex = 0; !err && bindex <= bend; bindex++) {
 		br = au_sbr(sb, bindex);
-		path.mnt = br->br_mnt;
+		path.mnt = au_br_mnt(br);
 		path.dentry = hdp[bindex].hd_dentry;
 		err = au_seq_path(seq, &path);
 		if (err > 0) {
@@ -131,14 +131,14 @@ static void au_show_wbr_create(struct seq_file *m, int v,
 
 	AuRwMustAnyLock(&sbinfo->si_rwsem);
 
-	seq_printf(m, ",create=");
+	seq_puts(m, ",create=");
 	pat = au_optstr_wbr_create(v);
 	switch (v) {
 	case AuWbrCreate_TDP:
 	case AuWbrCreate_RR:
 	case AuWbrCreate_MFS:
 	case AuWbrCreate_PMFS:
-		seq_printf(m, pat);
+		seq_puts(m, pat);
 		break;
 	case AuWbrCreate_MFSV:
 		seq_printf(m, /*pat*/"mfs:%lu",
@@ -160,10 +160,20 @@ static void au_show_wbr_create(struct seq_file *m, int v,
 			   jiffies_to_msecs(sbinfo->si_wbr_mfs.mfs_expire)
 			   / MSEC_PER_SEC);
 		break;
+	case AuWbrCreate_PMFSRR:
+		seq_printf(m, /*pat*/"pmfsrr:%llu",
+			   sbinfo->si_wbr_mfs.mfsrr_watermark);
+		break;
+	case AuWbrCreate_PMFSRRV:
+		seq_printf(m, /*pat*/"pmfsrr:%llu:%lu",
+			   sbinfo->si_wbr_mfs.mfsrr_watermark,
+			   jiffies_to_msecs(sbinfo->si_wbr_mfs.mfs_expire)
+			   / MSEC_PER_SEC);
+		break;
 	}
 }
 
-static int au_show_xino(struct seq_file *seq, struct vfsmount *mnt)
+static int au_show_xino(struct seq_file *seq, struct super_block *sb)
 {
 #ifdef CONFIG_SYSFS
 	return 0;
@@ -171,7 +181,6 @@ static int au_show_xino(struct seq_file *seq, struct vfsmount *mnt)
 	int err;
 	const int len = sizeof(AUFS_XINO_FNAME) - 1;
 	aufs_bindex_t bindex, brid;
-	struct super_block *sb;
 	struct qstr *name;
 	struct file *f;
 	struct dentry *d, *h_root;
@@ -180,7 +189,6 @@ static int au_show_xino(struct seq_file *seq, struct vfsmount *mnt)
 	AuRwMustAnyLock(&sbinfo->si_rwsem);
 
 	err = 0;
-	sb = mnt->mnt_sb;
 	f = au_sbi(sb)->si_xib;
 	if (!f)
 		goto out;
@@ -210,7 +218,7 @@ out:
 }
 
 /* seq_file will re-call me in case of too long string */
-static int aufs_show_options(struct seq_file *m, struct vfsmount *mnt)
+static int aufs_show_options(struct seq_file *m, struct dentry *dentry)
 {
 	int err;
 	unsigned int mnt_flags, v;
@@ -235,14 +243,14 @@ static int aufs_show_options(struct seq_file *m, struct vfsmount *mnt)
 } while (0)
 
 	/* lock free root dinfo */
-	sb = mnt->mnt_sb;
+	sb = dentry->d_sb;
 	si_noflush_read_lock(sb);
 	sbinfo = au_sbi(sb);
 	seq_printf(m, ",si=%lx", sysaufs_si_id(sbinfo));
 
 	mnt_flags = au_mntflags(sb);
 	if (au_opt_test(mnt_flags, XINO)) {
-		err = au_show_xino(m, mnt);
+		err = au_show_xino(m, sb);
 		if (unlikely(err))
 			goto out;
 	} else
@@ -305,7 +313,18 @@ static u64 au_add_till_max(u64 a, u64 b)
 
 	old = a;
 	a += b;
-	if (old < a)
+	if (old <= a)
+		return a;
+	return ULLONG_MAX;
+}
+
+static u64 au_mul_till_max(u64 a, long mul)
+{
+	u64 old;
+
+	old = a;
+	a *= mul;
+	if (old <= a)
 		return a;
 	return ULLONG_MAX;
 }
@@ -313,25 +332,26 @@ static u64 au_add_till_max(u64 a, u64 b)
 static int au_statfs_sum(struct super_block *sb, struct kstatfs *buf)
 {
 	int err;
+	long bsize, factor;
 	u64 blocks, bfree, bavail, files, ffree;
 	aufs_bindex_t bend, bindex, i;
 	unsigned char shared;
 	struct path h_path;
 	struct super_block *h_sb;
 
+	err = 0;
+	bsize = LONG_MAX;
+	files = 0;
+	ffree = 0;
 	blocks = 0;
 	bfree = 0;
 	bavail = 0;
-	files = 0;
-	ffree = 0;
-
-	err = 0;
 	bend = au_sbend(sb);
-	for (bindex = bend; bindex >= 0; bindex--) {
+	for (bindex = 0; bindex <= bend; bindex++) {
 		h_path.mnt = au_sbr_mnt(sb, bindex);
 		h_sb = h_path.mnt->mnt_sb;
 		shared = 0;
-		for (i = bindex + 1; !shared && i <= bend; i++)
+		for (i = 0; !shared && i < bindex; i++)
 			shared = (au_sbr_sb(sb, i) == h_sb);
 		if (shared)
 			continue;
@@ -342,18 +362,36 @@ static int au_statfs_sum(struct super_block *sb, struct kstatfs *buf)
 		if (unlikely(err))
 			goto out;
 
-		blocks = au_add_till_max(blocks, buf->f_blocks);
-		bfree = au_add_till_max(bfree, buf->f_bfree);
-		bavail = au_add_till_max(bavail, buf->f_bavail);
+		if (bsize > buf->f_bsize) {
+			/*
+			 * we will reduce bsize, so we have to expand blocks
+			 * etc. to match them again
+			 */
+			factor = (bsize / buf->f_bsize);
+			blocks = au_mul_till_max(blocks, factor);
+			bfree = au_mul_till_max(bfree, factor);
+			bavail = au_mul_till_max(bavail, factor);
+			bsize = buf->f_bsize;
+		}
+
+		factor = (buf->f_bsize / bsize);
+		blocks = au_add_till_max(blocks,
+				au_mul_till_max(buf->f_blocks, factor));
+		bfree = au_add_till_max(bfree,
+				au_mul_till_max(buf->f_bfree, factor));
+		bavail = au_add_till_max(bavail,
+				au_mul_till_max(buf->f_bavail, factor));
 		files = au_add_till_max(files, buf->f_files);
 		ffree = au_add_till_max(ffree, buf->f_ffree);
 	}
 
+	buf->f_bsize = bsize;
 	buf->f_blocks = blocks;
 	buf->f_bfree = bfree;
 	buf->f_bavail = bavail;
 	buf->f_files = files;
 	buf->f_ffree = ffree;
+	buf->f_frsize = 0;
 
 out:
 	return err;
@@ -383,6 +421,36 @@ static int aufs_statfs(struct dentry *dentry, struct kstatfs *buf)
 		memset(&buf->f_fsid, 0, sizeof(buf->f_fsid));
 	}
 	/* buf->f_bsize = buf->f_blocks = buf->f_bfree = buf->f_bavail = -1; */
+
+	return err;
+}
+
+/* ---------------------------------------------------------------------- */
+
+static int aufs_sync_fs(struct super_block *sb, int wait)
+{
+	int err, e;
+	aufs_bindex_t bend, bindex;
+	struct au_branch *br;
+	struct super_block *h_sb;
+
+	err = 0;
+	si_noflush_read_lock(sb);
+	bend = au_sbend(sb);
+	for (bindex = 0; bindex <= bend; bindex++) {
+		br = au_sbr(sb, bindex);
+		if (!au_br_writable(br->br_perm))
+			continue;
+
+		h_sb = au_sbr_sb(sb, bindex);
+		if (h_sb->s_op->sync_fs) {
+			e = h_sb->s_op->sync_fs(h_sb, wait);
+			if (unlikely(e && !err))
+				err = e;
+			/* go on even if an error happens */
+		}
+	}
+	si_read_unlock(sb);
 
 	return err;
 }
@@ -599,7 +667,7 @@ static int au_refresh_i(struct super_block *sb)
 	sigen = au_sigen(sb);
 	for (ull = 0; ull < max; ull++) {
 		inode = array[ull];
-		if (au_iigen(inode) != sigen) {
+		if (au_iigen(inode, NULL) != sigen) {
 			ii_write_lock_child(inode);
 			e = au_refresh_hinode_self(inode);
 			ii_write_unlock(inode);
@@ -752,6 +820,7 @@ static const struct super_operations aufs_sop = {
 	.show_options	= aufs_show_options,
 	.statfs		= aufs_statfs,
 	.put_super	= aufs_put_super,
+	.sync_fs	= aufs_sync_fs,
 	.remount_fs	= aufs_remount_fs
 };
 
@@ -775,12 +844,12 @@ static int alloc_root(struct super_block *sb)
 	set_nlink(inode, 2);
 	unlock_new_inode(inode);
 
-	root = d_alloc_root(inode);
+	root = d_make_root(inode);
 	if (unlikely(!root))
-		goto out_iput;
+		goto out;
 	err = PTR_ERR(root);
 	if (IS_ERR(root))
-		goto out_iput;
+		goto out;
 
 	err = au_di_init(root);
 	if (!err) {
@@ -788,13 +857,9 @@ static int alloc_root(struct super_block *sb)
 		return 0; /* success */
 	}
 	dput(root);
-	goto out; /* do not iput */
 
-out_iput:
-	iget_failed(inode);
 out:
 	return err;
-
 }
 
 static int aufs_fill_super(struct super_block *sb, void *raw_data,
@@ -928,9 +993,8 @@ static void aufs_kill_sb(struct super_block *sb)
 
 struct file_system_type aufs_fs_type = {
 	.name		= AUFS_FSTYPE,
-	.fs_flags	=
-		FS_RENAME_DOES_D_MOVE	/* a race between rename and others */
-		| FS_REVAL_DOT,		/* for NFS branch and udba */
+	/* a race between rename and others */
+	.fs_flags	= FS_RENAME_DOES_D_MOVE,
 	.mount		= aufs_mount,
 	.kill_sb	= aufs_kill_sb,
 	/* no need to __module_get() and module_put(). */

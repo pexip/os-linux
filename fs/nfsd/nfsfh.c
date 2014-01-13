@@ -59,7 +59,7 @@ static int nfsd_acceptable(void *expv, struct dentry *dentry)
  * the write call).
  */
 static inline __be32
-nfsd_mode_check(struct svc_rqst *rqstp, umode_t mode, int requested)
+nfsd_mode_check(struct svc_rqst *rqstp, umode_t mode, umode_t requested)
 {
 	mode &= S_IFMT;
 
@@ -293,7 +293,7 @@ out:
  * include/linux/nfsd/nfsd.h.
  */
 __be32
-fh_verify(struct svc_rqst *rqstp, struct svc_fh *fhp, int type, int access)
+fh_verify(struct svc_rqst *rqstp, struct svc_fh *fhp, umode_t type, int access)
 {
 	struct svc_export *exp;
 	struct dentry	*dentry;
@@ -572,7 +572,7 @@ fh_compose(struct svc_fh *fhp, struct svc_export *exp, struct dentry *dentry,
 
 		if (inode)
 			_fh_update(fhp, exp, dentry);
-		if (fhp->fh_handle.fh_fileid_type == 255) {
+		if (fhp->fh_handle.fh_fileid_type == FILEID_INVALID) {
 			fh_put(fhp);
 			return nfserr_opnotsupp;
 		}
@@ -603,7 +603,7 @@ fh_update(struct svc_fh *fhp)
 			goto out;
 
 		_fh_update(fhp, fhp->fh_export, dentry);
-		if (fhp->fh_handle.fh_fileid_type == 255)
+		if (fhp->fh_handle.fh_fileid_type == FILEID_INVALID)
 			return nfserr_opnotsupp;
 	}
 out:
@@ -635,8 +635,9 @@ fh_put(struct svc_fh *fhp)
 		fhp->fh_post_saved = 0;
 #endif
 	}
+	fh_drop_write(fhp);
 	if (exp) {
-		cache_put(&exp->h, &svc_export_cache);
+		exp_put(exp);
 		fhp->fh_export = NULL;
 	}
 	return;

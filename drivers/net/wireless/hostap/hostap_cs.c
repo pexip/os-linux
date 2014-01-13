@@ -656,6 +656,9 @@ static const struct pcmcia_device_id hostap_cs_ids[] = {
 		"Addtron", "AWP-100 Wireless PCMCIA", "Version 01.02",
 		0xe6ec52ce, 0x08649af2, 0x4b74baa0),
 	PCMCIA_DEVICE_PROD_ID123(
+		"Canon", "Wireless LAN CF Card K30225", "Version 01.00",
+		0x96ef6fe2, 0x263fcbab, 0xa57adb8c),
+	PCMCIA_DEVICE_PROD_ID123(
 		"D", "Link DWL-650 11Mbps WLAN Card", "Version 01.02",
 		0x71b18589, 0xb6f1b0ab, 0x4b74baa0),
 	PCMCIA_DEVICE_PROD_ID123(
@@ -706,17 +709,4 @@ static struct pcmcia_driver hostap_driver = {
 	.suspend	= hostap_cs_suspend,
 	.resume		= hostap_cs_resume,
 };
-
-static int __init init_prism2_pccard(void)
-{
-	return pcmcia_register_driver(&hostap_driver);
-}
-
-static void __exit exit_prism2_pccard(void)
-{
-	pcmcia_unregister_driver(&hostap_driver);
-}
-
-
-module_init(init_prism2_pccard);
-module_exit(exit_prism2_pccard);
+module_pcmcia_driver(hostap_driver);

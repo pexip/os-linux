@@ -3,7 +3,7 @@
  *
  * Global definitions for the zfcp device driver.
  *
- * Copyright IBM Corporation 2002, 2010
+ * Copyright IBM Corp. 2002, 2010
  */
 
 #ifndef ZFCP_DEF_H
@@ -85,10 +85,6 @@ struct zfcp_reqlist;
 /* remote port status */
 #define ZFCP_STATUS_PORT_PHYS_OPEN		0x00000001
 #define ZFCP_STATUS_PORT_LINK_TEST		0x00000002
-
-/* logical unit status */
-#define ZFCP_STATUS_LUN_SHARED			0x00000004
-#define ZFCP_STATUS_LUN_READONLY		0x00000008
 
 /* FSF request status (this does not have a common part) */
 #define ZFCP_STATUS_FSFREQ_ERROR		0x00000008

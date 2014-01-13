@@ -127,7 +127,7 @@ for arch in $archs; do
 	# Can we make this more robust by avoiding $tmpdir completely?
 	# This approach was used for now because I didn't want to change
 	# splitconfig.pl
-	(cd $archconfdir; $bindir/splitconfig.pl; mv config.common \
+	(cd $archconfdir; $bindir/splitconfig.pl config.flavour.*; mv config.common \
 	 config.common.$arch; cp config.common.$arch $tmpdir)
 done
 
@@ -135,7 +135,7 @@ rm -f $common_conf
 
 # Now run splitconfig.pl on all the config.common.<arch> copied to
 # $tmpdir
-(cd $tmpdir; $bindir/splitconfig.pl)
+(cd $tmpdir; $bindir/splitconfig.pl *)
 (
 	cd $confdir;
 	rm -f *-full

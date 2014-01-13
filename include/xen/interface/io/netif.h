@@ -9,8 +9,8 @@
 #ifndef __XEN_PUBLIC_IO_NETIF_H__
 #define __XEN_PUBLIC_IO_NETIF_H__
 
-#include "ring.h"
-#include "../grant_table.h"
+#include <xen/interface/io/ring.h>
+#include <xen/interface/grant_table.h>
 
 /*
  * Older implementation of Xen network frontend / backend has an
@@ -36,6 +36,18 @@
  * If the client sends notification for rx requests then it should specify
  * feature 'feature-rx-notify' via xenbus. Otherwise the backend will assume
  * that it cannot safely queue packets (as it may not be kicked to send them).
+ */
+
+ /*
+ * "feature-split-event-channels" is introduced to separate guest TX
+ * and RX notificaion. Backend either doesn't support this feature or
+ * advertise it via xenstore as 0 (disabled) or 1 (enabled).
+ *
+ * To make use of this feature, frontend should allocate two event
+ * channels for TX and RX, advertise them to backend as
+ * "event-channel-tx" and "event-channel-rx" respectively. If frontend
+ * doesn't want to use this feature, it just writes "event-channel"
+ * node as before.
  */
 
 /*

@@ -55,8 +55,8 @@
 #include <linux/kernel.h>
 #include <linux/stringify.h>
 #include <linux/bottom_half.h>
+#include <asm/barrier.h>
 
-#include <asm/system.h>
 
 /*
  * Must define these before including other files, inline functions need them
@@ -117,9 +117,17 @@ do {								\
 #endif /*arch_spin_is_contended*/
 #endif
 
-/* The lock does not imply full memory barrier. */
-#ifndef ARCH_HAS_SMP_MB_AFTER_LOCK
-static inline void smp_mb__after_lock(void) { smp_mb(); }
+/*
+ * Despite its name it doesn't necessarily has to be a full barrier.
+ * It should only guarantee that a STORE before the critical section
+ * can not be reordered with a LOAD inside this section.
+ * spin_lock() is the one-way barrier, this LOAD can not escape out
+ * of the region. So the default implementation simply ensures that
+ * a STORE can not move into the critical section, smp_wmb() should
+ * serialize it with another STORE done by spin_lock().
+ */
+#ifndef smp_mb__before_spinlock
+#define smp_mb__before_spinlock()	smp_wmb()
 #endif
 
 /**
@@ -375,10 +383,7 @@ static inline int spin_can_lock(spinlock_t *lock)
 	return raw_spin_can_lock(&lock->rlock);
 }
 
-static inline void assert_spin_locked(spinlock_t *lock)
-{
-	assert_raw_spin_locked(&lock->rlock);
-}
+#define assert_spin_locked(lock)	assert_raw_spin_locked(&(lock)->rlock)
 
 /*
  * Pull the atomic_t declaration:

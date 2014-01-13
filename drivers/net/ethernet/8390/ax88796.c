@@ -1,4 +1,4 @@
-/* drivers/net/ax88796.c
+/* drivers/net/ethernet/8390/ax88796.c
  *
  * Copyright 2005,2007 Simtec Electronics
  *	Ben Dooks <ben@simtec.co.uk>
@@ -31,7 +31,6 @@
 
 #include <net/ax88796.h>
 
-#include <asm/system.h>
 
 /* Rename the lib8390.c functions to show that they are in this driver */
 #define __ei_open ax_ei_open
@@ -110,7 +109,7 @@ static inline struct ax_device *to_ax_dev(struct net_device *dev)
 /*
  * ax_initial_check
  *
- * do an initial probe for the card to check wether it exists
+ * do an initial probe for the card to check whether it exists
  * and is functional
  */
 static int ax_initial_check(struct net_device *dev)
@@ -192,11 +191,11 @@ static void ax_get_8390_hdr(struct net_device *dev, struct e8390_pkt_hdr *hdr,
 	ei_outb(E8390_RREAD+E8390_START, nic_base + NE_CMD);
 
 	if (ei_local->word16)
-		readsw(nic_base + NE_DATAPORT, hdr,
-		       sizeof(struct e8390_pkt_hdr) >> 1);
+		ioread16_rep(nic_base + NE_DATAPORT, hdr,
+			     sizeof(struct e8390_pkt_hdr) >> 1);
 	else
-		readsb(nic_base + NE_DATAPORT, hdr,
-		       sizeof(struct e8390_pkt_hdr));
+		ioread8_rep(nic_base + NE_DATAPORT, hdr,
+			    sizeof(struct e8390_pkt_hdr));
 
 	ei_outb(ENISR_RDC, nic_base + EN0_ISR);	/* Ack intr. */
 	ei_local->dmaing &= ~0x01;
@@ -238,12 +237,12 @@ static void ax_block_input(struct net_device *dev, int count,
 	ei_outb(E8390_RREAD+E8390_START, nic_base + NE_CMD);
 
 	if (ei_local->word16) {
-		readsw(nic_base + NE_DATAPORT, buf, count >> 1);
+		ioread16_rep(nic_base + NE_DATAPORT, buf, count >> 1);
 		if (count & 0x01)
 			buf[count-1] = ei_inb(nic_base + NE_DATAPORT);
 
 	} else {
-		readsb(nic_base + NE_DATAPORT, buf, count);
+		ioread8_rep(nic_base + NE_DATAPORT, buf, count);
 	}
 
 	ei_local->dmaing &= ~1;
@@ -287,9 +286,9 @@ static void ax_block_output(struct net_device *dev, int count,
 
 	ei_outb(E8390_RWRITE+E8390_START, nic_base + NE_CMD);
 	if (ei_local->word16)
-		writesw(nic_base + NE_DATAPORT, buf, count >> 1);
+		iowrite16_rep(nic_base + NE_DATAPORT, buf, count >> 1);
 	else
-		writesb(nic_base + NE_DATAPORT, buf, count);
+		iowrite8_rep(nic_base + NE_DATAPORT, buf, count);
 
 	dma_start = jiffies;
 
@@ -359,7 +358,7 @@ static int ax_mii_probe(struct net_device *dev)
 		return -ENODEV;
 	}
 
-	ret = phy_connect_direct(dev, phy_dev, ax_handle_link_change, 0,
+	ret = phy_connect_direct(dev, phy_dev, ax_handle_link_change,
 				 PHY_INTERFACE_MODE_MII);
 	if (ret) {
 		netdev_err(dev, "Could not attach to PHY\n");
@@ -470,9 +469,9 @@ static void ax_get_drvinfo(struct net_device *dev,
 {
 	struct platform_device *pdev = to_platform_device(dev->dev.parent);
 
-	strcpy(info->driver, DRV_NAME);
-	strcpy(info->version, DRV_VERSION);
-	strcpy(info->bus_info, pdev->name);
+	strlcpy(info->driver, DRV_NAME, sizeof(info->driver));
+	strlcpy(info->version, DRV_VERSION, sizeof(info->version));
+	strlcpy(info->bus_info, pdev->name, sizeof(info->bus_info));
 }
 
 static int ax_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
@@ -502,6 +501,7 @@ static const struct ethtool_ops ax_ethtool_ops = {
 	.get_settings		= ax_get_settings,
 	.set_settings		= ax_set_settings,
 	.get_link		= ethtool_op_get_link,
+	.get_ts_info		= ethtool_op_get_ts_info,
 };
 
 #ifdef CONFIG_AX88796_93CX6
@@ -623,7 +623,8 @@ static int ax_mii_init(struct net_device *dev)
 
 	ax->mii_bus->name = "ax88796_mii_bus";
 	ax->mii_bus->parent = dev->dev.parent;
-	snprintf(ax->mii_bus->id, MII_BUS_ID_SIZE, "%x", pdev->id);
+	snprintf(ax->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
+		pdev->name, pdev->id);
 
 	ax->mii_bus->irq = kmalloc(sizeof(int) * PHY_MAX_ADDR, GFP_KERNEL);
 	if (!ax->mii_bus->irq) {
@@ -735,15 +736,14 @@ static int ax_init_dev(struct net_device *dev)
 	if (ax->plat->flags & AXFLG_MAC_FROMDEV) {
 		ei_outb(E8390_NODMA + E8390_PAGE1 + E8390_STOP,
 			ei_local->mem + E8390_CMD); /* 0x61 */
-		for (i = 0; i < ETHER_ADDR_LEN; i++)
+		for (i = 0; i < ETH_ALEN; i++)
 			dev->dev_addr[i] =
 				ei_inb(ioaddr + EN1_PHYS_SHIFT(i));
 	}
 
 	if ((ax->plat->flags & AXFLG_MAC_FROMPLATFORM) &&
 	    ax->plat->mac_addr)
-		memcpy(dev->dev_addr, ax->plat->mac_addr,
-		       ETHER_ADDR_LEN);
+		memcpy(dev->dev_addr, ax->plat->mac_addr, ETH_ALEN);
 
 	ax_reset_8390(dev);
 
@@ -828,7 +828,7 @@ static int ax_probe(struct platform_device *pdev)
 	struct ei_device *ei_local;
 	struct ax_device *ax;
 	struct resource *irq, *mem, *mem2;
-	resource_size_t mem_size, mem2_size = 0;
+	unsigned long mem_size, mem2_size = 0;
 	int ret = 0;
 
 	dev = ax__alloc_ei_netdev(sizeof(struct ax_device));
@@ -991,18 +991,7 @@ static struct platform_driver axdrv = {
 	.resume		= ax_resume,
 };
 
-static int __init axdrv_init(void)
-{
-	return platform_driver_register(&axdrv);
-}
-
-static void __exit axdrv_exit(void)
-{
-	platform_driver_unregister(&axdrv);
-}
-
-module_init(axdrv_init);
-module_exit(axdrv_exit);
+module_platform_driver(axdrv);
 
 MODULE_DESCRIPTION("AX88796 10/100 Ethernet platform driver");
 MODULE_AUTHOR("Ben Dooks, <ben@simtec.co.uk>");

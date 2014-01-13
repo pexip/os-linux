@@ -98,7 +98,7 @@ err_enable:
 	return ret;
 }
 
-static int __devexit atmel_trng_remove(struct platform_device *pdev)
+static int atmel_trng_remove(struct platform_device *pdev)
 {
 	struct atmel_trng *trng = platform_get_drvdata(pdev);
 
@@ -107,8 +107,6 @@ static int __devexit atmel_trng_remove(struct platform_device *pdev)
 	writel(TRNG_KEY, trng->base + TRNG_CR);
 	clk_disable(trng->clk);
 	clk_put(trng->clk);
-
-	platform_set_drvdata(pdev, NULL);
 
 	return 0;
 }
@@ -138,7 +136,7 @@ static const struct dev_pm_ops atmel_trng_pm_ops = {
 
 static struct platform_driver atmel_trng_driver = {
 	.probe		= atmel_trng_probe,
-	.remove		= __devexit_p(atmel_trng_remove),
+	.remove		= atmel_trng_remove,
 	.driver		= {
 		.name	= "atmel-trng",
 		.owner	= THIS_MODULE,
@@ -148,17 +146,7 @@ static struct platform_driver atmel_trng_driver = {
 	},
 };
 
-static int __init atmel_trng_init(void)
-{
-	return platform_driver_register(&atmel_trng_driver);
-}
-module_init(atmel_trng_init);
-
-static void __exit atmel_trng_exit(void)
-{
-	platform_driver_unregister(&atmel_trng_driver);
-}
-module_exit(atmel_trng_exit);
+module_platform_driver(atmel_trng_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Peter Korsgaard <jacmet@sunsite.dk>");

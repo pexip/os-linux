@@ -37,7 +37,6 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <asm/uaccess.h>
-#include <asm/system.h>
 #include <linux/mm.h>
 #include <linux/interrupt.h>
 #include <linux/errno.h>
@@ -57,6 +56,7 @@
 #include <net/sock.h>
 #include <net/tcp_states.h>
 #include <trace/events/skb.h>
+#include <net/busy_poll.h>
 
 /*
  *	Is a socket 'connection oriented' ?
@@ -66,7 +66,7 @@ static inline int connection_based(struct sock *sk)
 	return sk->sk_type == SOCK_SEQPACKET || sk->sk_type == SOCK_STREAM;
 }
 
-static int receiver_wake_function(wait_queue_t *wait, unsigned mode, int sync,
+static int receiver_wake_function(wait_queue_t *wait, unsigned int mode, int sync,
 				  void *key)
 {
 	unsigned long bits = (unsigned long)key;
@@ -79,9 +79,10 @@ static int receiver_wake_function(wait_queue_t *wait, unsigned mode, int sync,
 	return autoremove_wake_function(wait, mode, sync, key);
 }
 /*
- * Wait for a packet..
+ * Wait for the last received packet to be different from skb
  */
-static int wait_for_packet(struct sock *sk, int *err, long *timeo_p)
+static int wait_for_more_packets(struct sock *sk, int *err, long *timeo_p,
+				 const struct sk_buff *skb)
 {
 	int error;
 	DEFINE_WAIT_FUNC(wait, receiver_wake_function);
@@ -93,7 +94,7 @@ static int wait_for_packet(struct sock *sk, int *err, long *timeo_p)
 	if (error)
 		goto out_err;
 
-	if (!skb_queue_empty(&sk->sk_receive_queue))
+	if (sk->sk_receive_queue.prev != skb)
 		goto out;
 
 	/* Socket shut down? */
@@ -133,6 +134,8 @@ out_noerr:
  *	@sk: socket
  *	@flags: MSG_ flags
  *	@peeked: returns non-zero if this packet has been seen before
+ *	@off: an offset in bytes to peek skb from. Returns an offset
+ *	      within an skb where data actually starts
  *	@err: error code returned
  *
  *	Get a datagram skbuff, understands the peeking, nonblocking wakeups
@@ -157,10 +160,10 @@ out_noerr:
  *	quite explicitly by POSIX 1003.1g, don't change them without having
  *	the standard around please.
  */
-struct sk_buff *__skb_recv_datagram(struct sock *sk, unsigned flags,
-				    int *peeked, int *err)
+struct sk_buff *__skb_recv_datagram(struct sock *sk, unsigned int flags,
+				    int *peeked, int *off, int *err)
 {
-	struct sk_buff *skb;
+	struct sk_buff *skb, *last;
 	long timeo;
 	/*
 	 * Caller is allowed not to check sk->sk_err before skb_recv_datagram()
@@ -180,28 +183,41 @@ struct sk_buff *__skb_recv_datagram(struct sock *sk, unsigned flags,
 		 * However, this function was correct in any case. 8)
 		 */
 		unsigned long cpu_flags;
+		struct sk_buff_head *queue = &sk->sk_receive_queue;
+		int _off = *off;
 
-		spin_lock_irqsave(&sk->sk_receive_queue.lock, cpu_flags);
-		skb = skb_peek(&sk->sk_receive_queue);
-		if (skb) {
+		last = (struct sk_buff *)queue;
+		spin_lock_irqsave(&queue->lock, cpu_flags);
+		skb_queue_walk(queue, skb) {
+			last = skb;
 			*peeked = skb->peeked;
 			if (flags & MSG_PEEK) {
+				if (_off >= skb->len && (skb->len || _off ||
+							 skb->peeked)) {
+					_off -= skb->len;
+					continue;
+				}
 				skb->peeked = 1;
 				atomic_inc(&skb->users);
 			} else
-				__skb_unlink(skb, &sk->sk_receive_queue);
-		}
-		spin_unlock_irqrestore(&sk->sk_receive_queue.lock, cpu_flags);
+				__skb_unlink(skb, queue);
 
-		if (skb)
+			spin_unlock_irqrestore(&queue->lock, cpu_flags);
+			*off = _off;
 			return skb;
+		}
+		spin_unlock_irqrestore(&queue->lock, cpu_flags);
+
+		if (sk_can_busy_loop(sk) &&
+		    sk_busy_loop(sk, flags & MSG_DONTWAIT))
+			continue;
 
 		/* User doesn't want to wait */
 		error = -EAGAIN;
 		if (!timeo)
 			goto no_packet;
 
-	} while (!wait_for_packet(sk, err, &timeo));
+	} while (!wait_for_more_packets(sk, err, &timeo, last));
 
 	return NULL;
 
@@ -211,13 +227,13 @@ no_packet:
 }
 EXPORT_SYMBOL(__skb_recv_datagram);
 
-struct sk_buff *skb_recv_datagram(struct sock *sk, unsigned flags,
+struct sk_buff *skb_recv_datagram(struct sock *sk, unsigned int flags,
 				  int noblock, int *err)
 {
-	int peeked;
+	int peeked, off = 0;
 
 	return __skb_recv_datagram(sk, flags | (noblock ? MSG_DONTWAIT : 0),
-				   &peeked, err);
+				   &peeked, &off, err);
 }
 EXPORT_SYMBOL(skb_recv_datagram);
 
@@ -243,7 +259,6 @@ void skb_free_datagram_locked(struct sock *sk, struct sk_buff *skb)
 	unlock_sock_fast(sk, slow);
 
 	/* skb is now orphaned, can be freed outside of locked section */
-	trace_kfree_skb(skb, skb_free_datagram_locked);
 	__kfree_skb(skb);
 }
 EXPORT_SYMBOL(skb_free_datagram_locked);
@@ -745,7 +760,9 @@ unsigned int datagram_poll(struct file *file, struct socket *sock,
 
 	/* exceptional events? */
 	if (sk->sk_err || !skb_queue_empty(&sk->sk_error_queue))
-		mask |= POLLERR;
+		mask |= POLLERR |
+			(sock_flag(sk, SOCK_SELECT_ERR_QUEUE) ? POLLPRI : 0);
+
 	if (sk->sk_shutdown & RCV_SHUTDOWN)
 		mask |= POLLRDHUP | POLLIN | POLLRDNORM;
 	if (sk->sk_shutdown == SHUTDOWN_MASK)

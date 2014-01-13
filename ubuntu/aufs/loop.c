@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,10 @@
  * support for loopback block device as a branch
  */
 
-#include <linux/loop.h>
 #include "aufs.h"
+
+/* added into drivers/block/loop.c */
+static struct file *(*backing_file_func)(struct super_block *sb);
 
 /*
  * test if two lower dentries have overlapping branches.
@@ -29,14 +31,14 @@
 int au_test_loopback_overlap(struct super_block *sb, struct dentry *h_adding)
 {
 	struct super_block *h_sb;
-	struct loop_device *l;
+	struct file *backing_file;
 
 	h_sb = h_adding->d_sb;
-	if (MAJOR(h_sb->s_dev) != LOOP_MAJOR)
+	backing_file = backing_file_func(h_sb);
+	if (!backing_file)
 		return 0;
 
-	l = h_sb->s_bdev->bd_disk->private_data;
-	h_adding = l->lo_backing_file->f_dentry;
+	h_adding = backing_file->f_dentry;
 	/*
 	 * h_adding can be local NFS.
 	 * in this case aufs cannot detect the loop.
@@ -51,12 +53,14 @@ int au_test_loopback_kthread(void)
 {
 	int ret;
 	struct task_struct *tsk = current;
+	char c, comm[sizeof(tsk->comm)];
 
 	ret = 0;
 	if (tsk->flags & PF_KTHREAD) {
-		const char c = tsk->comm[4];
+		get_task_comm(comm, tsk);
+		c = comm[4];
 		ret = ('0' <= c && c <= '9'
-		       && !strncmp(tsk->comm, "loop", 4));
+		       && !strncmp(comm, "loop", 4));
 	}
 
 	return ret;
@@ -107,8 +111,8 @@ void au_warn_loopback(struct super_block *h_sb)
 
 pr:
 	spin_unlock(&spin);
-	pr_warning("you may want to try another patch for loopback file "
-		   "on %s(0x%lx) branch\n", au_sbtype(h_sb), magic);
+	pr_warn("you may want to try another patch for loopback file "
+		"on %s(0x%lx) branch\n", au_sbtype(h_sb), magic);
 }
 
 int au_loopback_init(void)
@@ -118,16 +122,26 @@ int au_loopback_init(void)
 
 	AuDebugOn(sizeof(sb->s_magic) != sizeof(unsigned long));
 
-	err = 0;
+	err = -ENOMEM;
 	au_warn_loopback_array = kcalloc(au_warn_loopback_step,
 					 sizeof(unsigned long), GFP_NOFS);
 	if (unlikely(!au_warn_loopback_array))
-		err = -ENOMEM;
+		goto out;
 
+	err = 0;
+	backing_file_func = symbol_get(loop_backing_file);
+	if (backing_file_func)
+		goto out; /* success */
+
+	pr_err("loop_backing_file() is not defined\n");
+	err = -ENOSYS;
+	kfree(au_warn_loopback_array);
+out:
 	return err;
 }
 
 void au_loopback_fin(void)
 {
+	symbol_put(loop_backing_file);
 	kfree(au_warn_loopback_array);
 }

@@ -29,6 +29,8 @@
 #include <linux/spinlock.h>
 #include <linux/crc32.h>
 #include <linux/mii.h>
+#include <linux/of.h>
+#include <linux/of_net.h>
 #include <linux/ethtool.h>
 #include <linux/dm9000.h>
 #include <linux/delay.h>
@@ -193,35 +195,35 @@ iow(board_info_t * db, int reg, int value)
 
 static void dm9000_outblk_8bit(void __iomem *reg, void *data, int count)
 {
-	writesb(reg, data, count);
+	iowrite8_rep(reg, data, count);
 }
 
 static void dm9000_outblk_16bit(void __iomem *reg, void *data, int count)
 {
-	writesw(reg, data, (count+1) >> 1);
+	iowrite16_rep(reg, data, (count+1) >> 1);
 }
 
 static void dm9000_outblk_32bit(void __iomem *reg, void *data, int count)
 {
-	writesl(reg, data, (count+3) >> 2);
+	iowrite32_rep(reg, data, (count+3) >> 2);
 }
 
 /* input block from chip to memory */
 
 static void dm9000_inblk_8bit(void __iomem *reg, void *data, int count)
 {
-	readsb(reg, data, count);
+	ioread8_rep(reg, data, count);
 }
 
 
 static void dm9000_inblk_16bit(void __iomem *reg, void *data, int count)
 {
-	readsw(reg, data, (count+1) >> 1);
+	ioread16_rep(reg, data, (count+1) >> 1);
 }
 
 static void dm9000_inblk_32bit(void __iomem *reg, void *data, int count)
 {
-	readsl(reg, data, (count+3) >> 2);
+	ioread32_rep(reg, data, (count+3) >> 2);
 }
 
 /* dump block from chip to null */
@@ -535,9 +537,10 @@ static void dm9000_get_drvinfo(struct net_device *dev,
 {
 	board_info_t *dm = to_dm9000_board(dev);
 
-	strcpy(info->driver, CARDNAME);
-	strcpy(info->version, DRV_VERSION);
-	strcpy(info->bus_info, to_platform_device(dm->dev)->name);
+	strlcpy(info->driver, CARDNAME, sizeof(info->driver));
+	strlcpy(info->version, DRV_VERSION, sizeof(info->version));
+	strlcpy(info->bus_info, to_platform_device(dm->dev)->name,
+		sizeof(info->bus_info));
 }
 
 static u32 dm9000_get_msglevel(struct net_device *dev)
@@ -575,10 +578,11 @@ static int dm9000_nway_reset(struct net_device *dev)
 	return mii_nway_restart(&dm->mii);
 }
 
-static int dm9000_set_features(struct net_device *dev, u32 features)
+static int dm9000_set_features(struct net_device *dev,
+	netdev_features_t features)
 {
 	board_info_t *dm = to_dm9000_board(dev);
-	u32 changed = dev->features ^ features;
+	netdev_features_t changed = dev->features ^ features;
 	unsigned long flags;
 
 	if (!(changed & NETIF_F_RXCSUM))
@@ -825,20 +829,13 @@ dm9000_hash_table_unlocked(struct net_device *dev)
 	struct netdev_hw_addr *ha;
 	int i, oft;
 	u32 hash_val;
-	u16 hash_table[4];
+	u16 hash_table[4] = { 0, 0, 0, 0x8000 }; /* broadcast address */
 	u8 rcr = RCR_DIS_LONG | RCR_DIS_CRC | RCR_RXEN;
 
 	dm9000_dbg(db, 1, "entering %s\n", __func__);
 
 	for (i = 0, oft = DM9000_PAR; i < 6; i++, oft++)
 		iow(db, oft, dev->dev_addr[i]);
-
-	/* Clear Hash Table */
-	for (i = 0; i < 4; i++)
-		hash_table[i] = 0x0;
-
-	/* broadcast address */
-	hash_table[3] = 0x8000;
 
 	if (dev->flags & IFF_PROMISC)
 		rcr |= RCR_PRMSC;
@@ -1131,7 +1128,7 @@ dm9000_rx(struct net_device *dev)
 
 		/* Move data from DM9000 */
 		if (GoodPacket &&
-		    ((skb = dev_alloc_skb(RxLen + 4)) != NULL)) {
+		    ((skb = netdev_alloc_skb(dev, RxLen + 4)) != NULL)) {
 			skb_reserve(skb, 2);
 			rdptr = (u8 *) skb_put(skb, RxLen - 4);
 
@@ -1356,10 +1353,35 @@ static const struct net_device_ops dm9000_netdev_ops = {
 #endif
 };
 
+static struct dm9000_plat_data *dm9000_parse_dt(struct device *dev)
+{
+	struct dm9000_plat_data *pdata;
+	struct device_node *np = dev->of_node;
+	const void *mac_addr;
+
+	if (!IS_ENABLED(CONFIG_OF) || !np)
+		return NULL;
+
+	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+	if (!pdata)
+		return ERR_PTR(-ENOMEM);
+
+	if (of_find_property(np, "davicom,ext-phy", NULL))
+		pdata->flags |= DM9000_PLATF_EXT_PHY;
+	if (of_find_property(np, "davicom,no-eeprom", NULL))
+		pdata->flags |= DM9000_PLATF_NO_EEPROM;
+
+	mac_addr = of_get_mac_address(np);
+	if (mac_addr)
+		memcpy(pdata->dev_addr, mac_addr, sizeof(pdata->dev_addr));
+
+	return pdata;
+}
+
 /*
  * Search DM9000 board, allocate space and register it
  */
-static int __devinit
+static int
 dm9000_probe(struct platform_device *pdev)
 {
 	struct dm9000_plat_data *pdata = pdev->dev.platform_data;
@@ -1371,12 +1393,16 @@ dm9000_probe(struct platform_device *pdev)
 	int i;
 	u32 id_val;
 
+	if (!pdata) {
+		pdata = dm9000_parse_dt(&pdev->dev);
+		if (IS_ERR(pdata))
+			return PTR_ERR(pdata);
+	}
+
 	/* Init network device */
 	ndev = alloc_etherdev(sizeof(struct board_info));
-	if (!ndev) {
-		dev_err(&pdev->dev, "could not allocate device.\n");
+	if (!ndev)
 		return -ENOMEM;
-	}
 
 	SET_NETDEV_DEV(ndev, &pdev->dev);
 
@@ -1592,7 +1618,7 @@ dm9000_probe(struct platform_device *pdev)
 		dev_warn(db->dev, "%s: Invalid ethernet MAC address. Please "
 			 "set using ifconfig\n", ndev->name);
 
-		random_ether_addr(ndev->dev_addr);
+		eth_hw_addr_random(ndev);
 		mac_src = "random";
 	}
 
@@ -1668,12 +1694,10 @@ static const struct dev_pm_ops dm9000_drv_pm_ops = {
 	.resume		= dm9000_drv_resume,
 };
 
-static int __devexit
+static int
 dm9000_drv_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
-
-	platform_set_drvdata(pdev, NULL);
 
 	unregister_netdev(ndev);
 	dm9000_release_board(pdev, netdev_priv(ndev));
@@ -1683,32 +1707,26 @@ dm9000_drv_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static const struct of_device_id dm9000_of_matches[] = {
+	{ .compatible = "davicom,dm9000", },
+	{ /* sentinel */ }
+};
+MODULE_DEVICE_TABLE(of, dm9000_of_matches);
+#endif
+
 static struct platform_driver dm9000_driver = {
 	.driver	= {
 		.name    = "dm9000",
 		.owner	 = THIS_MODULE,
 		.pm	 = &dm9000_drv_pm_ops,
+		.of_match_table = of_match_ptr(dm9000_of_matches),
 	},
 	.probe   = dm9000_probe,
-	.remove  = __devexit_p(dm9000_drv_remove),
+	.remove  = dm9000_drv_remove,
 };
 
-static int __init
-dm9000_init(void)
-{
-	printk(KERN_INFO "%s Ethernet Driver, V%s\n", CARDNAME, DRV_VERSION);
-
-	return platform_driver_register(&dm9000_driver);
-}
-
-static void __exit
-dm9000_cleanup(void)
-{
-	platform_driver_unregister(&dm9000_driver);
-}
-
-module_init(dm9000_init);
-module_exit(dm9000_cleanup);
+module_platform_driver(dm9000_driver);
 
 MODULE_AUTHOR("Sascha Hauer, Ben Dooks");
 MODULE_DESCRIPTION("Davicom DM9000 network driver");

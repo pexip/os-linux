@@ -38,8 +38,9 @@ static const char *gfs2_acl_name(int type)
 	return NULL;
 }
 
-static struct posix_acl *gfs2_acl_get(struct gfs2_inode *ip, int type)
+struct posix_acl *gfs2_get_acl(struct inode *inode, int type)
 {
+	struct gfs2_inode *ip = GFS2_I(inode);
 	struct posix_acl *acl;
 	const char *name;
 	char *data;
@@ -62,14 +63,9 @@ static struct posix_acl *gfs2_acl_get(struct gfs2_inode *ip, int type)
 	if (len == 0)
 		return NULL;
 
-	acl = posix_acl_from_xattr(data, len);
+	acl = posix_acl_from_xattr(&init_user_ns, data, len);
 	kfree(data);
 	return acl;
-}
-
-struct posix_acl *gfs2_get_acl(struct inode *inode, int type)
-{
-	return gfs2_acl_get(GFS2_I(inode), type);
 }
 
 static int gfs2_set_mode(struct inode *inode, umode_t mode)
@@ -77,12 +73,8 @@ static int gfs2_set_mode(struct inode *inode, umode_t mode)
 	int error = 0;
 
 	if (mode != inode->i_mode) {
-		struct iattr iattr;
-
-		iattr.ia_valid = ATTR_MODE;
-		iattr.ia_mode = mode;
-
-		error = gfs2_setattr_simple(inode, &iattr);
+		inode->i_mode = mode;
+		mark_inode_dirty(inode);
 	}
 
 	return error;
@@ -96,13 +88,13 @@ static int gfs2_acl_set(struct inode *inode, int type, struct posix_acl *acl)
 	const char *name = gfs2_acl_name(type);
 
 	BUG_ON(name == NULL);
-	len = posix_acl_to_xattr(acl, NULL, 0);
+	len = posix_acl_to_xattr(&init_user_ns, acl, NULL, 0);
 	if (len == 0)
 		return 0;
 	data = kmalloc(len, GFP_NOFS);
 	if (data == NULL)
 		return -ENOMEM;
-	error = posix_acl_to_xattr(acl, data, len);
+	error = posix_acl_to_xattr(&init_user_ns, acl, data, len);
 	if (error < 0)
 		goto out;
 	error = __gfs2_xattr_set(inode, name, data, len, 0, GFS2_EATYPE_SYS);
@@ -125,14 +117,12 @@ int gfs2_acl_create(struct gfs2_inode *dip, struct inode *inode)
 	if (S_ISLNK(inode->i_mode))
 		return 0;
 
-	acl = gfs2_acl_get(dip, ACL_TYPE_DEFAULT);
+	acl = gfs2_get_acl(&dip->i_inode, ACL_TYPE_DEFAULT);
 	if (IS_ERR(acl))
 		return PTR_ERR(acl);
 	if (!acl) {
 		mode &= ~current_umask();
-		if (mode != inode->i_mode)
-			error = gfs2_set_mode(inode, mode);
-		return error;
+		return gfs2_set_mode(inode, mode);
 	}
 
 	if (S_ISDIR(inode->i_mode)) {
@@ -166,7 +156,7 @@ int gfs2_acl_chmod(struct gfs2_inode *ip, struct iattr *attr)
 	unsigned int len;
 	int error;
 
-	acl = gfs2_acl_get(ip, ACL_TYPE_ACCESS);
+	acl = gfs2_get_acl(&ip->i_inode, ACL_TYPE_ACCESS);
 	if (IS_ERR(acl))
 		return PTR_ERR(acl);
 	if (!acl)
@@ -176,12 +166,12 @@ int gfs2_acl_chmod(struct gfs2_inode *ip, struct iattr *attr)
 	if (error)
 		return error;
 
-	len = posix_acl_to_xattr(acl, NULL, 0);
+	len = posix_acl_to_xattr(&init_user_ns, acl, NULL, 0);
 	data = kmalloc(len, GFP_NOFS);
 	error = -ENOMEM;
 	if (data == NULL)
 		goto out;
-	posix_acl_to_xattr(acl, data, len);
+	posix_acl_to_xattr(&init_user_ns, acl, data, len);
 	error = gfs2_xattr_acl_chmod(ip, attr, data);
 	kfree(data);
 	set_cached_acl(&ip->i_inode, ACL_TYPE_ACCESS, acl);
@@ -216,13 +206,13 @@ static int gfs2_xattr_system_get(struct dentry *dentry, const char *name,
 	if (type < 0)
 		return type;
 
-	acl = gfs2_acl_get(GFS2_I(inode), type);
+	acl = gfs2_get_acl(inode, type);
 	if (IS_ERR(acl))
 		return PTR_ERR(acl);
 	if (acl == NULL)
 		return -ENODATA;
 
-	error = posix_acl_to_xattr(acl, buffer, size);
+	error = posix_acl_to_xattr(&init_user_ns, acl, buffer, size);
 	posix_acl_release(acl);
 
 	return error;
@@ -247,7 +237,7 @@ static int gfs2_xattr_system_set(struct dentry *dentry, const char *name,
 		return -EINVAL;
 	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
 		return value ? -EACCES : 0;
-	if ((current_fsuid() != inode->i_uid) && !capable(CAP_FOWNER))
+	if (!uid_eq(current_fsuid(), inode->i_uid) && !capable(CAP_FOWNER))
 		return -EPERM;
 	if (S_ISLNK(inode->i_mode))
 		return -EOPNOTSUPP;
@@ -255,7 +245,7 @@ static int gfs2_xattr_system_set(struct dentry *dentry, const char *name,
 	if (!value)
 		goto set_acl;
 
-	acl = posix_acl_from_xattr(value, size);
+	acl = posix_acl_from_xattr(&init_user_ns, value, size);
 	if (!acl) {
 		/*
 		 * acl_set_file(3) may request that we set default ACLs with

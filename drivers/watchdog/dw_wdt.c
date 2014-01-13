@@ -16,7 +16,8 @@
  * If we receive an expected close for the watchdog then we keep the timer
  * running, otherwise the timer is stopped and the watchdog will expire.
  */
-#define pr_fmt(fmt) "dw_wdt: " fmt
+
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/bitops.h>
 #include <linux/clk.h>
@@ -45,8 +46,8 @@
 /* The maximum TOP (timeout period) value that can be set in the watchdog. */
 #define DW_WDT_MAX_TOP		15
 
-static int nowayout = WATCHDOG_NOWAYOUT;
-module_param(nowayout, int, 0);
+static bool nowayout = WATCHDOG_NOWAYOUT;
+module_param(nowayout, bool, 0);
 MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started "
 		 "(default=" __MODULE_STRING(WATCHDOG_NOWAYOUT) ")");
 
@@ -153,8 +154,8 @@ static int dw_wdt_open(struct inode *inode, struct file *filp)
 	return nonseekable_open(inode, filp);
 }
 
-ssize_t dw_wdt_write(struct file *filp, const char __user *buf, size_t len,
-		     loff_t *offset)
+static ssize_t dw_wdt_write(struct file *filp, const char __user *buf,
+			    size_t len, loff_t *offset)
 {
 	if (!len)
 		return 0;
@@ -292,7 +293,7 @@ static struct miscdevice dw_wdt_miscdev = {
 	.minor		= WATCHDOG_MINOR,
 };
 
-static int __devinit dw_wdt_drv_probe(struct platform_device *pdev)
+static int dw_wdt_drv_probe(struct platform_device *pdev)
 {
 	int ret;
 	struct resource *mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -300,21 +301,17 @@ static int __devinit dw_wdt_drv_probe(struct platform_device *pdev)
 	if (!mem)
 		return -EINVAL;
 
-	if (!devm_request_mem_region(&pdev->dev, mem->start, resource_size(mem),
-				     "dw_wdt"))
-		return -ENOMEM;
+	dw_wdt.regs = devm_ioremap_resource(&pdev->dev, mem);
+	if (IS_ERR(dw_wdt.regs))
+		return PTR_ERR(dw_wdt.regs);
 
-	dw_wdt.regs = devm_ioremap(&pdev->dev, mem->start, resource_size(mem));
-	if (!dw_wdt.regs)
-		return -ENOMEM;
-
-	dw_wdt.clk = clk_get(&pdev->dev, NULL);
+	dw_wdt.clk = devm_clk_get(&pdev->dev, NULL);
 	if (IS_ERR(dw_wdt.clk))
 		return PTR_ERR(dw_wdt.clk);
 
 	ret = clk_enable(dw_wdt.clk);
 	if (ret)
-		goto out_put_clk;
+		return ret;
 
 	spin_lock_init(&dw_wdt.lock);
 
@@ -330,25 +327,22 @@ static int __devinit dw_wdt_drv_probe(struct platform_device *pdev)
 
 out_disable_clk:
 	clk_disable(dw_wdt.clk);
-out_put_clk:
-	clk_put(dw_wdt.clk);
 
 	return ret;
 }
 
-static int __devexit dw_wdt_drv_remove(struct platform_device *pdev)
+static int dw_wdt_drv_remove(struct platform_device *pdev)
 {
 	misc_deregister(&dw_wdt_miscdev);
 
 	clk_disable(dw_wdt.clk);
-	clk_put(dw_wdt.clk);
 
 	return 0;
 }
 
 static struct platform_driver dw_wdt_driver = {
 	.probe		= dw_wdt_drv_probe,
-	.remove		= __devexit_p(dw_wdt_drv_remove),
+	.remove		= dw_wdt_drv_remove,
 	.driver		= {
 		.name	= "dw_wdt",
 		.owner	= THIS_MODULE,
@@ -358,17 +352,7 @@ static struct platform_driver dw_wdt_driver = {
 	},
 };
 
-static int __init dw_wdt_watchdog_init(void)
-{
-	return platform_driver_register(&dw_wdt_driver);
-}
-module_init(dw_wdt_watchdog_init);
-
-static void __exit dw_wdt_watchdog_exit(void)
-{
-	platform_driver_unregister(&dw_wdt_driver);
-}
-module_exit(dw_wdt_watchdog_exit);
+module_platform_driver(dw_wdt_driver);
 
 MODULE_AUTHOR("Jamie Iles");
 MODULE_DESCRIPTION("Synopsys DesignWare Watchdog Driver");

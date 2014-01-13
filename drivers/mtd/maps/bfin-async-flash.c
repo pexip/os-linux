@@ -30,7 +30,8 @@
 #include <linux/io.h>
 #include <asm/unaligned.h>
 
-#define pr_devinit(fmt, args...) ({ static const __devinitconst char __fmt[] = fmt; printk(__fmt, ## args); })
+#define pr_devinit(fmt, args...) \
+		({ static const char __fmt[] = fmt; printk(__fmt, ## args); })
 
 #define DRIVER_NAME "bfin-async-flash"
 
@@ -121,9 +122,10 @@ static void bfin_flash_copy_to(struct map_info *map, unsigned long to, const voi
 	switch_back(state);
 }
 
-static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
+static const char * const part_probe_types[] = {
+	"cmdlinepart", "RedBoot", NULL };
 
-static int __devinit bfin_flash_probe(struct platform_device *pdev)
+static int bfin_flash_probe(struct platform_device *pdev)
 {
 	int ret;
 	struct physmap_flash_data *pdata = pdev->dev.platform_data;
@@ -164,15 +166,15 @@ static int __devinit bfin_flash_probe(struct platform_device *pdev)
 		return -ENXIO;
 	}
 
-	mtd_device_parse_register(state->mtd, part_probe_types, 0,
-			pdata->parts, pdata->nr_parts);
+	mtd_device_parse_register(state->mtd, part_probe_types, NULL,
+				  pdata->parts, pdata->nr_parts);
 
 	platform_set_drvdata(pdev, state);
 
 	return 0;
 }
 
-static int __devexit bfin_flash_remove(struct platform_device *pdev)
+static int bfin_flash_remove(struct platform_device *pdev)
 {
 	struct async_state *state = platform_get_drvdata(pdev);
 	gpio_free(state->enet_flash_pin);
@@ -184,23 +186,13 @@ static int __devexit bfin_flash_remove(struct platform_device *pdev)
 
 static struct platform_driver bfin_flash_driver = {
 	.probe		= bfin_flash_probe,
-	.remove		= __devexit_p(bfin_flash_remove),
+	.remove		= bfin_flash_remove,
 	.driver		= {
 		.name	= DRIVER_NAME,
 	},
 };
 
-static int __init bfin_flash_init(void)
-{
-	return platform_driver_register(&bfin_flash_driver);
-}
-module_init(bfin_flash_init);
-
-static void __exit bfin_flash_exit(void)
-{
-	platform_driver_unregister(&bfin_flash_driver);
-}
-module_exit(bfin_flash_exit);
+module_platform_driver(bfin_flash_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("MTD map driver for Blackfins with flash/ethernet on same async bank");

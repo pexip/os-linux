@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ struct au_finfo {
 extern const struct address_space_operations aufs_aop;
 unsigned int au_file_roflags(unsigned int flags);
 struct file *au_h_open(struct dentry *dentry, aufs_bindex_t bindex, int flags,
-		       struct file *file);
+		       struct file *file, int force_wr);
 int au_do_open(struct file *file, int (*open)(struct file *file, int flags),
 	       struct au_fidir *fidir);
 int au_reopen_nondir(struct file *file);
@@ -88,12 +88,14 @@ unsigned int aufs_poll(struct file *file, poll_table *wait);
 
 #ifdef CONFIG_AUFS_BR_HFSPLUS
 /* hfsplus.c */
-struct file *au_h_open_pre(struct dentry *dentry, aufs_bindex_t bindex);
+struct file *au_h_open_pre(struct dentry *dentry, aufs_bindex_t bindex,
+			   int force_wr);
 void au_h_open_post(struct dentry *dentry, aufs_bindex_t bindex,
 		    struct file *h_file);
 #else
 static inline
-struct file *au_h_open_pre(struct dentry *dentry, aufs_bindex_t bindex)
+struct file *au_h_open_pre(struct dentry *dentry, aufs_bindex_t bindex,
+			   int force_wr)
 {
 	return NULL;
 }
@@ -109,9 +111,14 @@ int aufs_release_nondir(struct inode *inode __maybe_unused, struct file *file);
 
 #ifdef CONFIG_AUFS_SP_IATTR
 /* f_op_sp.c */
+struct au_finfo *au_fi_sp(struct file *file);
 int au_special_file(umode_t mode);
 void au_init_special_fop(struct inode *inode, umode_t mode, dev_t rdev);
 #else
+static inline struct au_finfo *au_fi_sp(struct file *file)
+{
+	return NULL;
+}
 AuStubInt0(au_special_file, umode_t mode)
 static inline void au_init_special_fop(struct inode *inode, umode_t mode,
 				       dev_t rdev)
@@ -138,13 +145,20 @@ long aufs_ioctl_nondir(struct file *file, unsigned int cmd, unsigned long arg);
 #ifdef CONFIG_COMPAT
 long aufs_compat_ioctl_dir(struct file *file, unsigned int cmd,
 			   unsigned long arg);
+long aufs_compat_ioctl_nondir(struct file *file, unsigned int cmd,
+			      unsigned long arg);
 #endif
 
 /* ---------------------------------------------------------------------- */
 
 static inline struct au_finfo *au_fi(struct file *file)
 {
-	return file->private_data;
+	struct au_finfo *finfo;
+
+	finfo = au_fi_sp(file);
+	if (!finfo)
+		finfo = file->private_data;
+	return finfo;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -227,7 +241,7 @@ static inline void au_set_mmapped(struct file *f)
 {
 	if (atomic_inc_return(&au_fi(f)->fi_mmapped))
 		return;
-	pr_warning("fi_mmapped wrapped around\n");
+	pr_warn("fi_mmapped wrapped around\n");
 	while (!atomic_inc_return(&au_fi(f)->fi_mmapped))
 		;
 }

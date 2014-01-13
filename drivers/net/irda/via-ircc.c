@@ -77,7 +77,7 @@ static int dongle_id = 0;	/* default: probe */
 module_param(dongle_id, int, 0);
 
 /* Some prototypes */
-static int via_ircc_open(struct pci_dev *pdev, chipio_t * info,
+static int via_ircc_open(struct pci_dev *pdev, chipio_t *info,
 			 unsigned int id);
 static int via_ircc_dma_receive(struct via_ircc_cb *self);
 static int via_ircc_dma_receive_complete(struct via_ircc_cb *self,
@@ -102,8 +102,8 @@ static int RxTimerHandler(struct via_ircc_cb *self, int iobase);
 static void hwreset(struct via_ircc_cb *self);
 static int via_ircc_dma_xmit(struct via_ircc_cb *self, u16 iobase);
 static int upload_rxdata(struct via_ircc_cb *self, int iobase);
-static int __devinit via_init_one (struct pci_dev *pcidev, const struct pci_device_id *id);
-static void __devexit via_remove_one (struct pci_dev *pdev);
+static int via_init_one(struct pci_dev *pcidev, const struct pci_device_id *id);
+static void via_remove_one(struct pci_dev *pdev);
 
 /* FIXME : Should use udelay() instead, even if we are x86 only - Jean II */
 static void iodelay(int udelay)
@@ -132,7 +132,7 @@ static struct pci_driver via_driver = {
 	.name		= VIA_MODULE_NAME,
 	.id_table	= via_pci_tbl,
 	.probe		= via_init_one,
-	.remove		= __devexit_p(via_remove_one),
+	.remove		= via_remove_one,
 };
 
 
@@ -156,7 +156,7 @@ static int __init via_ircc_init(void)
 	return 0;
 }
 
-static int __devinit via_init_one (struct pci_dev *pcidev, const struct pci_device_id *id)
+static int via_init_one(struct pci_dev *pcidev, const struct pci_device_id *id)
 {
 	int rc;
         u8 temp,oldPCI_40,oldPCI_44,bTmp,bTmp1;
@@ -210,8 +210,7 @@ static int __devinit via_init_one (struct pci_dev *pcidev, const struct pci_devi
 			pci_write_config_byte(pcidev,0x42,(bTmp | 0xf0));
 			pci_write_config_byte(pcidev,0x5a,0xc0);
 			WriteLPCReg(0x28, 0x70 );
-			if (via_ircc_open(pcidev, &info, 0x3076) == 0)
-				rc=0;
+			rc = via_ircc_open(pcidev, &info, 0x3076);
 		} else
 			rc = -ENODEV; //IR not turn on	 
 	} else { //Not VT1211
@@ -249,8 +248,7 @@ static int __devinit via_init_one (struct pci_dev *pcidev, const struct pci_devi
 			info.irq=FirIRQ;
 			info.dma=FirDRQ1;
 			info.dma2=FirDRQ0;
-			if (via_ircc_open(pcidev, &info, 0x3096) == 0)
-				rc=0;
+			rc = via_ircc_open(pcidev, &info, 0x3096);
 		} else
 			rc = -ENODEV; //IR not turn on !!!!!
 	}//Not VT1211
@@ -286,8 +284,7 @@ static const struct net_device_ops via_ircc_fir_ops = {
  *    Open driver instance
  *
  */
-static __devinit int via_ircc_open(struct pci_dev *pdev, chipio_t * info,
-				   unsigned int id)
+static int via_ircc_open(struct pci_dev *pdev, chipio_t *info, unsigned int id)
 {
 	struct net_device *dev;
 	struct via_ircc_cb *self;
@@ -365,21 +362,19 @@ static __devinit int via_ircc_open(struct pci_dev *pdev, chipio_t * info,
 	/* Allocate memory if needed */
 	self->rx_buff.head =
 		dma_alloc_coherent(&pdev->dev, self->rx_buff.truesize,
-				   &self->rx_buff_dma, GFP_KERNEL);
+				   &self->rx_buff_dma, GFP_KERNEL | __GFP_ZERO);
 	if (self->rx_buff.head == NULL) {
 		err = -ENOMEM;
 		goto err_out2;
 	}
-	memset(self->rx_buff.head, 0, self->rx_buff.truesize);
 
 	self->tx_buff.head =
 		dma_alloc_coherent(&pdev->dev, self->tx_buff.truesize,
-				   &self->tx_buff_dma, GFP_KERNEL);
+				   &self->tx_buff_dma, GFP_KERNEL | __GFP_ZERO);
 	if (self->tx_buff.head == NULL) {
 		err = -ENOMEM;
 		goto err_out3;
 	}
-	memset(self->tx_buff.head, 0, self->tx_buff.truesize);
 
 	self->rx_buff.in_frame = FALSE;
 	self->rx_buff.state = OUTSIDE_FRAME;
@@ -424,7 +419,7 @@ static __devinit int via_ircc_open(struct pci_dev *pdev, chipio_t * info,
  *    Close driver instance
  *
  */
-static void __devexit via_remove_one(struct pci_dev *pdev)
+static void via_remove_one(struct pci_dev *pdev)
 {
 	struct via_ircc_cb *self = pci_get_drvdata(pdev);
 	int iobase;
@@ -942,14 +937,14 @@ static int via_ircc_dma_xmit_complete(struct via_ircc_cb *self)
 	iobase = self->io.fir_base;
 	/* Disable DMA */
 //      DisableDmaChannel(self->io.dma);
-	/* Check for underrrun! */
+	/* Check for underrun! */
 	/* Clear bit, by writing 1 into it */
 	Tx_status = GetTXStatus(iobase);
 	if (Tx_status & 0x08) {
 		self->netdev->stats.tx_errors++;
 		self->netdev->stats.tx_fifo_errors++;
 		hwreset(self);
-// how to clear underrrun ?
+	/* how to clear underrun? */
 	} else {
 		self->netdev->stats.tx_packets++;
 		ResetChip(iobase, 3);
@@ -1495,14 +1490,14 @@ static int via_ircc_net_open(struct net_device *dev)
 	if (request_dma(self->io.dma, dev->name)) {
 		IRDA_WARNING("%s, unable to allocate dma=%d\n", driver_name,
 			     self->io.dma);
-		free_irq(self->io.irq, self);
+		free_irq(self->io.irq, dev);
 		return -EAGAIN;
 	}
 	if (self->io.dma2 != self->io.dma) {
 		if (request_dma(self->io.dma2, dev->name)) {
 			IRDA_WARNING("%s, unable to allocate dma2=%d\n",
 				     driver_name, self->io.dma2);
-			free_irq(self->io.irq, self);
+			free_irq(self->io.irq, dev);
 			free_dma(self->io.dma);
 			return -EAGAIN;
 		}

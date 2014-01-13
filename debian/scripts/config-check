@@ -75,7 +75,7 @@ sub pred_do {
 	} elsif ($a[0] eq 'flavour') {
 		die "$P: $pred: malformed -- $pred <flavour>\n" if ($#a < 1);
 		for $possible (@a[1..$#a]) {
-			#print "    *** FLAVOUR<$flavour ?? $a[1]>\n";
+			#print "    *** FLAVOUR<$flavour ?? $possible>\n";
 			return 1 if ($flavour eq $possible);
 		}
 		return 0;
@@ -94,6 +94,7 @@ sub pred_do {
 sub pred_exec {
 	my ($rest) = @_;
 	my $pred;
+	my $cut = 0;
 	my $res;
 	my $sep;
 
@@ -104,12 +105,19 @@ sub pred_exec {
 	# Leading ! implies inversion.
 	if ($pred =~ /^\s*!\s*(.*)$/) {
 		#print " invert<$1>\n";
-		$res = !pred_exec($1);
+		($cut, $res) = pred_exec($1);
+		$res = !$res;
+
+	# Leading / implies a CUT operation.
+	} elsif ($pred =~ /^\s*\/\s*(.*)$/) {
+		#print " cut<$1>\n";
+		($cut, $res) = pred_exec($1);
+		$cut = 1;
 
 	# Recurse left for complex expressions.
 	} elsif ($pred =~ /^\s*\((.*)\)\s*$/) {
 		#print " left<$1>\n";
-		$res = pred_exec($1);
+		($cut, $res) = pred_exec($1);
 
 	# Check for common syntax issues.
 	} elsif ($pred eq '') {
@@ -135,16 +143,16 @@ sub pred_exec {
 		if ($rest =~ /^\s*($|\||\&)/) {
 			die "$P: $pred$rest: malformed binary operator\n";
 		}
-		if (($res && $sep eq '&') || (!$res && $sep eq '|')) {
+		if ($cut == 0 && (($res && $sep eq '&') || (!$res && $sep eq '|'))) {
 			#print " right<$rest>\n";
-			$res = pred_exec($rest);
+			($cut, $res) = pred_exec($rest);
 		}
 
 	} else {
 		die "$P: $pred$rest: malformed predicate\n";
 	}
-	#print " return res<$res> sep<$sep>\n";
-	return $res;
+	#warn " return cut<$cut> res<$res> sep<$sep>\n";
+	return ($cut, $res);
 }
 
 #
@@ -154,7 +162,7 @@ my $test_total = 1;
 my $test_good = 0;
 sub pred_test {
 	my ($pred, $eres, $eerr) = @_;
-	my ($res, $err, $fail);
+	my ($cut, $res, $err, $fail);
 
 	$test_total++;
 	if ($test != 0 && $test != $test_total - 1) {
@@ -162,7 +170,7 @@ sub pred_test {
 	}
 
 	eval {
-		$res = pred_exec($pred);
+		($cut, $res) = pred_exec($pred);
 	};
 	$err = $@;
 	chomp($err);
@@ -345,6 +353,10 @@ if ($test >= 0) {
 	pred_test('exists ENABLED & exists ENABLED | exists MISSING', 1, undef);
 	pred_test('exists ENABLED & exists ENABLED | exists ENABLED', 1, undef);
 
+	print "TEST: $test_total: cut tests ...\n";
+	pred_test('(arch MYARCH & exists MISSING) | exists ENABLED', 1, undef);
+	pred_test('(arch MYARCH &/ exists MISSING) | exists ENABLED', 0, undef);
+
 	$test_total--;
 	print "TEST: $test_good/$test_total succeeded\n";
 
@@ -385,7 +397,7 @@ while (<CHECKS>) {
 
 	#print "CHECK: <$line>\n";
 	$total++;
-	my $result = pred_exec($line);
+	my (undef, $result) = pred_exec($line);
 	if (!$result) {
 		print "$P: FAIL: $line\n";
 		$exit_val = $fail_exit;

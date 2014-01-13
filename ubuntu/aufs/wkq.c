@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ static void wkq_func(struct work_struct *wk)
 {
 	struct au_wkinfo *wkinfo = container_of(wk, struct au_wkinfo, wk);
 
-	AuDebugOn(current_fsuid());
+	AuDebugOn(!uid_eq(current_fsuid(), GLOBAL_ROOT_UID));
 	AuDebugOn(rlimit(RLIMIT_FSIZE) != RLIM_INFINITY);
 
 	wkinfo->func(wkinfo->args);
@@ -62,7 +62,7 @@ static void wkq_func(struct work_struct *wk)
 /*
  * Since struct completion is large, try allocating it dynamically.
  */
-#if defined(CONFIG_4KSTACKS) || defined(AuTest4KSTACKS)
+#if 1 /* defined(CONFIG_4KSTACKS) || defined(AuTest4KSTACKS) */
 #define AuWkqCompDeclare(name)	struct completion *comp = NULL
 
 static int au_wkq_comp_alloc(struct au_wkinfo *wkinfo, struct completion **comp)
@@ -203,8 +203,7 @@ int __init au_wkq_init(void)
 	int err;
 
 	err = 0;
-	BUILD_BUG_ON(!WQ_RESCUER);
-	au_wkq = alloc_workqueue(AUFS_WKQ_NAME, !WQ_RESCUER, WQ_DFL_ACTIVE);
+	au_wkq = alloc_workqueue(AUFS_WKQ_NAME, 0, WQ_DFL_ACTIVE);
 	if (IS_ERR(au_wkq))
 		err = PTR_ERR(au_wkq);
 	else if (!au_wkq)

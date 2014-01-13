@@ -40,6 +40,7 @@
 #include <linux/slab.h>
 #include <linux/console.h>
 #include <linux/moduleparam.h>
+#include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/netpoll.h>
 #include <linux/inet.h>
@@ -55,6 +56,10 @@ MODULE_LICENSE("GPL");
 static char config[MAX_PARAM_LENGTH];
 module_param_string(netconsole, config, MAX_PARAM_LENGTH, 0);
 MODULE_PARM_DESC(netconsole, " netconsole=[src-port]@[src-ip]/[dev],[tgt-port]@<tgt-ip>/[tgt-macaddr]");
+
+static bool oops_only = false;
+module_param(oops_only, bool, 0600);
+MODULE_PARM_DESC(oops_only, "Only log oops messages");
 
 #ifndef	MODULE
 static int __init option_setup(char *opt)
@@ -169,10 +174,8 @@ static struct netconsole_target *alloc_param_target(char *target_config)
 	 * Note that these targets get their config_item fields zeroed-out.
 	 */
 	nt = kzalloc(sizeof(*nt), GFP_KERNEL);
-	if (!nt) {
-		printk(KERN_ERR "netconsole: failed to allocate memory\n");
+	if (!nt)
 		goto fail;
-	}
 
 	nt->np.name = "netconsole";
 	strlcpy(nt->np.dev_name, "eth0", IFNAMSIZ);
@@ -267,12 +270,18 @@ static ssize_t show_remote_port(struct netconsole_target *nt, char *buf)
 
 static ssize_t show_local_ip(struct netconsole_target *nt, char *buf)
 {
-	return snprintf(buf, PAGE_SIZE, "%pI4\n", &nt->np.local_ip);
+	if (nt->np.ipv6)
+		return snprintf(buf, PAGE_SIZE, "%pI6c\n", &nt->np.local_ip.in6);
+	else
+		return snprintf(buf, PAGE_SIZE, "%pI4\n", &nt->np.local_ip);
 }
 
 static ssize_t show_remote_ip(struct netconsole_target *nt, char *buf)
 {
-	return snprintf(buf, PAGE_SIZE, "%pI4\n", &nt->np.remote_ip);
+	if (nt->np.ipv6)
+		return snprintf(buf, PAGE_SIZE, "%pI6c\n", &nt->np.remote_ip.in6);
+	else
+		return snprintf(buf, PAGE_SIZE, "%pI4\n", &nt->np.remote_ip);
 }
 
 static ssize_t show_local_mac(struct netconsole_target *nt, char *buf)
@@ -408,7 +417,22 @@ static ssize_t store_local_ip(struct netconsole_target *nt,
 		return -EINVAL;
 	}
 
-	nt->np.local_ip = in_aton(buf);
+	if (strnchr(buf, count, ':')) {
+		const char *end;
+		if (in6_pton(buf, count, nt->np.local_ip.in6.s6_addr, -1, &end) > 0) {
+			if (*end && *end != '\n') {
+				printk(KERN_ERR "netconsole: invalid IPv6 address at: <%c>\n", *end);
+				return -EINVAL;
+			}
+			nt->np.ipv6 = true;
+		} else
+			return -EINVAL;
+	} else {
+		if (!nt->np.ipv6) {
+			nt->np.local_ip.ip = in_aton(buf);
+		} else
+			return -EINVAL;
+	}
 
 	return strnlen(buf, count);
 }
@@ -424,7 +448,22 @@ static ssize_t store_remote_ip(struct netconsole_target *nt,
 		return -EINVAL;
 	}
 
-	nt->np.remote_ip = in_aton(buf);
+	if (strnchr(buf, count, ':')) {
+		const char *end;
+		if (in6_pton(buf, count, nt->np.remote_ip.in6.s6_addr, -1, &end) > 0) {
+			if (*end && *end != '\n') {
+				printk(KERN_ERR "netconsole: invalid IPv6 address at: <%c>\n", *end);
+				return -EINVAL;
+			}
+			nt->np.ipv6 = true;
+		} else
+			return -EINVAL;
+	} else {
+		if (!nt->np.ipv6) {
+			nt->np.remote_ip.ip = in_aton(buf);
+		} else
+			return -EINVAL;
+	}
 
 	return strnlen(buf, count);
 }
@@ -551,10 +590,8 @@ static struct config_item *make_netconsole_target(struct config_group *group,
 	 * Target is disabled at creation (enabled == 0).
 	 */
 	nt = kzalloc(sizeof(*nt), GFP_KERNEL);
-	if (!nt) {
-		printk(KERN_ERR "netconsole: failed to allocate memory\n");
+	if (!nt)
 		return ERR_PTR(-ENOMEM);
-	}
 
 	nt->np.name = "netconsole";
 	strlcpy(nt->np.dev_name, "eth0", IFNAMSIZ);
@@ -617,12 +654,11 @@ static struct configfs_subsystem netconsole_subsys = {
 
 /* Handle network interface device notifications */
 static int netconsole_netdev_event(struct notifier_block *this,
-				   unsigned long event,
-				   void *ptr)
+				   unsigned long event, void *ptr)
 {
 	unsigned long flags;
 	struct netconsole_target *nt;
-	struct net_device *dev = ptr;
+	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
 	bool stopped = false;
 
 	if (!(event == NETDEV_CHANGENAME || event == NETDEV_UNREGISTER ||
@@ -690,6 +726,8 @@ static void write_msg(struct console *con, const char *msg, unsigned int len)
 	struct netconsole_target *nt;
 	const char *tmp;
 
+	if (oops_only && !oops_in_progress)
+		return;
 	/* Avoid taking lock and disabling interrupts unnecessarily */
 	if (list_empty(&target_list))
 		return;

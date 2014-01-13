@@ -167,8 +167,7 @@ static int timbgpio_irq_type(struct irq_data *d, unsigned trigger)
 		if (ver < 3) {
 			ret = -EINVAL;
 			goto out;
-		}
-		else {
+		} else {
 			flr |= 1 << offset;
 			bflr |= 1 << offset;
 		}
@@ -222,7 +221,7 @@ static struct irq_chip timbgpio_irqchip = {
 	.irq_set_type	= timbgpio_irq_type,
 };
 
-static int __devinit timbgpio_probe(struct platform_device *pdev)
+static int timbgpio_probe(struct platform_device *pdev)
 {
 	int err, i;
 	struct gpio_chip *gc;
@@ -316,7 +315,7 @@ err_mem:
 	return err;
 }
 
-static int __devexit timbgpio_remove(struct platform_device *pdev)
+static int timbgpio_remove(struct platform_device *pdev)
 {
 	int err;
 	struct timbgpio_platform_data *pdata = pdev->dev.platform_data;
@@ -343,8 +342,6 @@ static int __devexit timbgpio_remove(struct platform_device *pdev)
 	release_mem_region(iomem->start, resource_size(iomem));
 	kfree(tgpio);
 
-	platform_set_drvdata(pdev, NULL);
-
 	return 0;
 }
 
@@ -359,18 +356,7 @@ static struct platform_driver timbgpio_platform_driver = {
 
 /*--------------------------------------------------------------------------*/
 
-static int __init timbgpio_init(void)
-{
-	return platform_driver_register(&timbgpio_platform_driver);
-}
-
-static void __exit timbgpio_exit(void)
-{
-	platform_driver_unregister(&timbgpio_platform_driver);
-}
-
-module_init(timbgpio_init);
-module_exit(timbgpio_exit);
+module_platform_driver(timbgpio_platform_driver);
 
 MODULE_DESCRIPTION("Timberdale GPIO driver");
 MODULE_LICENSE("GPL v2");

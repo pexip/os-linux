@@ -14,7 +14,7 @@
 #define CYTP_CMD_STANDARD_MODE              ENCODE_CMD(0, 2, 0, 0)  /* not implemented yet. */
 #define CYTP_CMD_CYPRESS_REL_MODE           ENCODE_CMD(1, 1, 1, 1)  /* not implemented yet. */
 #define CYTP_CMD_READ_CYPRESS_ID            ENCODE_CMD(0, 0, 0, 0)
-#define CYTP_CMD_READ_VITAL_STATISTICS      ENCODE_CMD(0, 0, 0, 1)
+#define CYTP_CMD_READ_TP_METRICS            ENCODE_CMD(0, 0, 0, 1)
 #define CYTP_CMD_SET_HSCROLL_WIDTH(w)       ENCODE_CMD(1, 1, 0, (w))
 #define     CYTP_CMD_SET_HSCROLL_MASK       ENCODE_CMD(1, 1, 0, 0)
 #define CYTP_CMD_SET_VSCROLL_WIDTH(w)       ENCODE_CMD(1, 2, 0, (w))
@@ -57,10 +57,7 @@
 #define PALM_GEOMETRY_ENABLE  1
 #define PALM_GEOMETRY_DISABLE 0
 
-#define CYPRESS_KEY_1 0x33
-#define CYPRESS_KEY_2 0xCC
-
-#define VITAL_STATICS_MASK 0x80
+#define TP_METRICS_MASK  0x80
 #define FW_VERSION_MASX    0x7f
 #define FW_VER_HIGH_MASK 0x70
 #define FW_VER_LOW_MASK  0x0f
@@ -114,15 +111,15 @@
 #define DFLT_RESP_BIT_REPORTING  0x20
 #define DFLT_RESP_BIT_SCALING    0x10
 
-#define VITAL_BIT_PALM               0x80
-#define VITAL_BIT_STUBBORN           0x40
-#define VITAL_BIT_2F_JITTER          0x30
-#define VITAL_BIT_1F_JITTER          0x0c
-#define VITAL_BIT_APA                0x02
-#define VITAL_BIT_MTG                0x01
-#define VITAL_BIT_ABS_PKT_FORMAT_SET 0xf0
-#define VITAL_BIT_2F_SPIKE           0x0c
-#define VITAL_BIT_1F_SPIKE           0x03
+#define TP_METRICS_BIT_PALM               0x80
+#define TP_METRICS_BIT_STUBBORN           0x40
+#define TP_METRICS_BIT_2F_JITTER          0x30
+#define TP_METRICS_BIT_1F_JITTER          0x0c
+#define TP_METRICS_BIT_APA                0x02
+#define TP_METRICS_BIT_MTG                0x01
+#define TP_METRICS_BIT_ABS_PKT_FORMAT_SET 0xf0
+#define TP_METRICS_BIT_2F_SPIKE           0x0c
+#define TP_METRICS_BIT_1F_SPIKE           0x03
 
 /* bits of first byte response of E9h-Status Request command. */
 #define RESP_BTN_RIGHT_BIT  0x01
@@ -133,32 +130,33 @@
 #define RESP_REMOTE_BIT     0x40
 #define RESP_SMBUS_BIT      0x80
 
-#define CYTP_MAX_CONTACTS 5
-#define CYTP_MAX_MT_SLOTS 16
+/*
+ * CYPRESS_SIMULATED_MT
+ *   set to 1 for simulated multitouch (up to 5 contact points)
+ *   set to 0 for SEMI_MT (only 2 corner points, and count of fingers)
+ */
+#define CYPRESS_SIMULATED_MT 1
 
-enum cytp_type {
-	CYTP_STG,
-	CYTP_MTG,
-	CYTP_APA,
-};
+#if ( CYPRESS_SIMULATED_MT == 1 )
+# define CYTP_MAX_MT_SLOTS 5
+#else
+# define CYTP_MAX_MT_SLOTS 2
+#endif
 
 struct cytp_contact {
 	int x;
 	int y;
 	int z;  /* also named as touch pressure. */
-	int id; /* It's incremented with every new touch. */
 };
 
-/* The structure of */
+/* The structure of Cypress Trackpad event data. */
 struct cytp_report_data {
 	int contact_cnt;
-	struct cytp_contact contacts[CYTP_MAX_CONTACTS];
+	struct cytp_contact contacts[CYTP_MAX_MT_SLOTS];
 	unsigned int left:1;
 	unsigned int right:1;
 	unsigned int middle:1;
 	unsigned int tap:1;  /* multi-finger tap detected. */
-	signed char vscroll;
-	signed char hscroll;
 };
 
 /* The structure of Cypress Trackpad device private data. */
@@ -168,33 +166,17 @@ struct cytp_data {
 	int pkt_size;
 	int mode;
 
-	int scaling;
-	int reporting;
-
 	int tp_min_pressure;
 	int tp_max_pressure;
 	int tp_width;  /* X direction physical size in mm. */
 	int tp_high;  /* Y direction physical size in mm. */
-	int tp_max_abs_x;  /* Max X absolution units can be reported. */
-	int tp_max_abs_y;  /* Max Y absolution units can be reported. */
+	int tp_max_abs_x;  /* Max X absolute units that can be reported. */
+	int tp_max_abs_y;  /* Max Y absolute units that can be reported. */
 
 	int tp_res_x;  /* X resolution in units/mm. */
 	int tp_res_y;  /* Y resolution in units/mm. */
 
-	enum cytp_type tp_type;
-	unsigned char tp_palm;
-	unsigned char tp_stubborn;
-	unsigned char tp_2f_jitter;
-	unsigned char tp_1f_jitter;
-	unsigned char tp_abs_packet_format_set;
-	unsigned char tp_2f_spike;
-	unsigned char tp_1f_spike;
-
-	int vital_statics_supported;
-
-	int prev_contact_cnt;
-	int zero_packet_cnt;
-	struct cytp_report_data prev_report_data;
+	int tp_metrics_supported;
 };
 
 

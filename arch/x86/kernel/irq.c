@@ -18,6 +18,9 @@
 #include <asm/mce.h>
 #include <asm/hw_irq.h>
 
+#define CREATE_TRACE_POINTS
+#include <asm/trace/irq_vectors.h>
+
 atomic_t irq_err_count;
 
 /* Function pointer for generic interrupt vector handling */
@@ -74,6 +77,10 @@ int arch_show_interrupts(struct seq_file *p, int prec)
 	for_each_online_cpu(j)
 		seq_printf(p, "%10u ", irq_stats(j)->apic_irq_work_irqs);
 	seq_printf(p, "  IRQ work interrupts\n");
+	seq_printf(p, "%*s: ", prec, "RTR");
+	for_each_online_cpu(j)
+		seq_printf(p, "%10u ", irq_stats(j)->icr_read_retry_count);
+	seq_printf(p, "  APIC ICR read retries\n");
 #endif
 	if (x86_platform_ipi_callback) {
 		seq_printf(p, "%*s: ", prec, "PLT");
@@ -88,7 +95,8 @@ int arch_show_interrupts(struct seq_file *p, int prec)
 	seq_printf(p, "  Rescheduling interrupts\n");
 	seq_printf(p, "%*s: ", prec, "CAL");
 	for_each_online_cpu(j)
-		seq_printf(p, "%10u ", irq_stats(j)->irq_call_count);
+		seq_printf(p, "%10u ", irq_stats(j)->irq_call_count -
+					irq_stats(j)->irq_tlb_count);
 	seq_printf(p, "  Function call interrupts\n");
 	seq_printf(p, "%*s: ", prec, "TLB");
 	for_each_online_cpu(j)
@@ -136,13 +144,13 @@ u64 arch_irq_stat_cpu(unsigned int cpu)
 	sum += irq_stats(cpu)->irq_spurious_count;
 	sum += irq_stats(cpu)->apic_perf_irqs;
 	sum += irq_stats(cpu)->apic_irq_work_irqs;
+	sum += irq_stats(cpu)->icr_read_retry_count;
 #endif
 	if (x86_platform_ipi_callback)
 		sum += irq_stats(cpu)->x86_platform_ipis;
 #ifdef CONFIG_SMP
 	sum += irq_stats(cpu)->irq_resched_count;
 	sum += irq_stats(cpu)->irq_call_count;
-	sum += irq_stats(cpu)->irq_tlb_count;
 #endif
 #ifdef CONFIG_X86_THERMAL_VECTOR
 	sum += irq_stats(cpu)->irq_thermal_count;
@@ -177,8 +185,8 @@ unsigned int __irq_entry do_IRQ(struct pt_regs *regs)
 	unsigned vector = ~regs->orig_ax;
 	unsigned irq;
 
-	exit_idle();
 	irq_enter();
+	exit_idle();
 
 	irq = __this_cpu_read(vector_irq[vector]);
 
@@ -199,23 +207,55 @@ unsigned int __irq_entry do_IRQ(struct pt_regs *regs)
 /*
  * Handler for X86_PLATFORM_IPI_VECTOR.
  */
+void __smp_x86_platform_ipi(void)
+{
+	inc_irq_stat(x86_platform_ipis);
+
+	if (x86_platform_ipi_callback)
+		x86_platform_ipi_callback();
+}
+
 void smp_x86_platform_ipi(struct pt_regs *regs)
+{
+	struct pt_regs *old_regs = set_irq_regs(regs);
+
+	entering_ack_irq();
+	__smp_x86_platform_ipi();
+	exiting_irq();
+	set_irq_regs(old_regs);
+}
+
+#ifdef CONFIG_HAVE_KVM
+/*
+ * Handler for POSTED_INTERRUPT_VECTOR.
+ */
+void smp_kvm_posted_intr_ipi(struct pt_regs *regs)
 {
 	struct pt_regs *old_regs = set_irq_regs(regs);
 
 	ack_APIC_irq();
 
-	exit_idle();
-
 	irq_enter();
 
-	inc_irq_stat(x86_platform_ipis);
+	exit_idle();
 
-	if (x86_platform_ipi_callback)
-		x86_platform_ipi_callback();
+	inc_irq_stat(kvm_posted_intr_ipis);
 
 	irq_exit();
 
+	set_irq_regs(old_regs);
+}
+#endif
+
+void smp_trace_x86_platform_ipi(struct pt_regs *regs)
+{
+	struct pt_regs *old_regs = set_irq_regs(regs);
+
+	entering_ack_irq();
+	trace_x86_platform_ipi_entry(X86_PLATFORM_IPI_VECTOR);
+	__smp_x86_platform_ipi();
+	trace_x86_platform_ipi_exit(X86_PLATFORM_IPI_VECTOR);
+	exiting_irq();
 	set_irq_regs(old_regs);
 }
 
@@ -261,7 +301,7 @@ void fixup_irqs(void)
 
 		if (cpumask_any_and(affinity, cpu_online_mask) >= nr_cpu_ids) {
 			break_affinity = 1;
-			affinity = cpu_all_mask;
+			affinity = cpu_online_mask;
 		}
 
 		chip = irq_data_get_irq_chip(data);
@@ -273,16 +313,21 @@ void fixup_irqs(void)
 		else if (!(warned++))
 			set_affinity = 0;
 
+		/*
+		 * We unmask if the irq was not marked masked by the
+		 * core code. That respects the lazy irq disable
+		 * behaviour.
+		 */
 		if (!irqd_can_move_in_process_context(data) &&
-		    !irqd_irq_disabled(data) && chip->irq_unmask)
+		    !irqd_irq_masked(data) && chip->irq_unmask)
 			chip->irq_unmask(data);
 
 		raw_spin_unlock(&desc->lock);
 
 		if (break_affinity && set_affinity)
-			printk("Broke affinity for irq %i\n", irq);
+			pr_notice("Broke affinity for irq %i\n", irq);
 		else if (!set_affinity)
-			printk("Cannot set affinity for irq %i\n", irq);
+			pr_notice("Cannot set affinity for irq %i\n", irq);
 	}
 
 	/*
@@ -314,6 +359,7 @@ void fixup_irqs(void)
 				chip->irq_retrigger(data);
 			raw_spin_unlock(&desc->lock);
 		}
+		__this_cpu_write(vector_irq[vector], -1);
 	}
 }
 #endif

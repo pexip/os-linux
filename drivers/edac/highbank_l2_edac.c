@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Calxeda, Inc.
+ * Copyright 2011-2012 Calxeda, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -50,7 +50,7 @@ static irqreturn_t highbank_l2_err_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int __devinit highbank_l2_err_probe(struct platform_device *pdev)
+static int highbank_l2_err_probe(struct platform_device *pdev)
 {
 	struct edac_device_ctl_info *dci;
 	struct hb_l2_drvdata *drvdata;
@@ -146,4 +146,4 @@ module_platform_driver(highbank_l2_edac_driver);
 
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Calxeda, Inc.");
-MODULE_DESCRIPTION("EDAC Driver for Highbank L2 Cache");
+MODULE_DESCRIPTION("EDAC Driver for Calxeda Highbank L2 Cache");

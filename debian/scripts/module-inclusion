@@ -23,19 +23,15 @@ ILIST=$3
 #
 mkdir -p ${NROOT}
 
-echo $0 Copy over the framework
-
 # Copy over the framework...
 if  [ "$master" -eq 1 ]; then
 	(cd ${ROOT}; find . ! -name "*.ko" -type f) | \
 	while read f
 	do
 		mkdir -p ${NROOT}/`dirname $f`
-		mv -v ${ROOT}/$f ${NROOT}/$f
+		mv ${ROOT}/$f ${NROOT}/$f
 	done
 fi
-
-echo $0 Filter from the inclusion list
 
 cat ${ILIST} |while read i
 do
@@ -47,34 +43,18 @@ do
 		(cd ${ROOT}; eval find "${i}" -name "*.ko") |while read f
 		do
 			mkdir -p ${NROOT}/`dirname $f`
-			mv -v ${ROOT}/$f ${NROOT}/$f
+			mv ${ROOT}/$f ${NROOT}/$f
 		done
 	else
 		if [ -f "${ROOT}/$i" ]
 		then
 			mkdir -p ${NROOT}/`dirname $i`
-			mv -v ${ROOT}/$i ${NROOT}/$i
+			mv ${ROOT}/$i ${NROOT}/$i
 		else
 			echo Warning: Could not find ${ROOT}/$i
 		fi
 	fi
 
 done
-
-echo $0 Checking inclusion module dependencies.
-
-#
-# Check that all of the module dependencies exist.
-#
-(cd ${NROOT}; find . -name "*.ko" | while read f
-do
-	/sbin/modinfo $f | grep "^depends:" | sed -e 's/^depends://' | tr ',' '\n' | while read m
-	do
-		if ! find . -name "$m.ko"
-		then
-			echo Error: Missing module dependency $m
-		fi
-	done
-done)
 
 exit 0

@@ -1,12 +1,40 @@
 build-indep:
+	@echo Debug: $@
+
+# The binary-indep dependency chain is:
+#
+# install-headers <- install-doc <- install-source <- install-tools <- install-indep <- binary-indep
+# install-headers <- binary-headers
+#
+indep_hdrpkg = $(indep_hdrs_pkg_name)
+indep_hdrdir = $(CURDIR)/debian/$(indep_hdrpkg)/usr/src/$(indep_hdrpkg)
+install-headers:
+	@echo Debug: $@
+	dh_testdir
+	dh_testroot
+	dh_prep
+
+ifeq ($(do_flavour_header_package),true)
+	install -d $(indep_hdrdir)
+	find . -path './debian' -prune -o -path './$(DEBIAN)' -prune \
+	  -o -path './include/*' -prune \
+	  -o -path './scripts/*' -prune -o -type f \
+	  \( -name 'Makefile*' -o -name 'Kconfig*' -o -name 'Kbuild*' -o \
+	     -name '*.sh' -o -name '*.pl' -o -name '*.lds' \) \
+	  -print | cpio -pd --preserve-modification-time $(indep_hdrdir)
+	cp -a scripts include $(indep_hdrdir)
+	(find arch -name include -type d -print | \
+		xargs -n1 -i: find : -type f) | \
+		cpio -pd --preserve-modification-time $(indep_hdrdir)
+endif
 
 docpkg = $(doc_pkg_name)
 docdir = $(CURDIR)/debian/$(docpkg)/usr/share/doc/$(docpkg)
 install-doc: install-headers
+	@echo Debug: $@
 ifeq ($(do_doc_package),true)
 	dh_testdir
 	dh_testroot
-	dh_clean -k -p$(docpkg)
 
 	install -d $(docdir)
 ifeq ($(do_doc_package_content),true)
@@ -25,38 +53,12 @@ endif
 	find $(docdir) -name .gitignore | xargs rm -f
 endif
 
-indep_hdrpkg = $(hdrs_pkg_name)
-indep_hdrdir = $(CURDIR)/debian/$(indep_hdrpkg)/usr/src/$(indep_hdrpkg)
-install-headers:
-ifeq ($(do_flavour_header_package),true)
-	dh_testdir
-	dh_testroot
-	dh_clean -k -p$(indep_hdrpkg)
-
-	install -d $(indep_hdrdir)
-	find . -path './debian' -prune -o -path './$(DEBIAN)' -prune \
-	  -o -path './include/*' -prune \
-	  -o -path './scripts/*' -prune -o -type f \
-	  \( -name 'Makefile*' -o -name 'Kconfig*' -o -name 'Kbuild*' -o \
-	     -name '*.sh' -o -name '*.pl' -o -name '*.lds' \) \
-	  -print | cpio -pd --preserve-modification-time $(indep_hdrdir)
-	cp -a drivers/media/dvb/dvb-core/*.h $(indep_hdrdir)/drivers/media/dvb/dvb-core
-	cp -a drivers/media/video/*.h $(indep_hdrdir)/drivers/media/video
-	cp -a drivers/media/dvb/frontends/*.h $(indep_hdrdir)/drivers/media/dvb/frontends
-	cp -a scripts include $(indep_hdrdir)
-	(find arch -name include -type d -print | \
-		xargs -n1 -i: find : -type f) | \
-		cpio -pd --preserve-modification-time $(indep_hdrdir)
-endif
-
 srcpkg = $(src_pkg_name)-source-$(release)
 srcdir = $(CURDIR)/debian/$(srcpkg)/usr/src/$(srcpkg)
 balldir = $(CURDIR)/debian/$(srcpkg)/usr/src/$(srcpkg)/$(srcpkg)
 install-source: install-doc
+	@echo Debug: $@
 ifeq ($(do_source_package),true)
-	dh_testdir
-	dh_testroot
-	dh_clean -k -p$(srcpkg)
 
 	install -d $(srcdir)
 ifeq ($(do_source_package_content),true)
@@ -83,22 +85,23 @@ install-tools: toolspkg = $(tools_common_pkg_name)
 install-tools: toolsbin = $(CURDIR)/debian/$(toolspkg)/usr/bin
 install-tools: toolssbin = $(CURDIR)/debian/$(toolspkg)/usr/sbin
 install-tools: toolsman = $(CURDIR)/debian/$(toolspkg)/usr/share/man
-install-tools: install-source
-ifeq ($(do_tools),true)
-	dh_testdir
-	dh_testroot
-	dh_clean -k -p$(toolspkg)
-
+install-tools: install-source $(stampdir)/stamp-build-perarch
+	@echo Debug: $@
+ifeq ($(do_tools_common),true)
 	install -d $(toolsbin)
 	install -d $(toolsman)/man1
 
+	install -m755 debian/tools/generic $(toolsbin)/cpupower
+	install -m644 $(CURDIR)/tools/power/cpupower/man/*.1 $(toolsman)/man1/
+
 	install -m755 debian/tools/generic $(toolsbin)/perf
-	if [ "$(arch)" = "amd64" ] || [ "$(arch)" = "i386" ]; then \
-		install -m755 debian/tools/generic $(toolsbin)/x86_energy_perf_policy; \
-		install -m755 debian/tools/generic $(toolsbin)/turbostat; \
-		install -d $(toolssbin) ; \
-		install -m755 debian/tools/generic $(toolssbin)/hv_kvp_daemon; \
-	fi
+
+	install -m755 debian/tools/generic $(toolsbin)/x86_energy_perf_policy
+	install -m755 debian/tools/generic $(toolsbin)/turbostat
+
+	install -d $(toolssbin)
+	install -m755 debian/tools/generic $(toolssbin)/hv_kvp_daemon
+	install -m755 debian/tools/generic $(toolssbin)/hv_vss_daemon
 
 	rm -rf $(builddir)/tools
 	install -d $(builddir)/tools
@@ -109,21 +112,21 @@ ifeq ($(do_tools),true)
 	cd $(builddir)/tools/tools/perf && make man
 	install -m644 $(builddir)/tools/tools/perf/Documentation/*.1 \
 		$(toolsman)/man1
-	if [ "$(arch)" = "amd64" ] || [ "$(arch)" = "i386" ]; then \
-		install -d $(toolsman)/man8; \
-		install -m644 $(CURDIR)/tools/power/x86/x86_energy_perf_policy/*.8 $(toolsman)/man8; \
-		install -m644 $(CURDIR)/tools/power/x86/turbostat/*.8 $(toolsman)/man8; \
-		install -m644 $(CURDIR)/tools/hv/*.8 $(toolsman)/man8; \
-	fi
+
+	install -d $(toolsman)/man8
+	install -m644 $(CURDIR)/tools/power/x86/x86_energy_perf_policy/*.8 $(toolsman)/man8
+	install -m644 $(CURDIR)/tools/power/x86/turbostat/*.8 $(toolsman)/man8
+
+	install -m644 $(CURDIR)/tools/hv/*.8 $(toolsman)/man8
 endif
 
 install-indep: install-tools
+	@echo Debug: $@
 
 # This is just to make it easy to call manually. Normally done in
 # binary-indep target during builds.
 binary-headers: install-headers
-	dh_testdir
-	dh_testroot
+	@echo Debug: $@
 	dh_installchangelogs -p$(indep_hdrpkg)
 	dh_installdocs -p$(indep_hdrpkg)
 	dh_compress -p$(indep_hdrpkg)
@@ -134,8 +137,7 @@ binary-headers: install-headers
 	dh_builddeb -p$(indep_hdrpkg)
 
 binary-indep: install-indep
-	dh_testdir
-	dh_testroot
+	@echo Debug: $@
 
 	dh_installchangelogs -i
 	dh_installdocs -i

@@ -10,6 +10,7 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/device.h>
@@ -21,17 +22,6 @@
 #include <linux/usb/gadget.h>
 
 #include "gadget_chips.h"
-
-
-/* we must assign addresses for configurable endpoints (like net2280) */
-static unsigned epnum;
-
-// #define MANY_ENDPOINTS
-#ifdef MANY_ENDPOINTS
-/* more than 15 configurable endpoints */
-static unsigned in_epnum;
-#endif
-
 
 /*
  * This should work with endpoints from controller drivers sharing the
@@ -126,7 +116,7 @@ ep_matches (
 	 * descriptor and see if the EP matches it
 	 */
 	if (usb_endpoint_xfer_bulk(desc)) {
-		if (ep_comp) {
+		if (ep_comp && gadget->max_speed >= USB_SPEED_SUPER) {
 			num_req_streams = ep_comp->bmAttributes & 0x1f;
 			if (num_req_streams > ep->max_streams)
 				return 0;
@@ -149,7 +139,7 @@ ep_matches (
 	switch (type) {
 	case USB_ENDPOINT_XFER_INT:
 		/* INT:  limit 64 bytes full speed, 1024 high/super speed */
-		if (!gadget->is_dualspeed && max > 64)
+		if (!gadget_is_dualspeed(gadget) && max > 64)
 			return 0;
 		/* FALLTHROUGH */
 
@@ -157,12 +147,12 @@ ep_matches (
 		/* ISO:  limit 1023 bytes full speed, 1024 high/super speed */
 		if (ep->maxpacket < max)
 			return 0;
-		if (!gadget->is_dualspeed && max > 1023)
+		if (!gadget_is_dualspeed(gadget) && max > 1023)
 			return 0;
 
 		/* BOTH:  "high bandwidth" works only at high speed */
 		if ((desc->wMaxPacketSize & cpu_to_le16(3<<11))) {
-			if (!gadget->is_dualspeed)
+			if (!gadget_is_dualspeed(gadget))
 				return 0;
 			/* configure your hardware with enough buffering!! */
 		}
@@ -176,16 +166,14 @@ ep_matches (
 	if (isdigit (ep->name [2])) {
 		u8	num = simple_strtoul (&ep->name [2], NULL, 10);
 		desc->bEndpointAddress |= num;
-#ifdef	MANY_ENDPOINTS
 	} else if (desc->bEndpointAddress & USB_DIR_IN) {
-		if (++in_epnum > 15)
+		if (++gadget->in_epnum > 15)
 			return 0;
-		desc->bEndpointAddress = USB_DIR_IN | in_epnum;
-#endif
+		desc->bEndpointAddress = USB_DIR_IN | gadget->in_epnum;
 	} else {
-		if (++epnum > 15)
+		if (++gadget->out_epnum > 15)
 			return 0;
-		desc->bEndpointAddress |= epnum;
+		desc->bEndpointAddress |= gadget->out_epnum;
 	}
 
 	/* report (variable) full speed bulk maxpacket */
@@ -275,24 +263,24 @@ struct usb_ep *usb_ep_autoconfig_ss(
 		/* ep-e, ep-f are PIO with only 64 byte fifos */
 		ep = find_ep (gadget, "ep-e");
 		if (ep && ep_matches(gadget, ep, desc, ep_comp))
-			return ep;
+			goto found_ep;
 		ep = find_ep (gadget, "ep-f");
 		if (ep && ep_matches(gadget, ep, desc, ep_comp))
-			return ep;
+			goto found_ep;
 
 	} else if (gadget_is_goku (gadget)) {
 		if (USB_ENDPOINT_XFER_INT == type) {
 			/* single buffering is enough */
 			ep = find_ep(gadget, "ep3-bulk");
 			if (ep && ep_matches(gadget, ep, desc, ep_comp))
-				return ep;
+				goto found_ep;
 		} else if (USB_ENDPOINT_XFER_BULK == type
 				&& (USB_DIR_IN & desc->bEndpointAddress)) {
 			/* DMA may be available */
 			ep = find_ep(gadget, "ep2-bulk");
 			if (ep && ep_matches(gadget, ep, desc,
 					      ep_comp))
-				return ep;
+				goto found_ep;
 		}
 
 #ifdef CONFIG_BLACKFIN
@@ -311,19 +299,24 @@ struct usb_ep *usb_ep_autoconfig_ss(
 		} else
 			ep = NULL;
 		if (ep && ep_matches(gadget, ep, desc, ep_comp))
-			return ep;
+			goto found_ep;
 #endif
 	}
 
 	/* Second, look at endpoints until an unclaimed one looks usable */
 	list_for_each_entry (ep, &gadget->ep_list, ep_list) {
 		if (ep_matches(gadget, ep, desc, ep_comp))
-			return ep;
+			goto found_ep;
 	}
 
 	/* Fail */
 	return NULL;
+found_ep:
+	ep->desc = NULL;
+	ep->comp_desc = NULL;
+	return ep;
 }
+EXPORT_SYMBOL_GPL(usb_ep_autoconfig_ss);
 
 /**
  * usb_ep_autoconfig() - choose an endpoint matching the
@@ -363,7 +356,7 @@ struct usb_ep *usb_ep_autoconfig(
 {
 	return usb_ep_autoconfig_ss(gadget, desc, NULL);
 }
-
+EXPORT_SYMBOL_GPL(usb_ep_autoconfig);
 
 /**
  * usb_ep_autoconfig_reset - reset endpoint autoconfig state
@@ -381,9 +374,7 @@ void usb_ep_autoconfig_reset (struct usb_gadget *gadget)
 	list_for_each_entry (ep, &gadget->ep_list, ep_list) {
 		ep->driver_data = NULL;
 	}
-#ifdef	MANY_ENDPOINTS
-	in_epnum = 0;
-#endif
-	epnum = 0;
+	gadget->in_epnum = 0;
+	gadget->out_epnum = 0;
 }
-
+EXPORT_SYMBOL_GPL(usb_ep_autoconfig_reset);

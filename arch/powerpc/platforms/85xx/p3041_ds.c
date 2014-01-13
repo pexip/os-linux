@@ -18,7 +18,6 @@
 #include <linux/interrupt.h>
 #include <linux/phy.h>
 
-#include <asm/system.h>
 #include <asm/time.h>
 #include <asm/machdep.h>
 #include <asm/pci-bridge.h>
@@ -83,7 +82,7 @@ define_machine(p3041_ds) {
 	.power_save		= e500_idle,
 };
 
-machine_device_initcall(p3041_ds, corenet_ds_publish_devices);
+machine_arch_initcall(p3041_ds, corenet_ds_publish_devices);
 
 #ifdef CONFIG_SWIOTLB
 machine_arch_initcall(p3041_ds, swiotlb_setup_bus_notifier);

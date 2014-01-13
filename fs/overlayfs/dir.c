@@ -11,6 +11,7 @@
 #include <linux/namei.h>
 #include <linux/xattr.h>
 #include <linux/security.h>
+#include <linux/cred.h>
 #include "overlayfs.h"
 
 static const char *ovl_whiteout_symlink = "(overlay-whiteout)";
@@ -37,8 +38,8 @@ static int ovl_whiteout(struct dentry *upperdir, struct dentry *dentry)
 	cap_raise(override_cred->cap_effective, CAP_SYS_ADMIN);
 	cap_raise(override_cred->cap_effective, CAP_DAC_OVERRIDE);
 	cap_raise(override_cred->cap_effective, CAP_FOWNER);
-	override_cred->fsuid = 0;
-	override_cred->fsgid = 0;
+	override_cred->fsuid = GLOBAL_ROOT_UID;
+	override_cred->fsgid = GLOBAL_ROOT_GID;
 	old_cred = override_creds(override_cred);
 
 	newdentry = lookup_one_len(dentry->d_name.name, upperdir,
@@ -71,7 +72,7 @@ out:
 		 * There's no way to recover from failure to whiteout.
 		 * What should we do?  Log a big fat error and... ?
 		 */
-		printk(KERN_ERR "overlayfs: ERROR - failed to whiteout '%s'\n",
+		pr_err("overlayfs: ERROR - failed to whiteout '%s'\n",
 		       dentry->d_name.name);
 	}
 
@@ -246,7 +247,7 @@ static int ovl_dir_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	struct path realpath;
 
 	type = ovl_path_real(dentry, &realpath);
-	err = vfs_getattr(realpath.mnt, realpath.dentry, stat);
+	err = vfs_getattr(&realpath, stat);
 	if (err)
 		return err;
 
@@ -303,6 +304,7 @@ static int ovl_create_object(struct dentry *dentry, int mode, dev_t rdev,
 		}
 	}
 	ovl_dentry_update(dentry, newdentry);
+	ovl_copyattr(newdentry->d_inode, inode);
 	d_instantiate(dentry, inode);
 	inode = NULL;
 	newdentry = NULL;
@@ -319,7 +321,7 @@ out:
 }
 
 static int ovl_create(struct inode *dir, struct dentry *dentry, umode_t mode,
-			struct nameidata *nd)
+		      bool excl)
 {
 	return ovl_create_object(dentry, (mode & 07777) | S_IFREG, 0, NULL);
 }
@@ -416,6 +418,7 @@ static int ovl_link(struct dentry *old, struct inode *newdir,
 	struct dentry *olddentry;
 	struct dentry *newdentry;
 	struct dentry *upperdir;
+	struct inode *newinode;
 
 	err = ovl_copy_up(old);
 	if (err)
@@ -440,13 +443,20 @@ static int ovl_link(struct dentry *old, struct inode *newdir,
 			err = -ENOENT;
 			goto out_unlock;
 		}
+		newinode = ovl_new_inode(old->d_sb, newdentry->d_inode->i_mode,
+				new->d_fsdata);
+		if (!newinode) {
+			err = -ENOMEM;
+			goto link_fail;
+		}
+		ovl_copyattr(upperdir->d_inode, newinode);
 
 		ovl_dentry_version_inc(new->d_parent);
 		ovl_dentry_update(new, newdentry);
 
-		ihold(old->d_inode);
-		d_instantiate(new, old->d_inode);
+		d_instantiate(new, newinode);
 	} else {
+link_fail:
 		if (ovl_dentry_is_opaque(new))
 			ovl_whiteout(upperdir, new);
 		dput(newdentry);
@@ -455,7 +465,6 @@ out_unlock:
 	mutex_unlock(&upperdir->d_inode->i_mutex);
 out:
 	return err;
-
 }
 
 static int ovl_rename(struct inode *olddir, struct dentry *old,

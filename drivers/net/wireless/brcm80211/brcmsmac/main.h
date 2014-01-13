@@ -44,8 +44,6 @@
 /* transmit buffer max headroom for protocol headers */
 #define TXOFF (D11_TXH_LEN + D11_PHY_HDR_LEN)
 
-#define AC_COUNT		4
-
 /* Macros for doing definition and get/set of bitfields
  * Usage example, e.g. a three-bit field (bits 4-6):
  *    #define <NAME>_M	BITFIELD_MASK(3)
@@ -102,9 +100,6 @@
 #define BOARDREV_PROMOTED	1	/* to */
 
 #define DATA_BLOCK_TX_SUPR	(1 << 4)
-
-/* 802.1D Priority to TX FIFO number for wme */
-extern const u8 prio2fifo[];
 
 /* Ucode MCTL_WAKE override bits */
 #define BRCMS_WAKE_OVERRIDE_CLKCTL	0x01
@@ -244,7 +239,6 @@ struct brcms_core {
 
 	/* fifo */
 	uint *txavail[NFIFO];	/* # tx descriptors available */
-	s16 txpktpend[NFIFO];	/* tx admission control */
 
 	struct macstat *macstat_snapshot;	/* mac hw prev read values */
 };
@@ -336,7 +330,7 @@ struct brcms_hardware {
 	u32 machwcap_backup;	/* backup of machwcap */
 
 	struct si_pub *sih;	/* SI handle (cookie for siutils calls) */
-	struct d11regs __iomem *regs;	/* pointer to device registers */
+	struct bcma_device *d11core;	/* pointer to 802.11 core */
 	struct phy_shim_info *physhim; /* phy shim layer handler */
 	struct shared_phy *phy_sh;	/* pointer to shared phy state */
 	struct brcms_hw_band *band;/* pointer to active per-band state */
@@ -384,25 +378,11 @@ struct brcms_hardware {
 				 */
 };
 
-/* TX Queue information
- *
- * Each flow of traffic out of the device has a TX Queue with independent
- * flow control. Several interfaces may be associated with a single TX Queue
- * if they belong to the same flow of traffic from the device. For multi-channel
- * operation there are independent TX Queues for each channel.
- */
-struct brcms_txq_info {
-	struct brcms_txq_info *next;
-	struct pktq q;
-	uint stopped;		/* tx flow control bits */
-};
-
 /*
  * Principal common driver data structure.
  *
  * pub: pointer to driver public state.
  * wl: pointer to specific private state.
- * regs: pointer to device registers.
  * hw: HW related state.
  * clkreq_override: setting for clkreq for PCIE : Auto, 0, 1.
  * fastpwrup_dly: time in us needed to bring up d11 fast clock.
@@ -427,11 +407,6 @@ struct brcms_txq_info {
  * bandinit_pending: track band init in auto band.
  * radio_monitor: radio timer is running.
  * going_down: down path intermediate variable.
- * mpc: enable minimum power consumption.
- * mpc_dlycnt: # of watchdog cnt before turn disable radio.
- * mpc_offcnt: # of watchdog cnt that radio is disabled.
- * mpc_delay_off: delay radio disable by # of watchdog cnt.
- * prev_non_delay_mpc: prev state brcms_c_is_non_delay_mpc.
  * wdtimer: timer for watchdog routine.
  * radio_timer: timer for hw radio button monitor routine.
  * monitor: monitor (MPDU sniffing) mode.
@@ -441,13 +416,10 @@ struct brcms_txq_info {
  * bcn_li_dtim: beacon listen interval in # dtims.
  * WDarmed: watchdog timer is armed.
  * WDlast: last time wlc_watchdog() was called.
- * edcf_txop[AC_COUNT]: current txop for each ac.
+ * edcf_txop[IEEE80211_NUM_ACS]: current txop for each ac.
  * wme_retries: per-AC retry limits.
- * tx_prec_map: Precedence map based on HW FIFO space.
- * fifo2prec_map[NFIFO]: pointer to fifo2_prec map based on WME.
  * bsscfg: set of BSS configurations, idx 0 is default and always valid.
  * cfg: the primary bsscfg (can be AP or STA).
- * tx_queues: common TX Queue list.
  * modulecb:
  * mimoft: SIGN or 11N.
  * cck_40txbw: 11N, cck tx b/w override when in 40MHZ mode.
@@ -477,14 +449,12 @@ struct brcms_txq_info {
  * tempsense_lasttime;
  * tx_duty_cycle_ofdm: maximum allowed duty cycle for OFDM.
  * tx_duty_cycle_cck: maximum allowed duty cycle for CCK.
- * pkt_queue: txq for transmit packets.
  * wiphy:
  * pri_scb: primary Station Control Block
  */
 struct brcms_c_info {
 	struct brcms_pub *pub;
 	struct brcms_info *wl;
-	struct d11regs __iomem *regs;
 	struct brcms_hardware *hw;
 
 	/* clock */
@@ -522,18 +492,13 @@ struct brcms_c_info {
 	bool radio_monitor;
 	bool going_down;
 
-	bool mpc;
-	u8 mpc_dlycnt;
-	u8 mpc_offcnt;
-	u8 mpc_delay_off;
-	u8 prev_non_delay_mpc;
+	bool beacon_template_virgin;
 
 	struct brcms_timer *wdtimer;
 	struct brcms_timer *radio_timer;
 
 	/* promiscuous */
-	bool monitor;
-	bool bcnmisc_monitor;
+	uint filter_flags;
 
 	/* driver feature */
 	bool _rifs;
@@ -546,16 +511,11 @@ struct brcms_c_info {
 	u32 WDlast;
 
 	/* WME */
-	u16 edcf_txop[AC_COUNT];
+	u16 edcf_txop[IEEE80211_NUM_ACS];
 
-	u16 wme_retries[AC_COUNT];
-	u16 tx_prec_map;
-	u16 fifo2prec_map[NFIFO];
+	u16 wme_retries[IEEE80211_NUM_ACS];
 
 	struct brcms_bss_cfg *bsscfg;
-
-	/* tx queue */
-	struct brcms_txq_info *tx_queues;
 
 	struct modulecb *modulecb;
 
@@ -601,9 +561,13 @@ struct brcms_c_info {
 	u16 tx_duty_cycle_ofdm;
 	u16 tx_duty_cycle_cck;
 
-	struct brcms_txq_info *pkt_queue;
 	struct wiphy *wiphy;
 	struct scb pri_scb;
+
+	struct sk_buff *beacon;
+	u16 beacon_tim_offset;
+	u16 beacon_dtim_period;
+	struct sk_buff *probe_resp;
 };
 
 /* antsel module specific state */
@@ -619,14 +583,17 @@ struct antsel_info {
 	struct brcms_antselcfg antcfg_cur; /* current antenna config (auto) */
 };
 
+enum brcms_bss_type {
+	BRCMS_TYPE_STATION,
+	BRCMS_TYPE_AP,
+	BRCMS_TYPE_ADHOC,
+};
+
 /*
  * BSS configuration state
  *
  * wlc: wlc to which this bsscfg belongs to.
- * up: is this configuration up operational
- * enable: is this configuration enabled
- * associated: is BSS in ASSOCIATED state
- * BSS: infraustructure or adhoc
+ * type: interface type
  * SSID_len: the length of SSID
  * SSID: SSID string
  *
@@ -642,40 +609,20 @@ struct antsel_info {
  */
 struct brcms_bss_cfg {
 	struct brcms_c_info *wlc;
-	bool up;
-	bool enable;
-	bool associated;
-	bool BSS;
+	enum brcms_bss_type type;
 	u8 SSID_len;
 	u8 SSID[IEEE80211_MAX_SSID_LEN];
 	u8 BSSID[ETH_ALEN];
-	u8 cur_etheraddr[ETH_ALEN];
 	struct brcms_bss_info *current_bss;
 };
 
-extern void brcms_c_txfifo(struct brcms_c_info *wlc, uint fifo,
-			   struct sk_buff *p,
-			   bool commit, s8 txpktpend);
-extern void brcms_c_txfifo_complete(struct brcms_c_info *wlc, uint fifo,
-				    s8 txpktpend);
-extern void brcms_c_txq_enq(struct brcms_c_info *wlc, struct scb *scb,
-			    struct sk_buff *sdu, uint prec);
-extern void brcms_c_print_txstatus(struct tx_status *txs);
+extern int brcms_c_txfifo(struct brcms_c_info *wlc, uint fifo,
+			   struct sk_buff *p);
 extern int brcms_b_xmtfifo_sz_get(struct brcms_hardware *wlc_hw, uint fifo,
 		   uint *blocks);
 
-#if defined(BCMDBG)
-extern void brcms_c_print_txdesc(struct d11txh *txh);
-#else
-#define brcms_c_print_txdesc(a)
-#endif
-
 extern int brcms_c_set_gmode(struct brcms_c_info *wlc, u8 gmode, bool config);
-extern void brcms_c_mac_bcn_promisc_change(struct brcms_c_info *wlc,
-					   bool promisc);
-extern void brcms_c_send_q(struct brcms_c_info *wlc);
-extern int brcms_c_prep_pdu(struct brcms_c_info *wlc, struct sk_buff *pdu,
-			    uint *fifo);
+extern void brcms_c_mac_promisc(struct brcms_c_info *wlc, uint filter_flags);
 extern u16 brcms_c_calc_lsig_len(struct brcms_c_info *wlc, u32 ratespec,
 				uint mac_len);
 extern u32 brcms_c_rspec_to_rts_rspec(struct brcms_c_info *wlc,
@@ -690,7 +637,6 @@ extern u16 brcms_c_compute_rtscts_dur(struct brcms_c_info *wlc, bool cts_only,
 extern void brcms_c_inval_dma_pkts(struct brcms_hardware *hw,
 			       struct ieee80211_sta *sta,
 			       void (*dma_callback_fn));
-extern void brcms_c_update_beacon(struct brcms_c_info *wlc);
 extern void brcms_c_update_probe_resp(struct brcms_c_info *wlc, bool suspend);
 extern int brcms_c_set_nmode(struct brcms_c_info *wlc);
 extern void brcms_c_beacon_phytxctl_txant_upd(struct brcms_c_info *wlc,

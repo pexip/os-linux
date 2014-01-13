@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Calxeda, Inc.
+ * Copyright 2011-2012 Calxeda, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -20,6 +20,7 @@
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
 #include <linux/of_platform.h>
+#include <linux/uaccess.h>
 
 #include "edac_core.h"
 #include "edac_module.h"
@@ -44,6 +45,10 @@
 #define HB_DDR_ECC_INT_STAT_UE		0x20
 #define HB_DDR_ECC_INT_STAT_DOUBLE_UE	0x40
 
+#define HB_DDR_ECC_OPT_MODE_MASK	0x3
+#define HB_DDR_ECC_OPT_FWC		0x100
+#define HB_DDR_ECC_OPT_XOR_SHIFT	16
+
 struct hb_mc_drvdata {
 	void __iomem *mc_vbase;
 };
@@ -59,16 +64,21 @@ static irqreturn_t highbank_mc_err_handler(int irq, void *dev_id)
 
 	if (status & HB_DDR_ECC_INT_STAT_UE) {
 		err_addr = readl(drvdata->mc_vbase + HB_DDR_ECC_U_ERR_ADDR);
-		edac_mc_handle_ue(mci, err_addr >> PAGE_SHIFT,
-				  err_addr & ~PAGE_MASK, 0, mci->ctl_name);
+		edac_mc_handle_error(HW_EVENT_ERR_UNCORRECTED, mci, 1,
+				     err_addr >> PAGE_SHIFT,
+				     err_addr & ~PAGE_MASK, 0,
+				     0, 0, -1,
+				     mci->ctl_name, "");
 	}
 	if (status & HB_DDR_ECC_INT_STAT_CE) {
 		u32 syndrome = readl(drvdata->mc_vbase + HB_DDR_ECC_C_ERR_STAT);
 		syndrome = (syndrome >> 8) & 0xff;
 		err_addr = readl(drvdata->mc_vbase + HB_DDR_ECC_C_ERR_ADDR);
-		edac_mc_handle_ce(mci, err_addr >> PAGE_SHIFT,
-				  err_addr & ~PAGE_MASK, syndrome, 0, 0,
-				  mci->ctl_name);
+		edac_mc_handle_error(HW_EVENT_ERR_CORRECTED, mci, 1,
+				     err_addr >> PAGE_SHIFT,
+				     err_addr & ~PAGE_MASK, syndrome,
+				     0, 0, -1,
+				     mci->ctl_name, "");
 	}
 
 	/* clear the error, clears the interrupt */
@@ -76,50 +86,75 @@ static irqreturn_t highbank_mc_err_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static ssize_t highbank_mc_inject_ctrl_store(struct mem_ctl_info *mci,
-					     const char *data, size_t count)
+#ifdef CONFIG_EDAC_DEBUG
+static ssize_t highbank_mc_err_inject_write(struct file *file,
+				      const char __user *data,
+				      size_t count, loff_t *ppos)
 {
+	struct mem_ctl_info *mci = file->private_data;
 	struct hb_mc_drvdata *pdata = mci->pvt_info;
+	char buf[32];
+	size_t buf_size;
 	u32 reg;
-	if (!isdigit(*data))
-		return 0;
+	u8 synd;
 
-	reg = readl(pdata->mc_vbase + HB_DDR_ECC_OPT) & 0x3;
-	reg |= simple_strtoul(data, NULL, 0) << 16;
-	reg |= 0x100;
-	writel(reg, pdata->mc_vbase + HB_DDR_ECC_OPT);
+	buf_size = min(count, (sizeof(buf)-1));
+	if (copy_from_user(buf, data, buf_size))
+		return -EFAULT;
+	buf[buf_size] = 0;
+
+	if (!kstrtou8(buf, 16, &synd)) {
+		reg = readl(pdata->mc_vbase + HB_DDR_ECC_OPT);
+		reg &= HB_DDR_ECC_OPT_MODE_MASK;
+		reg |= (synd << HB_DDR_ECC_OPT_XOR_SHIFT) | HB_DDR_ECC_OPT_FWC;
+		writel(reg, pdata->mc_vbase + HB_DDR_ECC_OPT);
+	}
+
 	return count;
 }
 
-static struct mcidev_sysfs_attribute highbank_mc_sysfs_attributes[] = {
-	{
-	 .attr = {
-		  .name = "inject_ctrl",
-		  .mode = (S_IRUGO | S_IWUSR)
-		  },
-	 .store = highbank_mc_inject_ctrl_store
-	},
-	{
-	 .attr = {.name = NULL} /* End of list */
-	}
+static const struct file_operations highbank_mc_debug_inject_fops = {
+	.open = simple_open,
+	.write = highbank_mc_err_inject_write,
+	.llseek = generic_file_llseek,
 };
 
-static int __devinit highbank_mc_probe(struct platform_device *pdev)
+static void highbank_mc_create_debugfs_nodes(struct mem_ctl_info *mci)
 {
+	if (mci->debugfs)
+		debugfs_create_file("inject_ctrl", S_IWUSR, mci->debugfs, mci,
+				    &highbank_mc_debug_inject_fops);
+;
+}
+#else
+static void highbank_mc_create_debugfs_nodes(struct mem_ctl_info *mci)
+{}
+#endif
+
+static int highbank_mc_probe(struct platform_device *pdev)
+{
+	struct edac_mc_layer layers[2];
 	struct mem_ctl_info *mci;
 	struct hb_mc_drvdata *drvdata;
-	struct csrow_info *csi;
+	struct dimm_info *dimm;
 	struct resource *r;
 	u32 control;
 	int irq;
 	int res = 0;
 
-	mci = edac_mc_alloc(sizeof(struct hb_mc_drvdata), 1, 1, 0);
+	layers[0].type = EDAC_MC_LAYER_CHIP_SELECT;
+	layers[0].size = 1;
+	layers[0].is_virt_csrow = true;
+	layers[1].type = EDAC_MC_LAYER_CHANNEL;
+	layers[1].size = 1;
+	layers[1].is_virt_csrow = false;
+	mci = edac_mc_alloc(0, ARRAY_SIZE(layers), layers,
+			    sizeof(struct hb_mc_drvdata));
 	if (!mci)
 		return -ENOMEM;
 
+	mci->pdev = &pdev->dev;
 	drvdata = mci->pvt_info;
-	mci->dev = &pdev->dev;
 	platform_set_drvdata(pdev, mci);
 
 	if (!devres_open_group(&pdev->dev, NULL, GFP_KERNEL))
@@ -169,20 +204,20 @@ static int __devinit highbank_mc_probe(struct platform_device *pdev)
 	mci->mod_ver = "1";
 	mci->ctl_name = dev_name(&pdev->dev);
 	mci->scrub_mode = SCRUB_SW_SRC;
-	mci->mc_driver_sysfs_attributes = highbank_mc_sysfs_attributes;
 
-	csi = mci->csrows;
-	csi->edac_mode = EDAC_SECDED;
-	csi->mtype = MEM_DDR3;
-	csi->first_page = 0;
-	csi->nr_pages = (~0UL >> PAGE_SHIFT) + 1;
-	csi->last_page = csi->first_page + csi->nr_pages - 1;
-	csi->grain = 8;
-	csi->dtype = DEV_UNKNOWN;
+	/* Only a single 4GB DIMM is supported */
+	dimm = *mci->dimms;
+	dimm->nr_pages = (~0UL >> PAGE_SHIFT) + 1;
+	dimm->grain = 8;
+	dimm->dtype = DEV_X8;
+	dimm->mtype = MEM_DDR3;
+	dimm->edac_mode = EDAC_SECDED;
 
 	res = edac_mc_add_mc(mci);
 	if (res < 0)
 		goto err;
+
+	highbank_mc_create_debugfs_nodes(mci);
 
 	devres_close_group(&pdev->dev, NULL);
 	return 0;
@@ -220,4 +255,4 @@ module_platform_driver(highbank_mc_edac_driver);
 
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Calxeda, Inc.");
-MODULE_DESCRIPTION("EDAC Driver for Highbank");
+MODULE_DESCRIPTION("EDAC Driver for Calxeda Highbank");

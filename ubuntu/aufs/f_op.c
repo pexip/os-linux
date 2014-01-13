@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
  * file and vm operations
  */
 
+#include <linux/aio.h>
 #include <linux/fs_stack.h>
 #include <linux/mman.h>
 #include <linux/security.h>
@@ -44,7 +45,7 @@ int au_do_open_nondir(struct file *file, int flags)
 	memset(&finfo->fi_htop, 0, sizeof(finfo->fi_htop));
 	atomic_set(&finfo->fi_mmapped, 0);
 	bindex = au_dbstart(dentry);
-	h_file = au_h_open(dentry, bindex, flags, file);
+	h_file = au_h_open(dentry, bindex, flags, file, /*force_wr*/0);
 	if (IS_ERR(h_file))
 		err = PTR_ERR(h_file);
 	else {
@@ -83,11 +84,8 @@ int aufs_release_nondir(struct inode *inode __maybe_unused, struct file *file)
 
 	finfo = au_fi(file);
 	bindex = finfo->fi_btop;
-	if (bindex >= 0) {
-		/* remove me from sb->s_files */
-		file_sb_list_del(file);
+	if (bindex >= 0)
 		au_set_h_fptr(file, bindex, NULL);
-	}
 
 	au_finfo_fin(file);
 	return 0;
@@ -146,7 +144,7 @@ static ssize_t aufs_read(struct file *file, char __user *buf, size_t count,
 	/* todo: necessary? */
 	/* file->f_ra = h_file->f_ra; */
 	/* update without lock, I don't think it a problem */
-	fsstack_copy_attr_atime(dentry->d_inode, h_file->f_dentry->d_inode);
+	fsstack_copy_attr_atime(dentry->d_inode, file_inode(h_file));
 	fput(h_file);
 
 out:
@@ -213,7 +211,7 @@ static ssize_t aufs_write(struct file *file, const char __user *ubuf,
 	err = vfsub_write_u(h_file, buf, count, ppos);
 	ii_write_lock_child(inode);
 	au_cpup_attr_timesizes(inode);
-	inode->i_mode = h_file->f_dentry->d_inode->i_mode;
+	inode->i_mode = file_inode(h_file)->i_mode;
 	ii_write_unlock(inode);
 	fput(h_file);
 
@@ -281,7 +279,7 @@ static ssize_t aufs_aio_read(struct kiocb *kio, const struct iovec *iov,
 	/* todo: necessary? */
 	/* file->f_ra = h_file->f_ra; */
 	/* update without lock, I don't think it a problem */
-	fsstack_copy_attr_atime(dentry->d_inode, h_file->f_dentry->d_inode);
+	fsstack_copy_attr_atime(dentry->d_inode, file_inode(h_file));
 	fput(h_file);
 
 out:
@@ -326,7 +324,7 @@ static ssize_t aufs_aio_write(struct kiocb *kio, const struct iovec *iov,
 	err = au_do_aio(h_file, MAY_WRITE, kio, iov, nv, pos);
 	ii_write_lock_child(inode);
 	au_cpup_attr_timesizes(inode);
-	inode->i_mode = h_file->f_dentry->d_inode->i_mode;
+	inode->i_mode = file_inode(h_file)->i_mode;
 	ii_write_unlock(inode);
 	fput(h_file);
 
@@ -369,7 +367,7 @@ static ssize_t aufs_splice_read(struct file *file, loff_t *ppos,
 	/* todo: necessasry? */
 	/* file->f_ra = h_file->f_ra; */
 	/* update without lock, I don't think it a problem */
-	fsstack_copy_attr_atime(dentry->d_inode, h_file->f_dentry->d_inode);
+	fsstack_copy_attr_atime(dentry->d_inode, file_inode(h_file));
 	fput(h_file);
 
 out:
@@ -414,7 +412,7 @@ aufs_splice_write(struct pipe_inode_info *pipe, struct file *file, loff_t *ppos,
 	err = vfsub_splice_from(pipe, h_file, ppos, len, flags);
 	ii_write_lock_child(inode);
 	au_cpup_attr_timesizes(inode);
-	inode->i_mode = h_file->f_dentry->d_inode->i_mode;
+	inode->i_mode = file_inode(h_file)->i_mode;
 	ii_write_unlock(inode);
 	fput(h_file);
 
@@ -440,7 +438,7 @@ out:
  * It means that when aufs acquires si_rwsem for write, the process should never
  * acquire mmap_sem.
  *
- * Actually aufs_readdir() holds [fdi]i_rwsem before mmap_sem, but this is not a
+ * Actually aufs_iterate() holds [fdi]i_rwsem before mmap_sem, but this is not a
  * problem either since any directory is not able to be mmap-ed.
  * The similar scenario is applied to aufs_readlink() too.
  */
@@ -476,14 +474,12 @@ static unsigned long au_flag_conv(unsigned long flags)
 {
 	return AuConv_VM_MAP(flags, GROWSDOWN)
 		| AuConv_VM_MAP(flags, DENYWRITE)
-		| AuConv_VM_MAP(flags, EXECUTABLE)
 		| AuConv_VM_MAP(flags, LOCKED);
 }
 
 static int aufs_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	int err;
-	unsigned long prot;
 	aufs_bindex_t bstart;
 	const unsigned char wlock
 		= (file->f_mode & FMODE_WRITE) && (vma->vm_flags & VM_SHARED);
@@ -523,9 +519,8 @@ static int aufs_mmap(struct file *file, struct vm_area_struct *vma)
 	lockdep_on();
 
 	au_vm_file_reset(vma, h_file);
-	prot = au_prot_conv(vma->vm_flags);
-	err = security_file_mmap(h_file, /*reqprot*/prot, prot,
-				 au_flag_conv(vma->vm_flags), vma->vm_start, 0);
+	err = security_mmap_file(h_file, au_prot_conv(vma->vm_flags),
+				 au_flag_conv(vma->vm_flags));
 	if (!err)
 		err = h_file->f_op->mmap(h_file, vma);
 	if (unlikely(err))
@@ -533,8 +528,7 @@ static int aufs_mmap(struct file *file, struct vm_area_struct *vma)
 
 	au_vm_prfile_set(vma, file);
 	/* update without lock, I don't think it a problem */
-	fsstack_copy_attr_atime(file->f_dentry->d_inode,
-				h_file->f_dentry->d_inode);
+	fsstack_copy_attr_atime(file_inode(file), file_inode(h_file));
 	goto out_fput; /* success */
 
 out_reset:
@@ -629,11 +623,9 @@ static int aufs_aio_fsync_nondir(struct kiocb *kio, int datasync)
 	err = -ENOSYS;
 	h_file = au_hf_top(file);
 	if (h_file->f_op && h_file->f_op->aio_fsync) {
-		struct dentry *h_d;
 		struct mutex *h_mtx;
 
-		h_d = h_file->f_dentry;
-		h_mtx = &h_d->d_inode->i_mutex;
+		h_mtx = &file_inode(h_file)->i_mutex;
 		if (!is_sync_kiocb(kio)) {
 			get_file(h_file);
 			fput(file);
@@ -710,7 +702,7 @@ const struct file_operations aufs_file_fop = {
 #endif
 	.unlocked_ioctl	= aufs_ioctl_nondir,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl	= aufs_ioctl_nondir, /* same */
+	.compat_ioctl	= aufs_compat_ioctl_nondir,
 #endif
 	.mmap		= aufs_mmap,
 	.open		= aufs_open_nondir,

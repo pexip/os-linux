@@ -10,8 +10,6 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/xattr.h>
-#include <linux/device_cgroup.h>
-#include <linux/security.h>
 #include "overlayfs.h"
 
 int ovl_setattr(struct dentry *dentry, struct iattr *attr)
@@ -33,6 +31,8 @@ int ovl_setattr(struct dentry *dentry, struct iattr *attr)
 
 	mutex_lock(&upperdentry->d_inode->i_mutex);
 	err = notify_change(upperdentry, attr);
+	if (!err)
+		ovl_copyattr(upperdentry->d_inode, dentry->d_inode);
 	mutex_unlock(&upperdentry->d_inode->i_mutex);
 
 	return err;
@@ -44,7 +44,7 @@ static int ovl_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	struct path realpath;
 
 	ovl_path_real(dentry, &realpath);
-	return vfs_getattr(realpath.mnt, realpath.dentry, stat);
+	return vfs_getattr(&realpath, stat);
 }
 
 int ovl_permission(struct inode *inode, int mask)
@@ -65,15 +65,10 @@ int ovl_permission(struct inode *inode, int mask)
 		 * For non-directories find an alias and get the info
 		 * from there.
 		 */
-		spin_lock(&inode->i_lock);
-		if (WARN_ON(list_empty(&inode->i_dentry))) {
-			spin_unlock(&inode->i_lock);
+		alias = d_find_any_alias(inode);
+		if (WARN_ON(!alias))
 			return -ENOENT;
-		}
-		alias = list_entry(inode->i_dentry.next,
-				   struct dentry, d_alias);
-		dget(alias);
-		spin_unlock(&inode->i_lock);
+
 		oe = alias->d_fsdata;
 	}
 
@@ -107,24 +102,9 @@ int ovl_permission(struct inode *inode, int mask)
 		if (is_upper && !IS_RDONLY(inode) && IS_RDONLY(realinode) &&
 		    (S_ISREG(mode) || S_ISDIR(mode) || S_ISLNK(mode)))
 			goto out_dput;
-
-		/*
-		 * Nobody gets write access to an immutable file.
-		 */
-		err = -EACCES;
-		if (IS_IMMUTABLE(realinode))
-			goto out_dput;
 	}
 
-	if (realinode->i_op->permission)
-		err = realinode->i_op->permission(realinode, mask);
-	else
-		err = generic_permission(realinode, mask);
-
-	if (!err)
-		err = devcgroup_inode_permission(realinode, mask);
-	if (!err)
-		err = security_inode_permission(realinode, mask);
+	err = __inode_permission(realinode, mask);
 out_dput:
 	dput(alias);
 	return err;
@@ -193,7 +173,7 @@ static int ovl_readlink(struct dentry *dentry, char __user *buf, int bufsiz)
 	if (!realinode->i_op->readlink)
 		return -EINVAL;
 
-	touch_atime(realpath.mnt, realpath.dentry);
+	touch_atime(&realpath);
 
 	return realinode->i_op->readlink(realpath.dentry, buf, bufsiz);
 }
@@ -302,8 +282,8 @@ static bool ovl_open_need_copy_up(int flags, enum ovl_path_type type,
 	return true;
 }
 
-static struct file *ovl_open(struct dentry *dentry, struct file *file,
-			     const struct cred *cred)
+static int ovl_dentry_open(struct dentry *dentry, struct file *file,
+		    const struct cred *cred)
 {
 	int err;
 	struct path realpath;
@@ -316,7 +296,7 @@ static struct file *ovl_open(struct dentry *dentry, struct file *file,
 		else
 			err = ovl_copy_up(dentry);
 		if (err)
-			return ERR_PTR(err);
+			return err;
 
 		ovl_path_upper(dentry, &realpath);
 	}
@@ -332,7 +312,7 @@ static const struct inode_operations ovl_file_inode_operations = {
 	.getxattr	= ovl_getxattr,
 	.listxattr	= ovl_listxattr,
 	.removexattr	= ovl_removexattr,
-	.open		= ovl_open,
+	.dentry_open	= ovl_dentry_open,
 };
 
 static const struct inode_operations ovl_symlink_inode_operations = {
@@ -383,6 +363,7 @@ struct inode *ovl_new_inode(struct super_block *sb, umode_t mode,
 
 	default:
 		WARN(1, "illegal file type: %i\n", mode);
+		iput(inode);
 		inode = NULL;
 	}
 

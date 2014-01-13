@@ -17,7 +17,7 @@
  */
 
 #include <linux/pci.h>
-#include <linux/export.h>
+#include <linux/module.h>
 #include <linux/acpi.h>
 #include <linux/slab.h>
 #include <acpi/acpi_bus.h>
@@ -99,30 +99,20 @@ static void ioapic_remove(struct pci_dev *dev)
 }
 
 
-static struct pci_device_id ioapic_devices[] = {
-	{ PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID,
-	  PCI_CLASS_SYSTEM_PIC_IOAPIC << 8, 0xffff00, },
-	{ PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID, PCI_ANY_ID,
-	  PCI_CLASS_SYSTEM_PIC_IOXAPIC << 8, 0xffff00, },
+static DEFINE_PCI_DEVICE_TABLE(ioapic_devices) = {
+	{ PCI_DEVICE_CLASS(PCI_CLASS_SYSTEM_PIC_IOAPIC, ~0) },
+	{ PCI_DEVICE_CLASS(PCI_CLASS_SYSTEM_PIC_IOXAPIC, ~0) },
 	{ }
 };
+MODULE_DEVICE_TABLE(pci, ioapic_devices);
 
 static struct pci_driver ioapic_driver = {
 	.name		= "ioapic",
 	.id_table	= ioapic_devices,
 	.probe		= ioapic_probe,
-	.remove		= __devexit_p(ioapic_remove),
+	.remove		= ioapic_remove,
 };
 
-static int __init ioapic_init(void)
-{
-	return pci_register_driver(&ioapic_driver);
-}
+module_pci_driver(ioapic_driver);
 
-static void __exit ioapic_exit(void)
-{
-	pci_unregister_driver(&ioapic_driver);
-}
-
-module_init(ioapic_init);
-module_exit(ioapic_exit);
+MODULE_LICENSE("GPL");

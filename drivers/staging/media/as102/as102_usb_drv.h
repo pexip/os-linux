@@ -17,8 +17,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#include <linux/version.h>
-
 #ifndef _AS102_USB_DRV_H_
 #define _AS102_USB_DRV_H_
 
@@ -47,6 +45,11 @@
 #define NBOX_DVBT_DONGLE_USB_VID	0x0b89
 #define NBOX_DVBT_DONGLE_USB_PID	0x0007
 
+/* Sky Italia: Digital Key (green led) */
+#define AS102_SKY_IT_DIGITAL_KEY_NAME	"Sky IT Digital Key (green led)"
+#define SKY_IT_DIGITAL_KEY_USB_VID	0x2137
+#define SKY_IT_DIGITAL_KEY_USB_PID	0x0001
+
 void as102_urb_stream_irq(struct urb *urb);
 
 struct as10x_usb_token_cmd_t {
@@ -56,4 +59,3 @@ struct as10x_usb_token_cmd_t {
 	struct as10x_cmd_t r;
 };
 #endif
-/* EOF - vim: set textwidth=80 ts=8 sw=8 sts=8 noet: */

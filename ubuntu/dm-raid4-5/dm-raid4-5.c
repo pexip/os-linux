@@ -174,9 +174,13 @@ enum chunk_flags {
 	CHUNK_UPTODATE,		/* Chunk pages are uptodate. */
 };
 
+/*
+ * This does not work anymore with __REQ_* values being enums
+ *
 #if READ != 0 || WRITE != 1
 #error dm-raid45: READ/WRITE != 0/1 used as index!!!
 #endif
+*/
 
 enum bl_type {
 	WRITE_QUEUED = WRITE + 1,
@@ -906,7 +910,7 @@ static int raid_dev_lookup(struct raid_set *rs, struct raid_dev *dev_lookup)
  * Stripe hash functions
  */
 /* Initialize/destroy stripe hash. */
-static int hash_init(struct stripe_hash *hash, unsigned stripes)
+static int dm45_hash_init(struct stripe_hash *hash, unsigned stripes)
 {
 	unsigned buckets = 2, max_buckets = stripes >> 1;
 	static unsigned hash_primes[] = {
@@ -992,7 +996,7 @@ static int sc_hash_resize(struct stripe_cache *sc)
 		int r;
 		struct stripe_hash hash;
 
-		r = hash_init(&hash, atomic_read(&sc->stripes));
+		r = dm45_hash_init(&hash, atomic_read(&sc->stripes));
 		if (r)
 			return r;
 
@@ -1719,7 +1723,7 @@ static void bio_copy_page_list(int rw, struct stripe *stripe,
 	bio_for_each_segment(bv, bio, i) {
 		int len = bv->bv_len, size;
 		unsigned bio_offset = 0;
-		void *bio_addr = __bio_kmap_atomic(bio, i, KM_USER0);
+		void *bio_addr = __bio_kmap_atomic(bio, i);
 redo:
 		size = (page_offset + len > PAGE_SIZE) ?
 		       PAGE_SIZE - page_offset : len;
@@ -1752,7 +1756,7 @@ redo:
 			}
 		}
 
-		__bio_kunmap_atomic(bio_addr, KM_USER0);
+		__bio_kunmap_atomic(bio_addr);
 	}
 }
 
@@ -4069,7 +4073,7 @@ static int raid_ctr(struct dm_target *ti, unsigned argc, char **argv)
 	 * Make sure that dm core only hands maximum io size
 	 * length down and pays attention to io boundaries.
 	 */
-	ti->split_io = rs->set.io_size;
+	ti->max_io_len = rs->set.io_size;
 	ti->private = rs;
 
 	/* Initialize work queue to handle this RAID set's io. */
@@ -4097,8 +4101,7 @@ static void raid_dtr(struct dm_target *ti)
 }
 
 /* Raid mapping function. */
-static int raid_map(struct dm_target *ti, struct bio *bio,
-		    union map_info *map_context)
+static int raid_map(struct dm_target *ti, struct bio *bio)
 {
 	/* I don't want to waste stripe cache capacity. */
 	if (bio_rw(bio) == READA)
@@ -4241,8 +4244,8 @@ static void raid_devel_stats(struct dm_target *ti, char *result,
 	*size = sz;
 }
 
-static int raid_status(struct dm_target *ti, status_type_t type,
-		       char *result, unsigned maxlen)
+static void raid_status(struct dm_target *ti, status_type_t type,
+		       unsigned status_flags, char *result, unsigned maxlen)
 {
 	unsigned p, sz = 0;
 	char buf[BDEVNAME_SIZE];
@@ -4302,8 +4305,6 @@ static int raid_status(struct dm_target *ti, status_type_t type,
 			       format_dev_t(buf, rs->dev[p].dev->bdev->bd_dev),
 			       (unsigned long long) rs->dev[p].start);
 	}
-
-	return 0;
 }
 
 /*

@@ -2,6 +2,7 @@
 #define _LINUX_SWAPOPS_H
 
 #include <linux/radix-tree.h>
+#include <linux/bug.h>
 
 /*
  * swapcache pages are stored in the swapper_space radix tree.  We want to
@@ -66,6 +67,8 @@ static inline swp_entry_t pte_to_swp_entry(pte_t pte)
 	swp_entry_t arch_entry;
 
 	BUG_ON(pte_file(pte));
+	if (pte_swp_soft_dirty(pte))
+		pte = pte_swp_clear_soft_dirty(pte);
 	arch_entry = __pte_to_swp_entry(pte);
 	return swp_entry(__swp_type(arch_entry), __swp_offset(arch_entry));
 }

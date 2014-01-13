@@ -16,19 +16,11 @@ obj-$(CONFIG_DM_RAID45)		+= dm-raid4-5/
 ##
 ##
 ##
-#obj-m				+= rfkill/
-##
-##
-##
-obj-$(CONFIG_FSAM7400)		+= fsam7400/
-##
-##
-##
-#obj-$(CONFIG_OMNIBOOK)		+= omnibook/
-##
-##
-##
 obj-$(CONFIG_AUFS_FS)		+= aufs/
+##
+##
+##
+obj-m				+= lttng/
 ##
 ##
 ##

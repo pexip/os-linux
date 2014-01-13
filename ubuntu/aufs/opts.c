@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2012 Junjiro R. Okajima
+ * Copyright (C) 2005-2013 Junjiro R. Okajima
  *
  * This program, aufs is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -186,17 +186,16 @@ static match_table_t brperm = {
 	{0, NULL}
 };
 
-static match_table_t brrattr = {
+static match_table_t brattr = {
+	{AuBrAttr_UNPIN, AUFS_BRATTR_UNPIN},
 	{AuBrRAttr_WH, AUFS_BRRATTR_WH},
-	{0, NULL}
-};
-
-static match_table_t brwattr = {
 	{AuBrWAttr_NoLinkWH, AUFS_BRWATTR_NLWH},
 	{0, NULL}
 };
 
-#define AuBrStr_LONGEST	AUFS_BRPERM_RW "+" AUFS_BRWATTR_NLWH
+#define AuBrStr_LONGEST	AUFS_BRPERM_RW \
+	"+" AUFS_BRATTR_UNPIN \
+	"+" AUFS_BRWATTR_NLWH
 
 static int br_attr_val(char *str, match_table_t table, substring_t args[])
 {
@@ -214,7 +213,7 @@ static int br_attr_val(char *str, match_table_t table, substring_t args[])
 		else {
 			if (p)
 				*p = '+';
-			pr_warning("ignored branch attribute %s\n", str);
+			pr_warn("ignored branch attribute %s\n", str);
 			break;
 		}
 		if (p)
@@ -227,7 +226,7 @@ static int br_attr_val(char *str, match_table_t table, substring_t args[])
 static int noinline_for_stack br_perm_val(char *perm)
 {
 	int val;
-	char *p;
+	char *p, *q;
 	substring_t args[MAX_OPT_ARGS];
 
 	p = strchr(perm, '+');
@@ -237,20 +236,40 @@ static int noinline_for_stack br_perm_val(char *perm)
 	if (!val) {
 		if (p)
 			*p = '+';
-		pr_warning("ignored branch permission %s\n", perm);
+		pr_warn("ignored branch permission %s\n", perm);
 		val = AuBrPerm_RO;
 		goto out;
 	}
 	if (!p)
 		goto out;
 
-	switch (val) {
+	p++;
+	while (1) {
+		q = strchr(p, '+');
+		if (q)
+			*q = 0;
+		val |= br_attr_val(p, brattr, args);
+		if (q) {
+			*q = '+';
+			p = q + 1;
+		} else
+			break;
+	}
+	switch (val & AuBrPerm_Mask) {
 	case AuBrPerm_RO:
 	case AuBrPerm_RR:
-		val |= br_attr_val(p + 1, brrattr, args);
+		if (unlikely(val & AuBrWAttr_NoLinkWH)) {
+			pr_warn("ignored branch attribute %s\n",
+				AUFS_BRWATTR_NLWH);
+			val &= ~AuBrWAttr_NoLinkWH;
+		}
 		break;
 	case AuBrPerm_RW:
-		val |= br_attr_val(p + 1, brwattr, args);
+		if (unlikely(val & AuBrRAttr_WH)) {
+			pr_warn("ignored branch attribute %s\n",
+				AUFS_BRRATTR_WH);
+			val &= ~AuBrRAttr_WH;
+		}
 		break;
 	}
 
@@ -293,6 +312,7 @@ char *au_optstr_br_perm(int brperm)
 		AuDebugOn(1);
 	}
 
+	AppendAttr(AuBrAttr_UNPIN, AUFS_BRATTR_UNPIN);
 	AppendAttr(AuBrRAttr_WH, AUFS_BRRATTR_WH);
 	AppendAttr(AuBrWAttr_NoLinkWH, AUFS_BRWATTR_NLWH);
 
@@ -344,6 +364,8 @@ static match_table_t au_wbr_create_policy = {
 	{AuWbrCreate_MFSRRV, "mfsrr:%d:%d"},
 	{AuWbrCreate_PMFS, "pmfs"},
 	{AuWbrCreate_PMFSV, "pmfs:%d"},
+	{AuWbrCreate_PMFSRR, "pmfsrr:%d"},
+	{AuWbrCreate_PMFSRRV, "pmfsrr:%d:%d"},
 
 	{-1, NULL}
 };
@@ -413,6 +435,7 @@ au_wbr_create_val(char *str, struct au_opt_wbr_create *create)
 	create->wbr_create = err;
 	switch (err) {
 	case AuWbrCreate_MFSRRV:
+	case AuWbrCreate_PMFSRRV:
 		e = au_wbr_mfs_wmark(&args[0], str, create);
 		if (!e)
 			e = au_wbr_mfs_sec(&args[1], str, create);
@@ -420,6 +443,7 @@ au_wbr_create_val(char *str, struct au_opt_wbr_create *create)
 			err = e;
 		break;
 	case AuWbrCreate_MFSRR:
+	case AuWbrCreate_PMFSRR:
 		e = au_wbr_mfs_wmark(&args[0], str, create);
 		if (unlikely(e)) {
 			err = e;
@@ -636,6 +660,7 @@ static void dump_opts(struct au_opts *opts)
 					  u.create->mfsrr_watermark);
 				break;
 			case AuWbrCreate_MFSRRV:
+			case AuWbrCreate_PMFSRRV:
 				AuDbg("%llu watermark, %d sec\n",
 					  u.create->mfsrr_watermark,
 					  u.create->mfs_second);
@@ -1123,7 +1148,7 @@ int au_opts_parse(struct super_block *sb, char *str, struct au_opts *opts)
 			break;
 
 		case Opt_ignore:
-			pr_warning("ignored %s\n", opt_str);
+			pr_warn("ignored %s\n", opt_str);
 			/*FALLTHROUGH*/
 		case Opt_ignore_silent:
 			skipped = 1;
@@ -1175,6 +1200,8 @@ static int au_opt_wbr_create(struct super_block *sb,
 	switch (create->wbr_create) {
 	case AuWbrCreate_MFSRRV:
 	case AuWbrCreate_MFSRR:
+	case AuWbrCreate_PMFSRR:
+	case AuWbrCreate_PMFSRRV:
 		sbinfo->si_wbr_mfs.mfsrr_watermark = create->mfsrr_watermark;
 		/*FALLTHROUGH*/
 	case AuWbrCreate_MFS:
@@ -1459,14 +1486,14 @@ int au_opts_verify(struct super_block *sb, unsigned long sb_flags,
 
 	if (!(sb_flags & MS_RDONLY)) {
 		if (unlikely(!au_br_writable(au_sbr_perm(sb, 0))))
-			pr_warning("first branch should be rw\n");
+			pr_warn("first branch should be rw\n");
 		if (unlikely(au_opt_test(sbinfo->si_mntflags, SHWH)))
-			pr_warning("shwh should be used with ro\n");
+			pr_warn("shwh should be used with ro\n");
 	}
 
 	if (au_opt_test((sbinfo->si_mntflags | pending), UDBA_HNOTIFY)
 	    && !au_opt_test(sbinfo->si_mntflags, XINO))
-		pr_warning("udba=*notify requires xino\n");
+		pr_warn("udba=*notify requires xino\n");
 
 	err = 0;
 	root = sb->s_root;
@@ -1518,7 +1545,7 @@ int au_opts_verify(struct super_block *sb, unsigned long sb_flags,
 		au_hn_imtx_lock_nested(hdir, AuLsc_I_PARENT);
 		if (wbr)
 			wbr_wh_write_lock(wbr);
-		err = au_wh_init(au_h_dptr(root, bindex), br, sb);
+		err = au_wh_init(br, sb);
 		if (wbr)
 			wbr_wh_write_unlock(wbr);
 		au_hn_imtx_unlock(hdir);

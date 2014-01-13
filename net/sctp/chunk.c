@@ -66,7 +66,7 @@ static void sctp_datamsg_init(struct sctp_datamsg *msg)
 }
 
 /* Allocate and initialize datamsg. */
-SCTP_STATIC struct sctp_datamsg *sctp_datamsg_new(gfp_t gfp)
+static struct sctp_datamsg *sctp_datamsg_new(gfp_t gfp)
 {
 	struct sctp_datamsg *msg;
 	msg = kmalloc(sizeof(struct sctp_datamsg), gfp);
@@ -193,8 +193,9 @@ struct sctp_datamsg *sctp_datamsg_from_user(struct sctp_association *asoc,
 		msg->expires_at = jiffies +
 				    msecs_to_jiffies(sinfo->sinfo_timetolive);
 		msg->can_abandon = 1;
-		SCTP_DEBUG_PRINTK("%s: msg:%p expires_at: %ld jiffies:%ld\n",
-				  __func__, msg, msg->expires_at, jiffies);
+
+		pr_debug("%s: msg:%p expires_at:%ld jiffies:%ld\n", __func__,
+			 msg, msg->expires_at, jiffies);
 	}
 
 	/* This is the biggest possible DATA chunk that can fit into
@@ -257,7 +258,7 @@ struct sctp_datamsg *sctp_datamsg_from_user(struct sctp_association *asoc,
 	offset = 0;
 
 	if ((whole > 1) || (whole && over))
-		SCTP_INC_STATS_USER(SCTP_MIB_FRAGUSRMSGS);
+		SCTP_INC_STATS_USER(sock_net(asoc->base.sk), SCTP_MIB_FRAGUSRMSGS);
 
 	/* Create chunks for all the full sized DATA chunks. */
 	for (i=0, len=first_len; i < whole; i++) {

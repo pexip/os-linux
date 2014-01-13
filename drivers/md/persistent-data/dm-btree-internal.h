@@ -64,6 +64,7 @@ struct ro_spine {
 void init_ro_spine(struct ro_spine *s, struct dm_btree_info *info);
 int exit_ro_spine(struct ro_spine *s);
 int ro_step(struct ro_spine *s, dm_block_t new_child);
+void ro_pop(struct ro_spine *s);
 struct btree_node *ro_node(struct ro_spine *s);
 
 struct shadow_spine {
@@ -108,12 +109,9 @@ static inline void *value_base(struct btree_node *n)
 	return &n->keys[le32_to_cpu(n->header.max_entries)];
 }
 
-/*
- * FIXME: Now that value size is stored in node we don't need the third parm.
- */
-static inline void *value_ptr(struct btree_node *n, uint32_t index, size_t value_size)
+static inline void *value_ptr(struct btree_node *n, uint32_t index)
 {
-	BUG_ON(value_size != le32_to_cpu(n->header.value_size));
+	uint32_t value_size = le32_to_cpu(n->header.value_size);
 	return value_base(n) + (value_size * index);
 }
 

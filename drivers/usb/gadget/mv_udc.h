@@ -180,7 +180,7 @@ struct mv_udc {
 
 	struct mv_cap_regs __iomem	*cap_regs;
 	struct mv_op_regs __iomem	*op_regs;
-	unsigned int			phy_regs;
+	void __iomem                    *phy_regs;
 	unsigned int			max_eps;
 	struct mv_dqh			*ep_dqh;
 	size_t				ep_dqh_size;
@@ -211,16 +211,18 @@ struct mv_udc {
 				softconnected:1,
 				force_fs:1,
 				clock_gating:1,
-				active:1;
+				active:1,
+				stopped:1;      /* stop bit is setted */
 
 	struct work_struct	vbus_work;
 	struct workqueue_struct *qwork;
 
+	struct usb_phy		*transceiver;
+
 	struct mv_usb_platform_data     *pdata;
 
 	/* some SOC has mutiple clock sources for USB*/
-	unsigned int    clknum;
-	struct clk      *clk[0];
+	struct clk      *clk;
 };
 
 /* endpoint data structure */
@@ -229,7 +231,6 @@ struct mv_ep {
 	struct mv_udc		*udc;
 	struct list_head	queue;
 	struct mv_dqh		*dqh;
-	const struct usb_endpoint_descriptor	*desc;
 	u32			direction;
 	char			name[14];
 	unsigned		stopped:1,

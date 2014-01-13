@@ -46,7 +46,6 @@
 #include <linux/slab.h>
 #include <linux/tcp.h>
 #include <linux/types.h>
-#include <linux/version.h>
 #include <linux/wireless.h>
 #include <linux/etherdevice.h>
 #include <linux/uaccess.h>
@@ -60,7 +59,7 @@
 802.11 Data Frame
 
 
-802.11 frame_contorl for data frames - 2 bytes
+802.11 frame_control for data frames - 2 bytes
      ,-----------------------------------------------------------------------------------------.
 bits | 0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  |  a  |  b  |  c  |  d  |  e   |
      |----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|------|
@@ -180,10 +179,10 @@ inline int rtllib_put_snap(u8 *data, u16 h_proto)
 int rtllib_encrypt_fragment(struct rtllib_device *ieee, struct sk_buff *frag,
 			    int hdr_len)
 {
-	struct rtllib_crypt_data *crypt = NULL;
+	struct lib80211_crypt_data *crypt = NULL;
 	int res;
 
-	crypt = ieee->crypt[ieee->tx_keyidx];
+	crypt = ieee->crypt_info.crypt[ieee->crypt_info.tx_keyidx];
 
 	if (!(crypt && crypt->ops)) {
 		printk(KERN_INFO "=========>%s(), crypt is null\n", __func__);
@@ -288,7 +287,7 @@ static void rtllib_tx_query_agg_cap(struct rtllib_device *ieee,
 {
 	struct rt_hi_throughput *pHTInfo = ieee->pHTInfo;
 	struct tx_ts_record *pTxTs = NULL;
-	struct rtllib_hdr_1addr* hdr = (struct rtllib_hdr_1addr *)skb->data;
+	struct rtllib_hdr_1addr *hdr = (struct rtllib_hdr_1addr *)skb->data;
 
 	if (rtllib_act_scanning(ieee, false))
 		return;
@@ -297,8 +296,7 @@ static void rtllib_tx_query_agg_cap(struct rtllib_device *ieee,
 		return;
 	if (!IsQoSDataFrame(skb->data))
 		return;
-	if (is_multicast_ether_addr(hdr->addr1) ||
-	    is_broadcast_ether_addr(hdr->addr1))
+	if (is_multicast_ether_addr(hdr->addr1))
 		return;
 
 	if (tcb_desc->bdhcp || ieee->CntAfterLink < 2)
@@ -516,7 +514,7 @@ u16 rtllib_query_seqnum(struct rtllib_device *ieee, struct sk_buff *skb,
 {
 	u16 seqnum = 0;
 
-	if (is_multicast_ether_addr(dst) || is_broadcast_ether_addr(dst))
+	if (is_multicast_ether_addr(dst))
 		return 0;
 	if (IsQoSDataFrame(skb->data)) {
 		struct tx_ts_record *pTS = NULL;
@@ -569,7 +567,7 @@ int rtllib_xmit_inter(struct sk_buff *skb, struct net_device *dev)
 	};
 	u8 dest[ETH_ALEN], src[ETH_ALEN];
 	int qos_actived = ieee->current_network.qos_data.active;
-	struct rtllib_crypt_data *crypt = NULL;
+	struct lib80211_crypt_data *crypt = NULL;
 	struct cb_desc *tcb_desc;
 	u8 bIsMulticast = false;
 	u8 IsAmsdu = false;
@@ -577,7 +575,7 @@ int rtllib_xmit_inter(struct sk_buff *skb, struct net_device *dev)
 
 	spin_lock_irqsave(&ieee->lock, flags);
 
-	/* If there is no driver handler to take the TXB, dont' bother
+	/* If there is no driver handler to take the TXB, don't bother
 	 * creating it... */
 	if ((!ieee->hard_start_xmit && !(ieee->softmac_features &
 	   IEEE_SOFTMAC_TX_QUEUE)) ||
@@ -646,7 +644,7 @@ int rtllib_xmit_inter(struct sk_buff *skb, struct net_device *dev)
 		}
 
 		skb->priority = rtllib_classify(skb, IsAmsdu);
-		crypt = ieee->crypt[ieee->tx_keyidx];
+		crypt = ieee->crypt_info.crypt[ieee->crypt_info.tx_keyidx];
 		encrypt = !(ether_type == ETH_P_PAE && ieee->ieee802_1x) &&
 			ieee->host_encrypt && crypt && crypt->ops;
 		if (!encrypt && ieee->ieee802_1x &&
@@ -699,8 +697,7 @@ int rtllib_xmit_inter(struct sk_buff *skb, struct net_device *dev)
 			       ETH_ALEN);
 		}
 
-		bIsMulticast = is_broadcast_ether_addr(header.addr1) ||
-			       is_multicast_ether_addr(header.addr1);
+		bIsMulticast = is_multicast_ether_addr(header.addr1);
 
 		header.frame_ctl = cpu_to_le16(fc);
 
@@ -739,11 +736,13 @@ int rtllib_xmit_inter(struct sk_buff *skb, struct net_device *dev)
 		   (CFG_RTLLIB_COMPUTE_FCS | CFG_RTLLIB_RESERVE_FCS))
 			bytes_per_frag -= RTLLIB_FCS_LEN;
 
-		/* Each fragment may need to have room for encryptiong
+		/* Each fragment may need to have room for encrypting
 		 * pre/postfix */
 		if (encrypt) {
-			bytes_per_frag -= crypt->ops->extra_prefix_len +
-				crypt->ops->extra_postfix_len;
+			bytes_per_frag -= crypt->ops->extra_mpdu_prefix_len +
+				crypt->ops->extra_mpdu_postfix_len +
+				crypt->ops->extra_msdu_prefix_len +
+				crypt->ops->extra_msdu_postfix_len;
 		}
 		/* Number of fragments is the total bytes_per_frag /
 		* payload_per_fragment */
@@ -791,7 +790,8 @@ int rtllib_xmit_inter(struct sk_buff *skb, struct net_device *dev)
 				else
 					tcb_desc->bHwSec = 0;
 				skb_reserve(skb_frag,
-					    crypt->ops->extra_prefix_len);
+					    crypt->ops->extra_mpdu_prefix_len +
+					    crypt->ops->extra_msdu_prefix_len);
 			} else {
 				tcb_desc->bHwSec = 0;
 			}
@@ -965,3 +965,4 @@ int rtllib_xmit(struct sk_buff *skb, struct net_device *dev)
 	memset(skb->cb, 0, sizeof(skb->cb));
 	return rtllib_xmit_inter(skb, dev);
 }
+EXPORT_SYMBOL(rtllib_xmit);

@@ -27,6 +27,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/pci.h>
+#include <linux/pci-aspm.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
@@ -1058,7 +1059,7 @@ jme_alloc_and_feed_skb(struct jme_adapter *jme, int idx)
 		if (rxdesc->descwb.flags & cpu_to_le16(RXWBFLAG_TAGON)) {
 			u16 vid = le16_to_cpu(rxdesc->descwb.vlan);
 
-			__vlan_hwaccel_put_tag(skb, vid);
+			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vid);
 			NET_STAT(jme).rx_bytes += 4;
 		}
 		jme->jme_rx(skb);
@@ -1859,10 +1860,14 @@ jme_open(struct net_device *netdev)
 	jme_clear_pm(jme);
 	JME_NAPI_ENABLE(jme);
 
-	tasklet_enable(&jme->linkch_task);
-	tasklet_enable(&jme->txclean_task);
-	tasklet_hi_enable(&jme->rxclean_task);
-	tasklet_hi_enable(&jme->rxempty_task);
+	tasklet_init(&jme->linkch_task, jme_link_change_tasklet,
+		     (unsigned long) jme);
+	tasklet_init(&jme->txclean_task, jme_tx_clean_tasklet,
+		     (unsigned long) jme);
+	tasklet_init(&jme->rxclean_task, jme_rx_clean_tasklet,
+		     (unsigned long) jme);
+	tasklet_init(&jme->rxempty_task, jme_rx_empty_tasklet,
+		     (unsigned long) jme);
 
 	rc = jme_request_irq(jme);
 	if (rc)
@@ -1947,10 +1952,10 @@ jme_close(struct net_device *netdev)
 
 	JME_NAPI_DISABLE(jme);
 
-	tasklet_disable(&jme->linkch_task);
-	tasklet_disable(&jme->txclean_task);
-	tasklet_disable(&jme->rxclean_task);
-	tasklet_disable(&jme->rxempty_task);
+	tasklet_kill(&jme->linkch_task);
+	tasklet_kill(&jme->txclean_task);
+	tasklet_kill(&jme->rxclean_task);
+	tasklet_kill(&jme->rxempty_task);
 
 	jme_disable_rx_engine(jme);
 	jme_disable_tx_engine(jme);
@@ -1990,7 +1995,7 @@ jme_fill_tx_map(struct pci_dev *pdev,
 		struct page *page,
 		u32 page_offset,
 		u32 len,
-		u8 hidma)
+		bool hidma)
 {
 	dma_addr_t dmaaddr;
 
@@ -2024,7 +2029,7 @@ jme_map_tx_skb(struct jme_adapter *jme, struct sk_buff *skb, int idx)
 	struct jme_ring *txring = &(jme->txring[0]);
 	struct txdesc *txdesc = txring->desc, *ctxdesc;
 	struct jme_buffer_info *txbi = txring->bufinf, *ctxbi;
-	u8 hidma = jme->dev->features & NETIF_F_HIGHDMA;
+	bool hidma = jme->dev->features & NETIF_F_HIGHDMA;
 	int i, nr_frags = skb_shinfo(skb)->nr_frags;
 	int mask = jme->tx_ring_mask;
 	const struct skb_frag_struct *frag;
@@ -2391,9 +2396,9 @@ jme_get_drvinfo(struct net_device *netdev,
 {
 	struct jme_adapter *jme = netdev_priv(netdev);
 
-	strcpy(info->driver, DRV_NAME);
-	strcpy(info->version, DRV_VERSION);
-	strcpy(info->bus_info, pci_name(jme->pdev));
+	strlcpy(info->driver, DRV_NAME, sizeof(info->driver));
+	strlcpy(info->version, DRV_VERSION, sizeof(info->version));
+	strlcpy(info->bus_info, pci_name(jme->pdev), sizeof(info->bus_info));
 }
 
 static int
@@ -2719,8 +2724,8 @@ jme_set_msglevel(struct net_device *netdev, u32 value)
 	jme->msg_enable = value;
 }
 
-static u32
-jme_fix_features(struct net_device *netdev, u32 features)
+static netdev_features_t
+jme_fix_features(struct net_device *netdev, netdev_features_t features)
 {
 	if (netdev->mtu > 1900)
 		features &= ~(NETIF_F_ALL_TSO | NETIF_F_ALL_CSUM);
@@ -2728,7 +2733,7 @@ jme_fix_features(struct net_device *netdev, u32 features)
 }
 
 static int
-jme_set_features(struct net_device *netdev, u32 features)
+jme_set_features(struct net_device *netdev, netdev_features_t features)
 {
 	struct jme_adapter *jme = netdev_priv(netdev);
 
@@ -2742,6 +2747,17 @@ jme_set_features(struct net_device *netdev, u32 features)
 
 	return 0;
 }
+
+#ifdef CONFIG_NET_POLL_CONTROLLER
+static void jme_netpoll(struct net_device *dev)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	jme_intr(dev->irq, dev);
+	local_irq_restore(flags);
+}
+#endif
 
 static int
 jme_nway_reset(struct net_device *netdev)
@@ -2944,9 +2960,12 @@ static const struct net_device_ops jme_netdev_ops = {
 	.ndo_tx_timeout		= jme_tx_timeout,
 	.ndo_fix_features       = jme_fix_features,
 	.ndo_set_features       = jme_set_features,
+#ifdef CONFIG_NET_POLL_CONTROLLER
+	.ndo_poll_controller	= jme_netpoll,
+#endif
 };
 
-static int __devinit
+static int
 jme_init_one(struct pci_dev *pdev,
 	     const struct pci_device_id *ent)
 {
@@ -2959,6 +2978,9 @@ jme_init_one(struct pci_dev *pdev,
 	/*
 	 * set up PCI device basics
 	 */
+	pci_disable_link_state(pdev, PCIE_LINK_STATE_L0S | PCIE_LINK_STATE_L1 |
+			       PCIE_LINK_STATE_CLKPM);
+
 	rc = pci_enable_device(pdev);
 	if (rc) {
 		pr_err("Cannot enable PCI device\n");
@@ -2991,7 +3013,6 @@ jme_init_one(struct pci_dev *pdev,
 	 */
 	netdev = alloc_etherdev(sizeof(*jme));
 	if (!netdev) {
-		pr_err("Cannot allocate netdev structure\n");
 		rc = -ENOMEM;
 		goto err_out_release_regions;
 	}
@@ -3009,8 +3030,8 @@ jme_init_one(struct pci_dev *pdev,
 						NETIF_F_SG |
 						NETIF_F_TSO |
 						NETIF_F_TSO6 |
-						NETIF_F_HW_VLAN_TX |
-						NETIF_F_HW_VLAN_RX;
+						NETIF_F_HW_VLAN_CTAG_TX |
+						NETIF_F_HW_VLAN_CTAG_RX;
 	if (using_dac)
 		netdev->features	|=	NETIF_F_HIGHDMA;
 
@@ -3048,7 +3069,7 @@ jme_init_one(struct pci_dev *pdev,
 		jwrite32(jme, JME_APMC, apmc);
 	}
 
-	NETIF_NAPI_SET(netdev, &jme->napi, jme_poll, jme->rx_ring_size >> 2)
+	NETIF_NAPI_SET(netdev, &jme->napi, jme_poll, NAPI_POLL_WEIGHT)
 
 	spin_lock_init(&jme->phy_lock);
 	spin_lock_init(&jme->macaddr_lock);
@@ -3062,22 +3083,6 @@ jme_init_one(struct pci_dev *pdev,
 	tasklet_init(&jme->pcc_task,
 		     jme_pcc_tasklet,
 		     (unsigned long) jme);
-	tasklet_init(&jme->linkch_task,
-		     jme_link_change_tasklet,
-		     (unsigned long) jme);
-	tasklet_init(&jme->txclean_task,
-		     jme_tx_clean_tasklet,
-		     (unsigned long) jme);
-	tasklet_init(&jme->rxclean_task,
-		     jme_rx_clean_tasklet,
-		     (unsigned long) jme);
-	tasklet_init(&jme->rxempty_task,
-		     jme_rx_empty_tasklet,
-		     (unsigned long) jme);
-	tasklet_disable_nosync(&jme->linkch_task);
-	tasklet_disable_nosync(&jme->txclean_task);
-	tasklet_disable_nosync(&jme->rxclean_task);
-	tasklet_disable_nosync(&jme->rxempty_task);
 	jme->dpi.cur = PCC_P1;
 
 	jme->reg_ghc = 0;
@@ -3143,7 +3148,6 @@ jme_init_one(struct pci_dev *pdev,
 	jme->mii_if.mdio_write = jme_mdio_write;
 
 	jme_clear_pm(jme);
-	pci_set_power_state(jme->pdev, PCI_D0);
 	device_set_wakeup_enable(&pdev->dev, true);
 
 	jme_set_phyfifo_5level(jme);
@@ -3198,7 +3202,7 @@ err_out:
 	return rc;
 }
 
-static void __devexit
+static void
 jme_remove_one(struct pci_dev *pdev)
 {
 	struct net_device *netdev = pci_get_drvdata(pdev);
@@ -3313,7 +3317,7 @@ static struct pci_driver jme_driver = {
 	.name           = DRV_NAME,
 	.id_table       = jme_pci_tbl,
 	.probe          = jme_init_one,
-	.remove         = __devexit_p(jme_remove_one),
+	.remove         = jme_remove_one,
 	.shutdown       = jme_shutdown,
 	.driver.pm	= JME_PM_OPS,
 };

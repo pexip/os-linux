@@ -66,6 +66,7 @@ void fsnotify_get_group(struct fsnotify_group *group)
 {
 	atomic_inc(&group->refcnt);
 }
+EXPORT_SYMBOL(fsnotify_get_group);
 
 /*
  * Drop a reference to a group.  Free it if it's through.
@@ -105,3 +106,10 @@ struct fsnotify_group *fsnotify_alloc_group(const struct fsnotify_ops *ops)
 	return group;
 }
 EXPORT_SYMBOL(fsnotify_alloc_group);
+
+int fsnotify_fasync(int fd, struct file *file, int on)
+{
+	struct fsnotify_group *group = file->private_data;
+
+	return fasync_helper(fd, file, on, &group->fsn_fa) >= 0 ? 0 : -EIO;
+}

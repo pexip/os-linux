@@ -17,6 +17,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+
 #include <linux/device.h>
 #include <linux/hrtimer.h>
 #include <linux/init.h>
@@ -477,7 +480,7 @@ static int gianfar_ptp_probe(struct platform_device *dev)
 		pr_err("no resource\n");
 		goto no_resource;
 	}
-	if (request_resource(&ioport_resource, etsects->rsrc)) {
+	if (request_resource(&iomem_resource, etsects->rsrc)) {
 		pr_err("resource busy\n");
 		goto no_resource;
 	}
@@ -509,13 +512,14 @@ static int gianfar_ptp_probe(struct platform_device *dev)
 
 	spin_unlock_irqrestore(&etsects->lock, flags);
 
-	etsects->clock = ptp_clock_register(&etsects->caps);
+	etsects->clock = ptp_clock_register(&etsects->caps, &dev->dev);
 	if (IS_ERR(etsects->clock)) {
 		err = PTR_ERR(etsects->clock);
 		goto no_clock;
 	}
+	gfar_phc_index = ptp_clock_index(etsects->clock);
 
-	dev_set_drvdata(&dev->dev, etsects);
+	platform_set_drvdata(dev, etsects);
 
 	return 0;
 
@@ -533,11 +537,12 @@ no_memory:
 
 static int gianfar_ptp_remove(struct platform_device *dev)
 {
-	struct etsects *etsects = dev_get_drvdata(&dev->dev);
+	struct etsects *etsects = platform_get_drvdata(dev);
 
 	gfar_write(&etsects->regs->tmr_temask, 0);
 	gfar_write(&etsects->regs->tmr_ctrl,   0);
 
+	gfar_phc_index = -1;
 	ptp_clock_unregister(etsects->clock);
 	iounmap(etsects->regs);
 	release_resource(etsects->rsrc);
@@ -562,22 +567,8 @@ static struct platform_driver gianfar_ptp_driver = {
 	.remove      = gianfar_ptp_remove,
 };
 
-/* module operations */
+module_platform_driver(gianfar_ptp_driver);
 
-static int __init ptp_gianfar_init(void)
-{
-	return platform_driver_register(&gianfar_ptp_driver);
-}
-
-module_init(ptp_gianfar_init);
-
-static void __exit ptp_gianfar_exit(void)
-{
-	platform_driver_unregister(&gianfar_ptp_driver);
-}
-
-module_exit(ptp_gianfar_exit);
-
-MODULE_AUTHOR("Richard Cochran <richard.cochran@omicron.at>");
+MODULE_AUTHOR("Richard Cochran <richardcochran@gmail.com>");
 MODULE_DESCRIPTION("PTP clock using the eTSEC");
 MODULE_LICENSE("GPL");

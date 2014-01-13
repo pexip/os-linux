@@ -8,10 +8,9 @@ repo_list=(
 
 package_prefixes linux-image linux-image-extra
 
-getall armel omap
-getall armhf omap highbank
-getall amd64 generic virtual
-getall i386 generic generic-pae virtual
+getall armhf generic
+getall armhf generic-lpae
+getall amd64 generic
+getall i386 generic
 
 # Ports arches and flavours.
-getall powerpc powerpc-smp powerpc64-smp
