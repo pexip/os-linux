@@ -95,8 +95,8 @@ static int genericbl_probe(struct platform_device *pdev)
 	props.max_brightness = machinfo->max_intensity;
 	bd = backlight_device_register(name, &pdev->dev, NULL, &genericbl_ops,
 				       &props);
-	if (IS_ERR (bd))
-		return PTR_ERR (bd);
+	if (IS_ERR(bd))
+		return PTR_ERR(bd);
 
 	platform_set_drvdata(pdev, bd);
 
@@ -106,7 +106,7 @@ static int genericbl_probe(struct platform_device *pdev)
 
 	generic_backlight_device = bd;
 
-	printk("Generic Backlight Driver Initialized.\n");
+	dev_info(&pdev->dev, "Generic Backlight Driver Initialized.\n");
 	return 0;
 }
 
@@ -120,7 +120,7 @@ static int genericbl_remove(struct platform_device *pdev)
 
 	backlight_device_unregister(bd);
 
-	printk("Generic Backlight Driver Unloaded\n");
+	dev_info(&pdev->dev, "Generic Backlight Driver Unloaded\n");
 	return 0;
 }
 
@@ -132,18 +132,7 @@ static struct platform_driver genericbl_driver = {
 	},
 };
 
-static int __init genericbl_init(void)
-{
-	return platform_driver_register(&genericbl_driver);
-}
-
-static void __exit genericbl_exit(void)
-{
-	platform_driver_unregister(&genericbl_driver);
-}
-
-module_init(genericbl_init);
-module_exit(genericbl_exit);
+module_platform_driver(genericbl_driver);
 
 MODULE_AUTHOR("Richard Purdie <rpurdie@rpsys.net>");
 MODULE_DESCRIPTION("Generic Backlight Driver");

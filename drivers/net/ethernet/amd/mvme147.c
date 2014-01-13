@@ -22,7 +22,6 @@
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
 
-#include <asm/system.h>
 #include <asm/io.h>
 #include <asm/pgtable.h>
 #include <asm/mvme147hw.h>
@@ -189,9 +188,7 @@ static struct net_device *dev_mvme147_lance;
 int __init init_module(void)
 {
 	dev_mvme147_lance = mvme147lance_probe(-1);
-	if (IS_ERR(dev_mvme147_lance))
-		return PTR_ERR(dev_mvme147_lance);
-	return 0;
+	return PTR_RET(dev_mvme147_lance);
 }
 
 void __exit cleanup_module(void)

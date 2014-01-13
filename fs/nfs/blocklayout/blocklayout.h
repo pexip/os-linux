@@ -37,9 +37,11 @@
 #include <linux/sunrpc/rpc_pipe_fs.h>
 
 #include "../pnfs.h"
+#include "../netns.h"
 
 #define PAGE_CACHE_SECTORS (PAGE_CACHE_SIZE >> SECTOR_SHIFT)
 #define PAGE_CACHE_SECTOR_SHIFT (PAGE_CACHE_SHIFT - SECTOR_SHIFT)
+#define SECTOR_SIZE (1 << SECTOR_SHIFT)
 
 struct block_mount_id {
 	spinlock_t			bm_lock;    /* protects list */
@@ -50,6 +52,7 @@ struct pnfs_block_dev {
 	struct list_head		bm_node;
 	struct nfs4_deviceid		bm_mdevid;    /* associated devid */
 	struct block_device		*bm_mdev;     /* meta device itself */
+	struct net			*net;
 };
 
 enum exstate4 {
@@ -70,6 +73,7 @@ struct pnfs_inval_markings {
 	spinlock_t	im_lock;
 	struct my_tree	im_tree;	/* Sectors that need LAYOUTCOMMIT */
 	sector_t	im_block_size;	/* Server blocksize in sectors */
+	struct list_head im_extents;	/* Short extents for INVAL->RW conversion */
 };
 
 struct pnfs_inval_tracking {
@@ -105,6 +109,7 @@ BL_INIT_INVAL_MARKS(struct pnfs_inval_markings *marks, sector_t blocksize)
 {
 	spin_lock_init(&marks->im_lock);
 	INIT_LIST_HEAD(&marks->im_tree.mtt_stub);
+	INIT_LIST_HEAD(&marks->im_extents);
 	marks->im_block_size = blocksize;
 	marks->im_tree.mtt_step_size = min((sector_t)PAGE_CACHE_SECTORS,
 					   blocksize);
@@ -149,18 +154,15 @@ BLK_LSEG2EXT(struct pnfs_layout_segment *lseg)
 	return BLK_LO2EXT(lseg->pls_layout);
 }
 
-struct bl_dev_msg {
-	int32_t status;
-	uint32_t major, minor;
+struct bl_pipe_msg {
+	struct rpc_pipe_msg msg;
+	wait_queue_head_t *bl_wq;
 };
 
 struct bl_msg_hdr {
 	u8  type;
 	u16 totallen; /* length of entire message, including hdr itself */
 };
-
-extern struct dentry *bl_device_pipe;
-extern wait_queue_head_t bl_wq;
 
 #define BL_DEVICE_UMOUNT               0x0 /* Umount--delete devices */
 #define BL_DEVICE_MOUNT                0x1 /* Mount--create devices*/
@@ -171,8 +173,7 @@ extern wait_queue_head_t bl_wq;
 /* blocklayoutdev.c */
 ssize_t bl_pipe_downcall(struct file *, const char __user *, size_t);
 void bl_pipe_destroy_msg(struct rpc_pipe_msg *);
-struct block_device *nfs4_blkdev_get(dev_t dev);
-int nfs4_blkdev_put(struct block_device *bdev);
+void nfs4_blkdev_put(struct block_device *bdev);
 struct pnfs_block_dev *nfs4_blk_decode_device(struct nfs_server *server,
 						struct pnfs_device *dev);
 int nfs4_blk_process_layoutget(struct pnfs_layout_hdr *lo,
@@ -186,8 +187,7 @@ struct pnfs_block_extent *
 bl_find_get_extent(struct pnfs_block_layout *bl, sector_t isect,
 		struct pnfs_block_extent **cow_read);
 int bl_mark_sectors_init(struct pnfs_inval_markings *marks,
-			     sector_t offset, sector_t length,
-			     sector_t **pages);
+			     sector_t offset, sector_t length);
 void bl_put_extent(struct pnfs_block_extent *be);
 struct pnfs_block_extent *bl_alloc_extent(void);
 int bl_is_sector_init(struct pnfs_inval_markings *marks, sector_t isect);
@@ -200,6 +200,11 @@ void clean_pnfs_block_layoutupdate(struct pnfs_block_layout *bl,
 int bl_add_merge_extent(struct pnfs_block_layout *bl,
 			 struct pnfs_block_extent *new);
 int bl_mark_for_commit(struct pnfs_block_extent *be,
-			sector_t offset, sector_t length);
+			sector_t offset, sector_t length,
+			struct pnfs_block_short_extent *new);
+int bl_push_one_short_extent(struct pnfs_inval_markings *marks);
+struct pnfs_block_short_extent *
+bl_pop_one_short_extent(struct pnfs_inval_markings *marks);
+void bl_free_short_extents(struct pnfs_inval_markings *marks, int num_to_free);
 
 #endif /* FS_NFS_NFS4BLOCKLAYOUT_H */

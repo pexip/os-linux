@@ -40,7 +40,7 @@ static void iscsi_add_ts_to_active_list(struct iscsi_thread_set *ts)
 	spin_unlock(&active_ts_lock);
 }
 
-extern void iscsi_add_ts_to_inactive_list(struct iscsi_thread_set *ts)
+static void iscsi_add_ts_to_inactive_list(struct iscsi_thread_set *ts)
 {
 	spin_lock(&inactive_ts_lock);
 	list_add_tail(&ts->ts_list, &inactive_ts_list);
@@ -66,8 +66,7 @@ static struct iscsi_thread_set *iscsi_get_ts_from_inactive_list(void)
 		return NULL;
 	}
 
-	list_for_each_entry(ts, &inactive_ts_list, ts_list)
-		break;
+	ts = list_first_entry(&inactive_ts_list, struct iscsi_thread_set, ts_list);
 
 	list_del(&ts->ts_list);
 	iscsit_global->inactive_ts--;
@@ -76,7 +75,7 @@ static struct iscsi_thread_set *iscsi_get_ts_from_inactive_list(void)
 	return ts;
 }
 
-extern int iscsi_allocate_thread_sets(u32 thread_pair_count)
+int iscsi_allocate_thread_sets(u32 thread_pair_count)
 {
 	int allocated_thread_pair_count = 0, i, thread_id;
 	struct iscsi_thread_set *ts = NULL;
@@ -140,7 +139,7 @@ extern int iscsi_allocate_thread_sets(u32 thread_pair_count)
 	return allocated_thread_pair_count;
 }
 
-extern void iscsi_deallocate_thread_sets(void)
+void iscsi_deallocate_thread_sets(void)
 {
 	u32 released_count = 0;
 	struct iscsi_thread_set *ts = NULL;
@@ -535,12 +534,6 @@ int iscsi_thread_set_init(void)
 		pr_err("Unable to allocate iscsit_global->ts_bitmap\n");
 		return -ENOMEM;
 	}
-
-	spin_lock_init(&active_ts_lock);
-	spin_lock_init(&inactive_ts_lock);
-	spin_lock_init(&ts_bitmap_lock);
-	INIT_LIST_HEAD(&active_ts_list);
-	INIT_LIST_HEAD(&inactive_ts_list);
 
 	return 0;
 }

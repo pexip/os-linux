@@ -33,9 +33,6 @@ static inline bool kvm_exception_is_soft(unsigned int nr)
 	return (nr == BP_VECTOR) || (nr == OF_VECTOR);
 }
 
-struct kvm_cpuid_entry2 *kvm_find_cpuid_entry(struct kvm_vcpu *vcpu,
-                                             u32 function, u32 index);
-
 static inline bool is_protmode(struct kvm_vcpu *vcpu)
 {
 	return kvm_read_cr0_bits(vcpu, X86_CR0_PE);
@@ -67,7 +64,7 @@ static inline int is_pse(struct kvm_vcpu *vcpu)
 
 static inline int is_paging(struct kvm_vcpu *vcpu)
 {
-	return kvm_read_cr0_bits(vcpu, X86_CR0_PG);
+	return likely(kvm_read_cr0_bits(vcpu, X86_CR0_PG));
 }
 
 static inline u32 bit(int bitno)
@@ -115,7 +112,7 @@ void kvm_before_handle_nmi(struct kvm_vcpu *vcpu);
 void kvm_after_handle_nmi(struct kvm_vcpu *vcpu);
 int kvm_inject_realmode_interrupt(struct kvm_vcpu *vcpu, int irq, int inc_eip);
 
-void kvm_write_tsc(struct kvm_vcpu *vcpu, u64 data);
+void kvm_write_tsc(struct kvm_vcpu *vcpu, struct msr_data *msr);
 
 int kvm_read_guest_virt(struct x86_emulate_ctxt *ctxt,
 	gva_t addr, void *val, unsigned int bytes,
@@ -125,4 +122,7 @@ int kvm_write_guest_virt_system(struct x86_emulate_ctxt *ctxt,
 	gva_t addr, void *val, unsigned int bytes,
 	struct x86_exception *exception);
 
+extern u64 host_xcr0;
+
+extern struct static_key kvm_no_apic_vcpu;
 #endif

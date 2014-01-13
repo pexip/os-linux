@@ -458,8 +458,8 @@ static int ks8842_tx_frame_dma(struct sk_buff *skb, struct net_device *netdev)
 	if (sg_dma_len(&ctl->sg) % 4)
 		sg_dma_len(&ctl->sg) += 4 - sg_dma_len(&ctl->sg) % 4;
 
-	ctl->adesc = ctl->chan->device->device_prep_slave_sg(ctl->chan,
-		&ctl->sg, 1, DMA_TO_DEVICE,
+	ctl->adesc = dmaengine_prep_slave_sg(ctl->chan,
+		&ctl->sg, 1, DMA_MEM_TO_DEV,
 		DMA_PREP_INTERRUPT | DMA_COMPL_SKIP_SRC_UNMAP);
 	if (!ctl->adesc)
 		return NETDEV_TX_BUSY;
@@ -570,8 +570,8 @@ static int __ks8842_start_new_rx_dma(struct net_device *netdev)
 
 		sg_dma_len(sg) = DMA_BUFFER_SIZE;
 
-		ctl->adesc = ctl->chan->device->device_prep_slave_sg(ctl->chan,
-			sg, 1, DMA_FROM_DEVICE,
+		ctl->adesc = dmaengine_prep_slave_sg(ctl->chan,
+			sg, 1, DMA_DEV_TO_MEM,
 			DMA_PREP_INTERRUPT | DMA_COMPL_SKIP_SRC_UNMAP);
 
 		if (!ctl->adesc)
@@ -1140,7 +1140,7 @@ static const struct ethtool_ops ks8842_ethtool_ops = {
 	.get_link		= ethtool_op_get_link,
 };
 
-static int __devinit ks8842_probe(struct platform_device *pdev)
+static int ks8842_probe(struct platform_device *pdev)
 {
 	int err = -ENOMEM;
 	struct resource *iomem;
@@ -1211,7 +1211,7 @@ static int __devinit ks8842_probe(struct platform_device *pdev)
 		ks8842_read_mac_addr(adapter, netdev->dev_addr);
 
 		if (!is_valid_ether_addr(netdev->dev_addr))
-			random_ether_addr(netdev->dev_addr);
+			eth_hw_addr_random(netdev);
 	}
 
 	id = ks8842_read16(adapter, 32, REG_SW_ID_AND_ENABLE);
@@ -1239,7 +1239,7 @@ err_mem_region:
 	return err;
 }
 
-static int __devexit ks8842_remove(struct platform_device *pdev)
+static int ks8842_remove(struct platform_device *pdev)
 {
 	struct net_device *netdev = platform_get_drvdata(pdev);
 	struct ks8842_adapter *adapter = netdev_priv(netdev);
@@ -1250,7 +1250,6 @@ static int __devexit ks8842_remove(struct platform_device *pdev)
 	iounmap(adapter->hw_addr);
 	free_netdev(netdev);
 	release_mem_region(iomem->start, resource_size(iomem));
-	platform_set_drvdata(pdev, NULL);
 	return 0;
 }
 
@@ -1264,18 +1263,7 @@ static struct platform_driver ks8842_platform_driver = {
 	.remove		= ks8842_remove,
 };
 
-static int __init ks8842_init(void)
-{
-	return platform_driver_register(&ks8842_platform_driver);
-}
-
-static void __exit ks8842_exit(void)
-{
-	platform_driver_unregister(&ks8842_platform_driver);
-}
-
-module_init(ks8842_init);
-module_exit(ks8842_exit);
+module_platform_driver(ks8842_platform_driver);
 
 MODULE_DESCRIPTION("Timberdale KS8842 ethernet driver");
 MODULE_AUTHOR("Mocean Laboratories <info@mocean-labs.com>");

@@ -31,9 +31,11 @@
  * IN THE SOFTWARE.
  */
 
-#define DPRINTK(fmt, args...)				\
-	pr_debug("xenbus_probe (%s:%d) " fmt ".\n",	\
-		 __func__, __LINE__, ##args)
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+
+#define DPRINTK(fmt, ...)				\
+	pr_debug("(%s:%d) " fmt "\n",			\
+		 __func__, __LINE__, ##__VA_ARGS__)
 
 #include <linux/kernel.h>
 #include <linux/err.h>
@@ -232,15 +234,13 @@ int xenbus_dev_is_online(struct xenbus_device *dev)
 }
 EXPORT_SYMBOL_GPL(xenbus_dev_is_online);
 
-int __xenbus_register_backend(struct xenbus_driver *drv,
-			      struct module *owner, const char *mod_name)
+int xenbus_register_backend(struct xenbus_driver *drv)
 {
 	drv->read_otherend_details = read_frontend_details;
 
-	return xenbus_register_driver_common(drv, &xenbus_backend,
-					     owner, mod_name);
+	return xenbus_register_driver_common(drv, &xenbus_backend);
 }
-EXPORT_SYMBOL_GPL(__xenbus_register_backend);
+EXPORT_SYMBOL_GPL(xenbus_register_backend);
 
 static int backend_probe_and_watch(struct notifier_block *notifier,
 				   unsigned long event,

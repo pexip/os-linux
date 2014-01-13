@@ -449,10 +449,12 @@ void sysfs_notify_dirent(struct sysfs_dirent *sd)
 
 	spin_lock_irqsave(&sysfs_open_dirent_lock, flags);
 
-	od = sd->s_attr.open;
-	if (od) {
-		atomic_inc(&od->event);
-		wake_up_interruptible(&od->poll);
+	if (!WARN_ON(sysfs_type(sd) != SYSFS_KOBJ_ATTR)) {
+		od = sd->s_attr.open;
+		if (od) {
+			atomic_inc(&od->event);
+			wake_up_interruptible(&od->poll);
+		}
 	}
 
 	spin_unlock_irqrestore(&sysfs_open_dirent_lock, flags);
@@ -485,13 +487,19 @@ const struct file_operations sysfs_file_operations = {
 	.poll		= sysfs_poll,
 };
 
-int sysfs_attr_ns(struct kobject *kobj, const struct attribute *attr,
-		  const void **pns)
+static int sysfs_attr_ns(struct kobject *kobj, const struct attribute *attr,
+			 const void **pns)
 {
 	struct sysfs_dirent *dir_sd = kobj->sd;
 	const struct sysfs_ops *ops;
 	const void *ns = NULL;
 	int err;
+
+	if (!dir_sd) {
+		WARN(1, KERN_ERR "sysfs: kobject %s without dirent\n",
+			kobject_name(kobj));
+		return -ENOENT;
+	}
 
 	err = 0;
 	if (!sysfs_ns_type(dir_sd))
@@ -518,7 +526,7 @@ out:
 }
 
 int sysfs_add_file_mode(struct sysfs_dirent *dir_sd,
-			const struct attribute *attr, int type, mode_t amode)
+			const struct attribute *attr, int type, umode_t amode)
 {
 	umode_t mode = (amode & S_IALLUGO) | S_IFREG;
 	struct sysfs_addrm_cxt acxt;
@@ -618,7 +626,7 @@ EXPORT_SYMBOL_GPL(sysfs_add_file_to_group);
  *
  */
 int sysfs_chmod_file(struct kobject *kobj, const struct attribute *attr,
-		     mode_t mode)
+		     umode_t mode)
 {
 	struct sysfs_dirent *sd;
 	struct iattr newattrs;

@@ -161,7 +161,7 @@ static ssize_t set_temp(struct device *dev, struct device_attribute *da,
 	struct i2c_client *client = to_i2c_client(dev);
 	struct ds620_data *data = i2c_get_clientdata(client);
 
-	res = strict_strtol(buf, 10, &val);
+	res = kstrtol(buf, 10, &val);
 
 	if (res)
 		return res;
@@ -232,11 +232,10 @@ static int ds620_probe(struct i2c_client *client,
 	struct ds620_data *data;
 	int err;
 
-	data = kzalloc(sizeof(struct ds620_data), GFP_KERNEL);
-	if (!data) {
-		err = -ENOMEM;
-		goto exit;
-	}
+	data = devm_kzalloc(&client->dev, sizeof(struct ds620_data),
+			    GFP_KERNEL);
+	if (!data)
+		return -ENOMEM;
 
 	i2c_set_clientdata(client, data);
 	mutex_init(&data->update_lock);
@@ -247,7 +246,7 @@ static int ds620_probe(struct i2c_client *client,
 	/* Register sysfs hooks */
 	err = sysfs_create_group(&client->dev.kobj, &ds620_group);
 	if (err)
-		goto exit_free;
+		return err;
 
 	data->hwmon_dev = hwmon_device_register(&client->dev);
 	if (IS_ERR(data->hwmon_dev)) {
@@ -261,9 +260,6 @@ static int ds620_probe(struct i2c_client *client,
 
 exit_remove_files:
 	sysfs_remove_group(&client->dev.kobj, &ds620_group);
-exit_free:
-	kfree(data);
-exit:
 	return err;
 }
 
@@ -273,8 +269,6 @@ static int ds620_remove(struct i2c_client *client)
 
 	hwmon_device_unregister(data->hwmon_dev);
 	sysfs_remove_group(&client->dev.kobj, &ds620_group);
-
-	kfree(data);
 
 	return 0;
 }
@@ -297,19 +291,8 @@ static struct i2c_driver ds620_driver = {
 	.id_table = ds620_id,
 };
 
-static int __init ds620_init(void)
-{
-	return i2c_add_driver(&ds620_driver);
-}
-
-static void __exit ds620_exit(void)
-{
-	i2c_del_driver(&ds620_driver);
-}
+module_i2c_driver(ds620_driver);
 
 MODULE_AUTHOR("Roland Stigge <stigge@antcom.de>");
 MODULE_DESCRIPTION("DS620 driver");
 MODULE_LICENSE("GPL");
-
-module_init(ds620_init);
-module_exit(ds620_exit);

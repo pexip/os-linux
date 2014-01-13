@@ -23,7 +23,6 @@
 #include <linux/export.h>
 #include <scsi/iscsi_proto.h>
 #include <target/target_core_base.h>
-#include <target/target_core_transport.h>
 #include <target/configfs_macros.h>
 
 #include "iscsi_target_core.h"
@@ -411,14 +410,16 @@ static ssize_t iscsi_stat_tgt_attr_show_attr_fail_intr_addr_type(
 	struct iscsi_tiqn *tiqn = container_of(igrps,
 			struct iscsi_tiqn, tiqn_stat_grps);
 	struct iscsi_login_stats *lstat = &tiqn->login_stats;
-	unsigned char buf[8];
+	int ret;
 
 	spin_lock(&lstat->lock);
-	snprintf(buf, 8, "%s", (lstat->last_intr_fail_ip_addr != NULL) ?
-				"ipv6" : "ipv4");
+	if (lstat->last_intr_fail_ip_family == AF_INET6)
+		ret = snprintf(page, PAGE_SIZE, "ipv6\n");
+	else
+		ret = snprintf(page, PAGE_SIZE, "ipv4\n");
 	spin_unlock(&lstat->lock);
 
-	return snprintf(page, PAGE_SIZE, "%s\n", buf);
+	return ret;
 }
 ISCSI_STAT_TGT_ATTR_RO(fail_intr_addr_type);
 
@@ -428,16 +429,19 @@ static ssize_t iscsi_stat_tgt_attr_show_attr_fail_intr_addr(
 	struct iscsi_tiqn *tiqn = container_of(igrps,
 			struct iscsi_tiqn, tiqn_stat_grps);
 	struct iscsi_login_stats *lstat = &tiqn->login_stats;
-	unsigned char buf[32];
+	int ret;
 
 	spin_lock(&lstat->lock);
-	if (lstat->last_intr_fail_ip_family == AF_INET6)
-		snprintf(buf, 32, "[%s]", lstat->last_intr_fail_ip_addr);
-	else
-		snprintf(buf, 32, "%s", lstat->last_intr_fail_ip_addr);
+	if (lstat->last_intr_fail_ip_family == AF_INET6) {
+		ret = snprintf(page, PAGE_SIZE, "[%s]\n",
+			       lstat->last_intr_fail_ip_addr);
+	} else {
+		ret = snprintf(page, PAGE_SIZE, "%s\n",
+			       lstat->last_intr_fail_ip_addr);
+	}
 	spin_unlock(&lstat->lock);
 
-	return snprintf(page, PAGE_SIZE, "%s\n", buf);
+	return ret;
 }
 ISCSI_STAT_TGT_ATTR_RO(fail_intr_addr);
 
@@ -746,7 +750,7 @@ static ssize_t iscsi_stat_sess_show_attr_node(
 	spin_lock_bh(&se_nacl->nacl_sess_lock);
 	se_sess = se_nacl->nacl_sess;
 	if (se_sess) {
-		sess = (struct iscsi_session *)se_sess->fabric_sess_ptr;
+		sess = se_sess->fabric_sess_ptr;
 		if (sess)
 			ret = snprintf(page, PAGE_SIZE, "%u\n",
 				sess->sess_ops->SessionType ? 0 : ISCSI_NODE_INDEX);
@@ -770,7 +774,7 @@ static ssize_t iscsi_stat_sess_show_attr_indx(
 	spin_lock_bh(&se_nacl->nacl_sess_lock);
 	se_sess = se_nacl->nacl_sess;
 	if (se_sess) {
-		sess = (struct iscsi_session *)se_sess->fabric_sess_ptr;
+		sess = se_sess->fabric_sess_ptr;
 		if (sess)
 			ret = snprintf(page, PAGE_SIZE, "%u\n",
 					sess->session_index);
@@ -794,7 +798,7 @@ static ssize_t iscsi_stat_sess_show_attr_cmd_pdus(
 	spin_lock_bh(&se_nacl->nacl_sess_lock);
 	se_sess = se_nacl->nacl_sess;
 	if (se_sess) {
-		sess = (struct iscsi_session *)se_sess->fabric_sess_ptr;
+		sess = se_sess->fabric_sess_ptr;
 		if (sess)
 			ret = snprintf(page, PAGE_SIZE, "%u\n", sess->cmd_pdus);
 	}
@@ -817,7 +821,7 @@ static ssize_t iscsi_stat_sess_show_attr_rsp_pdus(
 	spin_lock_bh(&se_nacl->nacl_sess_lock);
 	se_sess = se_nacl->nacl_sess;
 	if (se_sess) {
-		sess = (struct iscsi_session *)se_sess->fabric_sess_ptr;
+		sess = se_sess->fabric_sess_ptr;
 		if (sess)
 			ret = snprintf(page, PAGE_SIZE, "%u\n", sess->rsp_pdus);
 	}
@@ -840,7 +844,7 @@ static ssize_t iscsi_stat_sess_show_attr_txdata_octs(
 	spin_lock_bh(&se_nacl->nacl_sess_lock);
 	se_sess = se_nacl->nacl_sess;
 	if (se_sess) {
-		sess = (struct iscsi_session *)se_sess->fabric_sess_ptr;
+		sess = se_sess->fabric_sess_ptr;
 		if (sess)
 			ret = snprintf(page, PAGE_SIZE, "%llu\n",
 				(unsigned long long)sess->tx_data_octets);
@@ -864,7 +868,7 @@ static ssize_t iscsi_stat_sess_show_attr_rxdata_octs(
 	spin_lock_bh(&se_nacl->nacl_sess_lock);
 	se_sess = se_nacl->nacl_sess;
 	if (se_sess) {
-		sess = (struct iscsi_session *)se_sess->fabric_sess_ptr;
+		sess = se_sess->fabric_sess_ptr;
 		if (sess)
 			ret = snprintf(page, PAGE_SIZE, "%llu\n",
 				(unsigned long long)sess->rx_data_octets);
@@ -888,7 +892,7 @@ static ssize_t iscsi_stat_sess_show_attr_conn_digest_errors(
 	spin_lock_bh(&se_nacl->nacl_sess_lock);
 	se_sess = se_nacl->nacl_sess;
 	if (se_sess) {
-		sess = (struct iscsi_session *)se_sess->fabric_sess_ptr;
+		sess = se_sess->fabric_sess_ptr;
 		if (sess)
 			ret = snprintf(page, PAGE_SIZE, "%u\n",
 					sess->conn_digest_errors);
@@ -912,7 +916,7 @@ static ssize_t iscsi_stat_sess_show_attr_conn_timeout_errors(
 	spin_lock_bh(&se_nacl->nacl_sess_lock);
 	se_sess = se_nacl->nacl_sess;
 	if (se_sess) {
-		sess = (struct iscsi_session *)se_sess->fabric_sess_ptr;
+		sess = se_sess->fabric_sess_ptr;
 		if (sess)
 			ret = snprintf(page, PAGE_SIZE, "%u\n",
 					sess->conn_timeout_errors);

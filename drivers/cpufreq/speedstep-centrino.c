@@ -25,6 +25,7 @@
 #include <asm/msr.h>
 #include <asm/processor.h>
 #include <asm/cpufeature.h>
+#include <asm/cpu_device_id.h>
 
 #define PFX		"speedstep-centrino: "
 #define MAINTAINER	"cpufreq@vger.kernel.org"
@@ -78,11 +79,11 @@ static struct cpufreq_driver centrino_driver;
 
 /* Computes the correct form for IA32_PERF_CTL MSR for a particular
    frequency/voltage operating point; frequency in MHz, volts in mV.
-   This is stored as "index" in the structure. */
+   This is stored as "driver_data" in the structure. */
 #define OP(mhz, mv)							\
 	{								\
 		.frequency = (mhz) * 1000,				\
-		.index = (((mhz)/100) << 8) | ((mv - 700) / 16)		\
+		.driver_data = (((mhz)/100) << 8) | ((mv - 700) / 16)		\
 	}
 
 /*
@@ -306,7 +307,7 @@ static unsigned extract_clock(unsigned msr, unsigned int cpu, int failsafe)
 		per_cpu(centrino_model, cpu)->op_points[i].frequency
 							!= CPUFREQ_TABLE_END;
 	     i++) {
-		if (msr == per_cpu(centrino_model, cpu)->op_points[i].index)
+		if (msr == per_cpu(centrino_model, cpu)->op_points[i].driver_data)
 			return per_cpu(centrino_model, cpu)->
 							op_points[i].frequency;
 	}
@@ -456,7 +457,7 @@ static int centrino_target (struct cpufreq_policy *policy,
 	unsigned int	msr, oldmsr = 0, h = 0, cpu = policy->cpu;
 	struct cpufreq_freqs	freqs;
 	int			retval = 0;
-	unsigned int		j, k, first_cpu, tmp;
+	unsigned int		j, first_cpu, tmp;
 	cpumask_var_t covered_cpus;
 
 	if (unlikely(!zalloc_cpumask_var(&covered_cpus, GFP_KERNEL)))
@@ -480,10 +481,6 @@ static int centrino_target (struct cpufreq_policy *policy,
 	for_each_cpu(j, policy->cpus) {
 		int good_cpu;
 
-		/* cpufreq holds the hotplug lock, so we are safe here */
-		if (!cpu_online(j))
-			continue;
-
 		/*
 		 * Support for SMP systems.
 		 * Make sure we are running on CPU that wants to change freq
@@ -504,7 +501,7 @@ static int centrino_target (struct cpufreq_policy *policy,
 			break;
 		}
 
-		msr = per_cpu(centrino_model, cpu)->op_points[newstate].index;
+		msr = per_cpu(centrino_model, cpu)->op_points[newstate].driver_data;
 
 		if (first_cpu) {
 			rdmsr_on_cpu(good_cpu, MSR_IA32_PERF_CTL, &oldmsr, &h);
@@ -521,13 +518,8 @@ static int centrino_target (struct cpufreq_policy *policy,
 			pr_debug("target=%dkHz old=%d new=%d msr=%04x\n",
 				target_freq, freqs.old, freqs.new, msr);
 
-			for_each_cpu(k, policy->cpus) {
-				if (!cpu_online(k))
-					continue;
-				freqs.cpu = k;
-				cpufreq_notify_transition(&freqs,
+			cpufreq_notify_transition(policy, &freqs,
 					CPUFREQ_PRECHANGE);
-			}
 
 			first_cpu = 0;
 			/* all but 16 LSB are reserved, treat them with care */
@@ -543,12 +535,7 @@ static int centrino_target (struct cpufreq_policy *policy,
 		cpumask_set_cpu(j, covered_cpus);
 	}
 
-	for_each_cpu(k, policy->cpus) {
-		if (!cpu_online(k))
-			continue;
-		freqs.cpu = k;
-		cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
-	}
+	cpufreq_notify_transition(policy, &freqs, CPUFREQ_POSTCHANGE);
 
 	if (unlikely(retval)) {
 		/*
@@ -564,12 +551,8 @@ static int centrino_target (struct cpufreq_policy *policy,
 		tmp = freqs.new;
 		freqs.new = freqs.old;
 		freqs.old = tmp;
-		for_each_cpu(j, policy->cpus) {
-			if (!cpu_online(j))
-				continue;
-			cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
-			cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
-		}
+		cpufreq_notify_transition(policy, &freqs, CPUFREQ_PRECHANGE);
+		cpufreq_notify_transition(policy, &freqs, CPUFREQ_POSTCHANGE);
 	}
 	retval = 0;
 
@@ -595,6 +578,24 @@ static struct cpufreq_driver centrino_driver = {
 	.owner		= THIS_MODULE,
 };
 
+/*
+ * This doesn't replace the detailed checks above because
+ * the generic CPU IDs don't have a way to match for steppings
+ * or ASCII model IDs.
+ */
+static const struct x86_cpu_id centrino_ids[] = {
+	{ X86_VENDOR_INTEL, 6, 9, X86_FEATURE_EST },
+	{ X86_VENDOR_INTEL, 6, 13, X86_FEATURE_EST },
+	{ X86_VENDOR_INTEL, 6, 13, X86_FEATURE_EST },
+	{ X86_VENDOR_INTEL, 6, 13, X86_FEATURE_EST },
+	{ X86_VENDOR_INTEL, 15, 3, X86_FEATURE_EST },
+	{ X86_VENDOR_INTEL, 15, 4, X86_FEATURE_EST },
+	{}
+};
+#if 0
+/* Autoload or not? Do not for now. */
+MODULE_DEVICE_TABLE(x86cpu, centrino_ids);
+#endif
 
 /**
  * centrino_init - initializes the Enhanced SpeedStep CPUFreq driver
@@ -612,11 +613,8 @@ static struct cpufreq_driver centrino_driver = {
  */
 static int __init centrino_init(void)
 {
-	struct cpuinfo_x86 *cpu = &cpu_data(0);
-
-	if (!cpu_has(cpu, X86_FEATURE_EST))
+	if (!x86_match_cpu(centrino_ids))
 		return -ENODEV;
-
 	return cpufreq_register_driver(&centrino_driver);
 }
 

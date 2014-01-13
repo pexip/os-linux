@@ -105,7 +105,7 @@ static int rfkill_gpio_probe(struct platform_device *pdev)
 		ret = pdata->gpio_runtime_setup(pdev);
 		if (ret) {
 			pr_warn("%s: can't set up gpio\n", __func__);
-			return ret;
+			goto fail_alloc;
 		}
 	}
 
@@ -131,6 +131,7 @@ static int rfkill_gpio_probe(struct platform_device *pdev)
 		rfkill->pwr_clk = clk_get(&pdev->dev, pdata->power_clk_name);
 		if (IS_ERR(rfkill->pwr_clk)) {
 			pr_warn("%s: can't find pwr_clk.\n", __func__);
+			ret = PTR_ERR(rfkill->pwr_clk);
 			goto fail_shutdown_name;
 		}
 	}
@@ -152,9 +153,11 @@ static int rfkill_gpio_probe(struct platform_device *pdev)
 	}
 
 	rfkill->rfkill_dev = rfkill_alloc(pdata->name, &pdev->dev, pdata->type,
-				&rfkill_gpio_ops, rfkill);
-	if (!rfkill->rfkill_dev)
+					  &rfkill_gpio_ops, rfkill);
+	if (!rfkill->rfkill_dev) {
+		ret = -ENOMEM;
 		goto fail_shutdown;
+	}
 
 	ret = rfkill_register(rfkill->rfkill_dev);
 	if (ret < 0)
@@ -213,25 +216,14 @@ static int rfkill_gpio_remove(struct platform_device *pdev)
 
 static struct platform_driver rfkill_gpio_driver = {
 	.probe = rfkill_gpio_probe,
-	.remove = __devexit_p(rfkill_gpio_remove),
+	.remove = rfkill_gpio_remove,
 	.driver = {
 		   .name = "rfkill_gpio",
 		   .owner = THIS_MODULE,
 	},
 };
 
-static int __init rfkill_gpio_init(void)
-{
-	return platform_driver_register(&rfkill_gpio_driver);
-}
-
-static void __exit rfkill_gpio_exit(void)
-{
-	platform_driver_unregister(&rfkill_gpio_driver);
-}
-
-module_init(rfkill_gpio_init);
-module_exit(rfkill_gpio_exit);
+module_platform_driver(rfkill_gpio_driver);
 
 MODULE_DESCRIPTION("gpio rfkill");
 MODULE_AUTHOR("NVIDIA");

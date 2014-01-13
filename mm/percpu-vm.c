@@ -184,8 +184,7 @@ static void pcpu_unmap_pages(struct pcpu_chunk *chunk,
 				   page_end - page_start);
 	}
 
-	for (i = page_start; i < page_end; i++)
-		__clear_bit(i, populated);
+	bitmap_clear(populated, page_start, page_end - page_start);
 }
 
 /**
@@ -361,7 +360,6 @@ err_free:
  * @chunk: chunk to depopulate
  * @off: offset to the area to depopulate
  * @size: size of the area to depopulate in bytes
- * @flush: whether to flush cache and tlb or not
  *
  * For each cpu, depopulate and unmap pages [@page_start,@page_end)
  * from @chunk.  If @flush is true, vcache is flushed before unmapping

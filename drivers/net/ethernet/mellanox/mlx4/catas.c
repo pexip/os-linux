@@ -48,7 +48,8 @@ static struct work_struct catas_work;
 static int internal_err_reset = 1;
 module_param(internal_err_reset, int, 0644);
 MODULE_PARM_DESC(internal_err_reset,
-		 "Reset device on internal errors if non-zero (default 1)");
+		 "Reset device on internal errors if non-zero"
+		 " (default 1, in SRIOV mode default is 0)");
 
 static void dump_err_buf(struct mlx4_dev *dev)
 {
@@ -68,16 +69,21 @@ static void poll_catas(unsigned long dev_ptr)
 	struct mlx4_priv *priv = mlx4_priv(dev);
 
 	if (readl(priv->catas_err.map)) {
-		dump_err_buf(dev);
+		/* If the device is off-line, we cannot try to recover it */
+		if (pci_channel_offline(dev->pdev))
+			mod_timer(&priv->catas_err.timer,
+				  round_jiffies(jiffies + MLX4_CATAS_POLL_INTERVAL));
+		else {
+			dump_err_buf(dev);
+			mlx4_dispatch_event(dev, MLX4_DEV_EVENT_CATASTROPHIC_ERROR, 0);
 
-		mlx4_dispatch_event(dev, MLX4_DEV_EVENT_CATASTROPHIC_ERROR, 0);
+			if (internal_err_reset) {
+				spin_lock(&catas_lock);
+				list_add(&priv->catas_err.list, &catas_list);
+				spin_unlock(&catas_lock);
 
-		if (internal_err_reset) {
-			spin_lock(&catas_lock);
-			list_add(&priv->catas_err.list, &catas_list);
-			spin_unlock(&catas_lock);
-
-			queue_work(mlx4_wq, &catas_work);
+				queue_work(mlx4_wq, &catas_work);
+			}
 		}
 	} else
 		mod_timer(&priv->catas_err.timer,
@@ -99,6 +105,10 @@ static void catas_reset(struct work_struct *work)
 	list_for_each_entry_safe(priv, tmppriv, &tlist, catas_err.list) {
 		struct pci_dev *pdev = priv->dev.pdev;
 
+		/* If the device is off-line, we cannot reset it */
+		if (pci_channel_offline(pdev))
+			continue;
+
 		ret = mlx4_restart_one(priv->dev.pdev);
 		/* 'priv' now is not valid */
 		if (ret)
@@ -115,6 +125,10 @@ void mlx4_start_catas_poll(struct mlx4_dev *dev)
 {
 	struct mlx4_priv *priv = mlx4_priv(dev);
 	phys_addr_t addr;
+
+	/*If we are in SRIOV the default of the module param must be 0*/
+	if (mlx4_is_mfunc(dev))
+		internal_err_reset = 0;
 
 	INIT_LIST_HEAD(&priv->catas_err.list);
 	init_timer(&priv->catas_err.timer);

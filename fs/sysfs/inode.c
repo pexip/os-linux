@@ -24,8 +24,6 @@
 #include <linux/security.h>
 #include "sysfs.h"
 
-extern struct super_block * sysfs_sb;
-
 static const struct address_space_operations sysfs_aops = {
 	.readpage	= simple_readpage,
 	.write_begin	= simple_write_begin,
@@ -62,8 +60,8 @@ static struct sysfs_inode_attrs *sysfs_init_inode_attrs(struct sysfs_dirent *sd)
 
 	/* assign default attributes */
 	iattrs->ia_mode = sd->s_mode;
-	iattrs->ia_uid = 0;
-	iattrs->ia_gid = 0;
+	iattrs->ia_uid = GLOBAL_ROOT_UID;
+	iattrs->ia_gid = GLOBAL_ROOT_GID;
 	iattrs->ia_atime = iattrs->ia_mtime = iattrs->ia_ctime = CURRENT_TIME;
 
 	return attrs;
@@ -136,12 +134,13 @@ static int sysfs_sd_setsecdata(struct sysfs_dirent *sd, void **secdata, u32 *sec
 	void *old_secdata;
 	size_t old_secdata_len;
 
-	iattrs = sd->s_iattr;
-	if (!iattrs)
-		iattrs = sysfs_init_inode_attrs(sd);
-	if (!iattrs)
-		return -ENOMEM;
+	if (!sd->s_iattr) {
+		sd->s_iattr = sysfs_init_inode_attrs(sd);
+		if (!sd->s_iattr)
+			return -ENOMEM;
+	}
 
+	iattrs = sd->s_iattr;
 	old_secdata = iattrs->ia_secdata;
 	old_secdata_len = iattrs->ia_secdata_len;
 
@@ -187,7 +186,7 @@ out:
 	return error;
 }
 
-static inline void set_default_inode_attr(struct inode * inode, mode_t mode)
+static inline void set_default_inode_attr(struct inode * inode, umode_t mode)
 {
 	inode->i_mode = mode;
 	inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
@@ -309,7 +308,7 @@ void sysfs_evict_inode(struct inode *inode)
 	struct sysfs_dirent *sd  = inode->i_private;
 
 	truncate_inode_pages(&inode->i_data, 0);
-	end_writeback(inode);
+	clear_inode(inode);
 	sysfs_put(sd);
 }
 
@@ -318,8 +317,11 @@ int sysfs_hash_and_remove(struct sysfs_dirent *dir_sd, const void *ns, const cha
 	struct sysfs_addrm_cxt acxt;
 	struct sysfs_dirent *sd;
 
-	if (!dir_sd)
+	if (!dir_sd) {
+		WARN(1, KERN_WARNING "sysfs: can not remove '%s', no directory\n",
+			name);
 		return -ENOENT;
+	}
 
 	sysfs_addrm_start(&acxt, dir_sd);
 

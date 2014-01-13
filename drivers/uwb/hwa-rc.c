@@ -645,7 +645,8 @@ void hwarc_neep_cb(struct urb *urb)
 		dev_err(dev, "NEEP: URB error %d\n", urb->status);
 	}
 	result = usb_submit_urb(urb, GFP_ATOMIC);
-	if (result < 0) {
+	if (result < 0 && result != -ENODEV && result != -EPERM) {
+		/* ignoring unrecoverable errors */
 		dev_err(dev, "NEEP: Can't resubmit URB (%d) resetting device\n",
 			result);
 		goto error;
@@ -899,6 +900,12 @@ static const struct usb_device_id hwarc_id_table[] = {
 	/* Intel i1480 (using firmware 1.3PA2-20070828) */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x8086, 0x0c3b, 0xe0, 0x01, 0x02),
 	  .driver_info = WUSB_QUIRK_WHCI_CMD_EVT },
+	/* Alereon 5310 */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x13dc, 0x5310, 0xe0, 0x01, 0x02),
+	  .driver_info = WUSB_QUIRK_WHCI_CMD_EVT },
+	/* Alereon 5611 */
+	{ USB_DEVICE_AND_INTERFACE_INFO(0x13dc, 0x5611, 0xe0, 0x01, 0x02),
+	  .driver_info = WUSB_QUIRK_WHCI_CMD_EVT },
 	/* Generic match for the Radio Control interface */
 	{ USB_INTERFACE_INFO(0xe0, 0x01, 0x02), },
 	{ },
@@ -914,17 +921,7 @@ static struct usb_driver hwarc_driver = {
 	.post_reset =   hwarc_post_reset,
 };
 
-static int __init hwarc_driver_init(void)
-{
-	return usb_register(&hwarc_driver);
-}
-module_init(hwarc_driver_init);
-
-static void __exit hwarc_driver_exit(void)
-{
-	usb_deregister(&hwarc_driver);
-}
-module_exit(hwarc_driver_exit);
+module_usb_driver(hwarc_driver);
 
 MODULE_AUTHOR("Inaky Perez-Gonzalez <inaky.perez-gonzalez@intel.com>");
 MODULE_DESCRIPTION("Host Wireless Adapter Radio Control Driver");

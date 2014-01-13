@@ -1,7 +1,7 @@
 /*******************************************************************************
 
   Intel 82599 Virtual Function driver
-  Copyright(c) 1999 - 2009 Intel Corporation.
+  Copyright(c) 1999 - 2012 Intel Corporation.
 
   This program is free software; you can redistribute it and/or modify it
   under the terms and conditions of the GNU General Public License,
@@ -27,6 +27,8 @@
 
 /* ethtool support for ixgbevf */
 
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+
 #include <linux/types.h>
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -41,7 +43,6 @@
 
 #define IXGBE_ALL_RAR_ENTRIES 16
 
-#ifdef ETHTOOL_GSTATS
 struct ixgbe_stats {
 	char stat_string[ETH_GSTRING_LEN];
 	int sizeof_stat;
@@ -54,7 +55,8 @@ struct ixgbe_stats {
 			    offsetof(struct ixgbevf_adapter, m),         \
 			    offsetof(struct ixgbevf_adapter, b),         \
 			    offsetof(struct ixgbevf_adapter, r)
-static struct ixgbe_stats ixgbe_gstrings_stats[] = {
+
+static const struct ixgbe_stats ixgbe_gstrings_stats[] = {
 	{"rx_packets", IXGBEVF_STAT(stats.vfgprc, stats.base_vfgprc,
 				    stats.saved_reset_vfgprc)},
 	{"tx_packets", IXGBEVF_STAT(stats.vfgptc, stats.base_vfgptc,
@@ -72,21 +74,17 @@ static struct ixgbe_stats ixgbe_gstrings_stats[] = {
 						zero_base)},
 	{"tx_csum_offload_ctxt", IXGBEVF_STAT(hw_csum_tx_good, zero_base,
 					      zero_base)},
-	{"rx_header_split", IXGBEVF_STAT(rx_hdr_split, zero_base, zero_base)},
 };
 
 #define IXGBE_QUEUE_STATS_LEN 0
 #define IXGBE_GLOBAL_STATS_LEN	ARRAY_SIZE(ixgbe_gstrings_stats)
 
 #define IXGBEVF_STATS_LEN (IXGBE_GLOBAL_STATS_LEN + IXGBE_QUEUE_STATS_LEN)
-#endif /* ETHTOOL_GSTATS */
-#ifdef ETHTOOL_TEST
 static const char ixgbe_gstrings_test[][ETH_GSTRING_LEN] = {
 	"Register test  (offline)",
 	"Link test   (on/offline)"
 };
 #define IXGBE_TEST_LEN (sizeof(ixgbe_gstrings_test) / ETH_GSTRING_LEN)
-#endif /* ETHTOOL_TEST */
 
 static int ixgbevf_get_settings(struct net_device *netdev,
 				struct ethtool_cmd *ecmd)
@@ -101,13 +99,24 @@ static int ixgbevf_get_settings(struct net_device *netdev,
 	ecmd->transceiver = XCVR_DUMMY1;
 	ecmd->port = -1;
 
+	hw->mac.get_link_status = 1;
 	hw->mac.ops.check_link(hw, &link_speed, &link_up, false);
 
 	if (link_up) {
-		ethtool_cmd_speed_set(
-			ecmd,
-			(link_speed == IXGBE_LINK_SPEED_10GB_FULL) ?
-			SPEED_10000 : SPEED_1000);
+		__u32 speed = SPEED_10000;
+		switch (link_speed) {
+		case IXGBE_LINK_SPEED_10GB_FULL:
+			speed = SPEED_10000;
+			break;
+		case IXGBE_LINK_SPEED_1GB_FULL:
+			speed = SPEED_1000;
+			break;
+		case IXGBE_LINK_SPEED_100_FULL:
+			speed = SPEED_100;
+			break;
+		}
+
+		ethtool_cmd_speed_set(ecmd, speed);
 		ecmd->duplex = DUPLEX_FULL;
 	} else {
 		ethtool_cmd_speed_set(ecmd, -1);
@@ -265,24 +274,22 @@ static void ixgbevf_get_drvinfo(struct net_device *netdev,
 {
 	struct ixgbevf_adapter *adapter = netdev_priv(netdev);
 
-	strlcpy(drvinfo->driver, ixgbevf_driver_name, 32);
-	strlcpy(drvinfo->version, ixgbevf_driver_version, 32);
-
-	strlcpy(drvinfo->fw_version, "N/A", 4);
-	strlcpy(drvinfo->bus_info, pci_name(adapter->pdev), 32);
+	strlcpy(drvinfo->driver, ixgbevf_driver_name, sizeof(drvinfo->driver));
+	strlcpy(drvinfo->version, ixgbevf_driver_version,
+		sizeof(drvinfo->version));
+	strlcpy(drvinfo->bus_info, pci_name(adapter->pdev),
+		sizeof(drvinfo->bus_info));
 }
 
 static void ixgbevf_get_ringparam(struct net_device *netdev,
 				  struct ethtool_ringparam *ring)
 {
 	struct ixgbevf_adapter *adapter = netdev_priv(netdev);
-	struct ixgbevf_ring *tx_ring = adapter->tx_ring;
-	struct ixgbevf_ring *rx_ring = adapter->rx_ring;
 
 	ring->rx_max_pending = IXGBEVF_MAX_RXD;
 	ring->tx_max_pending = IXGBEVF_MAX_TXD;
-	ring->rx_pending = rx_ring->count;
-	ring->tx_pending = tx_ring->count;
+	ring->rx_pending = adapter->rx_ring_count;
+	ring->tx_pending = adapter->tx_ring_count;
 }
 
 static int ixgbevf_set_ringparam(struct net_device *netdev,
@@ -290,33 +297,28 @@ static int ixgbevf_set_ringparam(struct net_device *netdev,
 {
 	struct ixgbevf_adapter *adapter = netdev_priv(netdev);
 	struct ixgbevf_ring *tx_ring = NULL, *rx_ring = NULL;
-	int i, err = 0;
 	u32 new_rx_count, new_tx_count;
+	int i, err = 0;
 
 	if ((ring->rx_mini_pending) || (ring->rx_jumbo_pending))
 		return -EINVAL;
 
-	new_rx_count = max(ring->rx_pending, (u32)IXGBEVF_MIN_RXD);
-	new_rx_count = min(new_rx_count, (u32)IXGBEVF_MAX_RXD);
-	new_rx_count = ALIGN(new_rx_count, IXGBE_REQ_RX_DESCRIPTOR_MULTIPLE);
-
-	new_tx_count = max(ring->tx_pending, (u32)IXGBEVF_MIN_TXD);
-	new_tx_count = min(new_tx_count, (u32)IXGBEVF_MAX_TXD);
+	new_tx_count = max_t(u32, ring->tx_pending, IXGBEVF_MIN_TXD);
+	new_tx_count = min_t(u32, new_tx_count, IXGBEVF_MAX_TXD);
 	new_tx_count = ALIGN(new_tx_count, IXGBE_REQ_TX_DESCRIPTOR_MULTIPLE);
 
-	if ((new_tx_count == adapter->tx_ring->count) &&
-	    (new_rx_count == adapter->rx_ring->count)) {
-		/* nothing to do */
+	new_rx_count = max_t(u32, ring->rx_pending, IXGBEVF_MIN_RXD);
+	new_rx_count = min_t(u32, new_rx_count, IXGBEVF_MAX_RXD);
+	new_rx_count = ALIGN(new_rx_count, IXGBE_REQ_RX_DESCRIPTOR_MULTIPLE);
+
+	/* if nothing to do return success */
+	if ((new_tx_count == adapter->tx_ring_count) &&
+	    (new_rx_count == adapter->rx_ring_count))
 		return 0;
-	}
 
 	while (test_and_set_bit(__IXGBEVF_RESETTING, &adapter->state))
-		msleep(1);
+		usleep_range(1000, 2000);
 
-	/*
-	 * If the adapter isn't up and running then just set the
-	 * new parameters and scurry for the exits.
-	 */
 	if (!netif_running(adapter->netdev)) {
 		for (i = 0; i < adapter->num_tx_queues; i++)
 			adapter->tx_ring[i].count = new_tx_count;
@@ -327,82 +329,98 @@ static int ixgbevf_set_ringparam(struct net_device *netdev,
 		goto clear_reset;
 	}
 
-	tx_ring = kcalloc(adapter->num_tx_queues,
-			  sizeof(struct ixgbevf_ring), GFP_KERNEL);
-	if (!tx_ring) {
-		err = -ENOMEM;
-		goto clear_reset;
+	if (new_tx_count != adapter->tx_ring_count) {
+		tx_ring = vmalloc(adapter->num_tx_queues * sizeof(*tx_ring));
+		if (!tx_ring) {
+			err = -ENOMEM;
+			goto clear_reset;
+		}
+
+		for (i = 0; i < adapter->num_tx_queues; i++) {
+			/* clone ring and setup updated count */
+			tx_ring[i] = adapter->tx_ring[i];
+			tx_ring[i].count = new_tx_count;
+			err = ixgbevf_setup_tx_resources(adapter, &tx_ring[i]);
+			if (!err)
+				continue;
+			while (i) {
+				i--;
+				ixgbevf_free_tx_resources(adapter, &tx_ring[i]);
+			}
+
+			vfree(tx_ring);
+			tx_ring = NULL;
+
+			goto clear_reset;
+		}
 	}
 
-	rx_ring = kcalloc(adapter->num_rx_queues,
-			  sizeof(struct ixgbevf_ring), GFP_KERNEL);
-	if (!rx_ring) {
-		err = -ENOMEM;
-		goto err_rx_setup;
+	if (new_rx_count != adapter->rx_ring_count) {
+		rx_ring = vmalloc(adapter->num_rx_queues * sizeof(*rx_ring));
+		if (!rx_ring) {
+			err = -ENOMEM;
+			goto clear_reset;
+		}
+
+		for (i = 0; i < adapter->num_rx_queues; i++) {
+			/* clone ring and setup updated count */
+			rx_ring[i] = adapter->rx_ring[i];
+			rx_ring[i].count = new_rx_count;
+			err = ixgbevf_setup_rx_resources(adapter, &rx_ring[i]);
+			if (!err)
+				continue;
+			while (i) {
+				i--;
+				ixgbevf_free_rx_resources(adapter, &rx_ring[i]);
+			}
+
+			vfree(rx_ring);
+			rx_ring = NULL;
+
+			goto clear_reset;
+		}
 	}
 
+	/* bring interface down to prepare for update */
 	ixgbevf_down(adapter);
 
-	memcpy(tx_ring, adapter->tx_ring,
-	       adapter->num_tx_queues * sizeof(struct ixgbevf_ring));
-	for (i = 0; i < adapter->num_tx_queues; i++) {
-		tx_ring[i].count = new_tx_count;
-		err = ixgbevf_setup_tx_resources(adapter, &tx_ring[i]);
-		if (err) {
-			while (i) {
-				i--;
-				ixgbevf_free_tx_resources(adapter,
-							  &tx_ring[i]);
-			}
-			goto err_tx_ring_setup;
+	/* Tx */
+	if (tx_ring) {
+		for (i = 0; i < adapter->num_tx_queues; i++) {
+			ixgbevf_free_tx_resources(adapter,
+						  &adapter->tx_ring[i]);
+			adapter->tx_ring[i] = tx_ring[i];
 		}
-		tx_ring[i].v_idx = adapter->tx_ring[i].v_idx;
+		adapter->tx_ring_count = new_tx_count;
+
+		vfree(tx_ring);
+		tx_ring = NULL;
 	}
 
-	memcpy(rx_ring, adapter->rx_ring,
-	       adapter->num_rx_queues * sizeof(struct ixgbevf_ring));
-	for (i = 0; i < adapter->num_rx_queues; i++) {
-		rx_ring[i].count = new_rx_count;
-		err = ixgbevf_setup_rx_resources(adapter, &rx_ring[i]);
-		if (err) {
-			while (i) {
-				i--;
-				ixgbevf_free_rx_resources(adapter,
-							  &rx_ring[i]);
-			}
-				goto err_rx_ring_setup;
+	/* Rx */
+	if (rx_ring) {
+		for (i = 0; i < adapter->num_rx_queues; i++) {
+			ixgbevf_free_rx_resources(adapter,
+						  &adapter->rx_ring[i]);
+			adapter->rx_ring[i] = rx_ring[i];
 		}
-		rx_ring[i].v_idx = adapter->rx_ring[i].v_idx;
+		adapter->rx_ring_count = new_rx_count;
+
+		vfree(rx_ring);
+		rx_ring = NULL;
 	}
 
-	/*
-	 * Only switch to new rings if all the prior allocations
-	 * and ring setups have succeeded.
-	 */
-	kfree(adapter->tx_ring);
-	adapter->tx_ring = tx_ring;
-	adapter->tx_ring_count = new_tx_count;
-
-	kfree(adapter->rx_ring);
-	adapter->rx_ring = rx_ring;
-	adapter->rx_ring_count = new_rx_count;
-
-	/* success! */
+	/* restore interface using new values */
 	ixgbevf_up(adapter);
 
-	goto clear_reset;
-
-err_rx_ring_setup:
-	for(i = 0; i < adapter->num_tx_queues; i++)
-		ixgbevf_free_tx_resources(adapter, &tx_ring[i]);
-
-err_tx_ring_setup:
-	kfree(rx_ring);
-
-err_rx_setup:
-	kfree(tx_ring);
-
 clear_reset:
+	/* free Tx resources if Rx error is encountered */
+	if (tx_ring) {
+		for (i = 0; i < adapter->num_tx_queues; i++)
+			ixgbevf_free_tx_resources(adapter, &tx_ring[i]);
+		vfree(tx_ring);
+	}
+
 	clear_bit(__IXGBEVF_RESETTING, &adapter->state);
 	return err;
 }
@@ -549,8 +567,8 @@ static const u32 register_test_patterns[] = {
 	writel((W & M), (adapter->hw.hw_addr + R));                           \
 	val = readl(adapter->hw.hw_addr + R);                                 \
 	if ((W & M) != (val & M)) {                                           \
-		printk(KERN_ERR "set/check reg %04X test failed: got 0x%08X " \
-				 "expected 0x%08X\n", R, (val & M), (W & M)); \
+		pr_err("set/check reg %04X test failed: got 0x%08X expected " \
+		       "0x%08X\n", R, (val & M), (W & M));                    \
 		*data = R;                                                    \
 		writel(before, (adapter->hw.hw_addr + R));                    \
 		return 1;                                                     \
@@ -661,15 +679,13 @@ static int ixgbevf_nway_reset(struct net_device *netdev)
 {
 	struct ixgbevf_adapter *adapter = netdev_priv(netdev);
 
-	if (netif_running(netdev)) {
-		if (!adapter->dev_closed)
-			ixgbevf_reinit_locked(adapter);
-	}
+	if (netif_running(netdev))
+		ixgbevf_reinit_locked(adapter);
 
 	return 0;
 }
 
-static struct ethtool_ops ixgbevf_ethtool_ops = {
+static const struct ethtool_ops ixgbevf_ethtool_ops = {
 	.get_settings           = ixgbevf_get_settings,
 	.get_drvinfo            = ixgbevf_get_drvinfo,
 	.get_regs_len           = ixgbevf_get_regs_len,

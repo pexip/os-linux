@@ -27,6 +27,7 @@
 #include <asm/ppc-pci.h>
 #include <asm/iommu.h>
 #include <asm/io-workarounds.h>
+#include <asm/debug.h>
 
 #include "wsp.h"
 #include "wsp_pci.h"
@@ -401,7 +402,7 @@ static struct wsp_dma_table *wsp_pci_create_dma32_table(struct wsp_phb *phb,
 	return ERR_PTR(-ENOMEM);
 }
 
-static void __devinit wsp_pci_dma_dev_setup(struct pci_dev *pdev)
+static void wsp_pci_dma_dev_setup(struct pci_dev *pdev)
 {
 	struct dev_archdata *archdata = &pdev->dev.archdata;
 	struct pci_controller *hose = pci_bus_to_host(pdev->bus);
@@ -468,15 +469,15 @@ static void __init wsp_pcie_configure_hw(struct pci_controller *hose)
 #define DUMP_REG(x) \
 	pr_debug("%-30s : 0x%016llx\n", #x, in_be64(hose->cfg_data + x))
 
-#ifdef CONFIG_WSP_DD1_WORKAROUND_BAD_PCIE_CLASS
-	/* WSP DD1 has a bogus class code by default in the PCI-E
-	 * root complex's built-in P2P bridge */
+	/*
+	 * Some WSP variants  has a bogus class code by default in the PCI-E
+	 * root complex's built-in P2P bridge
+	 */
 	val = in_be64(hose->cfg_data + PCIE_REG_SYS_CFG1);
 	pr_debug("PCI-E SYS_CFG1 : 0x%llx\n", val);
 	out_be64(hose->cfg_data + PCIE_REG_SYS_CFG1,
 		 (val & ~PCIE_REG_SYS_CFG1_CLASS_CODE) | (PCI_CLASS_BRIDGE_PCI << 8));
 	pr_debug("PCI-E SYS_CFG1 : 0x%llx\n", in_be64(hose->cfg_data + PCIE_REG_SYS_CFG1));
-#endif /* CONFIG_WSP_DD1_WORKAROUND_BAD_PCIE_CLASS */
 
 #ifdef CONFIG_WSP_DD1_WORKAROUND_DD1_TCE_BUGS
 	/* XXX Disable TCE caching, it doesn't work on DD1 */
@@ -501,7 +502,7 @@ static void __init wsp_pcie_configure_hw(struct pci_controller *hose)
 		 (~(hose->mem_resources[0].end -
 		    hose->mem_resources[0].start)) & 0x3ffffff0000ul);
 	out_be64(hose->cfg_data + PCIE_REG_M32A_START_ADDR,
-		 (hose->mem_resources[0].start - hose->pci_mem_offset) | 1);
+		 (hose->mem_resources[0].start - hose->mem_offset[0]) | 1);
 
 	/* Clear all TVT entries
 	 *
@@ -682,7 +683,6 @@ static int __init wsp_setup_one_phb(struct device_node *np)
 	/* XXX Force re-assigning of everything for now */
 	pci_add_flags(PCI_REASSIGN_ALL_BUS | PCI_REASSIGN_ALL_RSRC |
 		      PCI_ENABLE_PROC_DOMAINS);
-	pci_probe_only = 0;
 
 	/* Calculate how the TCE space is divided */
 	phb->dma32_base		= 0;

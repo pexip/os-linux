@@ -197,7 +197,7 @@ static int temac_dcr_setup(struct temac_local *lp, struct platform_device *op,
 #endif
 
 /**
- *  * temac_dma_bd_release - Release buffer descriptor rings
+ * temac_dma_bd_release - Release buffer descriptor rings
  */
 static void temac_dma_bd_release(struct net_device *ndev)
 {
@@ -237,49 +237,38 @@ static int temac_dma_bd_init(struct net_device *ndev)
 	struct sk_buff *skb;
 	int i;
 
-	lp->rx_skb = kzalloc(sizeof(*lp->rx_skb) * RX_BD_NUM, GFP_KERNEL);
-	if (!lp->rx_skb) {
-		dev_err(&ndev->dev,
-				"can't allocate memory for DMA RX buffer\n");
+	lp->rx_skb = kcalloc(RX_BD_NUM, sizeof(*lp->rx_skb), GFP_KERNEL);
+	if (!lp->rx_skb)
 		goto out;
-	}
+
 	/* allocate the tx and rx ring buffer descriptors. */
 	/* returns a virtual address and a physical address. */
 	lp->tx_bd_v = dma_alloc_coherent(ndev->dev.parent,
 					 sizeof(*lp->tx_bd_v) * TX_BD_NUM,
-					 &lp->tx_bd_p, GFP_KERNEL);
-	if (!lp->tx_bd_v) {
-		dev_err(&ndev->dev,
-				"unable to allocate DMA TX buffer descriptors");
+					 &lp->tx_bd_p, GFP_KERNEL | __GFP_ZERO);
+	if (!lp->tx_bd_v)
 		goto out;
-	}
+
 	lp->rx_bd_v = dma_alloc_coherent(ndev->dev.parent,
 					 sizeof(*lp->rx_bd_v) * RX_BD_NUM,
-					 &lp->rx_bd_p, GFP_KERNEL);
-	if (!lp->rx_bd_v) {
-		dev_err(&ndev->dev,
-				"unable to allocate DMA RX buffer descriptors");
+					 &lp->rx_bd_p, GFP_KERNEL | __GFP_ZERO);
+	if (!lp->rx_bd_v)
 		goto out;
-	}
 
-	memset(lp->tx_bd_v, 0, sizeof(*lp->tx_bd_v) * TX_BD_NUM);
 	for (i = 0; i < TX_BD_NUM; i++) {
 		lp->tx_bd_v[i].next = lp->tx_bd_p +
 				sizeof(*lp->tx_bd_v) * ((i + 1) % TX_BD_NUM);
 	}
 
-	memset(lp->rx_bd_v, 0, sizeof(*lp->rx_bd_v) * RX_BD_NUM);
 	for (i = 0; i < RX_BD_NUM; i++) {
 		lp->rx_bd_v[i].next = lp->rx_bd_p +
 				sizeof(*lp->rx_bd_v) * ((i + 1) % RX_BD_NUM);
 
 		skb = netdev_alloc_skb_ip_align(ndev,
 						XTE_MAX_JUMBO_FRAME_SIZE);
-
-		if (skb == 0) {
-			dev_err(&ndev->dev, "alloc_skb error %d\n", i);
+		if (!skb)
 			goto out;
-		}
+
 		lp->rx_skb[i] = skb;
 		/* returns physical address of skb->data */
 		lp->rx_bd_v[i].phys = dma_map_single(ndev->dev.parent,
@@ -319,15 +308,9 @@ out:
  * net_device_ops
  */
 
-static int temac_set_mac_address(struct net_device *ndev, void *address)
+static void temac_do_set_mac_address(struct net_device *ndev)
 {
 	struct temac_local *lp = netdev_priv(ndev);
-
-	if (address)
-		memcpy(ndev->dev_addr, address, ETH_ALEN);
-
-	if (!is_valid_ether_addr(ndev->dev_addr))
-		random_ether_addr(ndev->dev_addr);
 
 	/* set up unicast MAC address filter set its mac address */
 	mutex_lock(&lp->indirect_mutex);
@@ -342,15 +325,26 @@ static int temac_set_mac_address(struct net_device *ndev, void *address)
 			     (ndev->dev_addr[4] & 0x000000ff) |
 			     (ndev->dev_addr[5] << 8));
 	mutex_unlock(&lp->indirect_mutex);
+}
 
+static int temac_init_mac_address(struct net_device *ndev, void *address)
+{
+	memcpy(ndev->dev_addr, address, ETH_ALEN);
+	if (!is_valid_ether_addr(ndev->dev_addr))
+		eth_hw_addr_random(ndev);
+	temac_do_set_mac_address(ndev);
 	return 0;
 }
 
-static int netdev_set_mac_address(struct net_device *ndev, void *p)
+static int temac_set_mac_address(struct net_device *ndev, void *p)
 {
 	struct sockaddr *addr = p;
 
-	return temac_set_mac_address(ndev, addr->sa_data);
+	if (!is_valid_ether_addr(addr->sa_data))
+		return -EADDRNOTAVAIL;
+	memcpy(ndev->dev_addr, addr->sa_data, ETH_ALEN);
+	temac_do_set_mac_address(ndev);
+	return 0;
 }
 
 static void temac_set_multicast_list(struct net_device *ndev)
@@ -577,7 +571,7 @@ static void temac_device_reset(struct net_device *ndev)
 	temac_setoptions(ndev,
 			 lp->options & ~(XTE_OPTION_TXEN | XTE_OPTION_RXEN));
 
-	temac_set_mac_address(ndev, NULL);
+	temac_do_set_mac_address(ndev);
 
 	/* Set address filter table */
 	temac_set_multicast_list(ndev);
@@ -766,7 +760,6 @@ static void ll_temac_recv(struct net_device *ndev)
 				 DMA_FROM_DEVICE);
 
 		skb_put(skb, length);
-		skb->dev = ndev;
 		skb->protocol = eth_type_trans(skb, ndev);
 		skb_checksum_none_assert(skb);
 
@@ -787,9 +780,7 @@ static void ll_temac_recv(struct net_device *ndev)
 
 		new_skb = netdev_alloc_skb_ip_align(ndev,
 						XTE_MAX_JUMBO_FRAME_SIZE);
-
-		if (new_skb == 0) {
-			dev_err(&ndev->dev, "no memory for new sk_buff\n");
+		if (!new_skb) {
 			spin_unlock_irqrestore(&lp->rx_lock, flags);
 			return;
 		}
@@ -920,12 +911,26 @@ temac_poll_controller(struct net_device *ndev)
 }
 #endif
 
+static int temac_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd)
+{
+	struct temac_local *lp = netdev_priv(ndev);
+
+	if (!netif_running(ndev))
+		return -EINVAL;
+
+	if (!lp->phy_dev)
+		return -EINVAL;
+
+	return phy_mii_ioctl(lp->phy_dev, rq, cmd);
+}
+
 static const struct net_device_ops temac_netdev_ops = {
 	.ndo_open = temac_open,
 	.ndo_stop = temac_stop,
 	.ndo_start_xmit = temac_start_xmit,
-	.ndo_set_mac_address = netdev_set_mac_address,
+	.ndo_set_mac_address = temac_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
+	.ndo_do_ioctl = temac_ioctl,
 #ifdef CONFIG_NET_POLL_CONTROLLER
 	.ndo_poll_controller = temac_poll_controller,
 #endif
@@ -984,9 +989,10 @@ static const struct ethtool_ops temac_ethtool_ops = {
 	.set_settings = temac_set_settings,
 	.nway_reset = temac_nway_reset,
 	.get_link = ethtool_op_get_link,
+	.get_ts_info = ethtool_op_get_ts_info,
 };
 
-static int __devinit temac_of_probe(struct platform_device *op)
+static int temac_of_probe(struct platform_device *op)
 {
 	struct device_node *np;
 	struct temac_local *lp;
@@ -997,12 +1003,11 @@ static int __devinit temac_of_probe(struct platform_device *op)
 
 	/* Init network device structure */
 	ndev = alloc_etherdev(sizeof(*lp));
-	if (!ndev) {
-		dev_err(&op->dev, "could not allocate device.\n");
+	if (!ndev)
 		return -ENOMEM;
-	}
+
 	ether_setup(ndev);
-	dev_set_drvdata(&op->dev, ndev);
+	platform_set_drvdata(op, ndev);
 	SET_NETDEV_DEV(ndev, &op->dev);
 	ndev->flags &= ~IFF_MULTICAST;  /* clear multicast */
 	ndev->features = NETIF_F_SG | NETIF_F_FRAGLIST;
@@ -1013,9 +1018,9 @@ static int __devinit temac_of_probe(struct platform_device *op)
 	ndev->features |= NETIF_F_HW_CSUM; /* Can checksum all the packets. */
 	ndev->features |= NETIF_F_IPV6_CSUM; /* Can checksum IPV6 TCP/UDP */
 	ndev->features |= NETIF_F_HIGHDMA; /* Can DMA to high memory. */
-	ndev->features |= NETIF_F_HW_VLAN_TX; /* Transmit VLAN hw accel */
-	ndev->features |= NETIF_F_HW_VLAN_RX; /* Receive VLAN hw acceleration */
-	ndev->features |= NETIF_F_HW_VLAN_FILTER; /* Receive VLAN filtering */
+	ndev->features |= NETIF_F_HW_VLAN_CTAG_TX; /* Transmit VLAN hw accel */
+	ndev->features |= NETIF_F_HW_VLAN_CTAG_RX; /* Receive VLAN hw acceleration */
+	ndev->features |= NETIF_F_HW_VLAN_CTAG_FILTER; /* Receive VLAN filtering */
 	ndev->features |= NETIF_F_VLAN_CHALLENGED; /* cannot handle VLAN pkts */
 	ndev->features |= NETIF_F_GSO; /* Enable software GSO. */
 	ndev->features |= NETIF_F_MULTI_QUEUE; /* Has multiple TX/RX queues */
@@ -1077,7 +1082,7 @@ static int __devinit temac_of_probe(struct platform_device *op)
 
 	of_node_put(np); /* Finished with the DMA node; drop the reference */
 
-	if ((lp->rx_irq == NO_IRQ) || (lp->tx_irq == NO_IRQ)) {
+	if (!lp->rx_irq || !lp->tx_irq) {
 		dev_err(&op->dev, "could not determine irqs\n");
 		rc = -ENOMEM;
 		goto err_iounmap_2;
@@ -1091,7 +1096,7 @@ static int __devinit temac_of_probe(struct platform_device *op)
 		rc = -ENODEV;
 		goto err_iounmap_2;
 	}
-	temac_set_mac_address(ndev, (void *)addr);
+	temac_init_mac_address(ndev, (void *)addr);
 
 	rc = temac_mdio_setup(lp, op->dev.of_node);
 	if (rc)
@@ -1129,9 +1134,9 @@ static int __devinit temac_of_probe(struct platform_device *op)
 	return rc;
 }
 
-static int __devexit temac_of_remove(struct platform_device *op)
+static int temac_of_remove(struct platform_device *op)
 {
-	struct net_device *ndev = dev_get_drvdata(&op->dev);
+	struct net_device *ndev = platform_get_drvdata(op);
 	struct temac_local *lp = netdev_priv(ndev);
 
 	temac_mdio_teardown(lp);
@@ -1140,7 +1145,6 @@ static int __devexit temac_of_remove(struct platform_device *op)
 	if (lp->phy_node)
 		of_node_put(lp->phy_node);
 	lp->phy_node = NULL;
-	dev_set_drvdata(&op->dev, NULL);
 	iounmap(lp->regs);
 	if (lp->sdma_regs)
 		iounmap(lp->sdma_regs);
@@ -1148,7 +1152,7 @@ static int __devexit temac_of_remove(struct platform_device *op)
 	return 0;
 }
 
-static struct of_device_id temac_of_match[] __devinitdata = {
+static struct of_device_id temac_of_match[] = {
 	{ .compatible = "xlnx,xps-ll-temac-1.01.b", },
 	{ .compatible = "xlnx,xps-ll-temac-2.00.a", },
 	{ .compatible = "xlnx,xps-ll-temac-2.02.a", },
@@ -1159,7 +1163,7 @@ MODULE_DEVICE_TABLE(of, temac_of_match);
 
 static struct platform_driver temac_of_driver = {
 	.probe = temac_of_probe,
-	.remove = __devexit_p(temac_of_remove),
+	.remove = temac_of_remove,
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = "xilinx_temac",
@@ -1167,17 +1171,7 @@ static struct platform_driver temac_of_driver = {
 	},
 };
 
-static int __init temac_init(void)
-{
-	return platform_driver_register(&temac_of_driver);
-}
-module_init(temac_init);
-
-static void __exit temac_exit(void)
-{
-	platform_driver_unregister(&temac_of_driver);
-}
-module_exit(temac_exit);
+module_platform_driver(temac_of_driver);
 
 MODULE_DESCRIPTION("Xilinx LL_TEMAC Ethernet driver");
 MODULE_AUTHOR("Yoshio Kashiwagi");

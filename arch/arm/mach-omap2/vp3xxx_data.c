@@ -19,7 +19,7 @@
 #include <linux/err.h>
 #include <linux/init.h>
 
-#include <plat/common.h>
+#include "common.h"
 
 #include "prm-regbits-34xx.h"
 #include "voltage.h"
@@ -76,4 +76,14 @@ struct omap_vp_instance omap3_vp_core = {
 	.vlimitto = OMAP3_PRM_VP2_VLIMITTO_OFFSET,
 	.vstatus = OMAP3_PRM_VP2_STATUS_OFFSET,
 	.voltage = OMAP3_PRM_VP2_VOLTAGE_OFFSET,
+};
+
+struct omap_vp_param omap3_mpu_vp_data = {
+	.vddmin			= OMAP3430_VP1_VLIMITTO_VDDMIN,
+	.vddmax			= OMAP3430_VP1_VLIMITTO_VDDMAX,
+};
+
+struct omap_vp_param omap3_core_vp_data = {
+	.vddmin			= OMAP3430_VP2_VLIMITTO_VDDMIN,
+	.vddmax			= OMAP3430_VP2_VLIMITTO_VDDMAX,
 };

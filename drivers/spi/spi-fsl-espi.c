@@ -17,7 +17,6 @@
 #include <linux/mm.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
-#include <linux/of_spi.h>
 #include <linux/interrupt.h>
 #include <linux/err.h>
 #include <sysdev/fsl_soc.h>
@@ -145,10 +144,6 @@ static int fsl_espi_setup_transfer(struct spi_device *spi,
 	if (!bits_per_word)
 		bits_per_word = spi->bits_per_word;
 
-	/* Make sure its a bit width we support [4..16] */
-	if ((bits_per_word < 4) || (bits_per_word > 16))
-		return -EINVAL;
-
 	if (!hz)
 		hz = spi->max_speed_hz;
 
@@ -158,12 +153,10 @@ static int fsl_espi_setup_transfer(struct spi_device *spi,
 	cs->get_tx = mpc8xxx_spi_tx_buf_u32;
 	if (bits_per_word <= 8) {
 		cs->rx_shift = 8 - bits_per_word;
-	} else if (bits_per_word <= 16) {
+	} else {
 		cs->rx_shift = 16 - bits_per_word;
 		if (spi->mode & SPI_LSB_FIRST)
 			cs->get_tx = fsl_espi_tx_buf_lsb;
-	} else {
-		return -EINVAL;
 	}
 
 	mpc8xxx_spi->rx_shift = cs->rx_shift;
@@ -180,18 +173,20 @@ static int fsl_espi_setup_transfer(struct spi_device *spi,
 
 	if ((mpc8xxx_spi->spibrg / hz) > 64) {
 		cs->hw_mode |= CSMODE_DIV16;
-		pm = (mpc8xxx_spi->spibrg - 1) / (hz * 64) + 1;
+		pm = DIV_ROUND_UP(mpc8xxx_spi->spibrg, hz * 16 * 4);
 
-		WARN_ONCE(pm > 16, "%s: Requested speed is too low: %d Hz. "
+		WARN_ONCE(pm > 33, "%s: Requested speed is too low: %d Hz. "
 			  "Will use %d Hz instead.\n", dev_name(&spi->dev),
-			  hz, mpc8xxx_spi->spibrg / 1024);
-		if (pm > 16)
-			pm = 16;
+				hz, mpc8xxx_spi->spibrg / (4 * 16 * (32 + 1)));
+		if (pm > 33)
+			pm = 33;
 	} else {
-		pm = (mpc8xxx_spi->spibrg - 1) / (hz * 4) + 1;
+		pm = DIV_ROUND_UP(mpc8xxx_spi->spibrg, hz * 4);
 	}
 	if (pm)
 		pm--;
+	if (pm < 2)
+		pm = 2;
 
 	cs->hw_mode |= CSMODE_PM(pm);
 
@@ -586,7 +581,7 @@ static void fsl_espi_remove(struct mpc8xxx_spi *mspi)
 	iounmap(mspi->reg_base);
 }
 
-static struct spi_master * __devinit fsl_espi_probe(struct device *dev,
+static struct spi_master * fsl_espi_probe(struct device *dev,
 		struct resource *mem, unsigned int irq)
 {
 	struct fsl_spi_platform_data *pdata = dev->platform_data;
@@ -608,6 +603,7 @@ static struct spi_master * __devinit fsl_espi_probe(struct device *dev,
 	if (ret)
 		goto err_probe;
 
+	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(4, 16);
 	master->setup = fsl_espi_setup;
 
 	mpc8xxx_spi = spi_master_get_devdata(master);
@@ -685,7 +681,7 @@ static int of_fsl_espi_get_chipselects(struct device *dev)
 	return 0;
 }
 
-static int __devinit of_fsl_espi_probe(struct platform_device *ofdev)
+static int of_fsl_espi_probe(struct platform_device *ofdev)
 {
 	struct device *dev = &ofdev->dev;
 	struct device_node *np = ofdev->dev.of_node;
@@ -724,7 +720,7 @@ err:
 	return ret;
 }
 
-static int __devexit of_fsl_espi_remove(struct platform_device *dev)
+static int of_fsl_espi_remove(struct platform_device *dev)
 {
 	return mpc8xxx_spi_remove(&dev->dev);
 }
@@ -742,7 +738,7 @@ static struct platform_driver fsl_espi_driver = {
 		.of_match_table = of_fsl_espi_match,
 	},
 	.probe		= of_fsl_espi_probe,
-	.remove		= __devexit_p(of_fsl_espi_remove),
+	.remove		= of_fsl_espi_remove,
 };
 module_platform_driver(fsl_espi_driver);
 

@@ -77,6 +77,7 @@ ENTRY(cpu_arm926_proc_fin)
  * loc: location to jump to for soft reset
  */
 	.align	5
+	.pushsection	.idmap.text, "ax"
 ENTRY(cpu_arm926_reset)
 	mov	ip, #0
 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
@@ -89,6 +90,8 @@ ENTRY(cpu_arm926_reset)
 	bic	ip, ip, #0x1100			@ ...i...s........
 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
 	mov	pc, r0
+ENDPROC(cpu_arm926_reset)
+	.popsection
 
 /*
  * cpu_arm926_do_idle()
@@ -218,6 +221,7 @@ ENTRY(arm926_coherent_user_range)
 	cmp	r0, r1
 	blo	1b
 	mcr	p15, 0, r0, c7, c10, 4		@ drain WB
+	mov	r0, #0
 	mov	pc, lr
 
 /*
@@ -335,6 +339,9 @@ ENTRY(arm926_dma_unmap_area)
 	mov	pc, lr
 ENDPROC(arm926_dma_unmap_area)
 
+	.globl	arm926_flush_kern_cache_louis
+	.equ	arm926_flush_kern_cache_louis, arm926_flush_kern_cache_all
+
 	@ define struct cpu_cache_fns (see <asm/cacheflush.h> and proc-macros.S)
 	define_cache_functions arm926
 
@@ -395,7 +402,7 @@ ENTRY(cpu_arm926_set_pte_ext)
 /* Suspend/resume support: taken from arch/arm/plat-s3c24xx/sleep.S */
 .globl	cpu_arm926_suspend_size
 .equ	cpu_arm926_suspend_size, 4 * 3
-#ifdef CONFIG_PM_SLEEP
+#ifdef CONFIG_ARM_CPU_SUSPEND
 ENTRY(cpu_arm926_do_suspend)
 	stmfd	sp!, {r4 - r6, lr}
 	mrc	p15, 0, r4, c13, c0, 0	@ PID
@@ -417,8 +424,6 @@ ENTRY(cpu_arm926_do_resume)
 	b	cpu_resume_mmu
 ENDPROC(cpu_arm926_do_resume)
 #endif
-
-	__CPUINIT
 
 	.type	__arm926_setup, #function
 __arm926_setup:

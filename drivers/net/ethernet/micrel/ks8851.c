@@ -1,4 +1,4 @@
-/* drivers/net/ks8851.c
+/* drivers/net/ethernet/micrel/ks8851.c
  *
  * Copyright 2009 Simtec Electronics
  *	http://www.simtec.co.uk/
@@ -22,6 +22,7 @@
 #include <linux/cache.h>
 #include <linux/crc32.h>
 #include <linux/mii.h>
+#include <linux/eeprom_93cx6.h>
 
 #include <linux/spi/spi.h>
 
@@ -68,7 +69,6 @@ union ks8851_tx_hdr {
  * @mii: The MII state information for the mii calls.
  * @rxctrl: RX settings for @rxctrl_work.
  * @tx_work: Work queue for tx packets
- * @irq_work: Work queue for servicing interrupts
  * @rxctrl_work: Work queue for updating RX mode and multicast lists
  * @txq: Queue of packets for transmission.
  * @spi_msg1: pre-setup SPI transfer with one message, @spi_xfer1.
@@ -82,6 +82,7 @@ union ks8851_tx_hdr {
  * @rc_ccr: Cached copy of KS_CCR.
  * @rc_rxqcr: Cached copy of KS_RXQCR.
  * @eeprom_size: Companion eeprom size in Bytes, 0 if no eeprom
+ * @eeprom: 93CX6 EEPROM state for accessing on-board EEPROM.
  *
  * The @lock ensures that the chip is protected when certain operations are
  * in progress. When the read or write packet transfer is in progress, most
@@ -119,7 +120,6 @@ struct ks8851_net {
 	struct ks8851_rxctrl	rxctrl;
 
 	struct work_struct	tx_work;
-	struct work_struct	irq_work;
 	struct work_struct	rxctrl_work;
 
 	struct sk_buff_head	txq;
@@ -128,6 +128,8 @@ struct ks8851_net {
 	struct spi_message	spi_msg2;
 	struct spi_transfer	spi_xfer1;
 	struct spi_transfer	spi_xfer2[2];
+
+	struct eeprom_93cx6	eeprom;
 };
 
 static int msg_enable;
@@ -343,6 +345,26 @@ static void ks8851_soft_reset(struct ks8851_net *ks, unsigned op)
 }
 
 /**
+ * ks8851_set_powermode - set power mode of the device
+ * @ks: The device state
+ * @pwrmode: The power mode value to write to KS_PMECR.
+ *
+ * Change the power mode of the chip.
+ */
+static void ks8851_set_powermode(struct ks8851_net *ks, unsigned pwrmode)
+{
+	unsigned pmecr;
+
+	netif_dbg(ks, hw, ks->netdev, "setting power mode %d\n", pwrmode);
+
+	pmecr = ks8851_rdreg16(ks, KS_PMECR);
+	pmecr &= ~PMECR_PM_MASK;
+	pmecr |= pwrmode;
+
+	ks8851_wrreg16(ks, KS_PMECR, pmecr);
+}
+
+/**
  * ks8851_write_mac_addr - write mac address to device registers
  * @dev: The network device
  *
@@ -358,8 +380,15 @@ static int ks8851_write_mac_addr(struct net_device *dev)
 
 	mutex_lock(&ks->lock);
 
+	/*
+	 * Wake up chip in case it was powered off when stopped; otherwise,
+	 * the first write to the MAC address does not take effect.
+	 */
+	ks8851_set_powermode(ks, PMECR_PM_NORMAL);
 	for (i = 0; i < ETH_ALEN; i++)
 		ks8851_wrreg8(ks, KS_MAR(i), dev->dev_addr[i]);
+	if (!netif_running(dev))
+		ks8851_set_powermode(ks, PMECR_PM_SOFTDOWN);
 
 	mutex_unlock(&ks->lock);
 
@@ -367,40 +396,49 @@ static int ks8851_write_mac_addr(struct net_device *dev)
 }
 
 /**
+ * ks8851_read_mac_addr - read mac address from device registers
+ * @dev: The network device
+ *
+ * Update our copy of the KS8851 MAC address from the registers of @dev.
+*/
+static void ks8851_read_mac_addr(struct net_device *dev)
+{
+	struct ks8851_net *ks = netdev_priv(dev);
+	int i;
+
+	mutex_lock(&ks->lock);
+
+	for (i = 0; i < ETH_ALEN; i++)
+		dev->dev_addr[i] = ks8851_rdreg8(ks, KS_MAR(i));
+
+	mutex_unlock(&ks->lock);
+}
+
+/**
  * ks8851_init_mac - initialise the mac address
  * @ks: The device structure
  *
  * Get or create the initial mac address for the device and then set that
- * into the station address register. Currently we assume that the device
- * does not have a valid mac address in it, and so we use random_ether_addr()
+ * into the station address register. If there is an EEPROM present, then
+ * we try that. If no valid mac address is found we use eth_random_addr()
  * to create a new one.
- *
- * In future, the driver should check to see if the device has an EEPROM
- * attached and whether that has a valid ethernet address in it.
  */
 static void ks8851_init_mac(struct ks8851_net *ks)
 {
 	struct net_device *dev = ks->netdev;
 
-	random_ether_addr(dev->dev_addr);
+	/* first, try reading what we've got already */
+	if (ks->rc_ccr & CCR_EEPROM) {
+		ks8851_read_mac_addr(dev);
+		if (is_valid_ether_addr(dev->dev_addr))
+			return;
+
+		netdev_err(ks->netdev, "invalid mac address read %pM\n",
+				dev->dev_addr);
+	}
+
+	eth_hw_addr_random(dev);
 	ks8851_write_mac_addr(dev);
-}
-
-/**
- * ks8851_irq - device interrupt handler
- * @irq: Interrupt number passed from the IRQ hnalder.
- * @pw: The private word passed to register_irq(), our struct ks8851_net.
- *
- * Disable the interrupt from happening again until we've processed the
- * current status by scheduling ks8851_irq_work().
- */
-static irqreturn_t ks8851_irq(int irq, void *pw)
-{
-	struct ks8851_net *ks = pw;
-
-	disable_irq_nosync(irq);
-	schedule_work(&ks->irq_work);
-	return IRQ_HANDLED;
 }
 
 /**
@@ -490,7 +528,7 @@ static void ks8851_rx_pkts(struct ks8851_net *ks)
 	for (; rxfc != 0; rxfc--) {
 		rxh = ks8851_rdreg32(ks, KS_RXFHSR);
 		rxstat = rxh & 0xffff;
-		rxlen = rxh >> 16;
+		rxlen = (rxh >> 16) & 0xfff;
 
 		netif_dbg(ks, rx_status, ks->netdev,
 			  "rx: stat 0x%04x, len 0x%04x\n", rxstat, rxlen);
@@ -526,7 +564,7 @@ static void ks8851_rx_pkts(struct ks8851_net *ks)
 					ks8851_dbg_dumpkkt(ks, rxpkt);
 
 				skb->protocol = eth_type_trans(skb, ks->netdev);
-				netif_rx(skb);
+				netif_rx_ni(skb);
 
 				ks->netdev->stats.rx_packets++;
 				ks->netdev->stats.rx_bytes += rxlen;
@@ -538,19 +576,20 @@ static void ks8851_rx_pkts(struct ks8851_net *ks)
 }
 
 /**
- * ks8851_irq_work - work queue handler for dealing with interrupt requests
- * @work: The work structure that was scheduled by schedule_work()
+ * ks8851_irq - IRQ handler for dealing with interrupt requests
+ * @irq: IRQ number
+ * @_ks: cookie
  *
- * This is the handler invoked when the ks8851_irq() is called to find out
- * what happened, as we cannot allow ourselves to sleep whilst waiting for
- * anything other process has the chip's lock.
+ * This handler is invoked when the IRQ line asserts to find out what happened.
+ * As we cannot allow ourselves to sleep in HARDIRQ context, this handler runs
+ * in thread context.
  *
  * Read the interrupt status, work out what needs to be done and then clear
  * any of the interrupts that are not needed.
  */
-static void ks8851_irq_work(struct work_struct *work)
+static irqreturn_t ks8851_irq(int irq, void *_ks)
 {
-	struct ks8851_net *ks = container_of(work, struct ks8851_net, irq_work);
+	struct ks8851_net *ks = _ks;
 	unsigned status;
 	unsigned handled = 0;
 
@@ -561,10 +600,8 @@ static void ks8851_irq_work(struct work_struct *work)
 	netif_dbg(ks, intr, ks->netdev,
 		  "%s: status 0x%04x\n", __func__, status);
 
-	if (status & IRQ_LCI) {
-		/* should do something about checking link status */
+	if (status & IRQ_LCI)
 		handled |= IRQ_LCI;
-	}
 
 	if (status & IRQ_LDI) {
 		u16 pmecr = ks8851_rdreg16(ks, KS_PMECR);
@@ -627,10 +664,13 @@ static void ks8851_irq_work(struct work_struct *work)
 
 	mutex_unlock(&ks->lock);
 
+	if (status & IRQ_LCI)
+		mii_check_link(&ks->mii);
+
 	if (status & IRQ_TXI)
 		netif_wake_queue(ks->netdev);
 
-	enable_irq(ks->netdev->irq);
+	return IRQ_HANDLED;
 }
 
 /**
@@ -739,26 +779,6 @@ static void ks8851_tx_work(struct work_struct *work)
 }
 
 /**
- * ks8851_set_powermode - set power mode of the device
- * @ks: The device state
- * @pwrmode: The power mode value to write to KS_PMECR.
- *
- * Change the power mode of the chip.
- */
-static void ks8851_set_powermode(struct ks8851_net *ks, unsigned pwrmode)
-{
-	unsigned pmecr;
-
-	netif_dbg(ks, hw, ks->netdev, "setting power mode %d\n", pwrmode);
-
-	pmecr = ks8851_rdreg16(ks, KS_PMECR);
-	pmecr &= ~PMECR_PM_MASK;
-	pmecr |= pwrmode;
-
-	ks8851_wrreg16(ks, KS_PMECR, pmecr);
-}
-
-/**
  * ks8851_net_open - open network device
  * @dev: The network device being opened.
  *
@@ -852,16 +872,16 @@ static int ks8851_net_stop(struct net_device *dev)
 	netif_stop_queue(dev);
 
 	mutex_lock(&ks->lock);
-
-	/* stop any outstanding work */
-	flush_work(&ks->irq_work);
-	flush_work(&ks->tx_work);
-	flush_work(&ks->rxctrl_work);
-
 	/* turn off the IRQs and ack any outstanding */
 	ks8851_wrreg16(ks, KS_IER, 0x0000);
 	ks8851_wrreg16(ks, KS_ISR, 0xffff);
+	mutex_unlock(&ks->lock);
 
+	/* stop any outstanding work */
+	flush_work(&ks->tx_work);
+	flush_work(&ks->rxctrl_work);
+
+	mutex_lock(&ks->lock);
 	/* shutdown RX process */
 	ks8851_wrreg16(ks, KS_RXCR1, 0x0000);
 
@@ -870,6 +890,7 @@ static int ks8851_net_stop(struct net_device *dev)
 
 	/* set powermode to soft power down to save power */
 	ks8851_set_powermode(ks, PMECR_PM_SOFTDOWN);
+	mutex_unlock(&ks->lock);
 
 	/* ensure any queued tx buffers are dumped */
 	while (!skb_queue_empty(&ks->txq)) {
@@ -881,7 +902,6 @@ static int ks8851_net_stop(struct net_device *dev)
 		dev_kfree_skb(txb);
 	}
 
-	mutex_unlock(&ks->lock);
 	return 0;
 }
 
@@ -1038,234 +1058,6 @@ static const struct net_device_ops ks8851_netdev_ops = {
 	.ndo_validate_addr	= eth_validate_addr,
 };
 
-/* Companion eeprom access */
-
-enum {	/* EEPROM programming states */
-	EEPROM_CONTROL,
-	EEPROM_ADDRESS,
-	EEPROM_DATA,
-	EEPROM_COMPLETE
-};
-
-/**
- * ks8851_eeprom_read - read a 16bits word in ks8851 companion EEPROM
- * @dev: The network device the PHY is on.
- * @addr: EEPROM address to read
- *
- * eeprom_size: used to define the data coding length. Can be changed
- * through debug-fs.
- *
- * Programs a read on the EEPROM using ks8851 EEPROM SW access feature.
- * Warning: The READ feature is not supported on ks8851 revision 0.
- *
- * Rough programming model:
- *  - on period start: set clock high and read value on bus
- *  - on period / 2: set clock low and program value on bus
- *  - start on period / 2
- */
-unsigned int ks8851_eeprom_read(struct net_device *dev, unsigned int addr)
-{
-	struct ks8851_net *ks = netdev_priv(dev);
-	int eepcr;
-	int ctrl = EEPROM_OP_READ;
-	int state = EEPROM_CONTROL;
-	int bit_count = EEPROM_OP_LEN - 1;
-	unsigned int data = 0;
-	int dummy;
-	unsigned int addr_len;
-
-	addr_len = (ks->eeprom_size == 128) ? 6 : 8;
-
-	/* start transaction: chip select high, authorize write */
-	mutex_lock(&ks->lock);
-	eepcr = EEPCR_EESA | EEPCR_EESRWA;
-	ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-	eepcr |= EEPCR_EECS;
-	ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-	mutex_unlock(&ks->lock);
-
-	while (state != EEPROM_COMPLETE) {
-		/* falling clock period starts... */
-		/* set EED_IO pin for control and address */
-		eepcr &= ~EEPCR_EEDO;
-		switch (state) {
-		case EEPROM_CONTROL:
-			eepcr |= ((ctrl >> bit_count) & 1) << 2;
-			if (bit_count-- <= 0) {
-				bit_count = addr_len - 1;
-				state = EEPROM_ADDRESS;
-			}
-			break;
-		case EEPROM_ADDRESS:
-			eepcr |= ((addr >> bit_count) & 1) << 2;
-			bit_count--;
-			break;
-		case EEPROM_DATA:
-			/* Change to receive mode */
-			eepcr &= ~EEPCR_EESRWA;
-			break;
-		}
-
-		/* lower clock  */
-		eepcr &= ~EEPCR_EESCK;
-
-		mutex_lock(&ks->lock);
-		ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-		mutex_unlock(&ks->lock);
-
-		/* waitread period / 2 */
-		udelay(EEPROM_SK_PERIOD / 2);
-
-		/* rising clock period starts... */
-
-		/* raise clock */
-		mutex_lock(&ks->lock);
-		eepcr |= EEPCR_EESCK;
-		ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-		mutex_unlock(&ks->lock);
-
-		/* Manage read */
-		switch (state) {
-		case EEPROM_ADDRESS:
-			if (bit_count < 0) {
-				bit_count = EEPROM_DATA_LEN - 1;
-				state = EEPROM_DATA;
-			}
-			break;
-		case EEPROM_DATA:
-			mutex_lock(&ks->lock);
-			dummy = ks8851_rdreg16(ks, KS_EEPCR);
-			mutex_unlock(&ks->lock);
-			data |= ((dummy >> EEPCR_EESB_OFFSET) & 1) << bit_count;
-			if (bit_count-- <= 0)
-				state = EEPROM_COMPLETE;
-			break;
-		}
-
-		/* wait period / 2 */
-		udelay(EEPROM_SK_PERIOD / 2);
-	}
-
-	/* close transaction */
-	mutex_lock(&ks->lock);
-	eepcr &= ~EEPCR_EECS;
-	ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-	eepcr = 0;
-	ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-	mutex_unlock(&ks->lock);
-
-	return data;
-}
-
-/**
- * ks8851_eeprom_write - write a 16bits word in ks8851 companion EEPROM
- * @dev: The network device the PHY is on.
- * @op: operand (can be WRITE, EWEN, EWDS)
- * @addr: EEPROM address to write
- * @data: data to write
- *
- * eeprom_size: used to define the data coding length. Can be changed
- * through debug-fs.
- *
- * Programs a write on the EEPROM using ks8851 EEPROM SW access feature.
- *
- * Note that a write enable is required before writing data.
- *
- * Rough programming model:
- *  - on period start: set clock high
- *  - on period / 2: set clock low and program value on bus
- *  - start on period / 2
- */
-void ks8851_eeprom_write(struct net_device *dev, unsigned int op,
-					unsigned int addr, unsigned int data)
-{
-	struct ks8851_net *ks = netdev_priv(dev);
-	int eepcr;
-	int state = EEPROM_CONTROL;
-	int bit_count = EEPROM_OP_LEN - 1;
-	unsigned int addr_len;
-
-	addr_len = (ks->eeprom_size == 128) ? 6 : 8;
-
-	switch (op) {
-	case EEPROM_OP_EWEN:
-		addr = 0x30;
-	break;
-	case EEPROM_OP_EWDS:
-		addr = 0;
-		break;
-	}
-
-	/* start transaction: chip select high, authorize write */
-	mutex_lock(&ks->lock);
-	eepcr = EEPCR_EESA | EEPCR_EESRWA;
-	ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-	eepcr |= EEPCR_EECS;
-	ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-	mutex_unlock(&ks->lock);
-
-	while (state != EEPROM_COMPLETE) {
-		/* falling clock period starts... */
-		/* set EED_IO pin for control and address */
-		eepcr &= ~EEPCR_EEDO;
-		switch (state) {
-		case EEPROM_CONTROL:
-			eepcr |= ((op >> bit_count) & 1) << 2;
-			if (bit_count-- <= 0) {
-				bit_count = addr_len - 1;
-				state = EEPROM_ADDRESS;
-			}
-			break;
-		case EEPROM_ADDRESS:
-			eepcr |= ((addr >> bit_count) & 1) << 2;
-			if (bit_count-- <= 0) {
-				if (op == EEPROM_OP_WRITE) {
-					bit_count = EEPROM_DATA_LEN - 1;
-					state = EEPROM_DATA;
-				} else {
-					state = EEPROM_COMPLETE;
-				}
-			}
-			break;
-		case EEPROM_DATA:
-			eepcr |= ((data >> bit_count) & 1) << 2;
-			if (bit_count-- <= 0)
-				state = EEPROM_COMPLETE;
-			break;
-		}
-
-		/* lower clock  */
-		eepcr &= ~EEPCR_EESCK;
-
-		mutex_lock(&ks->lock);
-		ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-		mutex_unlock(&ks->lock);
-
-		/* wait period / 2 */
-		udelay(EEPROM_SK_PERIOD / 2);
-
-		/* rising clock period starts... */
-
-		/* raise clock */
-		eepcr |= EEPCR_EESCK;
-		mutex_lock(&ks->lock);
-		ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-		mutex_unlock(&ks->lock);
-
-		/* wait period / 2 */
-		udelay(EEPROM_SK_PERIOD / 2);
-	}
-
-	/* close transaction */
-	mutex_lock(&ks->lock);
-	eepcr &= ~EEPCR_EECS;
-	ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-	eepcr = 0;
-	ks8851_wrreg16(ks, KS_EEPCR, eepcr);
-	mutex_unlock(&ks->lock);
-
-}
-
 /* ethtool support */
 
 static void ks8851_get_drvinfo(struct net_device *dev,
@@ -1312,115 +1104,141 @@ static int ks8851_nway_reset(struct net_device *dev)
 	return mii_nway_restart(&ks->mii);
 }
 
-static int ks8851_get_eeprom_len(struct net_device *dev)
+/* EEPROM support */
+
+static void ks8851_eeprom_regread(struct eeprom_93cx6 *ee)
+{
+	struct ks8851_net *ks = ee->data;
+	unsigned val;
+
+	val = ks8851_rdreg16(ks, KS_EEPCR);
+
+	ee->reg_data_out = (val & EEPCR_EESB) ? 1 : 0;
+	ee->reg_data_clock = (val & EEPCR_EESCK) ? 1 : 0;
+	ee->reg_chip_select = (val & EEPCR_EECS) ? 1 : 0;
+}
+
+static void ks8851_eeprom_regwrite(struct eeprom_93cx6 *ee)
+{
+	struct ks8851_net *ks = ee->data;
+	unsigned val = EEPCR_EESA;	/* default - eeprom access on */
+
+	if (ee->drive_data)
+		val |= EEPCR_EESRWA;
+	if (ee->reg_data_in)
+		val |= EEPCR_EEDO;
+	if (ee->reg_data_clock)
+		val |= EEPCR_EESCK;
+	if (ee->reg_chip_select)
+		val |= EEPCR_EECS;
+
+	ks8851_wrreg16(ks, KS_EEPCR, val);
+}
+
+/**
+ * ks8851_eeprom_claim - claim device EEPROM and activate the interface
+ * @ks: The network device state.
+ *
+ * Check for the presence of an EEPROM, and then activate software access
+ * to the device.
+ */
+static int ks8851_eeprom_claim(struct ks8851_net *ks)
+{
+	if (!(ks->rc_ccr & CCR_EEPROM))
+		return -ENOENT;
+
+	mutex_lock(&ks->lock);
+
+	/* start with clock low, cs high */
+	ks8851_wrreg16(ks, KS_EEPCR, EEPCR_EESA | EEPCR_EECS);
+	return 0;
+}
+
+/**
+ * ks8851_eeprom_release - release the EEPROM interface
+ * @ks: The device state
+ *
+ * Release the software access to the device EEPROM
+ */
+static void ks8851_eeprom_release(struct ks8851_net *ks)
+{
+	unsigned val = ks8851_rdreg16(ks, KS_EEPCR);
+
+	ks8851_wrreg16(ks, KS_EEPCR, val & ~EEPCR_EESA);
+	mutex_unlock(&ks->lock);
+}
+
+#define KS_EEPROM_MAGIC (0x00008851)
+
+static int ks8851_set_eeprom(struct net_device *dev,
+			     struct ethtool_eeprom *ee, u8 *data)
 {
 	struct ks8851_net *ks = netdev_priv(dev);
-	return ks->eeprom_size;
+	int offset = ee->offset;
+	int len = ee->len;
+	u16 tmp;
+
+	/* currently only support byte writing */
+	if (len != 1)
+		return -EINVAL;
+
+	if (ee->magic != KS_EEPROM_MAGIC)
+		return -EINVAL;
+
+	if (ks8851_eeprom_claim(ks))
+		return -ENOENT;
+
+	eeprom_93cx6_wren(&ks->eeprom, true);
+
+	/* ethtool currently only supports writing bytes, which means
+	 * we have to read/modify/write our 16bit EEPROMs */
+
+	eeprom_93cx6_read(&ks->eeprom, offset/2, &tmp);
+
+	if (offset & 1) {
+		tmp &= 0xff;
+		tmp |= *data << 8;
+	} else {
+		tmp &= 0xff00;
+		tmp |= *data;
+	}
+
+	eeprom_93cx6_write(&ks->eeprom, offset/2, tmp);
+	eeprom_93cx6_wren(&ks->eeprom, false);
+
+	ks8851_eeprom_release(ks);
+
+	return 0;
 }
 
 static int ks8851_get_eeprom(struct net_device *dev,
-			    struct ethtool_eeprom *eeprom, u8 *bytes)
+			     struct ethtool_eeprom *ee, u8 *data)
 {
 	struct ks8851_net *ks = netdev_priv(dev);
-	u16 *eeprom_buff;
-	int first_word;
-	int last_word;
-	int ret_val = 0;
-	u16 i;
+	int offset = ee->offset;
+	int len = ee->len;
 
-	if (eeprom->len == 0)
+	/* must be 2 byte aligned */
+	if (len & 1 || offset & 1)
 		return -EINVAL;
 
-	if (eeprom->len > ks->eeprom_size)
-		return -EINVAL;
+	if (ks8851_eeprom_claim(ks))
+		return -ENOENT;
 
-	eeprom->magic = ks8851_rdreg16(ks, KS_CIDER);
+	ee->magic = KS_EEPROM_MAGIC;
 
-	first_word = eeprom->offset >> 1;
-	last_word = (eeprom->offset + eeprom->len - 1) >> 1;
+	eeprom_93cx6_multiread(&ks->eeprom, offset/2, (__le16 *)data, len/2);
+	ks8851_eeprom_release(ks);
 
-	eeprom_buff = kmalloc(sizeof(u16) *
-			(last_word - first_word + 1), GFP_KERNEL);
-	if (!eeprom_buff)
-		return -ENOMEM;
-
-	for (i = 0; i < last_word - first_word + 1; i++)
-		eeprom_buff[i] = ks8851_eeprom_read(dev, first_word + 1);
-
-	/* Device's eeprom is little-endian, word addressable */
-	for (i = 0; i < last_word - first_word + 1; i++)
-		le16_to_cpus(&eeprom_buff[i]);
-
-	memcpy(bytes, (u8 *)eeprom_buff + (eeprom->offset & 1), eeprom->len);
-	kfree(eeprom_buff);
-
-	return ret_val;
+	return 0;
 }
 
-static int ks8851_set_eeprom(struct net_device *dev,
-			    struct ethtool_eeprom *eeprom, u8 *bytes)
+static int ks8851_get_eeprom_len(struct net_device *dev)
 {
 	struct ks8851_net *ks = netdev_priv(dev);
-	u16 *eeprom_buff;
-	void *ptr;
-	int max_len;
-	int first_word;
-	int last_word;
-	int ret_val = 0;
-	u16 i;
 
-	if (eeprom->len == 0)
-		return -EOPNOTSUPP;
-
-	if (eeprom->len > ks->eeprom_size)
-		return -EINVAL;
-
-	if (eeprom->magic != ks8851_rdreg16(ks, KS_CIDER))
-		return -EFAULT;
-
-	first_word = eeprom->offset >> 1;
-	last_word = (eeprom->offset + eeprom->len - 1) >> 1;
-	max_len = (last_word - first_word + 1) * 2;
-	eeprom_buff = kmalloc(max_len, GFP_KERNEL);
-	if (!eeprom_buff)
-		return -ENOMEM;
-
-	ptr = (void *)eeprom_buff;
-
-	if (eeprom->offset & 1) {
-		/* need read/modify/write of first changed EEPROM word */
-		/* only the second byte of the word is being modified */
-		eeprom_buff[0] = ks8851_eeprom_read(dev, first_word);
-		ptr++;
-	}
-	if ((eeprom->offset + eeprom->len) & 1)
-		/* need read/modify/write of last changed EEPROM word */
-		/* only the first byte of the word is being modified */
-		eeprom_buff[last_word - first_word] =
-					ks8851_eeprom_read(dev, last_word);
-
-
-	/* Device's eeprom is little-endian, word addressable */
-	le16_to_cpus(&eeprom_buff[0]);
-	le16_to_cpus(&eeprom_buff[last_word - first_word]);
-
-	memcpy(ptr, bytes, eeprom->len);
-
-	for (i = 0; i < last_word - first_word + 1; i++)
-		eeprom_buff[i] = cpu_to_le16(eeprom_buff[i]);
-
-	ks8851_eeprom_write(dev, EEPROM_OP_EWEN, 0, 0);
-
-	for (i = 0; i < last_word - first_word + 1; i++) {
-		ks8851_eeprom_write(dev, EEPROM_OP_WRITE, first_word + i,
-							eeprom_buff[i]);
-		mdelay(EEPROM_WRITE_TIME);
-	}
-
-	ks8851_eeprom_write(dev, EEPROM_OP_EWDS, 0, 0);
-
-	kfree(eeprom_buff);
-	return ret_val;
+	/* currently, we assume it is an 93C46 attached, so return 128 */
+	return ks->rc_ccr & CCR_EEPROM ? 128 : 0;
 }
 
 static const struct ethtool_ops ks8851_ethtool_ops = {
@@ -1546,48 +1364,47 @@ static int ks8851_read_selftest(struct ks8851_net *ks)
 
 /* driver bus management functions */
 
-#ifdef CONFIG_PM
-static int ks8851_suspend(struct spi_device *spi, pm_message_t state)
-{
-	struct ks8851_net *ks = dev_get_drvdata(&spi->dev);
-	struct net_device *dev = ks->netdev;
+#ifdef CONFIG_PM_SLEEP
 
-	if (netif_running(dev)) {
-		netif_device_detach(dev);
-		ks8851_net_stop(dev);
+static int ks8851_suspend(struct device *dev)
+{
+	struct ks8851_net *ks = dev_get_drvdata(dev);
+	struct net_device *netdev = ks->netdev;
+
+	if (netif_running(netdev)) {
+		netif_device_detach(netdev);
+		ks8851_net_stop(netdev);
 	}
 
 	return 0;
 }
 
-static int ks8851_resume(struct spi_device *spi)
+static int ks8851_resume(struct device *dev)
 {
-	struct ks8851_net *ks = dev_get_drvdata(&spi->dev);
-	struct net_device *dev = ks->netdev;
+	struct ks8851_net *ks = dev_get_drvdata(dev);
+	struct net_device *netdev = ks->netdev;
 
-	if (netif_running(dev)) {
-		ks8851_net_open(dev);
-		netif_device_attach(dev);
+	if (netif_running(netdev)) {
+		ks8851_net_open(netdev);
+		netif_device_attach(netdev);
 	}
 
 	return 0;
 }
-#else
-#define ks8851_suspend NULL
-#define ks8851_resume NULL
 #endif
 
-static int __devinit ks8851_probe(struct spi_device *spi)
+static SIMPLE_DEV_PM_OPS(ks8851_pm_ops, ks8851_suspend, ks8851_resume);
+
+static int ks8851_probe(struct spi_device *spi)
 {
 	struct net_device *ndev;
 	struct ks8851_net *ks;
 	int ret;
+	unsigned cider;
 
 	ndev = alloc_etherdev(sizeof(struct ks8851_net));
-	if (!ndev) {
-		dev_err(&spi->dev, "failed to alloc ethernet device\n");
+	if (!ndev)
 		return -ENOMEM;
-	}
 
 	spi->bits_per_word = 8;
 
@@ -1601,7 +1418,6 @@ static int __devinit ks8851_probe(struct spi_device *spi)
 	spin_lock_init(&ks->statelock);
 
 	INIT_WORK(&ks->tx_work, ks8851_tx_work);
-	INIT_WORK(&ks->irq_work, ks8851_irq_work);
 	INIT_WORK(&ks->rxctrl_work, ks8851_rxctrl_work);
 
 	/* initialise pre-made spi transfer messages */
@@ -1612,6 +1428,13 @@ static int __devinit ks8851_probe(struct spi_device *spi)
 	spi_message_init(&ks->spi_msg2);
 	spi_message_add_tail(&ks->spi_xfer2[0], &ks->spi_msg2);
 	spi_message_add_tail(&ks->spi_xfer2[1], &ks->spi_msg2);
+
+	/* setup EEPROM state */
+
+	ks->eeprom.data = ks;
+	ks->eeprom.width = PCI_EEPROM_WIDTH_93C46;
+	ks->eeprom.register_read = ks8851_eeprom_regread;
+	ks->eeprom.register_write = ks8851_eeprom_regwrite;
 
 	/* setup mii state */
 	ks->mii.dev		= ndev;
@@ -1633,7 +1456,7 @@ static int __devinit ks8851_probe(struct spi_device *spi)
 	SET_ETHTOOL_OPS(ndev, &ks8851_ethtool_ops);
 	SET_NETDEV_DEV(ndev, &spi->dev);
 
-	dev_set_drvdata(&spi->dev, ks);
+	spi_set_drvdata(spi, ks);
 
 	ndev->if_port = IF_PORT_100BASET;
 	ndev->netdev_ops = &ks8851_netdev_ops;
@@ -1643,8 +1466,8 @@ static int __devinit ks8851_probe(struct spi_device *spi)
 	ks8851_soft_reset(ks, GRR_GSR);
 
 	/* simple check for a valid chip being connected to the bus */
-
-	if ((ks8851_rdreg16(ks, KS_CIDER) & ~CIDER_REV_MASK) != CIDER_ID) {
+	cider = ks8851_rdreg16(ks, KS_CIDER);
+	if ((cider & ~CIDER_REV_MASK) != CIDER_ID) {
 		dev_err(&spi->dev, "failed to read device ID\n");
 		ret = -ENODEV;
 		goto err_id;
@@ -1661,8 +1484,9 @@ static int __devinit ks8851_probe(struct spi_device *spi)
 	ks8851_read_selftest(ks);
 	ks8851_init_mac(ks);
 
-	ret = request_irq(spi->irq, ks8851_irq, IRQF_TRIGGER_LOW,
-			  ndev->name, ks);
+	ret = request_threaded_irq(spi->irq, NULL, ks8851_irq,
+				   IRQF_TRIGGER_LOW | IRQF_ONESHOT,
+				   ndev->name, ks);
 	if (ret < 0) {
 		dev_err(&spi->dev, "failed to get irq\n");
 		goto err_irq;
@@ -1674,15 +1498,15 @@ static int __devinit ks8851_probe(struct spi_device *spi)
 		goto err_netdev;
 	}
 
-	netdev_info(ndev, "revision %d, MAC %pM, IRQ %d\n",
-		    CIDER_REV_GET(ks8851_rdreg16(ks, KS_CIDER)),
-		    ndev->dev_addr, ndev->irq);
+	netdev_info(ndev, "revision %d, MAC %pM, IRQ %d, %s EEPROM\n",
+		    CIDER_REV_GET(cider), ndev->dev_addr, ndev->irq,
+		    ks->rc_ccr & CCR_EEPROM ? "has" : "no");
 
 	return 0;
 
 
 err_netdev:
-	free_irq(ndev->irq, ndev);
+	free_irq(ndev->irq, ks);
 
 err_id:
 err_irq:
@@ -1690,9 +1514,9 @@ err_irq:
 	return ret;
 }
 
-static int __devexit ks8851_remove(struct spi_device *spi)
+static int ks8851_remove(struct spi_device *spi)
 {
-	struct ks8851_net *priv = dev_get_drvdata(&spi->dev);
+	struct ks8851_net *priv = spi_get_drvdata(spi);
 
 	if (netif_msg_drv(priv))
 		dev_info(&spi->dev, "remove\n");
@@ -1708,25 +1532,12 @@ static struct spi_driver ks8851_driver = {
 	.driver = {
 		.name = "ks8851",
 		.owner = THIS_MODULE,
+		.pm = &ks8851_pm_ops,
 	},
 	.probe = ks8851_probe,
-	.remove = __devexit_p(ks8851_remove),
-	.suspend = ks8851_suspend,
-	.resume = ks8851_resume,
+	.remove = ks8851_remove,
 };
-
-static int __init ks8851_init(void)
-{
-	return spi_register_driver(&ks8851_driver);
-}
-
-static void __exit ks8851_exit(void)
-{
-	spi_unregister_driver(&ks8851_driver);
-}
-
-module_init(ks8851_init);
-module_exit(ks8851_exit);
+module_spi_driver(ks8851_driver);
 
 MODULE_DESCRIPTION("KS8851 Network driver");
 MODULE_AUTHOR("Ben Dooks <ben@simtec.co.uk>");

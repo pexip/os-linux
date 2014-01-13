@@ -337,12 +337,12 @@ static struct snd_soc_platform_driver nuc900_soc_platform = {
 	.pcm_free	= nuc900_dma_free_dma_buffers,
 };
 
-static int __devinit nuc900_soc_platform_probe(struct platform_device *pdev)
+static int nuc900_soc_platform_probe(struct platform_device *pdev)
 {
 	return snd_soc_register_platform(&pdev->dev, &nuc900_soc_platform);
 }
 
-static int __devexit nuc900_soc_platform_remove(struct platform_device *pdev)
+static int nuc900_soc_platform_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_platform(&pdev->dev);
 	return 0;
@@ -355,20 +355,10 @@ static struct platform_driver nuc900_pcm_driver = {
 	},
 
 	.probe = nuc900_soc_platform_probe,
-	.remove = __devexit_p(nuc900_soc_platform_remove),
+	.remove = nuc900_soc_platform_remove,
 };
 
-static int __init nuc900_pcm_init(void)
-{
-	return platform_driver_register(&nuc900_pcm_driver);
-}
-module_init(nuc900_pcm_init);
-
-static void __exit nuc900_pcm_exit(void)
-{
-	platform_driver_unregister(&nuc900_pcm_driver);
-}
-module_exit(nuc900_pcm_exit);
+module_platform_driver(nuc900_pcm_driver);
 
 MODULE_AUTHOR("Wan ZongShun, <mcuos.com@gmail.com>");
 MODULE_DESCRIPTION("nuc900 Audio DMA module");

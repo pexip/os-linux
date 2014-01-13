@@ -45,6 +45,7 @@
 #include <net/addrconf.h>
 #include <net/ip6_route.h>
 #include <rdma/ib_addr.h>
+#include <rdma/ib.h>
 
 MODULE_AUTHOR("Sean Hefty");
 MODULE_DESCRIPTION("IB Address Translation");
@@ -69,6 +70,21 @@ static DEFINE_MUTEX(lock);
 static LIST_HEAD(req_list);
 static DECLARE_DELAYED_WORK(work, process_req);
 static struct workqueue_struct *addr_wq;
+
+int rdma_addr_size(struct sockaddr *addr)
+{
+	switch (addr->sa_family) {
+	case AF_INET:
+		return sizeof(struct sockaddr_in);
+	case AF_INET6:
+		return sizeof(struct sockaddr_in6);
+	case AF_IB:
+		return sizeof(struct sockaddr_ib);
+	default:
+		return 0;
+	}
+}
+EXPORT_SYMBOL(rdma_addr_size);
 
 void rdma_addr_register_client(struct rdma_addr_client *client)
 {
@@ -129,7 +145,7 @@ int rdma_translate_ip(struct sockaddr *addr, struct rdma_dev_addr *dev_addr)
 		dev_put(dev);
 		break;
 
-#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
+#if IS_ENABLED(CONFIG_IPV6)
 	case AF_INET6:
 		rcu_read_lock();
 		for_each_netdev_rcu(&init_net, dev) {
@@ -152,13 +168,11 @@ static void set_timeout(unsigned long time)
 {
 	unsigned long delay;
 
-	cancel_delayed_work(&work);
-
 	delay = time - jiffies;
 	if ((long)delay <= 0)
 		delay = 1;
 
-	queue_delayed_work(addr_wq, &work, delay);
+	mod_delayed_work(addr_wq, &work, delay);
 }
 
 static void queue_req(struct addr_req *req)
@@ -178,6 +192,29 @@ static void queue_req(struct addr_req *req)
 	mutex_unlock(&lock);
 }
 
+static int dst_fetch_ha(struct dst_entry *dst, struct rdma_dev_addr *dev_addr, void *daddr)
+{
+	struct neighbour *n;
+	int ret;
+
+	n = dst_neigh_lookup(dst, daddr);
+
+	rcu_read_lock();
+	if (!n || !(n->nud_state & NUD_VALID)) {
+		if (n)
+			neigh_event_send(n, NULL);
+		ret = -ENODATA;
+	} else {
+		ret = rdma_copy_addr(dev_addr, dst->dev, n->ha);
+	}
+	rcu_read_unlock();
+
+	if (n)
+		neigh_release(n);
+
+	return ret;
+}
+
 static int addr4_resolve(struct sockaddr_in *src_in,
 			 struct sockaddr_in *dst_in,
 			 struct rdma_dev_addr *addr)
@@ -185,7 +222,6 @@ static int addr4_resolve(struct sockaddr_in *src_in,
 	__be32 src_ip = src_in->sin_addr.s_addr;
 	__be32 dst_ip = dst_in->sin_addr.s_addr;
 	struct rtable *rt;
-	struct neighbour *neigh;
 	struct flowi4 fl4;
 	int ret;
 
@@ -214,39 +250,25 @@ static int addr4_resolve(struct sockaddr_in *src_in,
 		goto put;
 	}
 
-	neigh = neigh_lookup(&arp_tbl, &rt->rt_gateway, rt->dst.dev);
-	if (!neigh || !(neigh->nud_state & NUD_VALID)) {
-		rcu_read_lock();
-		neigh_event_send(dst_get_neighbour(&rt->dst), NULL);
-		rcu_read_unlock();
-		ret = -ENODATA;
-		if (neigh)
-			goto release;
-		goto put;
-	}
-
-	ret = rdma_copy_addr(addr, neigh->dev, neigh->ha);
-release:
-	neigh_release(neigh);
+	ret = dst_fetch_ha(&rt->dst, addr, &fl4.daddr);
 put:
 	ip_rt_put(rt);
 out:
 	return ret;
 }
 
-#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
+#if IS_ENABLED(CONFIG_IPV6)
 static int addr6_resolve(struct sockaddr_in6 *src_in,
 			 struct sockaddr_in6 *dst_in,
 			 struct rdma_dev_addr *addr)
 {
 	struct flowi6 fl6;
-	struct neighbour *neigh;
 	struct dst_entry *dst;
 	int ret;
 
 	memset(&fl6, 0, sizeof fl6);
-	ipv6_addr_copy(&fl6.daddr, &dst_in->sin6_addr);
-	ipv6_addr_copy(&fl6.saddr, &src_in->sin6_addr);
+	fl6.daddr = dst_in->sin6_addr;
+	fl6.saddr = src_in->sin6_addr;
 	fl6.flowi6_oif = addr->bound_dev_if;
 
 	dst = ip6_route_output(&init_net, NULL, &fl6);
@@ -260,7 +282,7 @@ static int addr6_resolve(struct sockaddr_in6 *src_in,
 			goto put;
 
 		src_in->sin6_family = AF_INET6;
-		ipv6_addr_copy(&src_in->sin6_addr, &fl6.saddr);
+		src_in->sin6_addr = fl6.saddr;
 	}
 
 	if (dst->dev->flags & IFF_LOOPBACK) {
@@ -276,16 +298,7 @@ static int addr6_resolve(struct sockaddr_in6 *src_in,
 		goto put;
 	}
 
-	rcu_read_lock();
-	neigh = dst_get_neighbour(dst);
-	if (!neigh || !(neigh->nud_state & NUD_VALID)) {
-		if (neigh)
-			neigh_event_send(neigh, NULL);
-		ret = -ENODATA;
-	} else {
-		ret = rdma_copy_addr(addr, dst->dev, neigh->ha);
-	}
-	rcu_read_unlock();
+	ret = dst_fetch_ha(dst, addr, &fl6.daddr);
 put:
 	dst_release(dst);
 	return ret;
@@ -372,12 +385,12 @@ int rdma_resolve_ip(struct rdma_addr_client *client,
 			goto err;
 		}
 
-		memcpy(src_in, src_addr, ip_addr_size(src_addr));
+		memcpy(src_in, src_addr, rdma_addr_size(src_addr));
 	} else {
 		src_in->sa_family = dst_addr->sa_family;
 	}
 
-	memcpy(dst_in, dst_addr, ip_addr_size(dst_addr));
+	memcpy(dst_in, dst_addr, rdma_addr_size(dst_addr));
 	req->addr = addr;
 	req->callback = callback;
 	req->context = context;

@@ -104,7 +104,7 @@ static irqreturn_t input_handler(int rq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int __devinit xenkbd_probe(struct xenbus_device *dev,
+static int xenkbd_probe(struct xenbus_device *dev,
 				  const struct xenbus_device_id *id)
 {
 	int ret, i, abs;
@@ -311,7 +311,6 @@ static void xenkbd_backend_changed(struct xenbus_device *dev,
 	case XenbusStateReconfiguring:
 	case XenbusStateReconfigured:
 	case XenbusStateUnknown:
-	case XenbusStateClosed:
 		break;
 
 	case XenbusStateInitWait:
@@ -350,6 +349,10 @@ InitWait:
 
 		break;
 
+	case XenbusStateClosed:
+		if (dev->state == XenbusStateClosed)
+			break;
+		/* Missed the backend's CLOSING state -- fallthrough */
 	case XenbusStateClosing:
 		xenbus_frontend_closed(dev);
 		break;
@@ -361,15 +364,12 @@ static const struct xenbus_device_id xenkbd_ids[] = {
 	{ "" }
 };
 
-static struct xenbus_driver xenkbd_driver = {
-	.name = "vkbd",
-	.owner = THIS_MODULE,
-	.ids = xenkbd_ids,
+static DEFINE_XENBUS_DRIVER(xenkbd, ,
 	.probe = xenkbd_probe,
 	.remove = xenkbd_remove,
 	.resume = xenkbd_resume,
 	.otherend_changed = xenkbd_backend_changed,
-};
+);
 
 static int __init xenkbd_init(void)
 {

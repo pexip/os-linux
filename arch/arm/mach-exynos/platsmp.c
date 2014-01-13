@@ -22,9 +22,9 @@
 #include <linux/io.h>
 
 #include <asm/cacheflush.h>
-#include <asm/hardware/gic.h>
+#include <asm/smp_plat.h>
 #include <asm/smp_scu.h>
-#include <asm/unified.h>
+#include <asm/firmware.h>
 
 #include <mach/hardware.h>
 #include <mach/regs-clock.h>
@@ -32,18 +32,28 @@
 
 #include <plat/cpu.h>
 
-extern unsigned int gic_bank_offset;
+#include "common.h"
+
 extern void exynos4_secondary_startup(void);
 
-#define CPU1_BOOT_REG		(samsung_rev() == EXYNOS4210_REV_1_1 ? \
-				S5P_INFORM5 : S5P_VA_SYSRAM)
+static inline void __iomem *cpu_boot_reg_base(void)
+{
+	if (soc_is_exynos4210() && samsung_rev() == EXYNOS4210_REV_1_1)
+		return S5P_INFORM5;
+	return S5P_VA_SYSRAM;
+}
 
-/*
- * control for which core is the next to come out of the secondary
- * boot "holding pen"
- */
+static inline void __iomem *cpu_boot_reg(int cpu)
+{
+	void __iomem *boot_reg;
 
-volatile int __cpuinitdata pen_release = -1;
+	boot_reg = cpu_boot_reg_base();
+	if (soc_is_exynos4412())
+		boot_reg += 4*cpu;
+	else if (soc_is_exynos5420())
+		boot_reg += 4;
+	return boot_reg;
+}
 
 /*
  * Write pen_release in a way that is guaranteed to be visible to all
@@ -65,40 +75,8 @@ static void __iomem *scu_base_addr(void)
 
 static DEFINE_SPINLOCK(boot_lock);
 
-static void __cpuinit exynos4_gic_secondary_init(void)
+static void exynos_secondary_init(unsigned int cpu)
 {
-	void __iomem *dist_base = S5P_VA_GIC_DIST +
-				(gic_bank_offset * smp_processor_id());
-	void __iomem *cpu_base = S5P_VA_GIC_CPU +
-				(gic_bank_offset * smp_processor_id());
-	int i;
-
-	/*
-	 * Deal with the banked PPI and SGI interrupts - disable all
-	 * PPI interrupts, ensure all SGI interrupts are enabled.
-	 */
-	__raw_writel(0xffff0000, dist_base + GIC_DIST_ENABLE_CLEAR);
-	__raw_writel(0x0000ffff, dist_base + GIC_DIST_ENABLE_SET);
-
-	/*
-	 * Set priority on PPI and SGI interrupts
-	 */
-	for (i = 0; i < 32; i += 4)
-		__raw_writel(0xa0a0a0a0, dist_base + GIC_DIST_PRI + i * 4 / 4);
-
-	__raw_writel(0xf0, cpu_base + GIC_CPU_PRIMASK);
-	__raw_writel(1, cpu_base + GIC_CPU_CTRL);
-}
-
-void __cpuinit platform_secondary_init(unsigned int cpu)
-{
-	/*
-	 * if any interrupts are already enabled for the primary
-	 * core (e.g. timer irq), then they will not have been enabled
-	 * for us: do so
-	 */
-	exynos4_gic_secondary_init();
-
 	/*
 	 * let the primary processor know we're out of the
 	 * pen, then head off into the C entry point
@@ -112,9 +90,10 @@ void __cpuinit platform_secondary_init(unsigned int cpu)
 	spin_unlock(&boot_lock);
 }
 
-int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
+static int exynos_boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
 	unsigned long timeout;
+	unsigned long phys_cpu = cpu_logical_map(cpu);
 
 	/*
 	 * Set synchronisation state between this boot processor
@@ -130,7 +109,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 	 * Note that "pen_release" is the hardware CPU ID, whereas
 	 * "cpu" is Linux's internal ID.
 	 */
-	write_pen_release(cpu_logical_map(cpu));
+	write_pen_release(phys_cpu);
 
 	if (!(__raw_readl(S5P_ARM_CORE1_STATUS) & S5P_CORE_LOCAL_PWR_EN)) {
 		__raw_writel(S5P_CORE_LOCAL_PWR_EN,
@@ -161,11 +140,22 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 
 	timeout = jiffies + (1 * HZ);
 	while (time_before(jiffies, timeout)) {
+		unsigned long boot_addr;
+
 		smp_rmb();
 
-		__raw_writel(BSYM(virt_to_phys(exynos4_secondary_startup)),
-			CPU1_BOOT_REG);
-		gic_raise_softirq(cpumask_of(cpu), 1);
+		boot_addr = virt_to_phys(exynos4_secondary_startup);
+
+		/*
+		 * Try to set boot address using firmware first
+		 * and fall back to boot register if it fails.
+		 */
+		if (call_firmware_op(set_cpu_boot_addr, phys_cpu, boot_addr))
+			__raw_writel(boot_addr, cpu_boot_reg(phys_cpu));
+
+		call_firmware_op(cpu_boot, phys_cpu);
+
+		arch_send_wakeup_ipi_mask(cpumask_of(cpu));
 
 		if (pen_release == -1)
 			break;
@@ -187,12 +177,19 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
  * which may be present or become present in the system.
  */
 
-void __init smp_init_cpus(void)
+static void __init exynos_smp_init_cpus(void)
 {
 	void __iomem *scu_base = scu_base_addr();
 	unsigned int i, ncores;
 
-	ncores = scu_base ? scu_get_core_count(scu_base) : 1;
+	if (read_cpuid_part_number() == ARM_CPU_PART_CORTEX_A9)
+		ncores = scu_base ? scu_get_core_count(scu_base) : 1;
+	else
+		/*
+		 * CPU Nodes are passed thru DT and set_cpu_possible
+		 * is set by "arm_dt_init_cpu_maps".
+		 */
+		return;
 
 	/* sanity check */
 	if (ncores > nr_cpu_ids) {
@@ -203,21 +200,42 @@ void __init smp_init_cpus(void)
 
 	for (i = 0; i < ncores; i++)
 		set_cpu_possible(i, true);
-
-	set_smp_cross_call(gic_raise_softirq);
 }
 
-void __init platform_smp_prepare_cpus(unsigned int max_cpus)
+static void __init exynos_smp_prepare_cpus(unsigned int max_cpus)
 {
+	int i;
 
-	scu_enable(scu_base_addr());
+	if (read_cpuid_part_number() == ARM_CPU_PART_CORTEX_A9)
+		scu_enable(scu_base_addr());
 
 	/*
 	 * Write the address of secondary startup into the
 	 * system-wide flags register. The boot monitor waits
 	 * until it receives a soft interrupt, and then the
 	 * secondary CPU branches to this address.
+	 *
+	 * Try using firmware operation first and fall back to
+	 * boot register if it fails.
 	 */
-	__raw_writel(BSYM(virt_to_phys(exynos4_secondary_startup)),
-			CPU1_BOOT_REG);
+	for (i = 1; i < max_cpus; ++i) {
+		unsigned long phys_cpu;
+		unsigned long boot_addr;
+
+		phys_cpu = cpu_logical_map(i);
+		boot_addr = virt_to_phys(exynos4_secondary_startup);
+
+		if (call_firmware_op(set_cpu_boot_addr, phys_cpu, boot_addr))
+			__raw_writel(boot_addr, cpu_boot_reg(phys_cpu));
+	}
 }
+
+struct smp_operations exynos_smp_ops __initdata = {
+	.smp_init_cpus		= exynos_smp_init_cpus,
+	.smp_prepare_cpus	= exynos_smp_prepare_cpus,
+	.smp_secondary_init	= exynos_secondary_init,
+	.smp_boot_secondary	= exynos_boot_secondary,
+#ifdef CONFIG_HOTPLUG_CPU
+	.cpu_die		= exynos_cpu_die,
+#endif
+};

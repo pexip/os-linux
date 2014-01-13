@@ -26,7 +26,7 @@ static void audit_cb(struct audit_buffer *ab, void *va)
 {
 	struct common_audit_data *sa = va;
 	audit_log_format(ab, " target=");
-	audit_log_untrustedstring(ab, sa->aad.target);
+	audit_log_untrustedstring(ab, sa->aad->target);
 }
 
 /**
@@ -41,10 +41,12 @@ static int aa_audit_ptrace(struct aa_profile *profile,
 			   struct aa_profile *target, int error)
 {
 	struct common_audit_data sa;
-	COMMON_AUDIT_DATA_INIT(&sa, NONE);
-	sa.aad.op = OP_PTRACE;
-	sa.aad.target = target;
-	sa.aad.error = error;
+	struct apparmor_audit_data aad = {0,};
+	sa.type = LSM_AUDIT_DATA_NONE;
+	sa.aad = &aad;
+	aad.op = OP_PTRACE;
+	aad.target = target;
+	aad.error = error;
 
 	return aa_audit(AUDIT_APPARMOR_AUTO, profile, GFP_ATOMIC, &sa,
 			audit_cb);
@@ -93,23 +95,18 @@ int aa_ptrace(struct task_struct *tracer, struct task_struct *tracee,
 	 *       - tracer profile has CAP_SYS_PTRACE
 	 */
 
-	struct aa_profile *tracer_p;
-	/* cred released below */
-	const struct cred *cred = get_task_cred(tracer);
+	struct aa_profile *tracer_p = aa_get_task_profile(tracer);
 	int error = 0;
-	tracer_p = aa_cred_profile(cred);
 
 	if (!unconfined(tracer_p)) {
-		/* lcred released below */
-		const struct cred *lcred = get_task_cred(tracee);
-		struct aa_profile *tracee_p = aa_cred_profile(lcred);
+		struct aa_profile *tracee_p = aa_get_task_profile(tracee);
 
 		error = aa_may_ptrace(tracer, tracer_p, tracee_p, mode);
 		error = aa_audit_ptrace(tracer_p, tracee_p, error);
 
-		put_cred(lcred);
+		aa_put_profile(tracee_p);
 	}
-	put_cred(cred);
+	aa_put_profile(tracer_p);
 
 	return error;
 }

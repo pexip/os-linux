@@ -8,6 +8,8 @@
  * published by the Free Software Foundation.
  */
 
+#define pr_fmt(fmt) "cpufreq: " fmt
+
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/init.h>
@@ -82,18 +84,17 @@ static int s3c64xx_cpufreq_set_target(struct cpufreq_policy *policy,
 	if (ret != 0)
 		return ret;
 
-	freqs.cpu = 0;
 	freqs.old = clk_get_rate(armclk) / 1000;
 	freqs.new = s3c64xx_freq_table[i].frequency;
 	freqs.flags = 0;
-	dvfs = &s3c64xx_dvfs_table[s3c64xx_freq_table[i].index];
+	dvfs = &s3c64xx_dvfs_table[s3c64xx_freq_table[i].driver_data];
 
 	if (freqs.old == freqs.new)
 		return 0;
 
-	pr_debug("cpufreq: Transition %d-%dkHz\n", freqs.old, freqs.new);
+	pr_debug("Transition %d-%dkHz\n", freqs.old, freqs.new);
 
-	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
+	cpufreq_notify_transition(policy, &freqs, CPUFREQ_PRECHANGE);
 
 #ifdef CONFIG_REGULATOR
 	if (vddarm && freqs.new > freqs.old) {
@@ -101,21 +102,25 @@ static int s3c64xx_cpufreq_set_target(struct cpufreq_policy *policy,
 					    dvfs->vddarm_min,
 					    dvfs->vddarm_max);
 		if (ret != 0) {
-			pr_err("cpufreq: Failed to set VDDARM for %dkHz: %d\n",
+			pr_err("Failed to set VDDARM for %dkHz: %d\n",
 			       freqs.new, ret);
-			goto err;
+			freqs.new = freqs.old;
+			goto post_notify;
 		}
 	}
 #endif
 
 	ret = clk_set_rate(armclk, freqs.new * 1000);
 	if (ret < 0) {
-		pr_err("cpufreq: Failed to set rate %dkHz: %d\n",
+		pr_err("Failed to set rate %dkHz: %d\n",
 		       freqs.new, ret);
-		goto err;
+		freqs.new = freqs.old;
 	}
 
-	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
+post_notify:
+	cpufreq_notify_transition(policy, &freqs, CPUFREQ_POSTCHANGE);
+	if (ret)
+		goto err;
 
 #ifdef CONFIG_REGULATOR
 	if (vddarm && freqs.new < freqs.old) {
@@ -123,14 +128,14 @@ static int s3c64xx_cpufreq_set_target(struct cpufreq_policy *policy,
 					    dvfs->vddarm_min,
 					    dvfs->vddarm_max);
 		if (ret != 0) {
-			pr_err("cpufreq: Failed to set VDDARM for %dkHz: %d\n",
+			pr_err("Failed to set VDDARM for %dkHz: %d\n",
 			       freqs.new, ret);
 			goto err_clk;
 		}
 	}
 #endif
 
-	pr_debug("cpufreq: Set actual frequency %lukHz\n",
+	pr_debug("Set actual frequency %lukHz\n",
 		 clk_get_rate(armclk) / 1000);
 
 	return 0;
@@ -139,7 +144,7 @@ err_clk:
 	if (clk_set_rate(armclk, freqs.old * 1000) < 0)
 		pr_err("Failed to restore original clock rate\n");
 err:
-	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
+	cpufreq_notify_transition(policy, &freqs, CPUFREQ_POSTCHANGE);
 
 	return ret;
 }
@@ -153,7 +158,7 @@ static void __init s3c64xx_cpufreq_config_regulator(void)
 
 	count = regulator_count_voltages(vddarm);
 	if (count < 0) {
-		pr_err("cpufreq: Unable to check supported voltages\n");
+		pr_err("Unable to check supported voltages\n");
 	}
 
 	freq = s3c64xx_freq_table;
@@ -171,7 +176,7 @@ static void __init s3c64xx_cpufreq_config_regulator(void)
 		}
 
 		if (!found) {
-			pr_debug("cpufreq: %dkHz unsupported by regulator\n",
+			pr_debug("%dkHz unsupported by regulator\n",
 				 freq->frequency);
 			freq->frequency = CPUFREQ_ENTRY_INVALID;
 		}
@@ -194,13 +199,13 @@ static int s3c64xx_cpufreq_driver_init(struct cpufreq_policy *policy)
 		return -EINVAL;
 
 	if (s3c64xx_freq_table == NULL) {
-		pr_err("cpufreq: No frequency information for this CPU\n");
+		pr_err("No frequency information for this CPU\n");
 		return -ENODEV;
 	}
 
 	armclk = clk_get(NULL, "armclk");
 	if (IS_ERR(armclk)) {
-		pr_err("cpufreq: Unable to obtain ARMCLK: %ld\n",
+		pr_err("Unable to obtain ARMCLK: %ld\n",
 		       PTR_ERR(armclk));
 		return PTR_ERR(armclk);
 	}
@@ -209,8 +214,8 @@ static int s3c64xx_cpufreq_driver_init(struct cpufreq_policy *policy)
 	vddarm = regulator_get(NULL, "vddarm");
 	if (IS_ERR(vddarm)) {
 		ret = PTR_ERR(vddarm);
-		pr_err("cpufreq: Failed to obtain VDDARM: %d\n", ret);
-		pr_err("cpufreq: Only frequency scaling available\n");
+		pr_err("Failed to obtain VDDARM: %d\n", ret);
+		pr_err("Only frequency scaling available\n");
 		vddarm = NULL;
 	} else {
 		s3c64xx_cpufreq_config_regulator();
@@ -225,7 +230,7 @@ static int s3c64xx_cpufreq_driver_init(struct cpufreq_policy *policy)
 		r = clk_round_rate(armclk, freq->frequency * 1000);
 		r /= 1000;
 		if (r != freq->frequency) {
-			pr_debug("cpufreq: %dkHz unsupported by clock\n",
+			pr_debug("%dkHz unsupported by clock\n",
 				 freq->frequency);
 			freq->frequency = CPUFREQ_ENTRY_INVALID;
 		}
@@ -248,7 +253,7 @@ static int s3c64xx_cpufreq_driver_init(struct cpufreq_policy *policy)
 
 	ret = cpufreq_frequency_table_cpuinfo(policy, s3c64xx_freq_table);
 	if (ret != 0) {
-		pr_err("cpufreq: Failed to configure frequency table: %d\n",
+		pr_err("Failed to configure frequency table: %d\n",
 		       ret);
 		regulator_put(vddarm);
 		clk_put(armclk);

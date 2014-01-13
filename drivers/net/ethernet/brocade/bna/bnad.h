@@ -71,7 +71,7 @@ struct bnad_rx_ctrl {
 #define BNAD_NAME			"bna"
 #define BNAD_NAME_LEN			64
 
-#define BNAD_VERSION			"3.0.2.2"
+#define BNAD_VERSION			"3.2.21.1"
 
 #define BNAD_MAILBOX_MSIX_INDEX		0
 #define BNAD_MAILBOX_MSIX_VECTORS	1
@@ -83,12 +83,9 @@ struct bnad_rx_ctrl {
 
 #define BNAD_IOCETH_TIMEOUT	     10000
 
-#define BNAD_MAX_Q_DEPTH		0x10000
-#define BNAD_MIN_Q_DEPTH		0x200
-
-#define BNAD_MAX_RXQ_DEPTH		(BNAD_MAX_Q_DEPTH / bnad_rxqs_per_cq)
-/* keeping MAX TX and RX Q depth equal */
-#define BNAD_MAX_TXQ_DEPTH		BNAD_MAX_RXQ_DEPTH
+#define BNAD_MIN_Q_DEPTH		512
+#define BNAD_MAX_RXQ_DEPTH		2048
+#define BNAD_MAX_TXQ_DEPTH		2048
 
 #define BNAD_JUMBO_MTU			9000
 
@@ -101,9 +98,8 @@ struct bnad_rx_ctrl {
 #define BNAD_TXQ_TX_STARTED		1
 
 /* Bit positions for rcb->flags */
-#define BNAD_RXQ_REFILL			0
-#define BNAD_RXQ_STARTED		1
-#define BNAD_RXQ_POST_OK		2
+#define BNAD_RXQ_STARTED		0
+#define BNAD_RXQ_POST_OK		1
 
 /* Resource limits */
 #define BNAD_NUM_TXQ			(bnad->num_tx * bnad->num_txq_per_tx)
@@ -122,6 +118,12 @@ enum bnad_intr_source {
 enum bnad_link_state {
 	BNAD_LS_DOWN		= 0,
 	BNAD_LS_UP		= 1
+};
+
+struct bnad_iocmd_comp {
+	struct bnad		*bnad;
+	struct completion	comp;
+	int			comp_status;
 };
 
 struct bnad_completion {
@@ -204,6 +206,7 @@ struct bnad_tx_info {
 	struct bna_tx *tx; /* 1:1 between tx_info & tx */
 	struct bna_tcb *tcb[BNAD_MAX_TXQ_PER_TX];
 	u32 tx_id;
+	struct delayed_work tx_cleanup_work;
 } ____cacheline_aligned;
 
 struct bnad_rx_info {
@@ -211,20 +214,46 @@ struct bnad_rx_info {
 
 	struct bnad_rx_ctrl rx_ctrl[BNAD_MAX_RXP_PER_RX];
 	u32 rx_id;
+	struct work_struct rx_cleanup_work;
 } ____cacheline_aligned;
 
-/* Unmap queues for Tx / Rx cleanup */
-struct bnad_skb_unmap {
-	struct sk_buff		*skb;
+struct bnad_tx_vector {
 	DEFINE_DMA_UNMAP_ADDR(dma_addr);
 };
 
-struct bnad_unmap_q {
-	u32		producer_index;
-	u32		consumer_index;
-	u32		q_depth;
-	/* This should be the last one */
-	struct bnad_skb_unmap unmap_array[1];
+struct bnad_tx_unmap {
+	struct sk_buff		*skb;
+	u32			nvecs;
+	struct bnad_tx_vector	vectors[BFI_TX_MAX_VECTORS_PER_WI];
+};
+
+struct bnad_rx_vector {
+	DEFINE_DMA_UNMAP_ADDR(dma_addr);
+	u32			len;
+};
+
+struct bnad_rx_unmap {
+	struct page		*page;
+	u32			page_offset;
+	struct sk_buff		*skb;
+	struct bnad_rx_vector	vector;
+};
+
+enum bnad_rxbuf_type {
+	BNAD_RXBUF_NONE		= 0,
+	BNAD_RXBUF_SKB		= 1,
+	BNAD_RXBUF_PAGE		= 2,
+	BNAD_RXBUF_MULTI	= 3
+};
+
+#define BNAD_RXBUF_IS_PAGE(_type)	((_type) == BNAD_RXBUF_PAGE)
+
+struct bnad_rx_unmap_q {
+	int			reuse_pi;
+	int			alloc_order;
+	u32			map_size;
+	enum bnad_rxbuf_type	type;
+	struct bnad_rx_unmap	unmap[0];
 };
 
 /* Bit mask values for bnad->cfg_flags */
@@ -244,13 +273,10 @@ struct bnad_unmap_q {
 #define BNAD_RF_STATS_TIMER_RUNNING	5
 #define BNAD_RF_TX_PRIO_SET		6
 
-
-/* Define for Fast Path flags */
-/* Defined as bit positions */
-#define BNAD_FP_IN_RX_PATH	      0
-
 struct bnad {
 	struct net_device	*netdev;
+	u32			id;
+	struct list_head	list_entry;
 
 	/* Data path */
 	struct bnad_tx_info tx_info[BNAD_MAX_TX];
@@ -274,8 +300,8 @@ struct bnad {
 	u8			tx_coalescing_timeo;
 	u8			rx_coalescing_timeo;
 
-	struct bna_rx_config rx_config[BNAD_MAX_RX];
-	struct bna_tx_config tx_config[BNAD_MAX_TX];
+	struct bna_rx_config rx_config[BNAD_MAX_RX] ____cacheline_aligned;
+	struct bna_tx_config tx_config[BNAD_MAX_TX] ____cacheline_aligned;
 
 	void __iomem		*bar0;	/* BAR0 address */
 
@@ -310,7 +336,7 @@ struct bnad {
 	/* Burnt in MAC address */
 	mac_t			perm_addr;
 
-	struct tasklet_struct	tx_free_tasklet;
+	struct workqueue_struct *work_q;
 
 	/* Statistics */
 	struct bnad_stats stats;
@@ -320,12 +346,27 @@ struct bnad {
 	char			adapter_name[BNAD_NAME_LEN];
 	char			port_name[BNAD_NAME_LEN];
 	char			mbox_irq_name[BNAD_NAME_LEN];
+	char			wq_name[BNAD_NAME_LEN];
+
+	/* debugfs specific data */
+	char	*regdata;
+	u32	reglen;
+	struct dentry *bnad_dentry_files[5];
+	struct dentry *port_debugfs_root;
+};
+
+struct bnad_drvinfo {
+	struct bfa_ioc_attr  ioc_attr;
+	struct bfa_cee_attr  cee_attr;
+	struct bfa_flash_attr flash_attr;
+	u32	cee_status;
+	u32	flash_status;
 };
 
 /*
  * EXTERN VARIABLES
  */
-extern struct firmware *bfi_fw;
+extern const struct firmware *bfi_fw;
 extern u32		bnad_rxqs_per_cq;
 
 /*
@@ -340,6 +381,7 @@ extern int bnad_mac_addr_set_locked(struct bnad *bnad, u8 *mac_addr);
 extern int bnad_enable_default_bcast(struct bnad *bnad);
 extern void bnad_restore_vlans(struct bnad *bnad, u32 rx_id);
 extern void bnad_set_ethtool_ops(struct net_device *netdev);
+extern void bnad_cb_completion(void *arg, enum bfa_status status);
 
 /* Configuration & setup */
 extern void bnad_tx_coalescing_timeo_set(struct bnad *bnad);
@@ -347,8 +389,8 @@ extern void bnad_rx_coalescing_timeo_set(struct bnad *bnad);
 
 extern int bnad_setup_rx(struct bnad *bnad, u32 rx_id);
 extern int bnad_setup_tx(struct bnad *bnad, u32 tx_id);
-extern void bnad_cleanup_tx(struct bnad *bnad, u32 tx_id);
-extern void bnad_cleanup_rx(struct bnad *bnad, u32 rx_id);
+extern void bnad_destroy_tx(struct bnad *bnad, u32 tx_id);
+extern void bnad_destroy_rx(struct bnad *bnad, u32 rx_id);
 
 /* Timer start/stop protos */
 extern void bnad_dim_timer_start(struct bnad *bnad);
@@ -359,9 +401,11 @@ extern void bnad_netdev_qstats_fill(struct bnad *bnad,
 extern void bnad_netdev_hwstats_fill(struct bnad *bnad,
 		struct rtnl_link_stats64 *stats);
 
-/**
- * MACROS
- */
+/* Debugfs */
+void	bnad_debugfs_init(struct bnad *bnad);
+void	bnad_debugfs_uninit(struct bnad *bnad);
+
+/* MACROS */
 /* To set & get the stats counters */
 #define BNAD_UPDATE_CTR(_bnad, _ctr)				\
 				(((_bnad)->stats.drv_stats._ctr)++)

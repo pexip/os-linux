@@ -371,16 +371,9 @@ static void mdio_write(struct net_device *dev, int phy_id, int phy_reg, int val)
 	}
 
 	/* The last cycle is a tri-state, so read from the PHY. */
-	for (j = 7; j < 8; j++) {
-		for (i = 0; i < p[j].len; i++) {
-			ipg_write_phy_ctl(ioaddr, IPG_PC_MGMTCLK_LO | polarity);
-
-			p[j].field |= ((ipg_r8(PHY_CTRL) &
-				IPG_PC_MGMTDATA) >> 1) << (p[j].len - 1 - i);
-
-			ipg_write_phy_ctl(ioaddr, IPG_PC_MGMTCLK_HI | polarity);
-		}
-	}
+	ipg_write_phy_ctl(ioaddr, IPG_PC_MGMTCLK_LO | polarity);
+	ipg_r8(PHY_CTRL);
+	ipg_write_phy_ctl(ioaddr, IPG_PC_MGMTCLK_HI | polarity);
 }
 
 static void ipg_set_led_mode(struct net_device *dev)
@@ -750,9 +743,6 @@ static int ipg_get_rxbuff(struct net_device *dev, int entry)
 		sp->rx_buff[entry] = NULL;
 		return -ENOMEM;
 	}
-
-	/* Associate the receive buffer with the IPG NIC. */
-	skb->dev = dev;
 
 	/* Save the address of the sk_buff structure. */
 	sp->rx_buff[entry] = skb;
@@ -2177,7 +2167,7 @@ static const struct ethtool_ops ipg_ethtool_ops = {
 	.nway_reset   = ipg_nway_reset,
 };
 
-static void __devexit ipg_remove(struct pci_dev *pdev)
+static void ipg_remove(struct pci_dev *pdev)
 {
 	struct net_device *dev = pci_get_drvdata(pdev);
 	struct ipg_nic_private *sp = netdev_priv(dev);
@@ -2209,8 +2199,7 @@ static const struct net_device_ops ipg_netdev_ops = {
 	.ndo_validate_addr	= eth_validate_addr,
 };
 
-static int __devinit ipg_probe(struct pci_dev *pdev,
-			       const struct pci_device_id *id)
+static int ipg_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	unsigned int i = id->driver_data;
 	struct ipg_nic_private *sp;
@@ -2240,7 +2229,6 @@ static int __devinit ipg_probe(struct pci_dev *pdev,
 	 */
 	dev = alloc_etherdev(sizeof(struct ipg_nic_private));
 	if (!dev) {
-		pr_err("%s: alloc_etherdev failed\n", pci_name(pdev));
 		rc = -ENOMEM;
 		goto err_disable_0;
 	}
@@ -2307,18 +2295,7 @@ static struct pci_driver ipg_pci_driver = {
 	.name		= IPG_DRIVER_NAME,
 	.id_table	= ipg_pci_tbl,
 	.probe		= ipg_probe,
-	.remove		= __devexit_p(ipg_remove),
+	.remove		= ipg_remove,
 };
 
-static int __init ipg_init_module(void)
-{
-	return pci_register_driver(&ipg_pci_driver);
-}
-
-static void __exit ipg_exit_module(void)
-{
-	pci_unregister_driver(&ipg_pci_driver);
-}
-
-module_init(ipg_init_module);
-module_exit(ipg_exit_module);
+module_pci_driver(ipg_pci_driver);

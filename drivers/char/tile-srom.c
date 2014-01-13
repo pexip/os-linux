@@ -194,14 +194,14 @@ static ssize_t srom_read(struct file *filp, char __user *buf,
 
 		hv_retval = _srom_read(srom->hv_devhdl, kernbuf,
 				       *f_pos, bytes_this_pass);
-		if (hv_retval > 0) {
-			if (copy_to_user(buf, kernbuf, hv_retval) != 0) {
-				retval = -EFAULT;
-				break;
-			}
-		} else if (hv_retval <= 0) {
+		if (hv_retval <= 0) {
 			if (retval == 0)
 				retval = hv_retval;
+			break;
+		}
+
+		if (copy_to_user(buf, kernbuf, hv_retval) != 0) {
+			retval = -EFAULT;
 			break;
 		}
 
@@ -273,32 +273,10 @@ static ssize_t srom_write(struct file *filp, const char __user *buf,
 }
 
 /* Provide our own implementation so we can use srom->total_size. */
-loff_t srom_llseek(struct file *filp, loff_t offset, int origin)
+loff_t srom_llseek(struct file *file, loff_t offset, int origin)
 {
-	struct srom_dev *srom = filp->private_data;
-
-	if (mutex_lock_interruptible(&srom->lock))
-		return -ERESTARTSYS;
-
-	switch (origin) {
-	case SEEK_END:
-		offset += srom->total_size;
-		break;
-	case SEEK_CUR:
-		offset += filp->f_pos;
-		break;
-	}
-
-	if (offset < 0 || offset > srom->total_size) {
-		offset = -EINVAL;
-	} else {
-		filp->f_pos = offset;
-		filp->f_version = 0;
-	}
-
-	mutex_unlock(&srom->lock);
-
-	return offset;
+	struct srom_dev *srom = file->private_data;
+	return fixed_size_llseek(file, offset, origin, srom->total_size);
 }
 
 static ssize_t total_show(struct device *dev,
@@ -329,7 +307,7 @@ static struct device_attribute srom_dev_attrs[] = {
 	__ATTR_NULL
 };
 
-static char *srom_devnode(struct device *dev, mode_t *mode)
+static char *srom_devnode(struct device *dev, umode_t *mode)
 {
 	*mode = S_IRUGO | S_IWUSR;
 	return kasprintf(GFP_KERNEL, "srom/%s", dev_name(dev));
@@ -371,7 +349,7 @@ static int srom_setup_minor(struct srom_dev *srom, int index)
 
 	dev = device_create(srom_class, &platform_bus,
 			    MKDEV(srom_major, index), srom, "%d", index);
-	return IS_ERR(dev) ? PTR_ERR(dev) : 0;
+	return PTR_RET(dev);
 }
 
 /** srom_init() - Initialize the driver's module. */

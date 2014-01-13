@@ -19,7 +19,7 @@
 #include <asm/page.h>
 #include <asm/pgtable.h>
 #include <asm/mmu_context.h>
-#include <asm/system.h>
+#include <asm/tlbmisc.h>
 #include <asm/isadep.h>
 #include <asm/io.h>
 #include <asm/bootinfo.h>
@@ -276,7 +276,7 @@ void add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
 	}
 }
 
-void __cpuinit tlb_init(void)
+void tlb_init(void)
 {
 	local_flush_tlb_all();
 

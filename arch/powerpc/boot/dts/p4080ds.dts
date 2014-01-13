@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/include/ "p4080si.dtsi"
+/include/ "fsl/p4080si-pre.dtsi"
 
 / {
 	model = "fsl,P4080DS";
@@ -50,6 +50,9 @@
 	};
 
 	soc: soc@ffe000000 {
+		ranges = <0x00000000 0xf 0xfe000000 0x1000000>;
+		reg = <0xf 0xfe000000 0 0x00001000>;
+
 		spi@110000 {
 			flash@0 {
 				#address-cells = <1>;
@@ -93,6 +96,10 @@
 				reg = <0x68>;
 				interrupts = <0x1 0x1 0 0>;
 			};
+			adt7461@4c {
+				compatible = "adi,adt7461";
+				reg = <0x4c>;
+			};
 		};
 
 		usb0: usb@210000 {
@@ -105,12 +112,18 @@
 		};
 	};
 
-	rapidio0: rapidio@ffe0c0000 {
-		reg = <0xf 0xfe0c0000 0 0x20000>;
-		ranges = <0 0 0xc 0x20000000 0 0x01000000>;
+	rio: rapidio@ffe0c0000 {
+		reg = <0xf 0xfe0c0000 0 0x11000>;
+
+		port1 {
+			ranges = <0 0 0xc 0x20000000 0 0x10000000>;
+		};
+		port2 {
+			ranges = <0 0 0xc 0x30000000 0 0x10000000>;
+		};
 	};
 
-	localbus@ffe124000 {
+	lbc: localbus@ffe124000 {
 		reg = <0xf 0xfe124000 0 0x1000>;
 		ranges = <0 0 0xf 0xe8000000 0x08000000
 			  3 0 0xf 0xffdf0000 0x00008000>;
@@ -174,3 +187,5 @@
 	};
 
 };
+
+/include/ "fsl/p4080si-post.dtsi"

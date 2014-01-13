@@ -387,7 +387,7 @@ void __init find_legacy_serial_ports(void)
 			of_node_put(parent);
 			continue;
 		}
-		/* Check for known pciclass, and also check wether we have
+		/* Check for known pciclass, and also check whether we have
 		 * a device with child nodes for ports or not
 		 */
 		if (of_device_is_compatible(np, "pciclass,0700") ||
@@ -441,6 +441,11 @@ static void __init fixup_port_irq(int index,
 		return;
 
 	port->irq = virq;
+
+#ifdef CONFIG_SERIAL_8250_FSL
+	if (of_device_is_compatible(np, "fsl,ns16550"))
+		port->handle_irq = fsl8250_handle_irq;
+#endif
 }
 
 static void __init fixup_port_pio(int index,

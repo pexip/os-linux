@@ -381,8 +381,6 @@ memory_squeeze:
 					dev->stats.rx_packets++;
 					dev->stats.rx_bytes += len;
 				} else {
-					printk(KERN_NOTICE "%s: Memory squeeze, deferring packet.\n",
-						dev->name);
 					dev->stats.rx_dropped++;
 				}
 			} else {
@@ -721,7 +719,7 @@ static const struct net_device_ops sgiseeq_netdev_ops = {
 	.ndo_validate_addr	= eth_validate_addr,
 };
 
-static int __devinit sgiseeq_probe(struct platform_device *pdev)
+static int sgiseeq_probe(struct platform_device *pdev)
 {
 	struct sgiseeq_platform_data *pd = pdev->dev.platform_data;
 	struct hpc3_regs *hpcregs = pd->hpc;
@@ -733,7 +731,6 @@ static int __devinit sgiseeq_probe(struct platform_device *pdev)
 
 	dev = alloc_etherdev(sizeof (struct sgiseeq_private));
 	if (!dev) {
-		printk(KERN_ERR "Sgiseeq: Etherdev alloc failed, aborting.\n");
 		err = -ENOMEM;
 		goto err_out;
 	}
@@ -752,6 +749,7 @@ static int __devinit sgiseeq_probe(struct platform_device *pdev)
 	sp->srings = sr;
 	sp->rx_desc = sp->srings->rxvector;
 	sp->tx_desc = sp->srings->txvector;
+	spin_lock_init(&sp->tx_lock);
 
 	/* A couple calculations now, saves many cycles later. */
 	setup_rx_ring(dev, sp->rx_desc, SEEQ_RX_BUFFERS);
@@ -820,7 +818,6 @@ static int __exit sgiseeq_remove(struct platform_device *pdev)
 	dma_free_noncoherent(&pdev->dev, sizeof(*sp->srings), sp->srings,
 			     sp->srings_dma);
 	free_netdev(dev);
-	platform_set_drvdata(pdev, NULL);
 
 	return 0;
 }
@@ -834,23 +831,7 @@ static struct platform_driver sgiseeq_driver = {
 	}
 };
 
-static int __init sgiseeq_module_init(void)
-{
-	if (platform_driver_register(&sgiseeq_driver)) {
-		printk(KERN_ERR "Driver registration failed\n");
-		return -ENODEV;
-	}
-
-	return 0;
-}
-
-static void __exit sgiseeq_module_exit(void)
-{
-	platform_driver_unregister(&sgiseeq_driver);
-}
-
-module_init(sgiseeq_module_init);
-module_exit(sgiseeq_module_exit);
+module_platform_driver(sgiseeq_driver);
 
 MODULE_DESCRIPTION("SGI Seeq 8003 driver");
 MODULE_AUTHOR("Linux/MIPS Mailing List <linux-mips@linux-mips.org>");

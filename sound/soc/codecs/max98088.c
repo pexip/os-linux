@@ -15,7 +15,6 @@
 #include <linux/delay.h>
 #include <linux/pm.h>
 #include <linux/i2c.h>
-#include <linux/platform_device.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
@@ -740,14 +739,32 @@ static const unsigned int max98088_micboost_tlv[] = {
        2, 2, TLV_DB_SCALE_ITEM(3000, 0, 0),
 };
 
+static const unsigned int max98088_hp_tlv[] = {
+	TLV_DB_RANGE_HEAD(5),
+	0, 6, TLV_DB_SCALE_ITEM(-6700, 400, 0),
+	7, 14, TLV_DB_SCALE_ITEM(-4000, 300, 0),
+	15, 21, TLV_DB_SCALE_ITEM(-1700, 200, 0),
+	22, 27, TLV_DB_SCALE_ITEM(-400, 100, 0),
+	28, 31, TLV_DB_SCALE_ITEM(150, 50, 0),
+};
+
+static const unsigned int max98088_spk_tlv[] = {
+	TLV_DB_RANGE_HEAD(5),
+	0, 6, TLV_DB_SCALE_ITEM(-6200, 400, 0),
+	7, 14, TLV_DB_SCALE_ITEM(-3500, 300, 0),
+	15, 21, TLV_DB_SCALE_ITEM(-1200, 200, 0),
+	22, 27, TLV_DB_SCALE_ITEM(100, 100, 0),
+	28, 31, TLV_DB_SCALE_ITEM(650, 50, 0),
+};
+
 static const struct snd_kcontrol_new max98088_snd_controls[] = {
 
-       SOC_DOUBLE_R("Headphone Volume", M98088_REG_39_LVL_HP_L,
-               M98088_REG_3A_LVL_HP_R, 0, 31, 0),
-       SOC_DOUBLE_R("Speaker Volume", M98088_REG_3D_LVL_SPK_L,
-               M98088_REG_3E_LVL_SPK_R, 0, 31, 0),
-       SOC_DOUBLE_R("Receiver Volume", M98088_REG_3B_LVL_REC_L,
-               M98088_REG_3C_LVL_REC_R, 0, 31, 0),
+	SOC_DOUBLE_R_TLV("Headphone Volume", M98088_REG_39_LVL_HP_L,
+			 M98088_REG_3A_LVL_HP_R, 0, 31, 0, max98088_hp_tlv),
+	SOC_DOUBLE_R_TLV("Speaker Volume", M98088_REG_3D_LVL_SPK_L,
+			 M98088_REG_3E_LVL_SPK_R, 0, 31, 0, max98088_spk_tlv),
+	SOC_DOUBLE_R_TLV("Receiver Volume", M98088_REG_3B_LVL_REC_L,
+			 M98088_REG_3C_LVL_REC_R, 0, 31, 0, max98088_spk_tlv),
 
        SOC_DOUBLE_R("Headphone Switch", M98088_REG_39_LVL_HP_L,
                M98088_REG_3A_LVL_HP_R, 7, 1, 1),
@@ -1595,7 +1612,7 @@ static int max98088_dai2_digital_mute(struct snd_soc_dai *codec_dai, int mute)
 
 static void max98088_sync_cache(struct snd_soc_codec *codec)
 {
-       u16 *reg_cache = codec->reg_cache;
+       u8 *reg_cache = codec->reg_cache;
        int i;
 
        if (!codec->cache_sync)
@@ -1650,14 +1667,14 @@ static int max98088_set_bias_level(struct snd_soc_codec *codec,
 #define MAX98088_RATES SNDRV_PCM_RATE_8000_96000
 #define MAX98088_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE)
 
-static struct snd_soc_dai_ops max98088_dai1_ops = {
+static const struct snd_soc_dai_ops max98088_dai1_ops = {
        .set_sysclk = max98088_dai_set_sysclk,
        .set_fmt = max98088_dai1_set_fmt,
        .hw_params = max98088_dai1_hw_params,
        .digital_mute = max98088_dai1_digital_mute,
 };
 
-static struct snd_soc_dai_ops max98088_dai2_ops = {
+static const struct snd_soc_dai_ops max98088_dai2_ops = {
        .set_sysclk = max98088_dai_set_sysclk,
        .set_fmt = max98088_dai2_set_fmt,
        .hw_params = max98088_dai2_hw_params,
@@ -1909,7 +1926,7 @@ static void max98088_handle_eq_pdata(struct snd_soc_codec *codec)
        max98088->eq_enum.texts = max98088->eq_texts;
        max98088->eq_enum.max = max98088->eq_textcnt;
 
-       ret = snd_soc_add_controls(codec, controls, ARRAY_SIZE(controls));
+       ret = snd_soc_add_codec_controls(codec, controls, ARRAY_SIZE(controls));
        if (ret != 0)
                dev_err(codec->dev, "Failed to add EQ control: %d\n", ret);
 }
@@ -1947,7 +1964,7 @@ static void max98088_handle_pdata(struct snd_soc_codec *codec)
 }
 
 #ifdef CONFIG_PM
-static int max98088_suspend(struct snd_soc_codec *codec, pm_message_t state)
+static int max98088_suspend(struct snd_soc_codec *codec)
 {
        max98088_set_bias_level(codec, SND_SOC_BIAS_OFF);
 
@@ -2007,7 +2024,7 @@ static int max98088_probe(struct snd_soc_codec *codec)
                        ret);
                goto err_access;
        }
-       dev_info(codec->dev, "revision %c\n", ret + 'A');
+       dev_info(codec->dev, "revision %c\n", ret - 0x40 + 'A');
 
        snd_soc_write(codec, M98088_REG_51_PWR_SYS, M98088_PWRSV);
 
@@ -2031,7 +2048,7 @@ static int max98088_probe(struct snd_soc_codec *codec)
 
        max98088_handle_pdata(codec);
 
-       snd_soc_add_controls(codec, max98088_snd_controls,
+       snd_soc_add_codec_controls(codec, max98088_snd_controls,
                             ARRAY_SIZE(max98088_snd_controls));
 
 err_access:
@@ -2070,7 +2087,8 @@ static int max98088_i2c_probe(struct i2c_client *i2c,
        struct max98088_priv *max98088;
        int ret;
 
-       max98088 = kzalloc(sizeof(struct max98088_priv), GFP_KERNEL);
+       max98088 = devm_kzalloc(&i2c->dev, sizeof(struct max98088_priv),
+			       GFP_KERNEL);
        if (max98088 == NULL)
                return -ENOMEM;
 
@@ -2081,15 +2099,12 @@ static int max98088_i2c_probe(struct i2c_client *i2c,
 
        ret = snd_soc_register_codec(&i2c->dev,
                        &soc_codec_dev_max98088, &max98088_dai[0], 2);
-       if (ret < 0)
-               kfree(max98088);
        return ret;
 }
 
-static int __devexit max98088_i2c_remove(struct i2c_client *client)
+static int max98088_i2c_remove(struct i2c_client *client)
 {
        snd_soc_unregister_codec(&client->dev);
-       kfree(i2c_get_clientdata(client));
        return 0;
 }
 
@@ -2101,32 +2116,16 @@ static const struct i2c_device_id max98088_i2c_id[] = {
 MODULE_DEVICE_TABLE(i2c, max98088_i2c_id);
 
 static struct i2c_driver max98088_i2c_driver = {
-       .driver = {
-               .name = "max98088",
-               .owner = THIS_MODULE,
-       },
-       .probe  = max98088_i2c_probe,
-       .remove = __devexit_p(max98088_i2c_remove),
-       .id_table = max98088_i2c_id,
+	.driver = {
+		.name = "max98088",
+		.owner = THIS_MODULE,
+	},
+	.probe  = max98088_i2c_probe,
+	.remove = max98088_i2c_remove,
+	.id_table = max98088_i2c_id,
 };
 
-static int __init max98088_init(void)
-{
-       int ret;
-
-       ret = i2c_add_driver(&max98088_i2c_driver);
-       if (ret)
-               pr_err("Failed to register max98088 I2C driver: %d\n", ret);
-
-       return ret;
-}
-module_init(max98088_init);
-
-static void __exit max98088_exit(void)
-{
-       i2c_del_driver(&max98088_i2c_driver);
-}
-module_exit(max98088_exit);
+module_i2c_driver(max98088_i2c_driver);
 
 MODULE_DESCRIPTION("ALSA SoC MAX98088 driver");
 MODULE_AUTHOR("Peter Hsiang, Jesse Marroquin");

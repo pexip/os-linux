@@ -53,7 +53,6 @@ static const char version2[] =
 #include <linux/jiffies.h>
 #include <linux/platform_device.h>
 
-#include <asm/system.h>
 #include <asm/io.h>
 
 #include "8390.h"
@@ -503,12 +502,12 @@ static int __init ne_probe1(struct net_device *dev, unsigned long ioaddr)
 #ifdef CONFIG_PLAT_MAPPI
 	outb_p(E8390_NODMA + E8390_PAGE1 + E8390_STOP,
 		ioaddr + E8390_CMD); /* 0x61 */
-	for (i = 0 ; i < ETHER_ADDR_LEN ; i++) {
+	for (i = 0; i < ETH_ALEN; i++) {
 		dev->dev_addr[i] = SA_prom[i]
 			= inb_p(ioaddr + EN1_PHYS_SHIFT(i));
 	}
 #else
-	for(i = 0; i < ETHER_ADDR_LEN; i++) {
+	for (i = 0; i < ETH_ALEN; i++) {
 		dev->dev_addr[i] = SA_prom[i];
 	}
 #endif
@@ -814,6 +813,7 @@ static int __init ne_drv_probe(struct platform_device *pdev)
 		dev->irq = irq[this_dev];
 		dev->mem_end = bad[this_dev];
 	}
+	SET_NETDEV_DEV(dev, &pdev->dev);
 	err = do_ne_probe(dev);
 	if (err) {
 		free_netdev(dev);
@@ -849,7 +849,6 @@ static int ne_drv_remove(struct platform_device *pdev)
 		free_irq(dev->irq, dev);
 		release_region(dev->base_addr, NE_IO_EXTENT);
 		free_netdev(dev);
-		platform_set_drvdata(pdev, NULL);
 	}
 	return 0;
 }

@@ -24,8 +24,7 @@ int main(void)
 	/* offsets into the task struct */
 	DEFINE(TASK_THREAD, offsetof(struct task_struct, thread));
 	DEFINE(TASK_MM, offsetof(struct task_struct, mm));
-	DEFINE(TASK_INFO, offsetof(struct task_struct, thread.info));
-	DEFINE(TASK_TINFO, offsetof(struct task_struct, thread.info));
+	DEFINE(TASK_STACK, offsetof(struct task_struct, stack));
 
 	/* offsets into the thread struct */
 	DEFINE(THREAD_KSP, offsetof(struct thread_struct, ksp));
@@ -78,7 +77,7 @@ int main(void)
 	DEFINE(BIR_SIZE, offsetof(struct bi_record, size));
 	DEFINE(BIR_DATA, offsetof(struct bi_record, data));
 
-	/* offsets into font_desc (drivers/video/console/font.h) */
+	/* offsets into the font_desc struct */
 	DEFINE(FONT_DESC_IDX, offsetof(struct font_desc, idx));
 	DEFINE(FONT_DESC_NAME, offsetof(struct font_desc, name));
 	DEFINE(FONT_DESC_WIDTH, offsetof(struct font_desc, width));

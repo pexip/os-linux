@@ -18,6 +18,7 @@
 #define SYN_QUE_SERIAL_NUMBER_SUFFIX	0x07
 #define SYN_QUE_RESOLUTION		0x08
 #define SYN_QUE_EXT_CAPAB		0x09
+#define SYN_QUE_FIRMWARE_ID		0x0a
 #define SYN_QUE_EXT_CAPAB_0C		0x0c
 #define SYN_QUE_EXT_MAX_COORDS		0x0d
 #define SYN_QUE_EXT_MIN_COORDS		0x0f
@@ -100,6 +101,7 @@
 #define SYN_ID_MINOR(i)			(((i) >> 16) & 0xff)
 #define SYN_ID_FULL(i)			((SYN_ID_MAJOR(i) << 8) | SYN_ID_MINOR(i))
 #define SYN_ID_IS_SYNAPTICS(i)		((((i) >> 8) & 0xff) == 0x47)
+#define SYN_ID_DISGEST_SUPPORTED(i)	(SYN_ID_MAJOR(i) >= 4)
 
 /* synaptics special commands */
 #define SYN_PS_SET_MODE2		0x14
@@ -147,6 +149,8 @@ struct synaptics_hw_state {
 struct synaptics_data {
 	/* Data read from the touchpad */
 	unsigned long int model_id;		/* Model-ID */
+	unsigned long int firmware_id;		/* Firmware-ID */
+	unsigned long int board_id;		/* Board-ID */
 	unsigned long int capabilities;		/* Capabilities */
 	unsigned long int ext_cap;		/* Extended Capabilities */
 	unsigned long int ext_cap_0c;		/* Ext Caps from 0x0c query */
@@ -158,6 +162,9 @@ struct synaptics_data {
 	unsigned char pkt_type;			/* packet type - old, new, etc */
 	unsigned char mode;			/* current mode byte */
 	int scroll;
+
+	bool absolute_mode;			/* run in Absolute mode */
+	bool disable_gesture;			/* disable gestures */
 
 	struct serio *pt_port;			/* Pass-through serio port */
 
@@ -175,6 +182,7 @@ struct synaptics_data {
 void synaptics_module_init(void);
 int synaptics_detect(struct psmouse *psmouse, bool set_properties);
 int synaptics_init(struct psmouse *psmouse);
+int synaptics_init_relative(struct psmouse *psmouse);
 void synaptics_reset(struct psmouse *psmouse);
 bool synaptics_supported(void);
 

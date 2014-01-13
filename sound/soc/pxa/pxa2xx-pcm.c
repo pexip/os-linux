@@ -120,12 +120,12 @@ static struct snd_soc_platform_driver pxa2xx_soc_platform = {
 	.pcm_free	= pxa2xx_pcm_free_dma_buffers,
 };
 
-static int __devinit pxa2xx_soc_platform_probe(struct platform_device *pdev)
+static int pxa2xx_soc_platform_probe(struct platform_device *pdev)
 {
 	return snd_soc_register_platform(&pdev->dev, &pxa2xx_soc_platform);
 }
 
-static int __devexit pxa2xx_soc_platform_remove(struct platform_device *pdev)
+static int pxa2xx_soc_platform_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_platform(&pdev->dev);
 	return 0;
@@ -138,20 +138,10 @@ static struct platform_driver pxa_pcm_driver = {
 	},
 
 	.probe = pxa2xx_soc_platform_probe,
-	.remove = __devexit_p(pxa2xx_soc_platform_remove),
+	.remove = pxa2xx_soc_platform_remove,
 };
 
-static int __init snd_pxa_pcm_init(void)
-{
-	return platform_driver_register(&pxa_pcm_driver);
-}
-module_init(snd_pxa_pcm_init);
-
-static void __exit snd_pxa_pcm_exit(void)
-{
-	platform_driver_unregister(&pxa_pcm_driver);
-}
-module_exit(snd_pxa_pcm_exit);
+module_platform_driver(pxa_pcm_driver);
 
 MODULE_AUTHOR("Nicolas Pitre");
 MODULE_DESCRIPTION("Intel PXA2xx PCM DMA module");

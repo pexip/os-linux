@@ -24,8 +24,10 @@
 #include <linux/gpio.h>
 #include <linux/pwm_backlight.h>
 #include <linux/fb.h>
+#include <linux/mmc/host.h>
 
 #include <video/platform_lcd.h>
+#include <video/samsung_fimd.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -35,23 +37,24 @@
 #include <mach/hardware.h>
 #include <mach/map.h>
 #include <mach/regs-clock.h>
-#include <mach/i2c.h>
 #include <mach/regs-gpio.h>
 
 #include <plat/regs-serial.h>
 #include <plat/gpio-cfg.h>
-#include <plat/s5p6450.h>
 #include <plat/clock.h>
 #include <plat/devs.h>
 #include <plat/cpu.h>
-#include <plat/iic.h>
+#include <linux/platform_data/i2c-s3c2410.h>
 #include <plat/pll.h>
 #include <plat/adc.h>
-#include <plat/ts.h>
-#include <plat/s5p-time.h>
+#include <linux/platform_data/touchscreen-s3c2410.h>
+#include <plat/samsung-time.h>
 #include <plat/backlight.h>
 #include <plat/fb.h>
-#include <plat/regs-fb.h>
+#include <plat/sdhci.h>
+
+#include "common.h"
+#include "i2c.h"
 
 #define SMDK6450_UCON_DEFAULT	(S3C2410_UCON_TXILEVEL |	\
 				S3C2410_UCON_RXILEVEL |		\
@@ -117,22 +120,26 @@ static struct s3c2410_uartcfg smdk6450_uartcfgs[] __initdata = {
 
 /* Frame Buffer */
 static struct s3c_fb_pd_win smdk6450_fb_win0 = {
-	.win_mode	= {
-		.left_margin	= 8,
-		.right_margin	= 13,
-		.upper_margin	= 7,
-		.lower_margin	= 5,
-		.hsync_len	= 3,
-		.vsync_len	= 1,
-		.xres		= 800,
-		.yres		= 480,
-	},
 	.max_bpp	= 32,
 	.default_bpp	= 24,
+	.xres		= 800,
+	.yres		= 480,
+};
+
+static struct fb_videomode smdk6450_lcd_timing = {
+	.left_margin	= 8,
+	.right_margin	= 13,
+	.upper_margin	= 7,
+	.lower_margin	= 5,
+	.hsync_len	= 3,
+	.vsync_len	= 1,
+	.xres		= 800,
+	.yres		= 480,
 };
 
 static struct s3c_fb_platdata smdk6450_lcd_pdata __initdata = {
 	.win[0]		= &smdk6450_fb_win0,
+	.vtiming	= &smdk6450_lcd_timing,
 	.vidcon0	= VIDCON0_VIDOUT_RGB | VIDCON0_PNRMODE_RGB,
 	.vidcon1	= VIDCON1_INV_HSYNC | VIDCON1_INV_VSYNC,
 	.setup_gpio	= s5p64x0_fb_gpio_setup_24bpp,
@@ -175,12 +182,29 @@ static struct platform_device *smdk6450_devices[] __initdata = {
 	&s3c_device_i2c1,
 	&s3c_device_ts,
 	&s3c_device_wdt,
-	&samsung_asoc_dma,
 	&s5p6450_device_iis0,
 	&s3c_device_fb,
 	&smdk6450_lcd_lte480wv,
-
+	&s3c_device_hsmmc0,
+	&s3c_device_hsmmc1,
+	&s3c_device_hsmmc2,
 	/* s5p6450_device_spi0 will be added */
+};
+
+static struct s3c_sdhci_platdata smdk6450_hsmmc0_pdata __initdata = {
+	.cd_type	= S3C_SDHCI_CD_NONE,
+};
+
+static struct s3c_sdhci_platdata smdk6450_hsmmc1_pdata __initdata = {
+	.cd_type	= S3C_SDHCI_CD_NONE,
+#if defined(CONFIG_S5P64X0_SD_CH1_8BIT)
+	.max_width	= 8,
+	.host_caps	= MMC_CAP_8_BIT_DATA,
+#endif
+};
+
+static struct s3c_sdhci_platdata smdk6450_hsmmc2_pdata __initdata = {
+	.cd_type	= S3C_SDHCI_CD_NONE,
 };
 
 static struct s3c2410_platform_i2c s5p6450_i2c0_data __initdata = {
@@ -221,10 +245,10 @@ static struct platform_pwm_backlight_data smdk6450_bl_data = {
 
 static void __init smdk6450_map_io(void)
 {
-	s5p_init_io(NULL, 0, S5P64X0_SYS_ID);
+	s5p64x0_init_io(NULL, 0);
 	s3c24xx_init_clocks(19200000);
 	s3c24xx_init_uarts(smdk6450_uartcfgs, ARRAY_SIZE(smdk6450_uartcfgs));
-	s5p_set_timer_source(S5P_PWM3, S5P_PWM4);
+	samsung_set_timer_source(SAMSUNG_PWM3, SAMSUNG_PWM4);
 }
 
 static void s5p6450_set_lcd_interface(void)
@@ -254,6 +278,10 @@ static void __init smdk6450_machine_init(void)
 	s5p6450_set_lcd_interface();
 	s3c_fb_set_platdata(&smdk6450_lcd_pdata);
 
+	s3c_sdhci0_set_platdata(&smdk6450_hsmmc0_pdata);
+	s3c_sdhci1_set_platdata(&smdk6450_hsmmc1_pdata);
+	s3c_sdhci2_set_platdata(&smdk6450_hsmmc2_pdata);
+
 	platform_add_devices(smdk6450_devices, ARRAY_SIZE(smdk6450_devices));
 }
 
@@ -264,5 +292,6 @@ MACHINE_START(SMDK6450, "SMDK6450")
 	.init_irq	= s5p6450_init_irq,
 	.map_io		= smdk6450_map_io,
 	.init_machine	= smdk6450_machine_init,
-	.timer		= &s5p_timer,
+	.init_time	= samsung_timer_init,
+	.restart	= s5p64x0_restart,
 MACHINE_END

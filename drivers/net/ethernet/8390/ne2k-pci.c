@@ -54,7 +54,6 @@ static int options[MAX_UNITS];
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 
-#include <asm/system.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/uaccess.h>
@@ -62,7 +61,7 @@ static int options[MAX_UNITS];
 #include "8390.h"
 
 /* These identify the driver base version and may not be removed. */
-static const char version[] __devinitconst =
+static const char version[] =
 	KERN_INFO DRV_NAME ".c:v" DRV_VERSION " " DRV_RELDATE
 	" D. Becker/P. Gortmaker\n";
 
@@ -120,7 +119,7 @@ enum ne2k_pci_chipsets {
 static struct {
 	char *name;
 	int flags;
-} pci_clone_list[] __devinitdata = {
+} pci_clone_list[] = {
 	{"RealTek RTL-8029", REALTEK_FDX},
 	{"Winbond 89C940", 0},
 	{"Compex RL2000", 0},
@@ -216,8 +215,8 @@ static const struct net_device_ops ne2k_netdev_ops = {
 #endif
 };
 
-static int __devinit ne2k_pci_init_one (struct pci_dev *pdev,
-				     const struct pci_device_id *ent)
+static int ne2k_pci_init_one(struct pci_dev *pdev,
+			     const struct pci_device_id *ent)
 {
 	struct net_device *dev;
 	int i;
@@ -375,7 +374,6 @@ static int __devinit ne2k_pci_init_one (struct pci_dev *pdev,
 	NS8390_init(dev, 0);
 
 	memcpy(dev->dev_addr, SA_prom, dev->addr_len);
-	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
 
 	i = register_netdev(dev);
 	if (i)
@@ -639,16 +637,16 @@ static void ne2k_pci_get_drvinfo(struct net_device *dev,
 	struct ei_device *ei = netdev_priv(dev);
 	struct pci_dev *pci_dev = (struct pci_dev *) ei->priv;
 
-	strcpy(info->driver, DRV_NAME);
-	strcpy(info->version, DRV_VERSION);
-	strcpy(info->bus_info, pci_name(pci_dev));
+	strlcpy(info->driver, DRV_NAME, sizeof(info->driver));
+	strlcpy(info->version, DRV_VERSION, sizeof(info->version));
+	strlcpy(info->bus_info, pci_name(pci_dev), sizeof(info->bus_info));
 }
 
 static const struct ethtool_ops ne2k_pci_ethtool_ops = {
 	.get_drvinfo		= ne2k_pci_get_drvinfo,
 };
 
-static void __devexit ne2k_pci_remove_one (struct pci_dev *pdev)
+static void ne2k_pci_remove_one(struct pci_dev *pdev)
 {
 	struct net_device *dev = pci_get_drvdata(pdev);
 
@@ -678,7 +676,7 @@ static int ne2k_pci_resume (struct pci_dev *pdev)
 	struct net_device *dev = pci_get_drvdata (pdev);
 	int rc;
 
-	pci_set_power_state(pdev, 0);
+	pci_set_power_state(pdev, PCI_D0);
 	pci_restore_state(pdev);
 
 	rc = pci_enable_device(pdev);
@@ -697,7 +695,7 @@ static int ne2k_pci_resume (struct pci_dev *pdev)
 static struct pci_driver ne2k_driver = {
 	.name		= DRV_NAME,
 	.probe		= ne2k_pci_init_one,
-	.remove		= __devexit_p(ne2k_pci_remove_one),
+	.remove		= ne2k_pci_remove_one,
 	.id_table	= ne2k_pci_tbl,
 #ifdef CONFIG_PM
 	.suspend	= ne2k_pci_suspend,

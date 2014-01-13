@@ -12,18 +12,15 @@
  * Simple spin lock operations.  There are two variants, one clears IRQ's
  * on the local processor, one does not.
  *
- * These are fair FIFO ticket locks, which are currently limited to 256
- * CPUs.
+ * These are fair FIFO ticket locks, which support up to 2^16 CPUs.
  *
  * (the type definitions are in asm/spinlock_types.h)
  */
 
 #ifdef CONFIG_X86_32
 # define LOCK_PTR_REG "a"
-# define REG_PTR_MODE "k"
 #else
 # define LOCK_PTR_REG "D"
-# define REG_PTR_MODE "q"
 #endif
 
 #if defined(CONFIG_X86_32) && \
@@ -79,36 +76,23 @@ static __always_inline int __ticket_spin_trylock(arch_spinlock_t *lock)
 	return cmpxchg(&lock->head_tail, old.head_tail, new.head_tail) == old.head_tail;
 }
 
-#if (NR_CPUS < 256)
 static __always_inline void __ticket_spin_unlock(arch_spinlock_t *lock)
 {
-	asm volatile(UNLOCK_LOCK_PREFIX "incb %0"
-		     : "+m" (lock->head_tail)
-		     :
-		     : "memory", "cc");
+	__add(&lock->tickets.head, 1, UNLOCK_LOCK_PREFIX);
 }
-#else
-static __always_inline void __ticket_spin_unlock(arch_spinlock_t *lock)
-{
-	asm volatile(UNLOCK_LOCK_PREFIX "incw %0"
-		     : "+m" (lock->head_tail)
-		     :
-		     : "memory", "cc");
-}
-#endif
 
 static inline int __ticket_spin_is_locked(arch_spinlock_t *lock)
 {
 	struct __raw_tickets tmp = ACCESS_ONCE(lock->tickets);
 
-	return !!(tmp.tail ^ tmp.head);
+	return tmp.tail != tmp.head;
 }
 
 static inline int __ticket_spin_is_contended(arch_spinlock_t *lock)
 {
 	struct __raw_tickets tmp = ACCESS_ONCE(lock->tickets);
 
-	return ((tmp.tail - tmp.head) & TICKET_MASK) > 1;
+	return (__ticket_t)(tmp.tail - tmp.head) > 1;
 }
 
 #ifndef CONFIG_PARAVIRT_SPINLOCKS
@@ -248,9 +232,5 @@ static inline void arch_write_unlock(arch_rwlock_t *rw)
 #define arch_spin_relax(lock)	cpu_relax()
 #define arch_read_relax(lock)	cpu_relax()
 #define arch_write_relax(lock)	cpu_relax()
-
-/* The {read|write|spin}_lock() on x86 are full memory barriers. */
-static inline void smp_mb__after_lock(void) { }
-#define ARCH_HAS_SMP_MB_AFTER_LOCK
 
 #endif /* _ASM_X86_SPINLOCK_H */

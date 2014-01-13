@@ -552,7 +552,8 @@ static void lguest_write_cr3(unsigned long cr3)
 	current_cr3 = cr3;
 
 	/* These two page tables are simple, linear, and used during boot */
-	if (cr3 != __pa(swapper_pg_dir) && cr3 != __pa(initial_page_table))
+	if (cr3 != __pa_symbol(swapper_pg_dir) &&
+	    cr3 != __pa_symbol(initial_page_table))
 		cr3_changed = true;
 }
 
@@ -856,18 +857,23 @@ static void __init lguest_init_IRQ(void)
 }
 
 /*
- * With CONFIG_SPARSE_IRQ, interrupt descriptors are allocated as-needed, so
- * rather than set them in lguest_init_IRQ we are called here every time an
- * lguest device needs an interrupt.
- *
- * FIXME: irq_alloc_desc_at() can fail due to lack of memory, we should
- * pass that up!
+ * Interrupt descriptors are allocated as-needed, but low-numbered ones are
+ * reserved by the generic x86 code.  So we ignore irq_alloc_desc_at if it
+ * tells us the irq is already used: other errors (ie. ENOMEM) we take
+ * seriously.
  */
-void lguest_setup_irq(unsigned int irq)
+int lguest_setup_irq(unsigned int irq)
 {
-	irq_alloc_desc_at(irq, 0);
+	int err;
+
+	/* Returns -ve error or vector number. */
+	err = irq_alloc_desc_at(irq, 0);
+	if (err < 0 && err != -EEXIST)
+		return err;
+
 	irq_set_chip_and_handler_name(irq, &lguest_irq_controller,
 				      handle_level_irq, "level");
+	return 0;
 }
 
 /*
@@ -876,9 +882,9 @@ void lguest_setup_irq(unsigned int irq)
  * It would be far better for everyone if the Guest had its own clock, but
  * until then the Host gives us the time on every interrupt.
  */
-static unsigned long lguest_get_wallclock(void)
+static void lguest_get_wallclock(struct timespec *now)
 {
-	return lguest_data.time.tv_sec;
+	*now = lguest_data.time;
 }
 
 /*
@@ -1328,6 +1334,7 @@ __init void lguest_init(void)
 	pv_mmu_ops.read_cr3 = lguest_read_cr3;
 	pv_mmu_ops.lazy_mode.enter = paravirt_enter_lazy_mmu;
 	pv_mmu_ops.lazy_mode.leave = lguest_leave_lazy_mmu_mode;
+	pv_mmu_ops.lazy_mode.flush = paravirt_flush_lazy_mmu;
 	pv_mmu_ops.pte_update = lguest_pte_update;
 	pv_mmu_ops.pte_update_defer = lguest_pte_update;
 
@@ -1403,11 +1410,11 @@ __init void lguest_init(void)
 	new_cpu_data.x86_capability[0] = cpuid_edx(1);
 
 	/* Math is always hard! */
-	new_cpu_data.hard_math = 1;
+	set_cpu_cap(&new_cpu_data, X86_FEATURE_FPU);
 
 	/* We don't have features.  We have puppies!  Puppies! */
 #ifdef CONFIG_X86_MCE
-	mce_disabled = 1;
+	mca_cfg.disabled = true;
 #endif
 #ifdef CONFIG_ACPI
 	acpi_disabled = 1;

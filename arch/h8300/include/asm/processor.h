@@ -107,10 +107,6 @@ static inline void release_thread(struct task_struct *dead_task)
 {
 }
 
-extern int kernel_thread(int (*fn)(void *), void * arg, unsigned long flags);
-
-#define prepare_to_copy(tsk)	do { } while (0)
-
 /*
  * Free current thread data structures etc..
  */
@@ -134,5 +130,10 @@ unsigned long get_wchan(struct task_struct *p);
 #define	KSTK_ESP(tsk)	((tsk) == current ? rdusp() : (tsk)->thread.usp)
 
 #define cpu_relax()    barrier()
+
+#define HARD_RESET_NOW() ({		\
+        local_irq_disable();		\
+        asm("jmp @@0");			\
+})
 
 #endif

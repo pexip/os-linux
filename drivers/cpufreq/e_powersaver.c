@@ -16,6 +16,7 @@
 #include <linux/io.h>
 #include <linux/delay.h>
 
+#include <asm/cpu_device_id.h>
 #include <asm/msr.h>
 #include <asm/tsc.h>
 
@@ -103,7 +104,7 @@ static unsigned int eps_get(unsigned int cpu)
 }
 
 static int eps_set_state(struct eps_cpu_data *centaur,
-			 unsigned int cpu,
+			 struct cpufreq_policy *policy,
 			 u32 dest_state)
 {
 	struct cpufreq_freqs freqs;
@@ -111,10 +112,9 @@ static int eps_set_state(struct eps_cpu_data *centaur,
 	int err = 0;
 	int i;
 
-	freqs.old = eps_get(cpu);
+	freqs.old = eps_get(policy->cpu);
 	freqs.new = centaur->fsb * ((dest_state >> 8) & 0xff);
-	freqs.cpu = cpu;
-	cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
+	cpufreq_notify_transition(policy, &freqs, CPUFREQ_PRECHANGE);
 
 	/* Wait while CPU is busy */
 	rdmsr(MSR_IA32_PERF_STATUS, lo, hi);
@@ -161,7 +161,10 @@ postchange:
 		current_multiplier);
 	}
 #endif
-	cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
+	if (err)
+		freqs.new = freqs.old;
+
+	cpufreq_notify_transition(policy, &freqs, CPUFREQ_POSTCHANGE);
 	return err;
 }
 
@@ -188,8 +191,8 @@ static int eps_target(struct cpufreq_policy *policy,
 	}
 
 	/* Make frequency transition */
-	dest_state = centaur->freq_table[newstate].index & 0xffff;
-	ret = eps_set_state(centaur, cpu, dest_state);
+	dest_state = centaur->freq_table[newstate].driver_data & 0xffff;
+	ret = eps_set_state(centaur, policy, dest_state);
 	if (ret)
 		printk(KERN_ERR "eps: Timeout!\n");
 	return ret;
@@ -380,9 +383,9 @@ static int eps_cpu_init(struct cpufreq_policy *policy)
 	f_table = &centaur->freq_table[0];
 	if (brand != EPS_BRAND_C7M) {
 		f_table[0].frequency = fsb * min_multiplier;
-		f_table[0].index = (min_multiplier << 8) | min_voltage;
+		f_table[0].driver_data = (min_multiplier << 8) | min_voltage;
 		f_table[1].frequency = fsb * max_multiplier;
-		f_table[1].index = (max_multiplier << 8) | max_voltage;
+		f_table[1].driver_data = (max_multiplier << 8) | max_voltage;
 		f_table[2].frequency = CPUFREQ_TABLE_END;
 	} else {
 		k = 0;
@@ -391,7 +394,7 @@ static int eps_cpu_init(struct cpufreq_policy *policy)
 		for (i = min_multiplier; i <= max_multiplier; i++) {
 			voltage = (k * step) / 256 + min_voltage;
 			f_table[k].frequency = fsb * i;
-			f_table[k].index = (i << 8) | voltage;
+			f_table[k].driver_data = (i << 8) | voltage;
 			k++;
 		}
 		f_table[k].frequency = CPUFREQ_TABLE_END;
@@ -437,18 +440,19 @@ static struct cpufreq_driver eps_driver = {
 	.attr		= eps_attr,
 };
 
+
+/* This driver will work only on Centaur C7 processors with
+ * Enhanced SpeedStep/PowerSaver registers */
+static const struct x86_cpu_id eps_cpu_id[] = {
+	{ X86_VENDOR_CENTAUR, 6, X86_MODEL_ANY, X86_FEATURE_EST },
+	{}
+};
+MODULE_DEVICE_TABLE(x86cpu, eps_cpu_id);
+
 static int __init eps_init(void)
 {
-	struct cpuinfo_x86 *c = &cpu_data(0);
-
-	/* This driver will work only on Centaur C7 processors with
-	 * Enhanced SpeedStep/PowerSaver registers */
-	if (c->x86_vendor != X86_VENDOR_CENTAUR
-	    || c->x86 != 6 || c->x86_model < 10)
+	if (!x86_match_cpu(eps_cpu_id) || boot_cpu_data.x86_model < 10)
 		return -ENODEV;
-	if (!cpu_has(c, X86_FEATURE_EST))
-		return -ENODEV;
-
 	if (cpufreq_register_driver(&eps_driver))
 		return -EINVAL;
 	return 0;

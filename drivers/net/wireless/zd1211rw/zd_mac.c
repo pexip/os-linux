@@ -306,9 +306,19 @@ int zd_op_start(struct ieee80211_hw *hw)
 	r = set_mc_hash(mac);
 	if (r)
 		goto disable_int;
+
+	/* Wait after setting the multicast hash table and powering on
+	 * the radio otherwise interface bring up will fail. This matches
+	 * what the vendor driver did.
+	 */
+	msleep(10);
+
 	r = zd_chip_switch_radio_on(chip);
-	if (r < 0)
+	if (r < 0) {
+		dev_err(zd_chip_dev(chip),
+			"%s: failed to set radio on\n", __func__);
 		goto disable_int;
+	}
 	r = zd_chip_enable_rxtx(chip);
 	if (r < 0)
 		goto disable_radio;
@@ -846,7 +856,7 @@ reset_device:
 
 	/* semaphore stuck, reset device to avoid fw freeze later */
 	dev_warn(zd_mac_dev(mac), "CR_BCN_FIFO_SEMAPHORE stuck, "
-				  "reseting device...");
+				  "resetting device...");
 	usb_queue_reset_device(mac->chip.usb.intf);
 
 	return r;
@@ -865,6 +875,14 @@ static int fill_ctrlset(struct zd_mac *mac,
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 
 	ZD_ASSERT(frag_len <= 0xffff);
+
+	/*
+	 * Firmware computes the duration itself (for all frames except PSPoll)
+	 * and needs the field set to 0 at input, otherwise firmware messes up
+	 * duration_id and sets bits 14 and 15 on.
+	 */
+	if (!ieee80211_is_pspoll(hdr->frame_control))
+		hdr->duration_id = 0;
 
 	txrate = ieee80211_get_tx_rate(mac->hw, info);
 
@@ -919,7 +937,9 @@ static int fill_ctrlset(struct zd_mac *mac,
  * control block of the skbuff will be initialized. If necessary the incoming
  * mac80211 queues will be stopped.
  */
-static void zd_op_tx(struct ieee80211_hw *hw, struct sk_buff *skb)
+static void zd_op_tx(struct ieee80211_hw *hw,
+		     struct ieee80211_tx_control *control,
+		     struct sk_buff *skb)
 {
 	struct zd_mac *mac = zd_hw_mac(hw);
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
@@ -1136,10 +1156,10 @@ static int zd_op_config(struct ieee80211_hw *hw, u32 changed)
 	struct ieee80211_conf *conf = &hw->conf;
 
 	spin_lock_irq(&mac->lock);
-	mac->channel = conf->channel->hw_value;
+	mac->channel = conf->chandef.chan->hw_value;
 	spin_unlock_irq(&mac->lock);
 
-	return zd_chip_set_channel(&mac->chip, conf->channel->hw_value);
+	return zd_chip_set_channel(&mac->chip, conf->chandef.chan->hw_value);
 }
 
 static void zd_beacon_done(struct zd_mac *mac)
@@ -1158,7 +1178,7 @@ static void zd_beacon_done(struct zd_mac *mac)
 		skb = ieee80211_get_buffered_bc(mac->hw, mac->vif);
 		if (!skb)
 			break;
-		zd_op_tx(mac->hw, skb);
+		zd_op_tx(mac->hw, NULL, skb);
 	}
 
 	/*
@@ -1381,7 +1401,8 @@ struct ieee80211_hw *zd_mac_alloc_hw(struct usb_interface *intf)
 
 	hw->flags = IEEE80211_HW_RX_INCLUDES_FCS |
 		    IEEE80211_HW_SIGNAL_UNSPEC |
-		    IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING;
+		    IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING |
+		    IEEE80211_HW_MFP_CAPABLE;
 
 	hw->wiphy->interface_modes =
 		BIT(NL80211_IFTYPE_MESH_POINT) |

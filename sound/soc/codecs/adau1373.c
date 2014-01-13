@@ -133,6 +133,8 @@ struct adau1373 {
 #define ADAU1373_DAI_FORMAT_DSP		0x3
 
 #define ADAU1373_BCLKDIV_SOURCE		BIT(5)
+#define ADAU1373_BCLKDIV_SR_MASK	(0x07 << 2)
+#define ADAU1373_BCLKDIV_BCLK_MASK	0x03
 #define ADAU1373_BCLKDIV_32		0x03
 #define ADAU1373_BCLKDIV_64		0x02
 #define ADAU1373_BCLKDIV_128		0x01
@@ -937,7 +939,8 @@ static int adau1373_hw_params(struct snd_pcm_substream *substream,
 	adau1373_dai->enable_src = (div != 0);
 
 	snd_soc_update_bits(codec, ADAU1373_BCLKDIV(dai->id),
-		~ADAU1373_BCLKDIV_SOURCE, (div << 2) | ADAU1373_BCLKDIV_64);
+		ADAU1373_BCLKDIV_SR_MASK | ADAU1373_BCLKDIV_BCLK_MASK,
+		(div << 2) | ADAU1373_BCLKDIV_64);
 
 	switch (params_format(params)) {
 	case SNDRV_PCM_FORMAT_S16_LE:
@@ -1244,8 +1247,6 @@ static int adau1373_probe(struct snd_soc_codec *codec)
 		return ret;
 	}
 
-	codec->dapm.idle_bias_off = true;
-
 	if (pdata) {
 		if (pdata->num_drc > ARRAY_SIZE(pdata->drc_setting))
 			return -EINVAL;
@@ -1259,7 +1260,7 @@ static int adau1373_probe(struct snd_soc_codec *codec)
 				pdata->drc_setting[i]);
 		}
 
-		snd_soc_add_controls(codec, adau1373_drc_controls,
+		snd_soc_add_codec_controls(codec, adau1373_drc_controls,
 			pdata->num_drc);
 
 		val = 0;
@@ -1284,7 +1285,7 @@ static int adau1373_probe(struct snd_soc_codec *codec)
 	}
 
 	if (!lineout_differential) {
-		snd_soc_add_controls(codec, adau1373_lineout2_controls,
+		snd_soc_add_codec_controls(codec, adau1373_lineout2_controls,
 			ARRAY_SIZE(adau1373_lineout2_controls));
 	}
 
@@ -1321,7 +1322,7 @@ static int adau1373_remove(struct snd_soc_codec *codec)
 	return 0;
 }
 
-static int adau1373_suspend(struct snd_soc_codec *codec, pm_message_t state)
+static int adau1373_suspend(struct snd_soc_codec *codec)
 {
 	return adau1373_set_bias_level(codec, SND_SOC_BIAS_OFF);
 }
@@ -1340,6 +1341,7 @@ static struct snd_soc_codec_driver adau1373_codec_driver = {
 	.suspend =	adau1373_suspend,
 	.resume =	adau1373_resume,
 	.set_bias_level = adau1373_set_bias_level,
+	.idle_bias_off = true,
 	.reg_cache_size = ARRAY_SIZE(adau1373_default_regs),
 	.reg_cache_default = adau1373_default_regs,
 	.reg_word_size = sizeof(uint8_t),
@@ -1354,13 +1356,13 @@ static struct snd_soc_codec_driver adau1373_codec_driver = {
 	.num_dapm_routes = ARRAY_SIZE(adau1373_dapm_routes),
 };
 
-static int __devinit adau1373_i2c_probe(struct i2c_client *client,
-	const struct i2c_device_id *id)
+static int adau1373_i2c_probe(struct i2c_client *client,
+			      const struct i2c_device_id *id)
 {
 	struct adau1373 *adau1373;
 	int ret;
 
-	adau1373 = kzalloc(sizeof(*adau1373), GFP_KERNEL);
+	adau1373 = devm_kzalloc(&client->dev, sizeof(*adau1373), GFP_KERNEL);
 	if (!adau1373)
 		return -ENOMEM;
 
@@ -1368,16 +1370,12 @@ static int __devinit adau1373_i2c_probe(struct i2c_client *client,
 
 	ret = snd_soc_register_codec(&client->dev, &adau1373_codec_driver,
 			adau1373_dai_driver, ARRAY_SIZE(adau1373_dai_driver));
-	if (ret < 0)
-		kfree(adau1373);
-
 	return ret;
 }
 
-static int __devexit adau1373_i2c_remove(struct i2c_client *client)
+static int adau1373_i2c_remove(struct i2c_client *client)
 {
 	snd_soc_unregister_codec(&client->dev);
-	kfree(dev_get_drvdata(&client->dev));
 	return 0;
 }
 
@@ -1393,21 +1391,11 @@ static struct i2c_driver adau1373_i2c_driver = {
 		.owner = THIS_MODULE,
 	},
 	.probe = adau1373_i2c_probe,
-	.remove = __devexit_p(adau1373_i2c_remove),
+	.remove = adau1373_i2c_remove,
 	.id_table = adau1373_i2c_id,
 };
 
-static int __init adau1373_init(void)
-{
-	return i2c_add_driver(&adau1373_i2c_driver);
-}
-module_init(adau1373_init);
-
-static void __exit adau1373_exit(void)
-{
-	i2c_del_driver(&adau1373_i2c_driver);
-}
-module_exit(adau1373_exit);
+module_i2c_driver(adau1373_i2c_driver);
 
 MODULE_DESCRIPTION("ASoC ADAU1373 driver");
 MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");

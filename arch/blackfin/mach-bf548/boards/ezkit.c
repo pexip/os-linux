@@ -165,6 +165,7 @@ static struct bfin_rotary_platform_data bfin_rotary_data = {
 	.rotary_button_key = KEY_ENTER,
 	.debounce	   = 10,	/* 0..17 */
 	.mode		   = ROT_QUAD_ENC | ROT_DEBE,
+	.pm_wakeup	   = 1,
 };
 
 static struct resource bfin_rotary_resources[] = {
@@ -634,9 +635,9 @@ static struct musb_hdrc_config musb_config = {
 };
 
 static struct musb_hdrc_platform_data musb_plat = {
-#if defined(CONFIG_USB_MUSB_OTG)
+#if defined(CONFIG_USB_MUSB_HDRC) && defined(CONFIG_USB_GADGET_MUSB_HDRC)
 	.mode		= MUSB_OTG,
-#elif defined(CONFIG_USB_MUSB_HDRC_HCD)
+#elif defined(CONFIG_USB_MUSB_HDRC)
 	.mode		= MUSB_HOST,
 #elif defined(CONFIG_USB_GADGET_MUSB_HDRC)
 	.mode		= MUSB_PERIPHERAL,
@@ -1110,7 +1111,7 @@ static struct spi_board_info bfin_spi_board_info[] __initdata = {
 	},
 #endif
 };
-#if defined(CONFIG_SPI_BFIN) || defined(CONFIG_SPI_BFIN_MODULE)
+#if defined(CONFIG_SPI_BFIN5XX) || defined(CONFIG_SPI_BFIN5XX_MODULE)
 /* SPI (0) */
 static struct resource bfin_spi0_resource[] = {
 	[0] = {
@@ -1183,7 +1184,76 @@ static struct platform_device bf54x_spi_master1 = {
 };
 #endif  /* spi master and devices */
 
+#if defined(CONFIG_VIDEO_BLACKFIN_CAPTURE) \
+	|| defined(CONFIG_VIDEO_BLACKFIN_CAPTURE_MODULE)
+#include <linux/videodev2.h>
+#include <media/blackfin/bfin_capture.h>
+#include <media/blackfin/ppi.h>
+
+static const unsigned short ppi_req[] = {
+	P_PPI1_D0, P_PPI1_D1, P_PPI1_D2, P_PPI1_D3,
+	P_PPI1_D4, P_PPI1_D5, P_PPI1_D6, P_PPI1_D7,
+	P_PPI1_CLK, P_PPI1_FS1, P_PPI1_FS2,
+	0,
+};
+
+static const struct ppi_info ppi_info = {
+	.type = PPI_TYPE_EPPI,
+	.dma_ch = CH_EPPI1,
+	.irq_err = IRQ_EPPI1_ERROR,
+	.base = (void __iomem *)EPPI1_STATUS,
+	.pin_req = ppi_req,
+};
+
+#if defined(CONFIG_VIDEO_VS6624) \
+	|| defined(CONFIG_VIDEO_VS6624_MODULE)
+static struct v4l2_input vs6624_inputs[] = {
+	{
+		.index = 0,
+		.name = "Camera",
+		.type = V4L2_INPUT_TYPE_CAMERA,
+		.std = V4L2_STD_UNKNOWN,
+	},
+};
+
+static struct bcap_route vs6624_routes[] = {
+	{
+		.input = 0,
+		.output = 0,
+	},
+};
+
+static const unsigned vs6624_ce_pin = GPIO_PG6;
+
+static struct bfin_capture_config bfin_capture_data = {
+	.card_name = "BF548",
+	.inputs = vs6624_inputs,
+	.num_inputs = ARRAY_SIZE(vs6624_inputs),
+	.routes = vs6624_routes,
+	.i2c_adapter_id = 0,
+	.board_info = {
+		.type = "vs6624",
+		.addr = 0x10,
+		.platform_data = (void *)&vs6624_ce_pin,
+	},
+	.ppi_info = &ppi_info,
+	.ppi_control = (POLC | PACKEN | DLEN_8 | XFR_TYPE | 0x20),
+	.int_mask = 0xFFFFFFFF, /* disable error interrupt on eppi */
+	.blank_clocks = 8, /* 8 clocks as SAV and EAV */
+};
+#endif
+
+static struct platform_device bfin_capture_device = {
+	.name = "bfin_capture",
+	.dev = {
+		.platform_data = &bfin_capture_data,
+	},
+};
+#endif
+
 #if defined(CONFIG_I2C_BLACKFIN_TWI) || defined(CONFIG_I2C_BLACKFIN_TWI_MODULE)
+static const u16 bfin_twi0_pins[] = {P_TWI0_SCL, P_TWI0_SDA, 0};
+
 static struct resource bfin_twi0_resource[] = {
 	[0] = {
 		.start = TWI0_REGBASE,
@@ -1202,9 +1272,14 @@ static struct platform_device i2c_bfin_twi0_device = {
 	.id = 0,
 	.num_resources = ARRAY_SIZE(bfin_twi0_resource),
 	.resource = bfin_twi0_resource,
+	.dev = {
+		.platform_data = &bfin_twi0_pins,
+	},
 };
 
 #if !defined(CONFIG_BF542)	/* The BF542 only has 1 TWI */
+static const u16 bfin_twi1_pins[] = {P_TWI1_SCL, P_TWI1_SDA, 0};
+
 static struct resource bfin_twi1_resource[] = {
 	[0] = {
 		.start = TWI1_REGBASE,
@@ -1223,11 +1298,19 @@ static struct platform_device i2c_bfin_twi1_device = {
 	.id = 1,
 	.num_resources = ARRAY_SIZE(bfin_twi1_resource),
 	.resource = bfin_twi1_resource,
+	.dev = {
+		.platform_data = &bfin_twi1_pins,
+	},
 };
 #endif
 #endif
 
 static struct i2c_board_info __initdata bfin_i2c_board_info0[] = {
+#if defined(CONFIG_SND_SOC_SSM2602) || defined(CONFIG_SND_SOC_SSM2602_MODULE)
+	{
+		I2C_BOARD_INFO("ssm2602", 0x1b),
+	},
+#endif
 };
 
 #if !defined(CONFIG_BF542)	/* The BF542 only has 1 TWI */
@@ -1310,7 +1393,6 @@ static struct platform_device bfin_dpmc = {
 };
 
 #if defined(CONFIG_SND_BF5XX_I2S) || defined(CONFIG_SND_BF5XX_I2S_MODULE) || \
-	defined(CONFIG_SND_BF5XX_TDM) || defined(CONFIG_SND_BF5XX_TDM_MODULE) || \
 	defined(CONFIG_SND_BF5XX_AC97) || defined(CONFIG_SND_BF5XX_AC97_MODULE)
 
 #define SPORT_REQ(x) \
@@ -1320,6 +1402,8 @@ static struct platform_device bfin_dpmc = {
 static const u16 bfin_snd_pin[][7] = {
 	SPORT_REQ(0),
 	SPORT_REQ(1),
+	SPORT_REQ(2),
+	SPORT_REQ(3),
 };
 
 static struct bfin_snd_platform_data bfin_snd_data[] = {
@@ -1328,6 +1412,12 @@ static struct bfin_snd_platform_data bfin_snd_data[] = {
 	},
 	{
 		.pin_req = &bfin_snd_pin[1][0],
+	},
+	{
+		.pin_req = &bfin_snd_pin[2][0],
+	},
+	{
+		.pin_req = &bfin_snd_pin[3][0],
 	},
 };
 
@@ -1358,10 +1448,21 @@ static struct bfin_snd_platform_data bfin_snd_data[] = {
 static struct resource bfin_snd_resources[][4] = {
 	BFIN_SND_RES(0),
 	BFIN_SND_RES(1),
+	BFIN_SND_RES(2),
+	BFIN_SND_RES(3),
 };
+#endif
 
-static struct platform_device bfin_pcm = {
-	.name = "bfin-pcm-audio",
+#if defined(CONFIG_SND_BF5XX_I2S) || defined(CONFIG_SND_BF5XX_I2S_MODULE)
+static struct platform_device bfin_i2s_pcm = {
+	.name = "bfin-i2s-pcm-audio",
+	.id = -1,
+};
+#endif
+
+#if defined(CONFIG_SND_BF5XX_AC97) || defined(CONFIG_SND_BF5XX_AC97_MODULE)
+static struct platform_device bfin_ac97_pcm = {
+	.name = "bfin-ac97-pcm-audio",
 	.id = -1,
 };
 #endif
@@ -1383,18 +1484,6 @@ static struct platform_device bfin_ad1980_codec_device = {
 #if defined(CONFIG_SND_BF5XX_SOC_I2S) || defined(CONFIG_SND_BF5XX_SOC_I2S_MODULE)
 static struct platform_device bfin_i2s = {
 	.name = "bfin-i2s",
-	.id = CONFIG_SND_BF5XX_SPORT_NUM,
-	.num_resources = ARRAY_SIZE(bfin_snd_resources[CONFIG_SND_BF5XX_SPORT_NUM]),
-	.resource = bfin_snd_resources[CONFIG_SND_BF5XX_SPORT_NUM],
-	.dev = {
-		.platform_data = &bfin_snd_data[CONFIG_SND_BF5XX_SPORT_NUM],
-	},
-};
-#endif
-
-#if defined(CONFIG_SND_BF5XX_SOC_TDM) || defined(CONFIG_SND_BF5XX_SOC_TDM_MODULE)
-static struct platform_device bfin_tdm = {
-	.name = "bfin-tdm",
 	.id = CONFIG_SND_BF5XX_SPORT_NUM,
 	.num_resources = ARRAY_SIZE(bfin_snd_resources[CONFIG_SND_BF5XX_SPORT_NUM]),
 	.resource = bfin_snd_resources[CONFIG_SND_BF5XX_SPORT_NUM],
@@ -1502,9 +1591,13 @@ static struct platform_device *ezkit_devices[] __initdata = {
 	&bf54x_sdh_device,
 #endif
 
-#if defined(CONFIG_SPI_BFIN) || defined(CONFIG_SPI_BFIN_MODULE)
+#if defined(CONFIG_SPI_BFIN5XX) || defined(CONFIG_SPI_BFIN5XX_MODULE)
 	&bf54x_spi_master0,
 	&bf54x_spi_master1,
+#endif
+#if defined(CONFIG_VIDEO_BLACKFIN_CAPTURE) \
+	|| defined(CONFIG_VIDEO_BLACKFIN_CAPTURE_MODULE)
+	&bfin_capture_device,
 #endif
 
 #if defined(CONFIG_KEYBOARD_BFIN) || defined(CONFIG_KEYBOARD_BFIN_MODULE)
@@ -1530,10 +1623,12 @@ static struct platform_device *ezkit_devices[] __initdata = {
 	&ezkit_flash_device,
 #endif
 
-#if defined(CONFIG_SND_BF5XX_I2S) || defined(CONFIG_SND_BF5XX_I2S_MODULE) || \
-	defined(CONFIG_SND_BF5XX_TDM) || defined(CONFIG_SND_BF5XX_TDM_MODULE) || \
-	defined(CONFIG_SND_BF5XX_AC97) || defined(CONFIG_SND_BF5XX_AC97_MODULE)
-	&bfin_pcm,
+#if defined(CONFIG_SND_BF5XX_I2S) || defined(CONFIG_SND_BF5XX_I2S_MODULE)
+	&bfin_i2s_pcm,
+#endif
+
+#if defined(CONFIG_SND_BF5XX_AC97) || defined(CONFIG_SND_BF5XX_AC97_MODULE)
+	&bfin_ac97_pcm,
 #endif
 
 #if defined(CONFIG_SND_BF5XX_SOC_AD1980) || defined(CONFIG_SND_BF5XX_SOC_AD1980_MODULE)
@@ -1542,10 +1637,6 @@ static struct platform_device *ezkit_devices[] __initdata = {
 
 #if defined(CONFIG_SND_BF5XX_I2S) || defined(CONFIG_SND_BF5XX_I2S_MODULE)
 	&bfin_i2s,
-#endif
-
-#if defined(CONFIG_SND_BF5XX_TDM) || defined(CONFIG_SND_BF5XX_TDM_MODULE)
-	&bfin_tdm,
 #endif
 
 #if defined(CONFIG_SND_BF5XX_AC97) || defined(CONFIG_SND_BF5XX_AC97_MODULE)
