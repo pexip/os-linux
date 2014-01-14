@@ -497,7 +497,7 @@ endif
 
 ifeq ($(do_tools_perf),true)
 	cd $(builddirpa)/tools/perf && \
-		make prefix=/usr ARCH=$(arch) HAVE_CPLUS_DEMANGLE=1 CROSS_COMPILE=$(CROSS_COMPILE) NO_LIBPYTHON=1 NO_LIBPERL=1 PYTHON=python2.7
+		make prefix=/usr ARCH=$(KERN_ARCH) HAVE_CPLUS_DEMANGLE=1 CROSS_COMPILE=$(CROSS_COMPILE) NO_LIBPYTHON=1 NO_LIBPERL=1 PYTHON=python2.7 EXTRA_CFLAGS="-I$(builddir)/$(KERN_ARCH)/include"
 endif
 ifeq ($(do_tools_x86),true)
 	cd $(builddirpa)/tools/power/x86/x86_energy_perf_policy && make ARCH=$(arch) CROSS_COMPILE=$(CROSS_COMPILE)

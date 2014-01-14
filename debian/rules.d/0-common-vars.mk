@@ -209,6 +209,9 @@ endif
 
 conc_level		= -j$(CONCURRENCY_LEVEL)
 
+# x86 just _has_ to be special
+KERN_ARCH = $(shell echo $(build_arch) | sed -e s/i.86/x86/ -e s/x86_64/x86/ -e s/amd64/x86/)
+
 # target_flavour is filled in for each step
 kmake = make ARCH=$(build_arch) \
 	CROSS_COMPILE=$(CROSS_COMPILE) \
