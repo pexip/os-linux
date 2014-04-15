@@ -31,14 +31,6 @@
 #include <asm/hyperv.h>
 #include "hyperv_vmbus.h"
 
-#ifndef PKG_ABI
-/*
- * Preserve the ability to 'make deb-pkg' since PKG_ABI is provided
- * by the Ubuntu build rules.
- */
-#define PKG_ABI 0
-#endif
-
 /* The one and only */
 struct hv_context hv_context = {
 	.synic_initialized	= false,
@@ -156,7 +148,7 @@ int hv_init(void)
 	/*
 	 * Write our OS ID.
 	 */
-	hv_context.guestid = generate_guest_id(0x80 /*Canonical*/, LINUX_VERSION_CODE, PKG_ABI);
+	hv_context.guestid = generate_guest_id(0, LINUX_VERSION_CODE, 0);
 	wrmsrl(HV_X64_MSR_GUEST_OS_ID, hv_context.guestid);
 
 	/* See if the hypercall page is already set */
@@ -312,7 +304,7 @@ err:
 void hv_synic_free_cpu(int cpu)
 {
 	kfree(hv_context.event_dpc[cpu]);
-	if (hv_context.synic_message_page[cpu])
+	if (hv_context.synic_event_page[cpu])
 		free_page((unsigned long)hv_context.synic_event_page[cpu]);
 	if (hv_context.synic_message_page[cpu])
 		free_page((unsigned long)hv_context.synic_message_page[cpu]);

@@ -411,6 +411,8 @@ void iwl_mvm_dump_nic_error_log(struct iwl_mvm *mvm)
 			mvm->status, table.valid);
 	}
 
+	IWL_ERR(mvm, "Loaded firmware version: %s\n", mvm->fw->fw_version);
+
 	trace_iwlwifi_dev_ucode_error(trans->dev, table.error_id, table.tsf_low,
 				      table.data1, table.data2, table.data3,
 				      table.blink1, table.blink2, table.ilink1,
@@ -451,6 +453,29 @@ void iwl_mvm_dump_nic_error_log(struct iwl_mvm *mvm)
 	IWL_ERR(mvm, "0x%08X | lmpm_pmg_sel\n", table.lmpm_pmg_sel);
 	IWL_ERR(mvm, "0x%08X | timestamp\n", table.u_timestamp);
 	IWL_ERR(mvm, "0x%08X | flow_handler\n", table.flow_handler);
+}
+
+void iwl_mvm_dump_sram(struct iwl_mvm *mvm)
+{
+	const struct fw_img *img;
+	int ofs, len = 0;
+	u8 *buf;
+
+	if (!mvm->ucode_loaded)
+		return;
+
+	img = &mvm->fw->img[mvm->cur_ucode];
+	ofs = img->sec[IWL_UCODE_SECTION_DATA].offset;
+	len = img->sec[IWL_UCODE_SECTION_DATA].len;
+
+	buf = kzalloc(len, GFP_ATOMIC);
+	if (!buf)
+		return;
+
+	iwl_trans_read_mem_bytes(mvm->trans, ofs, buf, len);
+	iwl_print_hex_error(mvm->trans, buf, len);
+
+	kfree(buf);
 }
 
 /**

@@ -1,3 +1,0 @@
-Tests: rebuild
-Depends: build-essential
-Restrictions: build-needed

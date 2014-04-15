@@ -69,7 +69,7 @@ static char essid[33] = "test";
 module_param_string(essid, essid, sizeof(essid), 0444);
 MODULE_PARM_DESC(essid, "Host AP's ESSID");
 
-static int iw_mode[MAX_PARM_DEVICES] = { IW_MODE_INFRA, DEF_INTS };
+static int iw_mode[MAX_PARM_DEVICES] = { IW_MODE_MASTER, DEF_INTS };
 module_param_array(iw_mode, int, NULL, 0444);
 MODULE_PARM_DESC(iw_mode, "Initial operation mode");
 
@@ -1425,7 +1425,7 @@ static int prism2_hw_init2(struct net_device *dev, int initial)
 		}
 		list_for_each(ptr, &local->hostap_interfaces) {
 			iface = list_entry(ptr, struct hostap_interface, list);
-			memcpy(iface->dev->dev_addr, dev->dev_addr, ETH_ALEN);
+			eth_hw_addr_inherit(iface->dev, dev);
 		}
 	} else if (local->fw_ap)
 		prism2_check_sta_fw_version(local);

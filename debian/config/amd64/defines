@@ -1,0 +1,23 @@
+[base]
+featuresets:
+ none
+ rt
+kernel-arch: x86
+
+[build]
+debug-info: true
+
+[image]
+bootloaders: grub-pc extlinux lilo
+configs:
+
+[relations]
+headers%gcc-4.8: linux-compiler-gcc-4.8-x86
+
+[amd64_description]
+hardware: 64-bit PCs
+hardware-long: PCs with AMD64, Intel 64 or VIA Nano processors
+
+[amd64_image]
+configs:
+ kernelarch-x86/config-arch-64

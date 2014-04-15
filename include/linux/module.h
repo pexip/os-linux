@@ -42,6 +42,7 @@ struct module_kobject {
 	struct module *mod;
 	struct kobject *drivers_dir;
 	struct module_param_attrs *mp;
+	struct completion *kobj_completion;
 };
 
 struct module_attribute {
@@ -365,9 +366,6 @@ struct module
 	struct list_head source_list;
 	/* What modules do I depend on? */
 	struct list_head target_list;
-
-	/* Who is waiting for us to be unloaded */
-	struct task_struct *waiter;
 
 	/* Destruction function. */
 	void (*exit)(void);

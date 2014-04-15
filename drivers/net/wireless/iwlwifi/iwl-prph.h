@@ -97,6 +97,8 @@
 
 #define APMG_PCIDEV_STT_VAL_L1_ACT_DIS		(0x00000800)
 
+#define APMG_RTC_INT_STT_RFKILL		(0x10000000)
+
 /* Device system time */
 #define DEVICE_SYSTEM_TIME_REG 0xA0206C
 
@@ -271,5 +273,9 @@ static inline unsigned int SCD_QUEUE_STATUS_BITS(unsigned int chnl)
 }
 
 /*********************** END TX SCHEDULER *************************************/
+
+/* Oscillator clock */
+#define OSC_CLK				(0xa04068)
+#define OSC_CLK_FORCE_CONTROL		(0x8)
 
 #endif				/* __iwl_prph_h__ */

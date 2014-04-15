@@ -1419,6 +1419,9 @@ static void storvsc_device_destroy(struct scsi_device *sdevice)
 {
 	struct stor_mem_pools *memp = sdevice->hostdata;
 
+	if (!memp)
+		return;
+
 	mempool_destroy(memp->request_mempool);
 	kmem_cache_destroy(memp->request_pool);
 	kfree(memp);
@@ -1437,14 +1440,6 @@ static int storvsc_device_configure(struct scsi_device *sdevice)
 	blk_queue_rq_timeout(sdevice->request_queue, (storvsc_timeout * HZ));
 
 	sdevice->no_write_same = 1;
-
-	/*
-	 * hyper-v lies about its capabilities indicating it is only SPC-2
-	 * compliant, but actually implements the core SPC-3 features.
-	 * If we pretend to be SPC-3, we send RC16 which activates trim and
-	 * will query the appropriate VPD pages to enable trim.
-	 */
-	sdevice->scsi_level = SCSI_SPC_3;
 
 	return 0;
 }
@@ -1536,8 +1531,6 @@ static bool storvsc_scsi_cmd_ok(struct scsi_cmnd *scmnd)
 	 * this. So, don't send it.
 	 */
 	case SET_WINDOW:
-	/* the host does not handle MAINTENANCE_IN preventing boot.*/
-	case MAINTENANCE_IN:
 		scmnd->result = ILLEGAL_REQUEST << 16;
 		allowed = false;
 		break;
@@ -1707,6 +1700,7 @@ static struct scsi_host_template scsi_driver = {
 	.use_clustering =	DISABLE_CLUSTERING,
 	/* Make sure we dont get a sg segment crosses a page boundary */
 	.dma_boundary =		PAGE_SIZE-1,
+	.no_write_same =	1,
 };
 
 enum {
@@ -1889,7 +1883,6 @@ static void __exit storvsc_drv_exit(void)
 }
 
 MODULE_LICENSE("GPL");
-MODULE_VERSION(HV_DRV_VERSION);
 MODULE_DESCRIPTION("Microsoft Hyper-V virtual storage driver");
 module_init(storvsc_drv_init);
 module_exit(storvsc_drv_exit);

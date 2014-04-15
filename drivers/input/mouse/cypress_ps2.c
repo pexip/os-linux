@@ -391,9 +391,7 @@ static int cypress_set_input_params(struct input_dev *input,
 	if (ret < 0)
 		return ret;
 
-#if ( CYPRESS_SIMULATED_MT != 1 )
 	__set_bit(INPUT_PROP_SEMI_MT, input->propbit);
-#endif
 
 	input_abs_set_res(input, ABS_X, cytp->tp_res_x);
 	input_abs_set_res(input, ABS_Y, cytp->tp_res_y);
@@ -412,7 +410,6 @@ static int cypress_set_input_params(struct input_dev *input,
 	__clear_bit(REL_X, input->relbit);
 	__clear_bit(REL_Y, input->relbit);
 
-	__set_bit(INPUT_PROP_BUTTONPAD, input->propbit);
 	__set_bit(EV_KEY, input->evbit);
 	__set_bit(BTN_LEFT, input->keybit);
 	__set_bit(BTN_RIGHT, input->keybit);
@@ -454,17 +451,10 @@ static int cypress_parse_packet(struct psmouse *psmouse,
 {
 	unsigned char *packet = psmouse->packet;
 	unsigned char header_byte = packet[0];
-	int contact_cnt;
 
 	memset(report_data, 0, sizeof(struct cytp_report_data));
 
-	contact_cnt = cypress_get_finger_count(header_byte);
-
-	if (contact_cnt < 0)
-		return -EINVAL;
-
-	report_data->contact_cnt = contact_cnt;
-
+	report_data->contact_cnt = cypress_get_finger_count(header_byte);
 	report_data->tap = (header_byte & ABS_MULTIFINGER_TAP) ? 1 : 0;
 
 	if (report_data->contact_cnt == 1) {
@@ -489,22 +479,6 @@ static int cypress_parse_packet(struct psmouse *psmouse,
 			((packet[5] & 0x0f) << 8) | packet[7];
 		if (cytp->mode & CYTP_BIT_ABS_PRESSURE)
 			report_data->contacts[1].z = report_data->contacts[0].z;
-#if ( CYPRESS_SIMULATED_MT == 1 )
-		/* simulate contact positions for >2 fingers */
-		if ( report_data->contact_cnt >= 3 ) {
-			int i;
-			for ( i=1; i<report_data->contact_cnt; i++ ) {
-			    report_data->contacts[i].x =
-					    report_data->contacts[0].x
-					    + 100*(i)*((i%2)?-1:1);
-			    report_data->contacts[i].y =
-					    report_data->contacts[0].y;
-			    if (cytp->mode & CYTP_BIT_ABS_PRESSURE)
-				    report_data->contacts[i].z =
-					    report_data->contacts[0].z;
-			}
-		}
-#endif
 	}
 
 	report_data->left = (header_byte & BTN_LEFT_BIT) ? 1 : 0;
@@ -553,11 +527,9 @@ static void cypress_process_packet(struct psmouse *psmouse, bool zero_pkt)
 	int slots[CYTP_MAX_MT_SLOTS];
 	int n;
 
-	if (cypress_parse_packet(psmouse, cytp, &report_data))
-		return;
+	cypress_parse_packet(psmouse, cytp, &report_data);
 
 	n = report_data.contact_cnt;
-
 	if (n > CYTP_MAX_MT_SLOTS)
 		n = CYTP_MAX_MT_SLOTS;
 
@@ -623,10 +595,6 @@ static psmouse_ret_t cypress_validate_byte(struct psmouse *psmouse)
 		return PSMOUSE_BAD_DATA;
 
 	contact_cnt = cypress_get_finger_count(packet[0]);
-
-	if (contact_cnt < 0)
-		return PSMOUSE_BAD_DATA;
-
 	if (cytp->mode & CYTP_BIT_ABS_NO_PRESSURE)
 		cypress_set_packet_size(psmouse, contact_cnt == 2 ? 7 : 4);
 	else
@@ -697,14 +665,14 @@ int cypress_init(struct psmouse *psmouse)
 {
 	struct cytp_data *cytp;
 
-	cytp = (struct cytp_data *)kzalloc(sizeof(struct cytp_data), GFP_KERNEL);
-	psmouse->private = (void *)cytp;
-	if (cytp == NULL)
+	cytp = kzalloc(sizeof(struct cytp_data), GFP_KERNEL);
+	if (!cytp)
 		return -ENOMEM;
 
-	cypress_reset(psmouse);
-
+	psmouse->private = cytp;
 	psmouse->pktsize = 8;
+
+	cypress_reset(psmouse);
 
 	if (cypress_query_hardware(psmouse)) {
 		psmouse_err(psmouse, "Unable to query Trackpad hardware.\n");

@@ -76,14 +76,14 @@ bool (*erratum_a15_798181_handler)(void);
 static bool erratum_a15_798181_partial(void)
 {
 	asm("mcr p15, 0, %0, c8, c3, 1" : : "r" (0));
-	dsb();
+	dsb(ish);
 	return false;
 }
 
 static bool erratum_a15_798181_broadcast(void)
 {
 	asm("mcr p15, 0, %0, c8, c3, 1" : : "r" (0));
-	dsb();
+	dsb(ish);
 	return true;
 }
 
@@ -205,5 +205,5 @@ void flush_bp_all(void)
 	if (tlb_ops_need_broadcast())
 		on_each_cpu(ipi_flush_bp_all, NULL, 1);
 	else
-		local_flush_bp_all();
+		__flush_bp_all();
 }

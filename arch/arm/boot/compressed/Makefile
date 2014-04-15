@@ -3,7 +3,6 @@
 #
 # create a compressed vmlinuz image from the original vmlinux
 #
-KBUILD_CFLAGS := $(filter-out -fstack-protector, $(KBUILD_CFLAGS)) -fno-stack-protector
 
 OBJS		=
 
@@ -43,10 +42,6 @@ endif
 #
 ifeq ($(CONFIG_ARCH_ACORN),y)
 OBJS		+= ll_char_wr.o font.o
-endif
-
-ifeq ($(CONFIG_ARCH_SHARK),y)
-OBJS		+= head-shark.o ofw-shark.o
 endif
 
 ifeq ($(CONFIG_ARCH_SA1100),y)
