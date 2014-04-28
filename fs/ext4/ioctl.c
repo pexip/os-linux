@@ -17,7 +17,6 @@
 #include <asm/uaccess.h>
 #include "ext4_jbd2.h"
 #include "ext4.h"
-#include "ext4_extents.h"
 
 #define MAX_32_NUM ((((unsigned long long) 1) << 32) - 1)
 
@@ -131,7 +130,7 @@ static long swap_inode_boot_loader(struct super_block *sb,
 
 	/* Protect orig inodes against a truncate and make sure,
 	 * that only 1 swap_inode_boot_loader is running. */
-	ext4_inode_double_lock(inode, inode_bl);
+	lock_two_nondirectories(inode, inode_bl);
 
 	truncate_inode_pages(&inode->i_data, 0);
 	truncate_inode_pages(&inode_bl->i_data, 0);
@@ -145,7 +144,7 @@ static long swap_inode_boot_loader(struct super_block *sb,
 	handle = ext4_journal_start(inode_bl, EXT4_HT_MOVE_EXTENTS, 2);
 	if (IS_ERR(handle)) {
 		err = -EINVAL;
-		goto swap_boot_out;
+		goto journal_err_out;
 	}
 
 	/* Protect extent tree against block allocations via delalloc */
@@ -203,10 +202,11 @@ static long swap_inode_boot_loader(struct super_block *sb,
 
 	ext4_double_up_write_data_sem(inode, inode_bl);
 
+journal_err_out:
 	ext4_inode_resume_unlocked_dio(inode);
 	ext4_inode_resume_unlocked_dio(inode_bl);
 
-	ext4_inode_double_unlock(inode, inode_bl);
+	unlock_two_nondirectories(inode, inode_bl);
 
 	iput(inode_bl);
 
@@ -624,6 +624,8 @@ resizefs_out:
 
 		return 0;
 	}
+	case EXT4_IOC_PRECACHE_EXTENTS:
+		return ext4_ext_precache(inode);
 
 	default:
 		return -ENOTTY;
@@ -688,6 +690,7 @@ long ext4_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case EXT4_IOC_MOVE_EXT:
 	case FITRIM:
 	case EXT4_IOC_RESIZE_FS:
+	case EXT4_IOC_PRECACHE_EXTENTS:
 		break;
 	default:
 		return -ENOIOCTLCMD;
