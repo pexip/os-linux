@@ -994,11 +994,9 @@ static int ext4_add_dirent_to_inline(handle_t *handle,
 	struct inode	*dir = dentry->d_parent->d_inode;
 	const char	*name = dentry->d_name.name;
 	int		namelen = dentry->d_name.len;
-	unsigned short	reclen;
 	int		err;
 	struct ext4_dir_entry_2 *de;
 
-	reclen = EXT4_DIR_REC_LEN(namelen);
 	err = ext4_find_dest_de(dir, inode, iloc->bh,
 				inline_start, inline_size,
 				name, namelen, &de);
@@ -1442,6 +1440,7 @@ int ext4_read_inline_dir(struct file *file,
 	if (ret < 0)
 		goto out;
 
+	ret = 0;
 	sb = inode->i_sb;
 	parent_ino = le32_to_cpu(((struct ext4_dir_entry_2 *)dir_buf)->inode);
 	offset = ctx->pos;
@@ -1925,9 +1924,11 @@ void ext4_inline_data_truncate(struct inode *inode, int *has_inline)
 		}
 
 		/* Clear the content within i_blocks. */
-		if (i_size < EXT4_MIN_INLINE_DATA_SIZE)
-			memset(ext4_raw_inode(&is.iloc)->i_block + i_size, 0,
-					EXT4_MIN_INLINE_DATA_SIZE - i_size);
+		if (i_size < EXT4_MIN_INLINE_DATA_SIZE) {
+			void *p = (void *) ext4_raw_inode(&is.iloc)->i_block;
+			memset(p + i_size, 0,
+			       EXT4_MIN_INLINE_DATA_SIZE - i_size);
+		}
 
 		EXT4_I(inode)->i_inline_size = i_size <
 					EXT4_MIN_INLINE_DATA_SIZE ?

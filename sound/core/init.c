@@ -66,7 +66,7 @@ static int module_slot_match(struct module *module, int idx)
 #ifdef MODULE
 	const char *s1, *s2;
 
-	if (!module || !module->name || !slots[idx])
+	if (!module || !*module->name || !slots[idx])
 		return 0;
 
 	s1 = module->name;
@@ -170,7 +170,7 @@ int snd_card_create(int idx, const char *xid,
 	if (idx < 0) {
 		for (idx2 = 0; idx2 < SNDRV_CARDS; idx2++) {
 			/* idx == -1 == 0xffff means: take any free slot */
-			if (idx2 < sizeof(int) && !(idx & (1U << idx2)))
+			if (idx2 < 32 && !(idx & (1U << idx2)))
 				continue;
 			if (!test_bit(idx2, snd_cards_lock)) {
 				if (module_slot_match(module, idx2)) {
@@ -183,7 +183,7 @@ int snd_card_create(int idx, const char *xid,
 	if (idx < 0) {
 		for (idx2 = 0; idx2 < SNDRV_CARDS; idx2++) {
 			/* idx == -1 == 0xffff means: take any free slot */
-			if (idx2 < sizeof(int) && !(idx & (1U << idx2)))
+			if (idx2 < 32 && !(idx & (1U << idx2)))
 				continue;
 			if (!test_bit(idx2, snd_cards_lock)) {
 				if (!slots[idx2] || !*slots[idx2]) {
@@ -597,7 +597,7 @@ static void snd_card_set_id_no_lock(struct snd_card *card, const char *src,
 	/* last resort... */
 	snd_printk(KERN_ERR "unable to set card id (%s)\n", id);
 	if (card->proc_root->name)
-		strcpy(card->id, card->proc_root->name);
+		strlcpy(card->id, card->proc_root->name, sizeof(card->id));
 }
 
 /**

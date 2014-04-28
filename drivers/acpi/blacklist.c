@@ -75,39 +75,6 @@ static struct acpi_blacklist_item acpi_blacklist[] __initdata = {
 	{""}
 };
 
-#if	CONFIG_ACPI_BLACKLIST_YEAR
-
-static int __init blacklist_by_year(void)
-{
-	int year;
-
-	/* Doesn't exist? Likely an old system */
-	if (!dmi_get_date(DMI_BIOS_DATE, &year, NULL, NULL)) {
-		printk(KERN_ERR PREFIX "no DMI BIOS year, "
-			"acpi=force is required to enable ACPI\n" );
-		return 1;
-	}
-	/* 0? Likely a buggy new BIOS */
-	if (year == 0) {
-		printk(KERN_ERR PREFIX "DMI BIOS year==0, "
-			"assuming ACPI-capable machine\n" );
-		return 0;
-	}
-	if (year < CONFIG_ACPI_BLACKLIST_YEAR) {
-		printk(KERN_ERR PREFIX "BIOS age (%d) fails cutoff (%d), "
-		       "acpi=force is required to enable ACPI\n",
-		       year, CONFIG_ACPI_BLACKLIST_YEAR);
-		return 1;
-	}
-	return 0;
-}
-#else
-static inline int blacklist_by_year(void)
-{
-	return 0;
-}
-#endif
-
 int __init acpi_blacklisted(void)
 {
 	int i = 0;
@@ -166,8 +133,6 @@ int __init acpi_blacklisted(void)
 		}
 	}
 
-	blacklisted += blacklist_by_year();
-
 	dmi_check_system(acpi_osi_dmi_table);
 
 	return blacklisted;
@@ -192,7 +157,6 @@ static int __init dmi_disable_osi_win7(const struct dmi_system_id *d)
 	acpi_osi_setup("!Windows 2009");
 	return 0;
 }
-
 static int __init dmi_disable_osi_win8(const struct dmi_system_id *d)
 {
 	printk(KERN_NOTICE PREFIX "DMI detected: %s\n", d->ident);
@@ -274,83 +238,89 @@ static struct dmi_system_id acpi_osi_dmi_table[] __initdata = {
 		     DMI_MATCH(DMI_PRODUCT_NAME, "Satellite P305D"),
 		},
 	},
+	{
+	.callback = dmi_disable_osi_vista,
+	.ident = "Toshiba NB100",
+	.matches = {
+		     DMI_MATCH(DMI_SYS_VENDOR, "TOSHIBA"),
+		     DMI_MATCH(DMI_PRODUCT_NAME, "NB100"),
+		},
+	},
 
 	/*
-	 * The following Lenovo models have a broken workaround in the
-	 * acpi_video backlight implementation to meet the Windows 8
-	 * requirement of 101 backlight levels. Reverting to pre-Win8
-	 * behavior fixes the problem.
+	 * The following machines have broken backlight support when reporting
+	 * the Windows 2012 OSI, so disable it until their support is fixed.
 	 */
 	{
 	.callback = dmi_disable_osi_win8,
-	.ident = "Lenovo ThinkPad L430",
+	.ident = "ASUS Zenbook Prime UX31A",
 	.matches = {
-		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
-		     DMI_MATCH(DMI_PRODUCT_VERSION, "ThinkPad L430"),
+		     DMI_MATCH(DMI_SYS_VENDOR, "ASUSTeK COMPUTER INC."),
+		     DMI_MATCH(DMI_PRODUCT_NAME, "UX31A"),
 		},
 	},
 	{
 	.callback = dmi_disable_osi_win8,
-	.ident = "Lenovo ThinkPad T430",
-	.matches = {
-		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
-		     DMI_MATCH(DMI_PRODUCT_VERSION, "ThinkPad T430"),
-		},
-	},
-	{
-	.callback = dmi_disable_osi_win8,
-	.ident = "Lenovo ThinkPad T430s",
-	.matches = {
-		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
-		     DMI_MATCH(DMI_PRODUCT_VERSION, "ThinkPad T430s"),
-		},
-	},
-	{
-	.callback = dmi_disable_osi_win8,
-	.ident = "Lenovo ThinkPad T530",
-	.matches = {
-		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
-		     DMI_MATCH(DMI_PRODUCT_VERSION, "ThinkPad T530"),
-		},
-	},
-	{
-	.callback = dmi_disable_osi_win8,
-	.ident = "Lenovo ThinkPad W530",
-	.matches = {
-		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
-		     DMI_MATCH(DMI_PRODUCT_VERSION, "ThinkPad W530"),
-		},
-	},
-	{
-	.callback = dmi_disable_osi_win8,
-	.ident = "Lenovo ThinkPad X1 Carbon",
-	.matches = {
-		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
-		     DMI_MATCH(DMI_PRODUCT_VERSION, "ThinkPad X1 Carbon"),
-		},
-	},
-	{
-	.callback = dmi_disable_osi_win8,
-	.ident = "Lenovo ThinkPad X230",
-	.matches = {
-		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
-		     DMI_MATCH(DMI_PRODUCT_VERSION, "ThinkPad X230"),
-		},
-	},
-	{
-	.callback = dmi_disable_osi_win8,
-	.ident = "Lenovo ThinkPad Edge E330",
-	.matches = {
-		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
-		     DMI_MATCH(DMI_PRODUCT_VERSION, "ThinkPad Edge E330"),
-		},
-	},
-	{
-	.callback = dmi_disable_osi_win8,
-	.ident = "Dell Inspiron 5537",
+	.ident = "Dell Inspiron 15R SE",
 	.matches = {
 		     DMI_MATCH(DMI_SYS_VENDOR, "Dell Inc."),
-		     DMI_MATCH(DMI_PRODUCT_NAME, "Inspiron 5537"),
+		     DMI_MATCH(DMI_PRODUCT_NAME, "Inspiron 7520"),
+		},
+	},
+	{
+	.callback = dmi_disable_osi_win8,
+	.ident = "ThinkPad Edge E530",
+	.matches = {
+		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
+		     DMI_MATCH(DMI_PRODUCT_VERSION, "3259A2G"),
+		},
+	},
+	{
+	.callback = dmi_disable_osi_win8,
+	.ident = "ThinkPad Edge E530",
+	.matches = {
+		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
+		     DMI_MATCH(DMI_PRODUCT_VERSION, "3259CTO"),
+		},
+	},
+	{
+	.callback = dmi_disable_osi_win8,
+	.ident = "ThinkPad Edge E530",
+	.matches = {
+		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
+		     DMI_MATCH(DMI_PRODUCT_VERSION, "3259HJG"),
+		},
+	},
+	{
+	.callback = dmi_disable_osi_win8,
+	.ident = "Acer Aspire V5-573G",
+	.matches = {
+		     DMI_MATCH(DMI_SYS_VENDOR, "Acer Aspire"),
+		     DMI_MATCH(DMI_PRODUCT_VERSION, "V5-573G/Dazzle_HW"),
+		},
+	},
+	{
+	.callback = dmi_disable_osi_win8,
+	.ident = "Acer Aspire V5-572G",
+	.matches = {
+		     DMI_MATCH(DMI_SYS_VENDOR, "Acer Aspire"),
+		     DMI_MATCH(DMI_PRODUCT_VERSION, "V5-572G/Dazzle_CX"),
+		},
+	},
+	{
+	.callback = dmi_disable_osi_win8,
+	.ident = "ThinkPad T431s",
+	.matches = {
+		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
+		     DMI_MATCH(DMI_PRODUCT_VERSION, "20AACTO1WW"),
+		},
+	},
+	{
+	.callback = dmi_disable_osi_win8,
+	.ident = "ThinkPad T430",
+	.matches = {
+		     DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
+		     DMI_MATCH(DMI_PRODUCT_VERSION, "2349D15"),
 		},
 	},
 

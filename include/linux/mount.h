@@ -48,6 +48,9 @@ struct mnt_namespace;
 #define MNT_INTERNAL	0x4000
 
 #define MNT_LOCK_READONLY	0x400000
+#define MNT_LOCKED		0x800000
+#define MNT_DOOMED		0x1000000
+#define MNT_SYNC_UMOUNT		0x2000000
 
 struct vfsmount {
 	struct dentry *mnt_root;	/* root of the mounted tree */
@@ -67,9 +70,6 @@ extern struct vfsmount *mntget(struct vfsmount *mnt);
 extern void mnt_pin(struct vfsmount *mnt);
 extern void mnt_unpin(struct vfsmount *mnt);
 extern int __mnt_is_readonly(struct vfsmount *mnt);
-
-struct path;
-extern struct vfsmount *clone_private_mount(struct path *path);
 
 struct file_system_type;
 extern struct vfsmount *vfs_kern_mount(struct file_system_type *type,

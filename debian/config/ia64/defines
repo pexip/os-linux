@@ -1,0 +1,16 @@
+[base]
+flavours:
+ itanium
+ mckinley
+kernel-arch: ia64
+compiler: gcc-4.6
+
+[image]
+bootloaders: elilo
+suggests: fdutils
+
+[itanium_description]
+hardware: Itanium
+
+[mckinley_description]
+hardware: Itanium II

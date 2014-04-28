@@ -1,0 +1,4323 @@
+# THIS IS A GENERATED FILE; DO NOT EDIT IT!
+# Translators should edit debian/templates/po/tr.po instead.
+#
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-alpha-generic/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-alpha-generic/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-alpha-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-alpha-smp/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-alpha-legacy/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-alpha-legacy/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-amd64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-amd64/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-ixp4xx/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-ixp4xx/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-kirkwood/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-kirkwood/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-mv78xx0/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-mv78xx0/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-orion5x/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-orion5x/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-versatile/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-versatile/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-armmp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-armmp/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-armmp-lpae/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-armmp-lpae/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-parisc/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-parisc/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-parisc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-parisc64-smp/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-486/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-486/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-686-pae/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-686-pae/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-amd64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-amd64/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-itanium/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-itanium/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-mckinley/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-mckinley/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-m68k/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-m68k/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-r4k-ip22/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-r4k-ip22/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-r5k-ip32/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-r5k-ip32/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sb1-bcm91250a/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sb1-bcm91250a/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sb1a-bcm91480b/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sb1a-bcm91480b/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-4kc-malta/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-4kc-malta/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-5kc-malta/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-5kc-malta/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-octeon/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-octeon/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sb1-bcm91250a/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sb1-bcm91250a/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sb1a-bcm91480b/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sb1a-bcm91480b/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-4kc-malta/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-4kc-malta/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-5kc-malta/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-5kc-malta/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-loongson-2e/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-loongson-2e/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-loongson-2f/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-loongson-2f/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-powerpc/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-powerpc/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-powerpc-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-powerpc-smp/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-powerpc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-powerpc64/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-powerpcspe/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-powerpcspe/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-powerpc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-powerpc64/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-s390x/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-s390x/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-s390x/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-s390x/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sh7751r/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sh7751r/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sh7785lcr/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sh7785lcr/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sparc64/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sparc64-smp/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sparc64/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."
+# Turkish translation of linux debconf template.
+# Copyright (C) 2012 Mert Dirik
+# This file is distributed under the same license as the linux package.
+# Mert Dirik <mertdirik@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 3.2.4-1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"PO-Revision-Date: 2012-02-12 22:36+0200\n"
+"Last-Translator: Mert Dirik <mertdirik@gmail.com>\n"
+"Language-Team: Debian L10n Turkish <debian-l10n-turkish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod hatasından sonra kurulum iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' komutu ${exit_value} (${SIGNAL}${CORE}) çıkış koduyla sonlandı."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.13-1-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Bu görüntü initrd kullandığından ötürü ${modules_base}/"
+"3.13-1-sparc64-smp/modules.dep dosyası, dosya geçersiz olsa da "
+"silinmeyecektir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Ya kurulumu iptal edip depmod'daki hataları düzeltmeli ya da initrd "
+"görüntüsünü düzgün olduğu bilinen bir modules.dep dosyasıyla yeniden "
+"oluşturmalısınız. Kurulumu iptal etmediğiniz takdirde sisteminizin başlamama "
+"olasılığı vardır."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Çekirdeği kaldırma işlemi iptal edilsin mi?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Kullandığınız çekirdekle (${running}) aynı sürümdeki çekirdeği kaldırmaya "
+"çalışıyorsunuz."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Bu eylem sisteminizi başlatılamaz hale getirebilir ( /boot/vmlinuz-"
+"${running} dosyasını ve  /lib/modules/${running} dizinindeki tüm modülleri "
+"kaldıracağından dolayı). Bu durum yalnızca bir çekirdek görüntüsü ve bu "
+"görüntüye uygun modüller yardımıyla düzeltilebilir."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Kaldırma işlemi sonrasında sistemi düzeltmeye hazır olmadığınız takdirde "
+"kaldırma işleminden vazgeçmeniz şiddetle tavsiye edilir."

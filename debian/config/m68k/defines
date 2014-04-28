@@ -1,0 +1,12 @@
+[base]
+compiler: gcc-4.8
+cflags: -ffreestanding
+flavours:
+ m68k
+kernel-arch: m68k
+
+[image]
+suggests: vmelilo, fdutils
+
+[m68k_description]
+hardware: Motorola MC68020+ family

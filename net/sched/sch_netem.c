@@ -215,10 +215,10 @@ static bool loss_4state(struct netem_sched_data *q)
 		if (rnd < clg->a4) {
 			clg->state = 4;
 			return true;
-		} else if (clg->a4 < rnd && rnd < clg->a1) {
+		} else if (clg->a4 < rnd && rnd < clg->a1 + clg->a4) {
 			clg->state = 3;
 			return true;
-		} else if (clg->a1 < rnd)
+		} else if (clg->a1 + clg->a4 < rnd)
 			clg->state = 1;
 
 		break;
@@ -235,7 +235,6 @@ static bool loss_4state(struct netem_sched_data *q)
 			clg->state = 2;
 		else if (clg->a3 < rnd && rnd < clg->a2 + clg->a3) {
 			clg->state = 1;
-			return true;
 		} else if (clg->a2 + clg->a3 < rnd) {
 			clg->state = 3;
 			return true;
@@ -269,10 +268,11 @@ static bool loss_gilb_ell(struct netem_sched_data *q)
 			clg->state = 2;
 		if (net_random() < clg->a4)
 			return true;
+		break;
 	case 2:
 		if (net_random() < clg->a2)
 			clg->state = 1;
-		if (clg->a3 > net_random())
+		if (net_random() > clg->a3)
 			return true;
 	}
 
@@ -427,12 +427,9 @@ static int netem_enqueue(struct sk_buff *skb, struct Qdisc *sch)
 
 	/* If a delay is expected, orphan the skb. (orphaning usually takes
 	 * place at TX completion time, so _before_ the link transit delay)
-	 * Ideally, this orphaning should be done after the rate limiting
-	 * module, because this breaks TCP Small Queue, and other mechanisms
-	 * based on socket sk_wmem_alloc.
 	 */
 	if (q->latency || q->jitter)
-		skb_orphan(skb);
+		skb_orphan_partial(skb);
 
 	/*
 	 * If we need to duplicate packet, then re-insert at top of the

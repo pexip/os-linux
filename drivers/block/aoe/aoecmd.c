@@ -380,7 +380,6 @@ aoecmd_ata_rw(struct aoedev *d)
 {
 	struct frame *f;
 	struct buf *buf;
-	struct aoetgt *t;
 	struct sk_buff *skb;
 	struct sk_buff_head queue;
 	ulong bcnt, fbcnt;
@@ -391,7 +390,6 @@ aoecmd_ata_rw(struct aoedev *d)
 	f = newframe(d);
 	if (f == NULL)
 		return 0;
-	t = *d->tgt;
 	bcnt = d->maxbcnt;
 	if (bcnt == 0)
 		bcnt = DEFAULTBCNT;
@@ -485,7 +483,6 @@ resend(struct aoedev *d, struct frame *f)
 	struct sk_buff *skb;
 	struct sk_buff_head queue;
 	struct aoe_hdr *h;
-	struct aoe_atahdr *ah;
 	struct aoetgt *t;
 	char buf[128];
 	u32 n;
@@ -500,7 +497,6 @@ resend(struct aoedev *d, struct frame *f)
 		return;
 	}
 	h = (struct aoe_hdr *) skb_mac_header(skb);
-	ah = (struct aoe_atahdr *) (h+1);
 
 	if (!(f->flags & FFL_PROBE)) {
 		snprintf(buf, sizeof(buf),
@@ -909,7 +905,7 @@ bio_pageinc(struct bio *bio)
 		/* Non-zero page count for non-head members of
 		 * compound pages is no longer allowed by the kernel.
 		 */
-		page = compound_trans_head(bv->bv_page);
+		page = compound_head(bv->bv_page);
 		atomic_inc(&page->_count);
 	}
 }
@@ -922,7 +918,7 @@ bio_pagedec(struct bio *bio)
 	int i;
 
 	bio_for_each_segment(bv, bio, i) {
-		page = compound_trans_head(bv->bv_page);
+		page = compound_head(bv->bv_page);
 		atomic_dec(&page->_count);
 	}
 }

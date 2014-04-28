@@ -46,6 +46,7 @@
 #include <linux/usb.h>
 #include <linux/usb/otg.h>
 #include <linux/usb/musb.h>
+#include <linux/phy/phy.h>
 
 struct musb;
 struct musb_hw_ep;
@@ -82,11 +83,6 @@ enum {
 	MUSB_PORT_MODE_GADGET,
 	MUSB_PORT_MODE_DUAL_ROLE,
 };
-
-#ifdef CONFIG_PROC_FS
-#include <linux/fs.h>
-#define MUSB_CONFIG_PROC_FS
-#endif
 
 /****************************** CONSTANTS ********************************/
 
@@ -346,6 +342,7 @@ struct musb {
 	u16			int_tx;
 
 	struct usb_phy		*xceiv;
+	struct phy		*phy;
 
 	int nIrq;
 	unsigned		irq_wake:1;
@@ -425,9 +422,6 @@ struct musb {
 
 	struct musb_hdrc_config	*config;
 
-#ifdef MUSB_CONFIG_PROC_FS
-	struct proc_dir_entry *proc_entry;
-#endif
 	int			xceiv_old_state;
 #ifdef CONFIG_DEBUG_FS
 	struct dentry		*debugfs_root;
