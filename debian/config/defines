@@ -1,5 +1,5 @@
 [abi]
-abiname: 1
+abiname: 1pexip1
 ignore-changes:
 # Not expected to be used by OOT drivers
  module:drivers/target/iscsi/iscsi_target_mod
