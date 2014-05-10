@@ -4,3 +4,9 @@ Depends: linux-image-@abiname@@localversion@ (= ${binary:Version}), ${misc:Depen
 Description: Xen system with Linux @upstreamversion@ on @class@ (meta-package)
  This package depends on the binary Linux image and hypervisors.
 
+Package: linux-image-virtual
+Section: metapackages
+Depends: linux-image-@abiname@@localversion@ (= ${binary:Version}), ${misc:Depends}
+Description: Linux @upstreamversion@ suitable for virtual machines (meta-package)
+ This package depends on the binary Linux image.
+
