@@ -16,8 +16,16 @@ Description: Compiler for Linux on IBM zSeries (meta-package)
 
 Package: linux-compiler-gcc-4.8-x86
 Depends: gcc-4.8, ${misc:Depends}
-Architecture: amd64 i386 x32
+Architecture: i386 x32
 Multi-Arch: foreign
 Description: Compiler for Linux on x86 (meta-package)
  This package depends on gcc 4.8 of the appropriate architecture for
- Linux on amd64, i386 and x32.
+ Linux on i386 and x32.
+
+Package: linux-compiler-gcc-4.6-x86
+Depends: gcc-4.6, ${misc:Depends}
+Architecture: amd64
+Multi-Arch: foreign
+Description: Compiler for Linux on x86 (meta-package)
+ This package depends on gcc 4.6 of the appropriate architecture for
+ Linux on amd64.
