@@ -3,6 +3,7 @@
 #include <linux/net.h>
 #include <linux/netdevice.h>
 #include <linux/packet_diag.h>
+#include <linux/percpu.h>
 #include <net/net_namespace.h>
 #include <net/sock.h>
 
@@ -171,7 +172,7 @@ static int sk_diag_fill(struct sock *sk, struct sk_buff *skb,
 		goto out_nlmsg_trim;
 
 	if ((req->pdiag_show & PACKET_SHOW_FILTER) &&
-	    sock_diag_put_filterinfo(user_ns, sk, skb, PACKET_DIAG_FILTER))
+	    sock_diag_put_filterinfo(sk, skb, PACKET_DIAG_FILTER))
 		goto out_nlmsg_trim;
 
 	return nlmsg_end(skb, nlh);

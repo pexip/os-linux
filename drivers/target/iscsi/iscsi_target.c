@@ -630,7 +630,7 @@ static int iscsit_add_reject(
 {
 	struct iscsi_cmd *cmd;
 
-	cmd = iscsit_allocate_cmd(conn, GFP_KERNEL);
+	cmd = iscsit_allocate_cmd(conn, TASK_INTERRUPTIBLE);
 	if (!cmd)
 		return -1;
 
@@ -2468,6 +2468,7 @@ static void iscsit_build_conn_drop_async_message(struct iscsi_conn *conn)
 {
 	struct iscsi_cmd *cmd;
 	struct iscsi_conn *conn_p;
+	bool found = false;
 
 	/*
 	 * Only send a Asynchronous Message on connections whos network
@@ -2476,14 +2477,15 @@ static void iscsit_build_conn_drop_async_message(struct iscsi_conn *conn)
 	list_for_each_entry(conn_p, &conn->sess->sess_conn_list, conn_list) {
 		if (conn_p->conn_state == TARG_CONN_STATE_LOGGED_IN) {
 			iscsit_inc_conn_usage_count(conn_p);
+			found = true;
 			break;
 		}
 	}
 
-	if (!conn_p)
+	if (!found)
 		return;
 
-	cmd = iscsit_allocate_cmd(conn_p, GFP_ATOMIC);
+	cmd = iscsit_allocate_cmd(conn_p, TASK_RUNNING);
 	if (!cmd) {
 		iscsit_dec_conn_usage_count(conn_p);
 		return;
@@ -3959,7 +3961,7 @@ static int iscsi_target_rx_opcode(struct iscsi_conn *conn, unsigned char *buf)
 
 	switch (hdr->opcode & ISCSI_OPCODE_MASK) {
 	case ISCSI_OP_SCSI_CMD:
-		cmd = iscsit_allocate_cmd(conn, GFP_KERNEL);
+		cmd = iscsit_allocate_cmd(conn, TASK_INTERRUPTIBLE);
 		if (!cmd)
 			goto reject;
 
@@ -3971,28 +3973,28 @@ static int iscsi_target_rx_opcode(struct iscsi_conn *conn, unsigned char *buf)
 	case ISCSI_OP_NOOP_OUT:
 		cmd = NULL;
 		if (hdr->ttt == cpu_to_be32(0xFFFFFFFF)) {
-			cmd = iscsit_allocate_cmd(conn, GFP_KERNEL);
+			cmd = iscsit_allocate_cmd(conn, TASK_INTERRUPTIBLE);
 			if (!cmd)
 				goto reject;
 		}
 		ret = iscsit_handle_nop_out(conn, cmd, buf);
 		break;
 	case ISCSI_OP_SCSI_TMFUNC:
-		cmd = iscsit_allocate_cmd(conn, GFP_KERNEL);
+		cmd = iscsit_allocate_cmd(conn, TASK_INTERRUPTIBLE);
 		if (!cmd)
 			goto reject;
 
 		ret = iscsit_handle_task_mgt_cmd(conn, cmd, buf);
 		break;
 	case ISCSI_OP_TEXT:
-		cmd = iscsit_allocate_cmd(conn, GFP_KERNEL);
+		cmd = iscsit_allocate_cmd(conn, TASK_INTERRUPTIBLE);
 		if (!cmd)
 			goto reject;
 
 		ret = iscsit_handle_text_cmd(conn, cmd, buf);
 		break;
 	case ISCSI_OP_LOGOUT:
-		cmd = iscsit_allocate_cmd(conn, GFP_KERNEL);
+		cmd = iscsit_allocate_cmd(conn, TASK_INTERRUPTIBLE);
 		if (!cmd)
 			goto reject;
 
