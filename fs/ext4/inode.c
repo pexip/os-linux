@@ -145,8 +145,8 @@ static int ext4_meta_trans_blocks(struct inode *inode, int lblocks,
  */
 static int ext4_inode_is_fast_symlink(struct inode *inode)
 {
-	int ea_blocks = EXT4_I(inode)->i_file_acl ?
-		(inode->i_sb->s_blocksize >> 9) : 0;
+        int ea_blocks = EXT4_I(inode)->i_file_acl ?
+		EXT4_CLUSTER_SIZE(inode->i_sb) >> 9 : 0;
 
 	return (S_ISLNK(inode->i_mode) && inode->i_blocks - ea_blocks == 0);
 }
@@ -514,6 +514,10 @@ int ext4_map_blocks(handle_t *handle, struct inode *inode,
 	ext_debug("ext4_map_blocks(): inode %lu, flag %d, max_blocks %u,"
 		  "logical block %lu\n", inode->i_ino, flags, map->m_len,
 		  (unsigned long) map->m_lblk);
+
+	/* We can handle the block number less than EXT_MAX_BLOCKS */
+	if (unlikely(map->m_lblk >= EXT_MAX_BLOCKS))
+		return -EIO;
 
 	/* Lookup extent status tree firstly */
 	if (ext4_es_lookup_extent(inode, map->m_lblk, &es)) {
@@ -1773,7 +1777,7 @@ static int __ext4_journalled_writepage(struct page *page,
 		ret = err;
 
 	if (!ext4_has_inline_data(inode))
-		ext4_walk_page_buffers(handle, page_bufs, 0, len,
+		ext4_walk_page_buffers(NULL, page_bufs, 0, len,
 				       NULL, bput_one);
 	ext4_set_inode_state(inode, EXT4_STATE_JDATA);
 out:
@@ -2232,13 +2236,23 @@ static int mpage_map_and_submit_extent(handle_t *handle,
 			return err;
 	} while (map->m_len);
 
-	/* Update on-disk size after IO is submitted */
+	/*
+	 * Update on-disk size after IO is submitted.  Races with
+	 * truncate are avoided by checking i_size under i_data_sem.
+	 */
 	disksize = ((loff_t)mpd->first_page) << PAGE_CACHE_SHIFT;
 	if (disksize > EXT4_I(inode)->i_disksize) {
 		int err2;
+		loff_t i_size;
 
-		ext4_wb_update_i_disksize(inode, disksize);
+		down_write(&EXT4_I(inode)->i_data_sem);
+		i_size = i_size_read(inode);
+		if (disksize > i_size)
+			disksize = i_size;
+		if (disksize > EXT4_I(inode)->i_disksize)
+			EXT4_I(inode)->i_disksize = disksize;
 		err2 = ext4_mark_inode_dirty(handle, inode);
+		up_write(&EXT4_I(inode)->i_data_sem);
 		if (err2)
 			ext4_error(inode->i_sb,
 				   "Failed to mark inode %lu dirty",
@@ -3502,11 +3516,6 @@ int ext4_punch_hole(struct inode *inode, loff_t offset, loff_t length)
 	if (!S_ISREG(inode->i_mode))
 		return -EOPNOTSUPP;
 
-	if (EXT4_SB(sb)->s_cluster_ratio > 1) {
-		/* TODO: Add support for bigalloc file systems */
-		return -EOPNOTSUPP;
-	}
-
 	trace_ext4_punch_hole(inode, offset, length);
 
 	/*
@@ -4670,7 +4679,7 @@ int ext4_setattr(struct dentry *dentry, struct iattr *attr)
 		ext4_orphan_del(NULL, inode);
 
 	if (!rc && (ia_valid & ATTR_MODE))
-		rc = ext4_acl_chmod(inode);
+		rc = posix_acl_chmod(inode, inode->i_mode);
 
 err_out:
 	ext4_std_error(inode->i_sb, error);
