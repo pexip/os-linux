@@ -109,13 +109,16 @@ static void ima_show_template_data_binary(struct seq_file *m,
 					  enum data_formats datafmt,
 					  struct ima_field_data *field_data)
 {
-	if (show != IMA_SHOW_BINARY_NO_FIELD_LEN)
-		ima_putc(m, &field_data->len, sizeof(u32));
+	u32 len = (show == IMA_SHOW_BINARY_OLD_STRING_FMT) ?
+	    strlen(field_data->data) : field_data->len;
 
-	if (!field_data->len)
+	if (show != IMA_SHOW_BINARY_NO_FIELD_LEN)
+		ima_putc(m, &len, sizeof(len));
+
+	if (!len)
 		return;
 
-	ima_putc(m, field_data->data, field_data->len);
+	ima_putc(m, field_data->data, len);
 }
 
 static void ima_show_template_field_data(struct seq_file *m,
@@ -129,6 +132,7 @@ static void ima_show_template_field_data(struct seq_file *m,
 		break;
 	case IMA_SHOW_BINARY:
 	case IMA_SHOW_BINARY_NO_FIELD_LEN:
+	case IMA_SHOW_BINARY_OLD_STRING_FMT:
 		ima_show_template_data_binary(m, show, datafmt, field_data);
 		break;
 	default:
@@ -162,8 +166,7 @@ void ima_show_template_sig(struct seq_file *m, enum ima_show_type show,
 }
 
 static int ima_eventdigest_init_common(u8 *digest, u32 digestsize, u8 hash_algo,
-				       struct ima_field_data *field_data,
-				       bool size_limit)
+				       struct ima_field_data *field_data)
 {
 	/*
 	 * digest formats:
@@ -176,11 +179,10 @@ static int ima_eventdigest_init_common(u8 *digest, u32 digestsize, u8 hash_algo,
 	enum data_formats fmt = DATA_FMT_DIGEST;
 	u32 offset = 0;
 
-	if (!size_limit) {
+	if (hash_algo < HASH_ALGO__LAST) {
 		fmt = DATA_FMT_DIGEST_WITH_ALGO;
-		if (hash_algo < HASH_ALGO__LAST)
-			offset += snprintf(buffer, CRYPTO_MAX_ALG_NAME + 1,
-					   "%s", hash_algo_name[hash_algo]);
+		offset += snprintf(buffer, CRYPTO_MAX_ALG_NAME + 1, "%s",
+				   hash_algo_name[hash_algo]);
 		buffer[offset] = ':';
 		offset += 2;
 	}
@@ -243,8 +245,8 @@ int ima_eventdigest_init(struct integrity_iint_cache *iint, struct file *file,
 	cur_digest = hash.hdr.digest;
 	cur_digestsize = hash.hdr.length;
 out:
-	return ima_eventdigest_init_common(cur_digest, cur_digestsize, -1,
-					   field_data, true);
+	return ima_eventdigest_init_common(cur_digest, cur_digestsize,
+					   HASH_ALGO__LAST, field_data);
 }
 
 /*
@@ -268,7 +270,7 @@ int ima_eventdigest_ng_init(struct integrity_iint_cache *iint,
 	hash_algo = iint->ima_hash->algo;
 out:
 	return ima_eventdigest_init_common(cur_digest, cur_digestsize,
-					   hash_algo, field_data, false);
+					   hash_algo, field_data);
 }
 
 static int ima_eventname_init_common(struct integrity_iint_cache *iint,
