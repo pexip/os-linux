@@ -1,0 +1,48 @@
+From: John-Mark Bell <jmb@pexip.com>
+Date: Mon, 09 Jun 2014 16:51:24 +0100
+Subject: net: Revert 4d83e177 (delete redundant calls of tcp_mtup_init())
+Forwarded: no
+
+This reverts commit 4d83e177 as it breaks TCP MTU probing over IPsec
+transports to stall. Previously, TCP transfers would begin with a 
+payload size of 1390 octets even with a default tcp_base_mss of 512 
+octets and tcp_mtu_probing set to 2 (i.e always probe). The result is 
+that, once the IPsec encapsulation has been added, the frame size
+is 1516 octets, which exceeds the default maximum MTU. The original 
+commit log follows.
+
+commit 4d83e1773031c2b7bbcfeb3736ad20980785dd93
+Author: Peter Pan(潘卫平) <panweiping3@gmail.com>
+Date:   Sun Jan 19 20:44:46 2014 +0800
+
+    tcp: delete redundant calls of tcp_mtup_init()
+    
+    As tcp_rcv_state_process() has already calls tcp_mtup_init() for non-fastopen
+    sock, we can delete the redundant calls of tcp_mtup_init() in
+    tcp_{v4,v6}_syn_recv_sock().
+    
+    Signed-off-by: Weiping Pan <panweiping3@gmail.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+--- a/net/ipv4/tcp_ipv4.c
++++ b/net/ipv4/tcp_ipv4.c
+@@ -1668,6 +1668,7 @@ struct sock *tcp_v4_syn_recv_sock(struct sock *sk, struct sk_buff *skb,
+ 	}
+ 	sk_setup_caps(newsk, dst);
+ 
++	tcp_mtup_init(newsk);
+ 	tcp_sync_mss(newsk, dst_mtu(dst));
+ 	newtp->advmss = dst_metric_advmss(dst);
+ 	if (tcp_sk(sk)->rx_opt.user_mss &&
+diff --git a/net/ipv6/tcp_ipv6.c b/net/ipv6/tcp_ipv6.c
+index 889079b..b61fa8b 100644
+--- a/net/ipv6/tcp_ipv6.c
++++ b/net/ipv6/tcp_ipv6.c
+@@ -1246,6 +1246,7 @@ static struct sock *tcp_v6_syn_recv_sock(struct sock *sk, struct sk_buff *skb,
+ 		inet_csk(newsk)->icsk_ext_hdr_len = (newnp->opt->opt_nflen +
+ 						     newnp->opt->opt_flen);
+ 
++	tcp_mtup_init(newsk);
+ 	tcp_sync_mss(newsk, dst_mtu(dst));
+ 	newtp->advmss = dst_metric_advmss(dst);
+ 	if (tcp_sk(sk)->rx_opt.user_mss &&
