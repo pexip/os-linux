@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -39,10 +39,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-generic/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-generic/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-alpha-generic/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-alpha-generic/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -95,6 +95,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-generic) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -103,7 +131,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -133,10 +161,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-alpha-smp/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-alpha-smp/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -189,6 +217,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -197,7 +253,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -227,10 +283,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-legacy/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-legacy/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-alpha-legacy/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-alpha-legacy/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -283,6 +339,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-legacy) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -291,7 +375,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -321,10 +405,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-amd64/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-amd64/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -377,6 +461,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -385,7 +497,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -415,10 +527,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-rt-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-rt-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-rt-amd64/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-rt-amd64/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -471,6 +583,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-rt-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -479,7 +619,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -509,10 +649,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-arm64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-arm64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-arm64/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-arm64/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -565,6 +705,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-arm64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -573,7 +741,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -603,10 +771,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-kirkwood/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-kirkwood/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-kirkwood/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-kirkwood/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -659,6 +827,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-kirkwood) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -667,7 +863,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -697,10 +893,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-mv78xx0/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-mv78xx0/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-mv78xx0/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-mv78xx0/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -753,6 +949,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-mv78xx0) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -761,7 +985,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -791,10 +1015,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-orion5x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-orion5x/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-orion5x/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-orion5x/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -847,6 +1071,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-orion5x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -855,7 +1107,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -885,10 +1137,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-versatile/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-versatile/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-versatile/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-versatile/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -941,6 +1193,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-versatile) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -949,7 +1229,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -979,10 +1259,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-armmp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-armmp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-armmp/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-armmp/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1035,6 +1315,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-armmp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1043,7 +1351,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1073,10 +1381,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-armmp-lpae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-armmp-lpae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-armmp-lpae/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-armmp-lpae/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1129,6 +1437,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-armmp-lpae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1137,7 +1473,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1167,10 +1503,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-parisc/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-parisc/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-parisc/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-parisc/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1223,6 +1559,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-parisc) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1231,7 +1595,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1261,10 +1625,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-parisc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-parisc64-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-parisc64-smp/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-parisc64-smp/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1317,6 +1681,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-parisc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1325,7 +1717,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1355,10 +1747,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-486/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-486/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-486/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-486/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1411,6 +1803,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-486) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1419,7 +1839,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1449,10 +1869,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-686-pae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-686-pae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-686-pae/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-686-pae/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1505,6 +1925,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-686-pae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1513,7 +1961,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1543,10 +1991,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-amd64/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-amd64/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1599,6 +2047,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1607,7 +2083,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1637,10 +2113,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-rt-686-pae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-rt-686-pae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-rt-686-pae/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-rt-686-pae/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1693,6 +2169,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-rt-686-pae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1701,7 +2205,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1731,10 +2235,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-itanium/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-itanium/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-itanium/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-itanium/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1787,6 +2291,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-itanium) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1795,7 +2327,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1825,10 +2357,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-mckinley/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-mckinley/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-mckinley/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-mckinley/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1881,6 +2413,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-mckinley) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1889,7 +2449,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -1919,10 +2479,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-m68k/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-m68k/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-m68k/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-m68k/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -1975,6 +2535,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-m68k) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -1983,7 +2571,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2013,10 +2601,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-r4k-ip22/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-r4k-ip22/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-r4k-ip22/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-r4k-ip22/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2069,6 +2657,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-r4k-ip22) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2077,7 +2693,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2107,10 +2723,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-r5k-ip32/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-r5k-ip32/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-r5k-ip32/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-r5k-ip32/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2163,6 +2779,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-r5k-ip32) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2171,7 +2815,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2201,10 +2845,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2257,6 +2901,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2265,7 +2937,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2295,10 +2967,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2351,6 +3023,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-4kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2359,7 +3059,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2389,10 +3089,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-4kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-4kc-malta/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2445,6 +3145,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-5kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2453,7 +3181,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2483,10 +3211,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-5kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-5kc-malta/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-octeon/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2539,6 +3267,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2547,7 +3303,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2577,10 +3333,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-octeon/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-octeon/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2633,6 +3389,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2641,7 +3425,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2671,10 +3455,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2727,6 +3511,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-4kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2735,7 +3547,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2765,10 +3577,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2821,6 +3633,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-5kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2829,7 +3669,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2859,10 +3699,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-4kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-4kc-malta/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -2915,6 +3755,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2e) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -2923,7 +3791,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -2953,10 +3821,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-5kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-5kc-malta/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3009,6 +3877,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2f) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3017,7 +3913,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3047,10 +3943,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-loongson-2e/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-3/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-loongson-2e/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-loongson-3/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3103,6 +3999,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-3) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3111,7 +4035,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3141,10 +4065,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-loongson-2f/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-loongson-2f/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3197,6 +4121,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3205,7 +4157,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3235,10 +4187,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-powerpc/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-octeon/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3291,6 +4243,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3299,7 +4279,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3329,10 +4309,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-powerpc-smp/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3385,6 +4365,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3393,7 +4401,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3423,10 +4431,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-powerpc64/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3479,6 +4487,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2e) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3487,7 +4523,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3517,10 +4553,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpcspe/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-powerpcspe/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3573,6 +4609,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2f) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3581,7 +4645,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3611,10 +4675,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-3/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-powerpc64/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-loongson-3/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3667,6 +4731,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-3) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3675,7 +4767,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3705,10 +4797,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-s390x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-s390x/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-octeon/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3761,6 +4853,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3769,7 +4889,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3799,10 +4919,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-s390x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-s390x/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-powerpc/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3855,6 +4975,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3863,7 +5011,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3893,10 +5041,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sh7751r/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sh7751r/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-powerpc-smp/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -3949,6 +5097,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -3957,7 +5133,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -3987,10 +5163,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sh7785lcr/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sh7785lcr/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-powerpc64/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -4043,6 +5219,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -4051,7 +5255,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -4081,10 +5285,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpcspe/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sparc64/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-powerpcspe/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -4137,6 +5341,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpcspe) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -4145,7 +5377,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -4175,10 +5407,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sparc64-smp/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-powerpc64/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -4231,6 +5463,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -4239,7 +5499,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -4269,10 +5529,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64le/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sparc64/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-powerpc64le/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -4325,6 +5585,34 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64le) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Vietnamese Debconf translation for Linux 2.6.
 # Copyright © 2010 Free Software Foundation, Inc.
 # Clytie Siddall <clytie@riverland.net.au>, 2010.
@@ -4333,7 +5621,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32-26\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
@@ -4363,10 +5651,10 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-s390x/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
-"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-1-sparc64-smp/"
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-s390x/"
 "modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
 
 #. Type: boolean
@@ -4419,3 +5707,885 @@ msgid ""
 msgstr ""
 "Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
 "chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-s390x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Vietnamese Debconf translation for Linux 2.6.
+# Copyright © 2010 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32-26\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.8\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Hủy bỏ tiến trình cài đặt sau khi gặp lỗi depmod ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Lệnh « depmod » đã thoát với mã thoát ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-s390x/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-s390x/"
+"modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Bạn nên hủy bỏ tiến trình cài đặt và sửa chữa các lỗi trong depmod, hoặc tạo "
+"lại ảnh initrd với một tập tin « modules.dep » tốt. Không hủy bỏ tiến trình "
+"cài đặt thì hệ thống có thể không khởi động được."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Hủy bỏ tiến trình gỡ bỏ hạt nhân ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Bạn đang chạy một hạt nhân phiên bản ${running} trong khi thử gỡ bỏ phiên "
+"bản đó."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Hành động này có thể làm cho hệ thống không có khả năng khởi động, vì nó gỡ "
+"bỏ « /boot/vmlinuz-${running} » và tất cả các mô-đụn nằm dưới thư mục « /lib/"
+"modules/${running} »."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
+"chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-s390x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Vietnamese Debconf translation for Linux 2.6.
+# Copyright © 2010 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32-26\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.8\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Hủy bỏ tiến trình cài đặt sau khi gặp lỗi depmod ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Lệnh « depmod » đã thoát với mã thoát ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sh7751r/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sh7751r/"
+"modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Bạn nên hủy bỏ tiến trình cài đặt và sửa chữa các lỗi trong depmod, hoặc tạo "
+"lại ảnh initrd với một tập tin « modules.dep » tốt. Không hủy bỏ tiến trình "
+"cài đặt thì hệ thống có thể không khởi động được."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Hủy bỏ tiến trình gỡ bỏ hạt nhân ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Bạn đang chạy một hạt nhân phiên bản ${running} trong khi thử gỡ bỏ phiên "
+"bản đó."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Hành động này có thể làm cho hệ thống không có khả năng khởi động, vì nó gỡ "
+"bỏ « /boot/vmlinuz-${running} » và tất cả các mô-đụn nằm dưới thư mục « /lib/"
+"modules/${running} »."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
+"chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sh7751r) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Vietnamese Debconf translation for Linux 2.6.
+# Copyright © 2010 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32-26\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.8\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Hủy bỏ tiến trình cài đặt sau khi gặp lỗi depmod ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Lệnh « depmod » đã thoát với mã thoát ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sh7785lcr/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sh7785lcr/"
+"modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Bạn nên hủy bỏ tiến trình cài đặt và sửa chữa các lỗi trong depmod, hoặc tạo "
+"lại ảnh initrd với một tập tin « modules.dep » tốt. Không hủy bỏ tiến trình "
+"cài đặt thì hệ thống có thể không khởi động được."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Hủy bỏ tiến trình gỡ bỏ hạt nhân ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Bạn đang chạy một hạt nhân phiên bản ${running} trong khi thử gỡ bỏ phiên "
+"bản đó."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Hành động này có thể làm cho hệ thống không có khả năng khởi động, vì nó gỡ "
+"bỏ « /boot/vmlinuz-${running} » và tất cả các mô-đụn nằm dưới thư mục « /lib/"
+"modules/${running} »."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
+"chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sh7785lcr) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Vietnamese Debconf translation for Linux 2.6.
+# Copyright © 2010 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32-26\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.8\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Hủy bỏ tiến trình cài đặt sau khi gặp lỗi depmod ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Lệnh « depmod » đã thoát với mã thoát ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sparc64/"
+"modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Bạn nên hủy bỏ tiến trình cài đặt và sửa chữa các lỗi trong depmod, hoặc tạo "
+"lại ảnh initrd với một tập tin « modules.dep » tốt. Không hủy bỏ tiến trình "
+"cài đặt thì hệ thống có thể không khởi động được."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Hủy bỏ tiến trình gỡ bỏ hạt nhân ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Bạn đang chạy một hạt nhân phiên bản ${running} trong khi thử gỡ bỏ phiên "
+"bản đó."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Hành động này có thể làm cho hệ thống không có khả năng khởi động, vì nó gỡ "
+"bỏ « /boot/vmlinuz-${running} » và tất cả các mô-đụn nằm dưới thư mục « /lib/"
+"modules/${running} »."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
+"chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Vietnamese Debconf translation for Linux 2.6.
+# Copyright © 2010 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32-26\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.8\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Hủy bỏ tiến trình cài đặt sau khi gặp lỗi depmod ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Lệnh « depmod » đã thoát với mã thoát ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Bạn nên hủy bỏ tiến trình cài đặt và sửa chữa các lỗi trong depmod, hoặc tạo "
+"lại ảnh initrd với một tập tin « modules.dep » tốt. Không hủy bỏ tiến trình "
+"cài đặt thì hệ thống có thể không khởi động được."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Hủy bỏ tiến trình gỡ bỏ hạt nhân ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Bạn đang chạy một hạt nhân phiên bản ${running} trong khi thử gỡ bỏ phiên "
+"bản đó."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Hành động này có thể làm cho hệ thống không có khả năng khởi động, vì nó gỡ "
+"bỏ « /boot/vmlinuz-${running} » và tất cả các mô-đụn nằm dưới thư mục « /lib/"
+"modules/${running} »."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
+"chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Vietnamese Debconf translation for Linux 2.6.
+# Copyright © 2010 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32-26\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.8\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Hủy bỏ tiến trình cài đặt sau khi gặp lỗi depmod ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Lệnh « depmod » đã thoát với mã thoát ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sparc64/"
+"modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Bạn nên hủy bỏ tiến trình cài đặt và sửa chữa các lỗi trong depmod, hoặc tạo "
+"lại ảnh initrd với một tập tin « modules.dep » tốt. Không hủy bỏ tiến trình "
+"cài đặt thì hệ thống có thể không khởi động được."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Hủy bỏ tiến trình gỡ bỏ hạt nhân ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Bạn đang chạy một hạt nhân phiên bản ${running} trong khi thử gỡ bỏ phiên "
+"bản đó."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Hành động này có thể làm cho hệ thống không có khả năng khởi động, vì nó gỡ "
+"bỏ « /boot/vmlinuz-${running} » và tất cả các mô-đụn nằm dưới thư mục « /lib/"
+"modules/${running} »."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
+"chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Vietnamese Debconf translation for Linux 2.6.
+# Copyright © 2010 Free Software Foundation, Inc.
+# Clytie Siddall <clytie@riverland.net.au>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32-26\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
+"Language-Team: Vietnamese <vi-VN@googlegroups.com>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: LocFactoryEditor 1.8\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Hủy bỏ tiến trình cài đặt sau khi gặp lỗi depmod ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Lệnh « depmod » đã thoát với mã thoát ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Vì ảnh này sử dụng initrd, tập tin ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep sẽ không bị xoá, dù là nó có thể không thích hợp."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Bạn nên hủy bỏ tiến trình cài đặt và sửa chữa các lỗi trong depmod, hoặc tạo "
+"lại ảnh initrd với một tập tin « modules.dep » tốt. Không hủy bỏ tiến trình "
+"cài đặt thì hệ thống có thể không khởi động được."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Hủy bỏ tiến trình gỡ bỏ hạt nhân ?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Bạn đang chạy một hạt nhân phiên bản ${running} trong khi thử gỡ bỏ phiên "
+"bản đó."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Hành động này có thể làm cho hệ thống không có khả năng khởi động, vì nó gỡ "
+"bỏ « /boot/vmlinuz-${running} » và tất cả các mô-đụn nằm dưới thư mục « /lib/"
+"modules/${running} »."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Rất khuyên bạn hủy bỏ tiến trình gỡ bỏ hạt nhân, nếu bạn không sẵn sàng sửa "
+"chữa hệ thống sau khi gỡ bỏ."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""

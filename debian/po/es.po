@@ -33,7 +33,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -69,11 +69,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-generic/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-generic/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-alpha-generic/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-alpha-generic/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -128,6 +128,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-generic) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -160,7 +188,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -196,11 +224,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-alpha-smp/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-alpha-smp/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -255,6 +283,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -287,7 +343,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -323,11 +379,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-legacy/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-legacy/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-alpha-legacy/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-alpha-legacy/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -382,6 +438,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-legacy) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -414,7 +498,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -450,11 +534,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-amd64/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-amd64/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -509,6 +593,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -541,7 +653,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -577,11 +689,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-rt-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-rt-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-rt-amd64/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-rt-amd64/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -636,6 +748,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-rt-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -668,7 +808,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -704,11 +844,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-arm64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-arm64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-arm64/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-arm64/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -763,6 +903,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-arm64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -795,7 +963,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -831,11 +999,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-kirkwood/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-kirkwood/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-kirkwood/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-kirkwood/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -890,6 +1058,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-kirkwood) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -922,7 +1118,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -958,11 +1154,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-mv78xx0/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-mv78xx0/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-mv78xx0/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-mv78xx0/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -1017,6 +1213,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-mv78xx0) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -1049,7 +1273,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -1085,11 +1309,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-orion5x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-orion5x/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-orion5x/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-orion5x/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -1144,6 +1368,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-orion5x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -1176,7 +1428,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -1212,11 +1464,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-versatile/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-versatile/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-versatile/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-versatile/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -1271,6 +1523,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-versatile) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -1303,7 +1583,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -1339,11 +1619,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-armmp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-armmp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-armmp/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-armmp/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -1398,6 +1678,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-armmp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -1430,7 +1738,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -1466,11 +1774,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-armmp-lpae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-armmp-lpae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-armmp-lpae/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-armmp-lpae/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -1525,6 +1833,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-armmp-lpae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -1557,7 +1893,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -1593,11 +1929,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-parisc/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-parisc/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-parisc/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-parisc/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -1652,6 +1988,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-parisc) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -1684,7 +2048,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -1720,11 +2084,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-parisc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-parisc64-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-parisc64-smp/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-parisc64-smp/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -1779,6 +2143,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-parisc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -1811,7 +2203,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -1847,11 +2239,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-486/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-486/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-486/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-486/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -1906,6 +2298,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-486) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -1938,7 +2358,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -1974,11 +2394,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-686-pae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-686-pae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-686-pae/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-686-pae/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -2033,6 +2453,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-686-pae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -2065,7 +2513,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2101,11 +2549,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-amd64/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-amd64/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -2160,6 +2608,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -2192,7 +2668,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2228,11 +2704,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-rt-686-pae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-rt-686-pae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-rt-686-pae/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-rt-686-pae/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -2287,6 +2763,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-rt-686-pae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -2319,7 +2823,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2355,11 +2859,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-itanium/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-itanium/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-itanium/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-itanium/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -2414,6 +2918,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-itanium) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -2446,7 +2978,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2482,11 +3014,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-mckinley/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-mckinley/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-mckinley/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-mckinley/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -2541,6 +3073,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-mckinley) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -2573,7 +3133,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2609,11 +3169,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-m68k/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-m68k/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-m68k/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-m68k/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -2668,6 +3228,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-m68k) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -2700,7 +3288,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2736,11 +3324,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-r4k-ip22/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-r4k-ip22/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-r4k-ip22/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-r4k-ip22/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -2795,6 +3383,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-r4k-ip22) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -2827,7 +3443,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2863,11 +3479,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-r5k-ip32/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-r5k-ip32/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-r5k-ip32/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-r5k-ip32/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -2922,6 +3538,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-r5k-ip32) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -2954,7 +3598,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -2990,11 +3634,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sb1-bcm91250a/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-sb1-bcm91250a/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -3049,6 +3693,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -3081,7 +3753,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -3117,11 +3789,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sb1a-bcm91480b/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-4kc-malta/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -3176,6 +3848,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-4kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -3208,7 +3908,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -3244,11 +3944,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-4kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-4kc-malta/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-5kc-malta/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -3303,6 +4003,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-5kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -3335,7 +4063,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -3371,11 +4099,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-5kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-5kc-malta/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-octeon/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -3430,6 +4158,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -3462,7 +4218,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -3498,11 +4254,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-octeon/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-octeon/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-sb1-bcm91250a/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -3557,6 +4313,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -3589,7 +4373,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -3625,11 +4409,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sb1-bcm91250a/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-4kc-malta/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -3684,6 +4468,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-4kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -3716,7 +4528,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -3752,11 +4564,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sb1a-bcm91480b/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-5kc-malta/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -3811,6 +4623,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-5kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -3843,7 +4683,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -3879,11 +4719,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-4kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-4kc-malta/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-loongson-2e/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -3938,6 +4778,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2e) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -3970,7 +4838,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -4006,11 +4874,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-5kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-5kc-malta/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-loongson-2f/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -4065,6 +4933,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2f) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -4097,7 +4993,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -4133,11 +5029,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-loongson-2e/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-3/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-loongson-2e/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-loongson-3/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -4192,6 +5088,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-3) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -4224,7 +5148,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -4260,11 +5184,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-loongson-2f/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-loongson-2f/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-sb1-bcm91250a/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -4319,6 +5243,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -4351,7 +5303,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -4387,11 +5339,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-powerpc/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-octeon/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -4446,6 +5398,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -4478,7 +5458,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -4514,11 +5494,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-powerpc-smp/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-sb1-bcm91250a/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -4573,6 +5553,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -4605,7 +5613,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -4641,11 +5649,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-powerpc64/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-loongson-2e/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -4700,6 +5708,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2e) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -4732,7 +5768,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -4768,11 +5804,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpcspe/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-powerpcspe/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-loongson-2f/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -4827,6 +5863,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2f) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -4859,7 +5923,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -4895,11 +5959,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-3/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-powerpc64/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-loongson-3/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -4954,6 +6018,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-3) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -4986,7 +6078,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -5022,11 +6114,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-s390x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-s390x/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-octeon/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -5081,6 +6173,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -5113,7 +6233,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -5149,11 +6269,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-s390x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-s390x/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-powerpc/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -5208,6 +6328,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -5240,7 +6388,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -5276,11 +6424,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sh7751r/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sh7751r/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-powerpc-smp/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -5335,6 +6483,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -5367,7 +6543,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -5403,11 +6579,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sh7785lcr/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sh7785lcr/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-powerpc64/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -5462,6 +6638,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -5494,7 +6698,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -5530,11 +6734,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpcspe/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sparc64/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-powerpcspe/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -5589,6 +6793,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpcspe) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -5621,7 +6853,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -5657,11 +6889,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sparc64-smp/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-powerpc64/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -5716,6 +6948,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -5748,7 +7008,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -5784,11 +7044,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64le/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sparc64/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-powerpc64le/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -5843,6 +7103,34 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64le) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # linux po-debconf translation to Spanish
 # This file is distributed under the same license as the linux package.
 #
@@ -5875,7 +7163,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux-2.6 2.6.32+5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2011-07-16 17:59+0200\n"
 "Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
 "Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
@@ -5911,11 +7199,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-s390x/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Debido a que esta imagen usa una imagen de arranque «initrd», no se "
-"eliminará el fichero «${modules_base}/3.14-1-sparc64-smp/modules.dep», "
+"eliminará el fichero «${modules_base}/3.14-2-s390x/modules.dep», "
 "aún cuando no sea válido."
 
 #. Type: boolean
@@ -5970,3 +7258,1116 @@ msgid ""
 msgstr ""
 "Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
 "que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-s390x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# linux po-debconf translation to Spanish
+# This file is distributed under the same license as the linux package.
+#
+#   Changes:
+#    - Initial translation
+#    Omar Campagne <ocampagne@gmail.com> 2010, 2011
+#   
+#    - Review and update
+#    Javier Fernandez-Sanguino, December 2010
+#
+# Traductores, si no conocen el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+#       info -n '(gettext)PO Files'
+#       info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+#   - El proyecto de traducción de Debian al español
+#     http://www.debian.org/intl/spanish/
+#     especialmente las notas y normas de traducción en
+#     http://www.debian.org/intl/spanish/notas
+#
+#   - La guía de traducción de po's de debconf:
+#     /usr/share/doc/po-debconf/README-trans
+#     o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32+5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2011-07-16 17:59+0200\n"
+"Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
+"Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.6.1\n"
+"X-POFile-SpellExtra: initrd postinsthook conf lib contrib yes IDE depmod\n"
+"X-POFile-SpellExtra: runningversion img script boot Free exitvalue version\n"
+"X-POFile-SpellExtra: Debian CORE free running dobootloader UUID dep SIGNAL\n"
+"X-POFile-SpellExtra: Guidelines modulesbase vmlinuz postinst\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr ""
+"¿Desea interrumpir la instalación cuando se produzca un fallo de depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"La orden «depmod» finalizó con el código de salida «${exit_value} "
+"(${SIGNAL}${CORE})»."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-s390x/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Debido a que esta imagen usa una imagen de arranque «initrd», no se "
+"eliminará el fichero «${modules_base}/3.14-2-s390x/modules.dep», "
+"aún cuando no sea válido."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Debería cancelar la instalación y arreglar los errores de depmod, o "
+"regenerar la imagen de arranque «initrd» con un fichero «modules.dep» "
+"fiable. Si no cancela la instalación, existe el peligro de que el sistema no "
+"pueda arrancar."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "¿Desea cancelar la eliminación del núcleo?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Su sistema está ejecutando el núcleo (versión ${running}), y está intentando "
+"eliminar la misma versión del núcleo."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Puede que el sistema no pueda arrancar posteriormente, ya que eliminaría «/"
+"boot/vmlinuz-${running}» y todos los módulos en el directorio «/lib/modules/"
+"${running}». Esto sólo se puede arreglar esto con una copia de la imagen del "
+"núcleo y los correspondientes módulos."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
+"que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-s390x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# linux po-debconf translation to Spanish
+# This file is distributed under the same license as the linux package.
+#
+#   Changes:
+#    - Initial translation
+#    Omar Campagne <ocampagne@gmail.com> 2010, 2011
+#   
+#    - Review and update
+#    Javier Fernandez-Sanguino, December 2010
+#
+# Traductores, si no conocen el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+#       info -n '(gettext)PO Files'
+#       info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+#   - El proyecto de traducción de Debian al español
+#     http://www.debian.org/intl/spanish/
+#     especialmente las notas y normas de traducción en
+#     http://www.debian.org/intl/spanish/notas
+#
+#   - La guía de traducción de po's de debconf:
+#     /usr/share/doc/po-debconf/README-trans
+#     o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32+5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2011-07-16 17:59+0200\n"
+"Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
+"Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.6.1\n"
+"X-POFile-SpellExtra: initrd postinsthook conf lib contrib yes IDE depmod\n"
+"X-POFile-SpellExtra: runningversion img script boot Free exitvalue version\n"
+"X-POFile-SpellExtra: Debian CORE free running dobootloader UUID dep SIGNAL\n"
+"X-POFile-SpellExtra: Guidelines modulesbase vmlinuz postinst\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr ""
+"¿Desea interrumpir la instalación cuando se produzca un fallo de depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"La orden «depmod» finalizó con el código de salida «${exit_value} "
+"(${SIGNAL}${CORE})»."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sh7751r/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Debido a que esta imagen usa una imagen de arranque «initrd», no se "
+"eliminará el fichero «${modules_base}/3.14-2-sh7751r/modules.dep», "
+"aún cuando no sea válido."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Debería cancelar la instalación y arreglar los errores de depmod, o "
+"regenerar la imagen de arranque «initrd» con un fichero «modules.dep» "
+"fiable. Si no cancela la instalación, existe el peligro de que el sistema no "
+"pueda arrancar."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "¿Desea cancelar la eliminación del núcleo?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Su sistema está ejecutando el núcleo (versión ${running}), y está intentando "
+"eliminar la misma versión del núcleo."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Puede que el sistema no pueda arrancar posteriormente, ya que eliminaría «/"
+"boot/vmlinuz-${running}» y todos los módulos en el directorio «/lib/modules/"
+"${running}». Esto sólo se puede arreglar esto con una copia de la imagen del "
+"núcleo y los correspondientes módulos."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
+"que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sh7751r) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# linux po-debconf translation to Spanish
+# This file is distributed under the same license as the linux package.
+#
+#   Changes:
+#    - Initial translation
+#    Omar Campagne <ocampagne@gmail.com> 2010, 2011
+#   
+#    - Review and update
+#    Javier Fernandez-Sanguino, December 2010
+#
+# Traductores, si no conocen el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+#       info -n '(gettext)PO Files'
+#       info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+#   - El proyecto de traducción de Debian al español
+#     http://www.debian.org/intl/spanish/
+#     especialmente las notas y normas de traducción en
+#     http://www.debian.org/intl/spanish/notas
+#
+#   - La guía de traducción de po's de debconf:
+#     /usr/share/doc/po-debconf/README-trans
+#     o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32+5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2011-07-16 17:59+0200\n"
+"Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
+"Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.6.1\n"
+"X-POFile-SpellExtra: initrd postinsthook conf lib contrib yes IDE depmod\n"
+"X-POFile-SpellExtra: runningversion img script boot Free exitvalue version\n"
+"X-POFile-SpellExtra: Debian CORE free running dobootloader UUID dep SIGNAL\n"
+"X-POFile-SpellExtra: Guidelines modulesbase vmlinuz postinst\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr ""
+"¿Desea interrumpir la instalación cuando se produzca un fallo de depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"La orden «depmod» finalizó con el código de salida «${exit_value} "
+"(${SIGNAL}${CORE})»."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sh7785lcr/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Debido a que esta imagen usa una imagen de arranque «initrd», no se "
+"eliminará el fichero «${modules_base}/3.14-2-sh7785lcr/modules.dep», "
+"aún cuando no sea válido."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Debería cancelar la instalación y arreglar los errores de depmod, o "
+"regenerar la imagen de arranque «initrd» con un fichero «modules.dep» "
+"fiable. Si no cancela la instalación, existe el peligro de que el sistema no "
+"pueda arrancar."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "¿Desea cancelar la eliminación del núcleo?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Su sistema está ejecutando el núcleo (versión ${running}), y está intentando "
+"eliminar la misma versión del núcleo."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Puede que el sistema no pueda arrancar posteriormente, ya que eliminaría «/"
+"boot/vmlinuz-${running}» y todos los módulos en el directorio «/lib/modules/"
+"${running}». Esto sólo se puede arreglar esto con una copia de la imagen del "
+"núcleo y los correspondientes módulos."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
+"que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sh7785lcr) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# linux po-debconf translation to Spanish
+# This file is distributed under the same license as the linux package.
+#
+#   Changes:
+#    - Initial translation
+#    Omar Campagne <ocampagne@gmail.com> 2010, 2011
+#   
+#    - Review and update
+#    Javier Fernandez-Sanguino, December 2010
+#
+# Traductores, si no conocen el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+#       info -n '(gettext)PO Files'
+#       info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+#   - El proyecto de traducción de Debian al español
+#     http://www.debian.org/intl/spanish/
+#     especialmente las notas y normas de traducción en
+#     http://www.debian.org/intl/spanish/notas
+#
+#   - La guía de traducción de po's de debconf:
+#     /usr/share/doc/po-debconf/README-trans
+#     o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32+5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2011-07-16 17:59+0200\n"
+"Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
+"Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.6.1\n"
+"X-POFile-SpellExtra: initrd postinsthook conf lib contrib yes IDE depmod\n"
+"X-POFile-SpellExtra: runningversion img script boot Free exitvalue version\n"
+"X-POFile-SpellExtra: Debian CORE free running dobootloader UUID dep SIGNAL\n"
+"X-POFile-SpellExtra: Guidelines modulesbase vmlinuz postinst\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr ""
+"¿Desea interrumpir la instalación cuando se produzca un fallo de depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"La orden «depmod» finalizó con el código de salida «${exit_value} "
+"(${SIGNAL}${CORE})»."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Debido a que esta imagen usa una imagen de arranque «initrd», no se "
+"eliminará el fichero «${modules_base}/3.14-2-sparc64/modules.dep», "
+"aún cuando no sea válido."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Debería cancelar la instalación y arreglar los errores de depmod, o "
+"regenerar la imagen de arranque «initrd» con un fichero «modules.dep» "
+"fiable. Si no cancela la instalación, existe el peligro de que el sistema no "
+"pueda arrancar."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "¿Desea cancelar la eliminación del núcleo?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Su sistema está ejecutando el núcleo (versión ${running}), y está intentando "
+"eliminar la misma versión del núcleo."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Puede que el sistema no pueda arrancar posteriormente, ya que eliminaría «/"
+"boot/vmlinuz-${running}» y todos los módulos en el directorio «/lib/modules/"
+"${running}». Esto sólo se puede arreglar esto con una copia de la imagen del "
+"núcleo y los correspondientes módulos."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
+"que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# linux po-debconf translation to Spanish
+# This file is distributed under the same license as the linux package.
+#
+#   Changes:
+#    - Initial translation
+#    Omar Campagne <ocampagne@gmail.com> 2010, 2011
+#   
+#    - Review and update
+#    Javier Fernandez-Sanguino, December 2010
+#
+# Traductores, si no conocen el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+#       info -n '(gettext)PO Files'
+#       info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+#   - El proyecto de traducción de Debian al español
+#     http://www.debian.org/intl/spanish/
+#     especialmente las notas y normas de traducción en
+#     http://www.debian.org/intl/spanish/notas
+#
+#   - La guía de traducción de po's de debconf:
+#     /usr/share/doc/po-debconf/README-trans
+#     o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32+5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2011-07-16 17:59+0200\n"
+"Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
+"Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.6.1\n"
+"X-POFile-SpellExtra: initrd postinsthook conf lib contrib yes IDE depmod\n"
+"X-POFile-SpellExtra: runningversion img script boot Free exitvalue version\n"
+"X-POFile-SpellExtra: Debian CORE free running dobootloader UUID dep SIGNAL\n"
+"X-POFile-SpellExtra: Guidelines modulesbase vmlinuz postinst\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr ""
+"¿Desea interrumpir la instalación cuando se produzca un fallo de depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"La orden «depmod» finalizó con el código de salida «${exit_value} "
+"(${SIGNAL}${CORE})»."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Debido a que esta imagen usa una imagen de arranque «initrd», no se "
+"eliminará el fichero «${modules_base}/3.14-2-sparc64-smp/modules.dep», "
+"aún cuando no sea válido."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Debería cancelar la instalación y arreglar los errores de depmod, o "
+"regenerar la imagen de arranque «initrd» con un fichero «modules.dep» "
+"fiable. Si no cancela la instalación, existe el peligro de que el sistema no "
+"pueda arrancar."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "¿Desea cancelar la eliminación del núcleo?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Su sistema está ejecutando el núcleo (versión ${running}), y está intentando "
+"eliminar la misma versión del núcleo."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Puede que el sistema no pueda arrancar posteriormente, ya que eliminaría «/"
+"boot/vmlinuz-${running}» y todos los módulos en el directorio «/lib/modules/"
+"${running}». Esto sólo se puede arreglar esto con una copia de la imagen del "
+"núcleo y los correspondientes módulos."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
+"que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# linux po-debconf translation to Spanish
+# This file is distributed under the same license as the linux package.
+#
+#   Changes:
+#    - Initial translation
+#    Omar Campagne <ocampagne@gmail.com> 2010, 2011
+#   
+#    - Review and update
+#    Javier Fernandez-Sanguino, December 2010
+#
+# Traductores, si no conocen el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+#       info -n '(gettext)PO Files'
+#       info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+#   - El proyecto de traducción de Debian al español
+#     http://www.debian.org/intl/spanish/
+#     especialmente las notas y normas de traducción en
+#     http://www.debian.org/intl/spanish/notas
+#
+#   - La guía de traducción de po's de debconf:
+#     /usr/share/doc/po-debconf/README-trans
+#     o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32+5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2011-07-16 17:59+0200\n"
+"Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
+"Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.6.1\n"
+"X-POFile-SpellExtra: initrd postinsthook conf lib contrib yes IDE depmod\n"
+"X-POFile-SpellExtra: runningversion img script boot Free exitvalue version\n"
+"X-POFile-SpellExtra: Debian CORE free running dobootloader UUID dep SIGNAL\n"
+"X-POFile-SpellExtra: Guidelines modulesbase vmlinuz postinst\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr ""
+"¿Desea interrumpir la instalación cuando se produzca un fallo de depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"La orden «depmod» finalizó con el código de salida «${exit_value} "
+"(${SIGNAL}${CORE})»."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Debido a que esta imagen usa una imagen de arranque «initrd», no se "
+"eliminará el fichero «${modules_base}/3.14-2-sparc64/modules.dep», "
+"aún cuando no sea válido."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Debería cancelar la instalación y arreglar los errores de depmod, o "
+"regenerar la imagen de arranque «initrd» con un fichero «modules.dep» "
+"fiable. Si no cancela la instalación, existe el peligro de que el sistema no "
+"pueda arrancar."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "¿Desea cancelar la eliminación del núcleo?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Su sistema está ejecutando el núcleo (versión ${running}), y está intentando "
+"eliminar la misma versión del núcleo."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Puede que el sistema no pueda arrancar posteriormente, ya que eliminaría «/"
+"boot/vmlinuz-${running}» y todos los módulos en el directorio «/lib/modules/"
+"${running}». Esto sólo se puede arreglar esto con una copia de la imagen del "
+"núcleo y los correspondientes módulos."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
+"que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# linux po-debconf translation to Spanish
+# This file is distributed under the same license as the linux package.
+#
+#   Changes:
+#    - Initial translation
+#    Omar Campagne <ocampagne@gmail.com> 2010, 2011
+#   
+#    - Review and update
+#    Javier Fernandez-Sanguino, December 2010
+#
+# Traductores, si no conocen el formato PO, merece la pena leer la
+# documentación de gettext, especialmente las secciones dedicadas a este
+# formato, por ejemplo ejecutando:
+#       info -n '(gettext)PO Files'
+#       info -n '(gettext)Header Entry'
+#
+# Equipo de traducción al español, por favor lean antes de traducir
+# los siguientes documentos:
+#
+#   - El proyecto de traducción de Debian al español
+#     http://www.debian.org/intl/spanish/
+#     especialmente las notas y normas de traducción en
+#     http://www.debian.org/intl/spanish/notas
+#
+#   - La guía de traducción de po's de debconf:
+#     /usr/share/doc/po-debconf/README-trans
+#     o http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: linux-2.6 2.6.32+5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2011-07-16 17:59+0200\n"
+"Last-Translator: Omar Campagne <ocampagne@gmail.com>\n"
+"Language-Team: Debian l10n Spanish <debian-l10n-spanish@lists.debian.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.6.1\n"
+"X-POFile-SpellExtra: initrd postinsthook conf lib contrib yes IDE depmod\n"
+"X-POFile-SpellExtra: runningversion img script boot Free exitvalue version\n"
+"X-POFile-SpellExtra: Debian CORE free running dobootloader UUID dep SIGNAL\n"
+"X-POFile-SpellExtra: Guidelines modulesbase vmlinuz postinst\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr ""
+"¿Desea interrumpir la instalación cuando se produzca un fallo de depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"La orden «depmod» finalizó con el código de salida «${exit_value} "
+"(${SIGNAL}${CORE})»."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Debido a que esta imagen usa una imagen de arranque «initrd», no se "
+"eliminará el fichero «${modules_base}/3.14-2-sparc64-smp/modules.dep», "
+"aún cuando no sea válido."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Debería cancelar la instalación y arreglar los errores de depmod, o "
+"regenerar la imagen de arranque «initrd» con un fichero «modules.dep» "
+"fiable. Si no cancela la instalación, existe el peligro de que el sistema no "
+"pueda arrancar."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "¿Desea cancelar la eliminación del núcleo?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Su sistema está ejecutando el núcleo (versión ${running}), y está intentando "
+"eliminar la misma versión del núcleo."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Puede que el sistema no pueda arrancar posteriormente, ya que eliminaría «/"
+"boot/vmlinuz-${running}» y todos los módulos en el directorio «/lib/modules/"
+"${running}». Esto sólo se puede arreglar esto con una copia de la imagen del "
+"núcleo y los correspondientes módulos."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Se recomienda encarecidamente cancelar la eliminación del núcleo, a menos "
+"que esté preparado para arreglar el sistema después de la eliminación."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
