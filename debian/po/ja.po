@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -41,11 +41,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-generic/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-generic/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-alpha-generic/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-alpha-generic/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -99,6 +99,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-generic) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -108,7 +136,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -139,11 +167,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-alpha-smp/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-alpha-smp/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -197,6 +225,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -206,7 +262,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -237,11 +293,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-legacy/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-legacy/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-alpha-legacy/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-alpha-legacy/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -295,6 +351,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-legacy) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -304,7 +388,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -335,11 +419,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-amd64/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-amd64/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -393,6 +477,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -402,7 +514,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -433,11 +545,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-rt-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-rt-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-rt-amd64/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-rt-amd64/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -491,6 +603,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-rt-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -500,7 +640,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -531,11 +671,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-arm64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-arm64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-arm64/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-arm64/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -589,6 +729,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-arm64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -598,7 +766,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -629,11 +797,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-kirkwood/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-kirkwood/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-kirkwood/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-kirkwood/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -687,6 +855,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-kirkwood) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -696,7 +892,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -727,11 +923,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-mv78xx0/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-mv78xx0/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-mv78xx0/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-mv78xx0/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -785,6 +981,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-mv78xx0) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -794,7 +1018,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -825,11 +1049,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-orion5x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-orion5x/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-orion5x/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-orion5x/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -883,6 +1107,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-orion5x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -892,7 +1144,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -923,11 +1175,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-versatile/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-versatile/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-versatile/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-versatile/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -981,6 +1233,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-versatile) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -990,7 +1270,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1021,11 +1301,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-armmp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-armmp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-armmp/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-armmp/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1079,6 +1359,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-armmp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1088,7 +1396,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1119,11 +1427,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-armmp-lpae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-armmp-lpae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-armmp-lpae/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-armmp-lpae/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1177,6 +1485,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-armmp-lpae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1186,7 +1522,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1217,11 +1553,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-parisc/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-parisc/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-parisc/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-parisc/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1275,6 +1611,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-parisc) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1284,7 +1648,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1315,11 +1679,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-parisc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-parisc64-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-parisc64-smp/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-parisc64-smp/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1373,6 +1737,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-parisc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1382,7 +1774,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1413,11 +1805,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-486/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-486/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-486/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-486/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1471,6 +1863,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-486) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1480,7 +1900,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1511,11 +1931,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-686-pae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-686-pae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-686-pae/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-686-pae/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1569,6 +1989,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-686-pae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1578,7 +2026,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1609,11 +2057,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-amd64/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-amd64/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1667,6 +2115,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1676,7 +2152,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1707,11 +2183,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-rt-686-pae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-rt-686-pae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-rt-686-pae/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-rt-686-pae/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1765,6 +2241,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-rt-686-pae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1774,7 +2278,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1805,11 +2309,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-itanium/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-itanium/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-itanium/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-itanium/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1863,6 +2367,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-itanium) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1872,7 +2404,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -1903,11 +2435,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-mckinley/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-mckinley/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-mckinley/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-mckinley/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -1961,6 +2493,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-mckinley) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1970,7 +2530,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2001,11 +2561,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-m68k/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-m68k/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-m68k/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-m68k/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2059,6 +2619,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-m68k) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2068,7 +2656,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2099,11 +2687,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-r4k-ip22/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-r4k-ip22/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-r4k-ip22/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-r4k-ip22/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2157,6 +2745,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-r4k-ip22) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2166,7 +2782,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2197,11 +2813,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-r5k-ip32/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-r5k-ip32/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-r5k-ip32/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-r5k-ip32/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2255,6 +2871,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-r5k-ip32) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2264,7 +2908,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2295,11 +2939,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sb1-bcm91250a/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-sb1-bcm91250a/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2353,6 +2997,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2362,7 +3034,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2393,11 +3065,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sb1a-bcm91480b/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-4kc-malta/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2451,6 +3123,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-4kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2460,7 +3160,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2491,11 +3191,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-4kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-4kc-malta/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-5kc-malta/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2549,6 +3249,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-5kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2558,7 +3286,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2589,11 +3317,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-5kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-5kc-malta/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-octeon/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2647,6 +3375,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2656,7 +3412,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2687,11 +3443,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-octeon/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-octeon/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-sb1-bcm91250a/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2745,6 +3501,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2754,7 +3538,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2785,11 +3569,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sb1-bcm91250a/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-4kc-malta/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2843,6 +3627,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-4kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2852,7 +3664,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2883,11 +3695,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sb1a-bcm91480b/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-5kc-malta/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -2941,6 +3753,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-5kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2950,7 +3790,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -2981,11 +3821,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-4kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-4kc-malta/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-loongson-2e/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3039,6 +3879,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2e) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3048,7 +3916,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3079,11 +3947,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-5kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-5kc-malta/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-loongson-2f/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3137,6 +4005,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2f) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3146,7 +4042,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3177,11 +4073,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-loongson-2e/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-3/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-loongson-2e/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-loongson-3/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3235,6 +4131,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-3) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3244,7 +4168,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3275,11 +4199,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-loongson-2f/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-loongson-2f/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-sb1-bcm91250a/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3333,6 +4257,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3342,7 +4294,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3373,11 +4325,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-powerpc/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-octeon/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3431,6 +4383,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3440,7 +4420,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3471,11 +4451,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-powerpc-smp/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-sb1-bcm91250a/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3529,6 +4509,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3538,7 +4546,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3569,11 +4577,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-powerpc64/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-loongson-2e/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3627,6 +4635,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2e) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3636,7 +4672,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3667,11 +4703,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpcspe/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-powerpcspe/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-loongson-2f/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3725,6 +4761,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2f) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3734,7 +4798,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3765,11 +4829,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-3/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-powerpc64/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-loongson-3/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3823,6 +4887,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-3) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3832,7 +4924,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3863,11 +4955,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-s390x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-s390x/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-octeon/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -3921,6 +5013,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3930,7 +5050,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -3961,11 +5081,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-s390x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-s390x/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-powerpc/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -4019,6 +5139,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4028,7 +5176,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -4059,11 +5207,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sh7751r/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sh7751r/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-powerpc-smp/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -4117,6 +5265,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4126,7 +5302,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -4157,11 +5333,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sh7785lcr/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sh7785lcr/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-powerpc64/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -4215,6 +5391,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4224,7 +5428,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -4255,11 +5459,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpcspe/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sparc64/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-powerpcspe/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -4313,6 +5517,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpcspe) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4322,7 +5554,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -4353,11 +5585,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sparc64-smp/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-powerpc64/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -4411,6 +5643,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4420,7 +5680,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -4451,11 +5711,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64le/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sparc64/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-powerpc64le/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -4509,6 +5769,34 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64le) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4518,7 +5806,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:38+0200\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
 "PO-Revision-Date: 2013-08-15 13:21+0200\n"
 "Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
@@ -4549,11 +5837,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-s390x/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "このイメージは initrd を使っているので、${modules_base}/"
-"3.14-1-sparc64-smp/modules.dep ファイルは (たとえ無効なものであったとし"
+"3.14-2-s390x/modules.dep ファイルは (たとえ無効なものであったとし"
 "ても) 削除されません。"
 
 #. Type: boolean
@@ -4607,3 +5895,913 @@ msgid ""
 msgstr ""
 "削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
 "することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-s390x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
+# Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
+# This file is distributed under the same license as the linux package.
+# Kenshi Muto <kmuto@debian.org>, 2010.
+# Nobuhiro Iwamatsu <iwamatsu@debian.org>, 2010.
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Japanese\n"
+"X-Poedit-Country: JAPAN\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod のエラー後にインストールを中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' コマンドは終了コード ${exit_value} (${SIGNAL}${CORE}) で終了しまし"
+"た。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-s390x/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"このイメージは initrd を使っているので、${modules_base}/"
+"3.14-2-s390x/modules.dep ファイルは (たとえ無効なものであったとし"
+"ても) 削除されません。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"インストールを中止して depmod のエラーを修正するか、問題がないとわかっている "
+"modules.dep ファイルで initrd イメージを再生成すべきです。インストールを中止"
+"しないと、システムの起動に失敗する恐れがあります。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "カーネルの削除を中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"現在カーネル (バージョン ${running}) を実行しており、同一バージョンのカーネル"
+"の削除を試みています。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"この操作は /boot/vmlinuz-${running} および /lib/modules/${running} ディレクト"
+"リ下のすべてのモジュールを削除するので、システムを起動不能にする可能性があり"
+"ます。これは、カーネルイメージおよび関連モジュールのコピーがない限り直せませ"
+"ん。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
+"することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-s390x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
+# Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
+# This file is distributed under the same license as the linux package.
+# Kenshi Muto <kmuto@debian.org>, 2010.
+# Nobuhiro Iwamatsu <iwamatsu@debian.org>, 2010.
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Japanese\n"
+"X-Poedit-Country: JAPAN\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod のエラー後にインストールを中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' コマンドは終了コード ${exit_value} (${SIGNAL}${CORE}) で終了しまし"
+"た。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sh7751r/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"このイメージは initrd を使っているので、${modules_base}/"
+"3.14-2-sh7751r/modules.dep ファイルは (たとえ無効なものであったとし"
+"ても) 削除されません。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"インストールを中止して depmod のエラーを修正するか、問題がないとわかっている "
+"modules.dep ファイルで initrd イメージを再生成すべきです。インストールを中止"
+"しないと、システムの起動に失敗する恐れがあります。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "カーネルの削除を中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"現在カーネル (バージョン ${running}) を実行しており、同一バージョンのカーネル"
+"の削除を試みています。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"この操作は /boot/vmlinuz-${running} および /lib/modules/${running} ディレクト"
+"リ下のすべてのモジュールを削除するので、システムを起動不能にする可能性があり"
+"ます。これは、カーネルイメージおよび関連モジュールのコピーがない限り直せませ"
+"ん。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
+"することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sh7751r) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
+# Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
+# This file is distributed under the same license as the linux package.
+# Kenshi Muto <kmuto@debian.org>, 2010.
+# Nobuhiro Iwamatsu <iwamatsu@debian.org>, 2010.
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Japanese\n"
+"X-Poedit-Country: JAPAN\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod のエラー後にインストールを中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' コマンドは終了コード ${exit_value} (${SIGNAL}${CORE}) で終了しまし"
+"た。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sh7785lcr/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"このイメージは initrd を使っているので、${modules_base}/"
+"3.14-2-sh7785lcr/modules.dep ファイルは (たとえ無効なものであったとし"
+"ても) 削除されません。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"インストールを中止して depmod のエラーを修正するか、問題がないとわかっている "
+"modules.dep ファイルで initrd イメージを再生成すべきです。インストールを中止"
+"しないと、システムの起動に失敗する恐れがあります。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "カーネルの削除を中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"現在カーネル (バージョン ${running}) を実行しており、同一バージョンのカーネル"
+"の削除を試みています。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"この操作は /boot/vmlinuz-${running} および /lib/modules/${running} ディレクト"
+"リ下のすべてのモジュールを削除するので、システムを起動不能にする可能性があり"
+"ます。これは、カーネルイメージおよび関連モジュールのコピーがない限り直せませ"
+"ん。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
+"することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sh7785lcr) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
+# Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
+# This file is distributed under the same license as the linux package.
+# Kenshi Muto <kmuto@debian.org>, 2010.
+# Nobuhiro Iwamatsu <iwamatsu@debian.org>, 2010.
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Japanese\n"
+"X-Poedit-Country: JAPAN\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod のエラー後にインストールを中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' コマンドは終了コード ${exit_value} (${SIGNAL}${CORE}) で終了しまし"
+"た。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"このイメージは initrd を使っているので、${modules_base}/"
+"3.14-2-sparc64/modules.dep ファイルは (たとえ無効なものであったとし"
+"ても) 削除されません。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"インストールを中止して depmod のエラーを修正するか、問題がないとわかっている "
+"modules.dep ファイルで initrd イメージを再生成すべきです。インストールを中止"
+"しないと、システムの起動に失敗する恐れがあります。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "カーネルの削除を中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"現在カーネル (バージョン ${running}) を実行しており、同一バージョンのカーネル"
+"の削除を試みています。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"この操作は /boot/vmlinuz-${running} および /lib/modules/${running} ディレクト"
+"リ下のすべてのモジュールを削除するので、システムを起動不能にする可能性があり"
+"ます。これは、カーネルイメージおよび関連モジュールのコピーがない限り直せませ"
+"ん。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
+"することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
+# Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
+# This file is distributed under the same license as the linux package.
+# Kenshi Muto <kmuto@debian.org>, 2010.
+# Nobuhiro Iwamatsu <iwamatsu@debian.org>, 2010.
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Japanese\n"
+"X-Poedit-Country: JAPAN\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod のエラー後にインストールを中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' コマンドは終了コード ${exit_value} (${SIGNAL}${CORE}) で終了しまし"
+"た。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"このイメージは initrd を使っているので、${modules_base}/"
+"3.14-2-sparc64-smp/modules.dep ファイルは (たとえ無効なものであったとし"
+"ても) 削除されません。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"インストールを中止して depmod のエラーを修正するか、問題がないとわかっている "
+"modules.dep ファイルで initrd イメージを再生成すべきです。インストールを中止"
+"しないと、システムの起動に失敗する恐れがあります。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "カーネルの削除を中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"現在カーネル (バージョン ${running}) を実行しており、同一バージョンのカーネル"
+"の削除を試みています。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"この操作は /boot/vmlinuz-${running} および /lib/modules/${running} ディレクト"
+"リ下のすべてのモジュールを削除するので、システムを起動不能にする可能性があり"
+"ます。これは、カーネルイメージおよび関連モジュールのコピーがない限り直せませ"
+"ん。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
+"することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
+# Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
+# This file is distributed under the same license as the linux package.
+# Kenshi Muto <kmuto@debian.org>, 2010.
+# Nobuhiro Iwamatsu <iwamatsu@debian.org>, 2010.
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Japanese\n"
+"X-Poedit-Country: JAPAN\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod のエラー後にインストールを中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' コマンドは終了コード ${exit_value} (${SIGNAL}${CORE}) で終了しまし"
+"た。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"このイメージは initrd を使っているので、${modules_base}/"
+"3.14-2-sparc64/modules.dep ファイルは (たとえ無効なものであったとし"
+"ても) 削除されません。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"インストールを中止して depmod のエラーを修正するか、問題がないとわかっている "
+"modules.dep ファイルで initrd イメージを再生成すべきです。インストールを中止"
+"しないと、システムの起動に失敗する恐れがあります。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "カーネルの削除を中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"現在カーネル (バージョン ${running}) を実行しており、同一バージョンのカーネル"
+"の削除を試みています。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"この操作は /boot/vmlinuz-${running} および /lib/modules/${running} ディレクト"
+"リ下のすべてのモジュールを削除するので、システムを起動不能にする可能性があり"
+"ます。これは、カーネルイメージおよび関連モジュールのコピーがない限り直せませ"
+"ん。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
+"することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+# Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
+# Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
+# This file is distributed under the same license as the linux package.
+# Kenshi Muto <kmuto@debian.org>, 2010.
+# Nobuhiro Iwamatsu <iwamatsu@debian.org>, 2010.
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2013-08-15 13:21+0200\n"
+"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Japanese\n"
+"X-Poedit-Country: JAPAN\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "depmod のエラー後にインストールを中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"'depmod' コマンドは終了コード ${exit_value} (${SIGNAL}${CORE}) で終了しまし"
+"た。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"このイメージは initrd を使っているので、${modules_base}/"
+"3.14-2-sparc64-smp/modules.dep ファイルは (たとえ無効なものであったとし"
+"ても) 削除されません。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"インストールを中止して depmod のエラーを修正するか、問題がないとわかっている "
+"modules.dep ファイルで initrd イメージを再生成すべきです。インストールを中止"
+"しないと、システムの起動に失敗する恐れがあります。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "カーネルの削除を中止しますか?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"現在カーネル (バージョン ${running}) を実行しており、同一バージョンのカーネル"
+"の削除を試みています。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"この操作は /boot/vmlinuz-${running} および /lib/modules/${running} ディレクト"
+"リ下のすべてのモジュールを削除するので、システムを起動不能にする可能性があり"
+"ます。これは、カーネルイメージおよび関連モジュールのコピーがない限り直せませ"
+"ん。"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"削除後でもシステムに問題がないような準備を済ませるまで、カーネルの削除を中止"
+"することを強くお勧めします。"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""

@@ -2,24 +2,23 @@
 # Translators should edit debian/templates/po/sv.po instead.
 #
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -40,11 +39,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-generic/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-generic/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-alpha-generic/modules.dep att raderas, trots att den kan vara "
+"3.14-2-alpha-generic/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -98,25 +97,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-generic) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-alpha-generic) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -137,11 +172,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-alpha-smp/modules.dep att raderas, trots att den kan vara "
+"3.14-2-alpha-smp/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -195,25 +230,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-alpha-smp) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -234,11 +305,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-alpha-legacy/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-alpha-legacy/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-alpha-legacy/modules.dep att raderas, trots att den kan vara "
+"3.14-2-alpha-legacy/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -292,25 +363,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-alpha-legacy) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-alpha-legacy) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -331,11 +438,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-amd64/modules.dep att raderas, trots att den kan vara "
+"3.14-2-amd64/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -389,25 +496,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-amd64) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -428,11 +571,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-rt-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-rt-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-rt-amd64/modules.dep att raderas, trots att den kan vara "
+"3.14-2-rt-amd64/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -486,25 +629,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-rt-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-rt-amd64) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -525,11 +704,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-arm64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-arm64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-arm64/modules.dep att raderas, trots att den kan vara "
+"3.14-2-arm64/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -583,25 +762,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-arm64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-arm64) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -622,11 +837,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-kirkwood/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-kirkwood/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-kirkwood/modules.dep att raderas, trots att den kan vara "
+"3.14-2-kirkwood/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -680,25 +895,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-kirkwood) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-kirkwood) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -719,11 +970,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-mv78xx0/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-mv78xx0/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-mv78xx0/modules.dep att raderas, trots att den kan vara "
+"3.14-2-mv78xx0/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -777,25 +1028,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-mv78xx0) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-mv78xx0) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -816,11 +1103,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-orion5x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-orion5x/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-orion5x/modules.dep att raderas, trots att den kan vara "
+"3.14-2-orion5x/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -874,25 +1161,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-orion5x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-orion5x) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -913,11 +1236,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-versatile/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-versatile/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-versatile/modules.dep att raderas, trots att den kan vara "
+"3.14-2-versatile/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -971,25 +1294,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-versatile) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-versatile) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1010,11 +1369,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-armmp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-armmp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-armmp/modules.dep att raderas, trots att den kan vara "
+"3.14-2-armmp/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1068,25 +1427,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-armmp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-armmp) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1107,11 +1502,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-armmp-lpae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-armmp-lpae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-armmp-lpae/modules.dep att raderas, trots att den kan vara "
+"3.14-2-armmp-lpae/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1165,25 +1560,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-armmp-lpae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-armmp-lpae) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1204,11 +1635,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-parisc/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-parisc/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-parisc/modules.dep att raderas, trots att den kan vara "
+"3.14-2-parisc/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1262,25 +1693,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-parisc) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-parisc) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1301,11 +1768,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-parisc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-parisc64-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-parisc64-smp/modules.dep att raderas, trots att den kan vara "
+"3.14-2-parisc64-smp/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1359,25 +1826,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-parisc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-parisc64-smp) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1398,11 +1901,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-486/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-486/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-486/modules.dep att raderas, trots att den kan vara "
+"3.14-2-486/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1456,25 +1959,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-486) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-486) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1495,11 +2034,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-686-pae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-686-pae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-686-pae/modules.dep att raderas, trots att den kan vara "
+"3.14-2-686-pae/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1553,25 +2092,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-686-pae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-686-pae) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1592,11 +2167,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-amd64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-amd64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-amd64/modules.dep att raderas, trots att den kan vara "
+"3.14-2-amd64/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1650,25 +2225,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-amd64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-amd64) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1689,11 +2300,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-rt-686-pae/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-rt-686-pae/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-rt-686-pae/modules.dep att raderas, trots att den kan vara "
+"3.14-2-rt-686-pae/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1747,25 +2358,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-rt-686-pae) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-rt-686-pae) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1786,11 +2433,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-itanium/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-itanium/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-itanium/modules.dep att raderas, trots att den kan vara "
+"3.14-2-itanium/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1844,25 +2491,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-itanium) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-itanium) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1883,11 +2566,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-mckinley/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-mckinley/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-mckinley/modules.dep att raderas, trots att den kan vara "
+"3.14-2-mckinley/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -1941,25 +2624,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-mckinley) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-mckinley) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -1980,11 +2699,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-m68k/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-m68k/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-m68k/modules.dep att raderas, trots att den kan vara "
+"3.14-2-m68k/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2038,25 +2757,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-m68k) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-m68k) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2077,11 +2832,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-r4k-ip22/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-r4k-ip22/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-r4k-ip22/modules.dep att raderas, trots att den kan vara "
+"3.14-2-r4k-ip22/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2135,25 +2890,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-r4k-ip22) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-r4k-ip22) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2174,11 +2965,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-r5k-ip32/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-r5k-ip32/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-r5k-ip32/modules.dep att raderas, trots att den kan vara "
+"3.14-2-r5k-ip32/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2232,25 +3023,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-r5k-ip32) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-r5k-ip32) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2271,11 +3098,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sb1-bcm91250a/modules.dep att raderas, trots att den kan vara "
+"3.14-2-sb1-bcm91250a/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2329,25 +3156,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2368,11 +3231,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sb1a-bcm91480b/modules.dep att raderas, trots att den kan vara "
+"3.14-2-4kc-malta/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2426,25 +3289,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-4kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-4kc-malta) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2465,11 +3364,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-4kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-4kc-malta/modules.dep att raderas, trots att den kan vara "
+"3.14-2-5kc-malta/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2523,25 +3422,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-5kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-5kc-malta) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2562,11 +3497,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-5kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-5kc-malta/modules.dep att raderas, trots att den kan vara "
+"3.14-2-octeon/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2620,25 +3555,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-octeon) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2659,11 +3630,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-octeon/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-octeon/modules.dep att raderas, trots att den kan vara "
+"3.14-2-sb1-bcm91250a/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2717,25 +3688,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2756,11 +3763,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1-bcm91250a/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-4kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sb1-bcm91250a/modules.dep att raderas, trots att den kan vara "
+"3.14-2-4kc-malta/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2814,25 +3821,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-4kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-4kc-malta) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2853,11 +3896,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sb1a-bcm91480b/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-5kc-malta/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sb1a-bcm91480b/modules.dep att raderas, trots att den kan vara "
+"3.14-2-5kc-malta/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -2911,25 +3954,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-5kc-malta) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-5kc-malta) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -2950,11 +4029,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-4kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-4kc-malta/modules.dep att raderas, trots att den kan vara "
+"3.14-2-loongson-2e/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3008,25 +4087,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2e) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-loongson-2e) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3047,11 +4162,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-5kc-malta/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-5kc-malta/modules.dep att raderas, trots att den kan vara "
+"3.14-2-loongson-2f/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3105,25 +4220,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2f) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-loongson-2f) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3144,11 +4295,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-loongson-2e/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-3/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-loongson-2e/modules.dep att raderas, trots att den kan vara "
+"3.14-2-loongson-3/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3202,25 +4353,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-3) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-loongson-3) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3241,11 +4428,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-loongson-2f/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-loongson-2f/modules.dep att raderas, trots att den kan vara "
+"3.14-2-sb1-bcm91250a/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3299,25 +4486,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3338,11 +4561,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-powerpc/modules.dep att raderas, trots att den kan vara "
+"3.14-2-octeon/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3396,25 +4619,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-octeon) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3435,11 +4694,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-sb1-bcm91250a/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-powerpc-smp/modules.dep att raderas, trots att den kan vara "
+"3.14-2-sb1-bcm91250a/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3493,25 +4752,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sb1-bcm91250a) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3532,11 +4827,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2e/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-powerpc64/modules.dep att raderas, trots att den kan vara "
+"3.14-2-loongson-2e/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3590,25 +4885,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2e) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-loongson-2e) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3629,11 +4960,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpcspe/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-2f/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-powerpcspe/modules.dep att raderas, trots att den kan vara "
+"3.14-2-loongson-2f/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3687,25 +5018,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-2f) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-loongson-2f) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3726,11 +5093,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-powerpc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-loongson-3/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-powerpc64/modules.dep att raderas, trots att den kan vara "
+"3.14-2-loongson-3/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3784,25 +5151,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-loongson-3) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-loongson-3) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3823,11 +5226,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-s390x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-octeon/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-s390x/modules.dep att raderas, trots att den kan vara "
+"3.14-2-octeon/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3881,25 +5284,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-octeon) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-octeon) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -3920,11 +5359,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-s390x/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-s390x/modules.dep att raderas, trots att den kan vara "
+"3.14-2-powerpc/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -3978,25 +5417,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-powerpc) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -4017,11 +5492,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sh7751r/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc-smp/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sh7751r/modules.dep att raderas, trots att den kan vara "
+"3.14-2-powerpc-smp/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -4075,25 +5550,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-powerpc-smp) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -4114,11 +5625,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sh7785lcr/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sh7785lcr/modules.dep att raderas, trots att den kan vara "
+"3.14-2-powerpc64/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -4172,25 +5683,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-powerpc64) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -4211,11 +5758,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpcspe/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sparc64/modules.dep att raderas, trots att den kan vara "
+"3.14-2-powerpcspe/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -4269,25 +5816,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpcspe) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-powerpcspe) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -4308,11 +5891,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sparc64-smp/modules.dep att raderas, trots att den kan vara "
+"3.14-2-powerpc64/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -4366,25 +5949,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-powerpc64) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -4405,11 +6024,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-powerpc64le/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sparc64/modules.dep att raderas, trots att den kan vara "
+"3.14-2-powerpc64le/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -4463,25 +6082,61 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-powerpc64le) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-powerpc64le) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
 # Translation of linux debconf template to Swedish
-# Copyright (C) 2010 Martin Bagge <brother@bsnet.se>
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
 # This file is distributed under the same license as the linux package.
 #
-# Martin Bagge <brother@bsnet.se>, 2010
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-08-10 00:43+0200\n"
-"PO-Revision-Date: 2011-06-02 14:52+0100\n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
 "Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
 "Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
-"Language: sv\n"
+"Language: Swedish\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: Swedish\n"
-"X-Poedit-Country: Sweden\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #. Type: boolean
 #. Description
@@ -4502,11 +6157,11 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:2001
 msgid ""
-"Since this image uses initrd, the ${modules_base}/3.14-1-sparc64-smp/"
+"Since this image uses initrd, the ${modules_base}/3.14-2-s390x/"
 "modules.dep file will not be deleted, even though it may be invalid."
 msgstr ""
 "Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
-"3.14-1-sparc64-smp/modules.dep att raderas, trots att den kan vara "
+"3.14-2-s390x/modules.dep att raderas, trots att den kan vara "
 "felaktig."
 
 #. Type: boolean
@@ -4560,3 +6215,971 @@ msgid ""
 msgstr ""
 "Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
 "beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-s390x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-s390x) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
+# Translation of linux debconf template to Swedish
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the linux package.
+#
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: Swedish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Avbryt installation efter fel i depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Kommandot \"depmod\" avslutades med felkod ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-s390x/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
+"3.14-2-s390x/modules.dep att raderas, trots att den kan vara "
+"felaktig."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Du bör avbryta installationen och laga felen i depmod eller skapa en ny "
+"initrd-avbildning med en fungerande modules.dep-fil. Om du inte avbryter "
+"installationen kan systemet hamna i ett läge där det inte kan starta."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Avbryt radering av kärnan?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Den kärna du kör (version ${running}) och den du försöker ta bort är samma "
+"version."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Detta kan göra systemet ostartbart eftersom det kommer att innebära att /"
+"boot/vmlinuz-${running} och alla moduler i /lib/modules/${running} raderas. "
+"Detta kan endast återställas med en kopia av kärnavbildningen och "
+"motsvarande moduler."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
+"beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-s390x) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-s390x) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
+# Translation of linux debconf template to Swedish
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the linux package.
+#
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: Swedish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Avbryt installation efter fel i depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Kommandot \"depmod\" avslutades med felkod ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sh7751r/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
+"3.14-2-sh7751r/modules.dep att raderas, trots att den kan vara "
+"felaktig."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Du bör avbryta installationen och laga felen i depmod eller skapa en ny "
+"initrd-avbildning med en fungerande modules.dep-fil. Om du inte avbryter "
+"installationen kan systemet hamna i ett läge där det inte kan starta."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Avbryt radering av kärnan?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Den kärna du kör (version ${running}) och den du försöker ta bort är samma "
+"version."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Detta kan göra systemet ostartbart eftersom det kommer att innebära att /"
+"boot/vmlinuz-${running} och alla moduler i /lib/modules/${running} raderas. "
+"Detta kan endast återställas med en kopia av kärnavbildningen och "
+"motsvarande moduler."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
+"beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sh7751r) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sh7751r) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
+# Translation of linux debconf template to Swedish
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the linux package.
+#
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: Swedish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Avbryt installation efter fel i depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Kommandot \"depmod\" avslutades med felkod ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sh7785lcr/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
+"3.14-2-sh7785lcr/modules.dep att raderas, trots att den kan vara "
+"felaktig."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Du bör avbryta installationen och laga felen i depmod eller skapa en ny "
+"initrd-avbildning med en fungerande modules.dep-fil. Om du inte avbryter "
+"installationen kan systemet hamna i ett läge där det inte kan starta."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Avbryt radering av kärnan?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Den kärna du kör (version ${running}) och den du försöker ta bort är samma "
+"version."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Detta kan göra systemet ostartbart eftersom det kommer att innebära att /"
+"boot/vmlinuz-${running} och alla moduler i /lib/modules/${running} raderas. "
+"Detta kan endast återställas med en kopia av kärnavbildningen och "
+"motsvarande moduler."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
+"beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sh7785lcr) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sh7785lcr) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
+# Translation of linux debconf template to Swedish
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the linux package.
+#
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: Swedish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Avbryt installation efter fel i depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Kommandot \"depmod\" avslutades med felkod ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
+"3.14-2-sparc64/modules.dep att raderas, trots att den kan vara "
+"felaktig."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Du bör avbryta installationen och laga felen i depmod eller skapa en ny "
+"initrd-avbildning med en fungerande modules.dep-fil. Om du inte avbryter "
+"installationen kan systemet hamna i ett läge där det inte kan starta."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Avbryt radering av kärnan?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Den kärna du kör (version ${running}) och den du försöker ta bort är samma "
+"version."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Detta kan göra systemet ostartbart eftersom det kommer att innebära att /"
+"boot/vmlinuz-${running} och alla moduler i /lib/modules/${running} raderas. "
+"Detta kan endast återställas med en kopia av kärnavbildningen och "
+"motsvarande moduler."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
+"beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sparc64) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
+# Translation of linux debconf template to Swedish
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the linux package.
+#
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: Swedish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Avbryt installation efter fel i depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Kommandot \"depmod\" avslutades med felkod ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
+"3.14-2-sparc64-smp/modules.dep att raderas, trots att den kan vara "
+"felaktig."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Du bör avbryta installationen och laga felen i depmod eller skapa en ny "
+"initrd-avbildning med en fungerande modules.dep-fil. Om du inte avbryter "
+"installationen kan systemet hamna i ett läge där det inte kan starta."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Avbryt radering av kärnan?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Den kärna du kör (version ${running}) och den du försöker ta bort är samma "
+"version."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Detta kan göra systemet ostartbart eftersom det kommer att innebära att /"
+"boot/vmlinuz-${running} och alla moduler i /lib/modules/${running} raderas. "
+"Detta kan endast återställas med en kopia av kärnavbildningen och "
+"motsvarande moduler."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
+"beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sparc64-smp) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
+# Translation of linux debconf template to Swedish
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the linux package.
+#
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: Swedish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Avbryt installation efter fel i depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Kommandot \"depmod\" avslutades med felkod ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
+"3.14-2-sparc64/modules.dep att raderas, trots att den kan vara "
+"felaktig."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Du bör avbryta installationen och laga felen i depmod eller skapa en ny "
+"initrd-avbildning med en fungerande modules.dep-fil. Om du inte avbryter "
+"installationen kan systemet hamna i ett läge där det inte kan starta."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Avbryt radering av kärnan?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Den kärna du kör (version ${running}) och den du försöker ta bort är samma "
+"version."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Detta kan göra systemet ostartbart eftersom det kommer att innebära att /"
+"boot/vmlinuz-${running} och alla moduler i /lib/modules/${running} raderas. "
+"Detta kan endast återställas med en kopia av kärnavbildningen och "
+"motsvarande moduler."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
+"beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sparc64) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
+# Translation of linux debconf template to Swedish
+# Copyright (C) 2014 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the linux package.
+#
+# Martin Bagge <brother@bsnet.se>, 2010, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: linux\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-07-20 22:37+0200\n"
+"PO-Revision-Date: 2014-07-18 11:09+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: Swedish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid "Abort installation after depmod error?"
+msgstr "Avbryt installation efter fel i depmod?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"The 'depmod' command exited with the exit code ${exit_value} "
+"(${SIGNAL}${CORE})."
+msgstr ""
+"Kommandot \"depmod\" avslutades med felkod ${exit_value} (${SIGNAL}${CORE})."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"Since this image uses initrd, the ${modules_base}/3.14-2-sparc64-smp/"
+"modules.dep file will not be deleted, even though it may be invalid."
+msgstr ""
+"Eftersom denna avbildning använder initrd kommer inte filen ${modules_base}/"
+"3.14-2-sparc64-smp/modules.dep att raderas, trots att den kan vara "
+"felaktig."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:2001
+msgid ""
+"You should abort the installation and fix the errors in depmod, or "
+"regenerate the initrd image with a known good modules.dep file. If you don't "
+"abort the installation, there is a danger that the system will fail to boot."
+msgstr ""
+"Du bör avbryta installationen och laga felen i depmod eller skapa en ny "
+"initrd-avbildning med en fungerande modules.dep-fil. Om du inte avbryter "
+"installationen kan systemet hamna i ett läge där det inte kan starta."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid "Abort kernel removal?"
+msgstr "Avbryt radering av kärnan?"
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"You are running a kernel (version ${running}) and attempting to remove the "
+"same version."
+msgstr ""
+"Den kärna du kör (version ${running}) och den du försöker ta bort är samma "
+"version."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"This can make the system unbootable as it will remove /boot/vmlinuz-"
+"${running} and all modules under the directory /lib/modules/${running}. This "
+"can only be fixed with a copy of the kernel image and the corresponding "
+"modules."
+msgstr ""
+"Detta kan göra systemet ostartbart eftersom det kommer att innebära att /"
+"boot/vmlinuz-${running} och alla moduler i /lib/modules/${running} raderas. "
+"Detta kan endast återställas med en kopia av kärnavbildningen och "
+"motsvarande moduler."
+
+#. Type: boolean
+#. Description
+#: ../image.plain.templates.in:3001
+msgid ""
+"It is highly recommended to abort the kernel removal unless you are prepared "
+"to fix the system after removal."
+msgstr ""
+"Det rekomenderas starkt att du avbryter raderingen av kärnan om du inte är "
+"beredd på att laga systemet efter raderingen."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid "Boot loader configuration must be updated to load initramfs"
+msgstr "Uppstartshanteraren behöver uppdateras för att läsa in initramfs"
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"This kernel package will build an \"initramfs\" file (/boot/initrd.img-"
+"3.14-2-sparc64-smp) for the system's boot loader to use in addition to "
+"the kernel itself. This method, formerly unsupported on MIPS, enables a more "
+"flexible boot process, and future kernel versions may require a "
+"corresponding initrd.img to boot."
+msgstr ""
+"Kärnans paket kommer att bygga en initramfs-fil (/boot/initrd.img-"
+"3.14-2-sparc64-smp) för systemets uppstartshanterare för att användas "
+"upptill kärnan själv. Denna metod, tidigare utan stöd på MIPS, aktiverar en "
+"mer flexibel uppstartsprocess och framtida kärnversioner kan komma att kräva "
+"en motsvarande initrd.img för att starta."
+
+#. Type: note
+#. Description
+#: ../image.plain.templates.in:4001
+msgid ""
+"The currently running kernel was booted without an initramfs. You should "
+"reconfigure the boot loader to load the initramfs for Linux version "
+"3.14-2, and for each later version. This is probably most easily "
+"accomplished by using the initrd.img symbolic link maintained by the kernel "
+"package."
+msgstr ""
+"Kärnan som används startades utan initramfs. Du bör ställa in "
+"uppstartshanteraren att läsa in initramfs för Linux version 3.14-2 och "
+"senare. Detta är troligen enklast att åstadkomma genom att använda den "
+"symboliska länken som hanteras av kärnans paket."
