@@ -11,8 +11,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -104,7 +104,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -116,6 +116,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-alpha-generic) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -127,6 +132,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -137,8 +147,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -230,7 +240,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -242,6 +252,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-alpha-smp) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -253,6 +268,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -263,8 +283,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -356,7 +376,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -368,6 +388,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-alpha-legacy) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -379,6 +404,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -389,8 +419,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -482,7 +512,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -494,6 +524,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-amd64) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -505,6 +540,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -515,8 +555,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -608,7 +648,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -620,6 +660,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-rt-amd64) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -631,6 +676,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -641,8 +691,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -734,7 +784,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -746,6 +796,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-arm64) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -757,6 +812,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -767,8 +827,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -860,7 +920,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -872,6 +932,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-kirkwood) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -883,6 +948,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -893,8 +963,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -986,7 +1056,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -998,6 +1068,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-mv78xx0) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -1009,6 +1084,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1019,8 +1099,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -1112,7 +1192,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -1124,6 +1204,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-orion5x) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -1135,6 +1220,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1145,8 +1235,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -1238,7 +1328,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -1250,6 +1340,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-versatile) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -1261,6 +1356,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1271,8 +1371,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -1364,7 +1464,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -1376,6 +1476,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-armmp) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -1387,6 +1492,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1397,8 +1507,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -1490,7 +1600,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -1502,6 +1612,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-armmp-lpae) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -1513,6 +1628,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1523,8 +1643,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -1616,7 +1736,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -1628,6 +1748,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-parisc) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -1639,6 +1764,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1649,8 +1779,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -1742,7 +1872,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -1754,6 +1884,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-parisc64-smp) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -1765,6 +1900,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1775,8 +1915,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -1868,7 +2008,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -1880,6 +2020,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-486) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -1891,6 +2036,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -1901,8 +2051,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -1994,7 +2144,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -2006,6 +2156,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-686-pae) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -2017,6 +2172,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2027,8 +2187,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -2120,7 +2280,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -2132,6 +2292,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-amd64) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -2143,6 +2308,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2153,8 +2323,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -2246,7 +2416,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -2258,6 +2428,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-rt-686-pae) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -2269,6 +2444,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2279,8 +2459,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -2372,7 +2552,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -2384,6 +2564,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-itanium) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -2395,6 +2580,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2405,8 +2595,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -2498,7 +2688,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -2510,6 +2700,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-mckinley) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -2521,6 +2716,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2531,8 +2731,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -2624,7 +2824,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -2636,6 +2836,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-m68k) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -2647,6 +2852,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2657,8 +2867,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -2750,7 +2960,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -2762,6 +2972,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-r4k-ip22) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -2773,6 +2988,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2783,8 +3003,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -2876,7 +3096,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -2888,6 +3108,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-r5k-ip32) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -2899,6 +3124,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -2909,8 +3139,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -3002,7 +3232,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -3014,6 +3244,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sb1-bcm91250a) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -3025,6 +3260,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3035,8 +3275,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -3128,7 +3368,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -3140,6 +3380,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-4kc-malta) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -3151,6 +3396,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3161,8 +3411,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -3254,7 +3504,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -3266,6 +3516,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-5kc-malta) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -3277,6 +3532,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3287,8 +3547,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -3380,7 +3640,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -3392,6 +3652,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-octeon) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -3403,6 +3668,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3413,8 +3683,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -3506,7 +3776,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -3518,6 +3788,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sb1-bcm91250a) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -3529,6 +3804,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3539,8 +3819,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -3632,7 +3912,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -3644,6 +3924,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-4kc-malta) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -3655,6 +3940,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3665,8 +3955,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -3758,7 +4048,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -3770,6 +4060,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-5kc-malta) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -3781,6 +4076,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3791,8 +4091,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -3884,7 +4184,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -3896,6 +4196,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-loongson-2e) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -3907,6 +4212,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -3917,8 +4227,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -4010,7 +4320,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -4022,6 +4332,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-loongson-2f) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -4033,6 +4348,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4043,8 +4363,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -4136,7 +4456,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -4148,6 +4468,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-loongson-3) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -4159,6 +4484,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4169,8 +4499,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -4262,7 +4592,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -4274,6 +4604,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sb1-bcm91250a) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -4285,6 +4620,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4295,8 +4635,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -4388,7 +4728,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -4400,6 +4740,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-octeon) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -4411,6 +4756,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4421,8 +4771,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -4514,7 +4864,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -4526,6 +4876,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sb1-bcm91250a) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -4537,6 +4892,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4547,8 +4907,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -4640,7 +5000,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -4652,6 +5012,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-loongson-2e) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -4663,6 +5028,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4673,8 +5043,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -4766,7 +5136,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -4778,6 +5148,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-loongson-2f) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -4789,6 +5164,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4799,8 +5179,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -4892,7 +5272,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -4904,6 +5284,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-loongson-3) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -4915,6 +5300,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -4925,8 +5315,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -5018,7 +5408,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -5030,6 +5420,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-octeon) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -5041,6 +5436,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -5051,8 +5451,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -5144,7 +5544,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -5156,6 +5556,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-powerpc) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -5167,6 +5572,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -5177,8 +5587,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -5270,7 +5680,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -5282,6 +5692,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-powerpc-smp) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -5293,6 +5708,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -5303,8 +5723,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -5396,7 +5816,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -5408,6 +5828,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-powerpc64) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -5419,6 +5844,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -5429,8 +5859,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -5522,7 +5952,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -5534,6 +5964,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-powerpcspe) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -5545,6 +5980,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -5555,8 +5995,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -5648,7 +6088,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -5660,6 +6100,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-powerpc64) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -5671,6 +6116,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -5681,8 +6131,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -5774,7 +6224,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -5786,6 +6236,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-powerpc64le) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -5797,6 +6252,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -5807,8 +6267,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -5900,7 +6360,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -5912,6 +6372,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-s390x) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -5923,6 +6388,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -5933,8 +6403,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -6026,7 +6496,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -6038,6 +6508,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-s390x) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -6049,6 +6524,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -6059,8 +6539,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -6152,7 +6632,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -6164,6 +6644,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sh7751r) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -6175,6 +6660,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -6185,8 +6675,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -6278,7 +6768,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -6290,6 +6780,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sh7785lcr) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -6301,6 +6796,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -6311,8 +6811,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -6404,7 +6904,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -6416,6 +6916,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sparc64) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -6427,6 +6932,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -6437,8 +6947,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -6530,7 +7040,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -6542,6 +7052,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sparc64-smp) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -6553,6 +7068,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -6563,8 +7083,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -6656,7 +7176,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -6668,6 +7188,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sparc64) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -6679,6 +7204,11 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
 # Copyright (C) 2010 Kenshi Muto <kmuto@debian.org>
 # Copyright (C) 2010 Nobuhiro Iwamatsu <iwamatsu@debian.org>
 # This file is distributed under the same license as the linux package.
@@ -6689,8 +7219,8 @@ msgstr ""
 "Project-Id-Version: linux\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-07-20 22:37+0200\n"
-"PO-Revision-Date: 2013-08-15 13:21+0200\n"
-"Last-Translator: Nobuhiro Iwamatsu <iwamatsu@debian.org>\n"
+"PO-Revision-Date: 2014-08-03 17:18+0200\n"
+"Last-Translator: Victory <victory.deb@gmail.com>\n"
 "Language-Team: Japanese <debian-japanese@lists.debian.org>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -6782,7 +7312,7 @@ msgstr ""
 #. Description
 #: ../image.plain.templates.in:4001
 msgid "Boot loader configuration must be updated to load initramfs"
-msgstr ""
+msgstr "initramfs をロードするためにはブートローダ設定を更新する必要があります"
 
 #. Type: note
 #. Description
@@ -6794,6 +7324,11 @@ msgid ""
 "flexible boot process, and future kernel versions may require a "
 "corresponding initrd.img to boot."
 msgstr ""
+"このカーネルパッケージはカーネル自体に加え、システムのブートローダで利用する"
+"「initramfs」ファイル (/boot/initrd.img-3.14-2-sparc64-smp) をビルドしま"
+"す。MIPS では以前サポートされていなかったこの方法によってブートプロセスをより"
+"柔軟にできるようになり、将来のバージョンのカーネルではブートするために対応す"
+"る initrd.img が必要となるかもしれません。"
 
 #. Type: note
 #. Description
@@ -6805,3 +7340,8 @@ msgid ""
 "accomplished by using the initrd.img symbolic link maintained by the kernel "
 "package."
 msgstr ""
+"現在実行中のカーネルは initramfs を使わずにブートされています。Linux バー"
+"ジョン 3.14-2 及び以後の各バージョンで専用の initramfs をロードするために"
+"ブートローダを再設定する必要があります。恐らくこれを最も簡単に実現できるのは"
+"カーネルパッケージにより保守される initrd.img シンボリックリンクを利用する方"
+"法です。"
