@@ -1,5 +1,5 @@
 60b8002c1ce3553671af6fd72b4d3ef7  debian/bin/gencontrol.py
-2c27995744b35bc5cb7ac7f1c2a3d23f  debian/changelog
+b06410fd11ec816ca6eccb6a2eefb3f9  debian/changelog
 3e2fde720ec84a08dab1cca4224521e2  debian/templates/image.plain.preinst.in
 1b17e6e766d2f44e0852cfa864459837  debian/templates/control.main.in
 4c5446e06f8220c5064d4810073445a4  debian/templates/image.plain.prerm.in
@@ -11,7 +11,7 @@ e5ddc3049729f85653d62f41764edd4e  debian/templates/control.libc-dev.in
 b8db2888e6a9a2ef87618d25ba17ae4d  debian/templates/control.image.type-plain.in
 5c970b7796dc1ecbe5322e06edae1441  debian/templates/control.source.in
 1d1f3a359852289a620e328d676aad72  debian/templates/image-dbg.lintian-override.in
-936951e3a4b8892e4a87fc083e26a575  debian/templates/image.plain.postinst.in
+358c351523bff142bc9063d32c854a51  debian/templates/image.plain.postinst.in
 d60e1ee86882c530ea74bfbb684a506e  debian/templates/control.headers.featureset.in
 fef9b0f150e661395a030827c5857255  debian/templates/control.headers.in
 bb68ff74384e6775bbd75fd2449e9e20  debian/templates/control.image.type-standalone.in
@@ -25,7 +25,6 @@ b346129ce21ac695b7387484ff4e0414  debian/config/mips64el/defines
 e9fff2b24d8123686bcb46e690d801b9  debian/config/amd64/defines
 c37cdd54296e7945d05a18227784c584  debian/config/mips/defines
 361e630fac9e87fd8b7b07b57acf7dc9  debian/config/arm64/defines
-787a5c1bf7ee47e6663eb1fb368c34cc  debian/config/powerpcspe/defines
 366b94d652a66b437eabcd165bcc9610  debian/config/featureset-rt/defines
 8d23725616eebc13e325931dbaa79170  debian/config/sparc/defines
 4172b5c05e5b889d735b6bce2fd721f1  debian/config/powerpc/defines
@@ -35,6 +34,7 @@ fa984290841c7f7cfe97a96a79495446  debian/config/mips64/defines
 b643abcfde9e3b8086c649c72447ee44  debian/config/sparc64/defines
 c6b24efeb180f41254fe50319d1d17fe  debian/config/mipsel/defines
 c3f4d884fcd6839c0821fcfd6a2318cf  debian/config/sh4/defines
+787a5c1bf7ee47e6663eb1fb368c34cc  debian/config/powerpcspe/defines
 e45681c668fde7fa18fbf40fa05686e1  debian/config/m68k/defines
 42eb39c4d4d537ad0b3a75dd82999937  debian/config/s390x/defines
 2a259e447c81628c8d33560dce855fd2  debian/config/ia64/defines
