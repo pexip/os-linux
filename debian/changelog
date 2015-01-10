@@ -1,3 +1,9 @@
+linux (3.14.28-0pexip1) pexip; urgency=medium
+
+  * New upstream release.
+
+ -- John-Mark Bell <jmb@pexip.com>  Sat, 10 Jan 2015 02:21:49 +0000
+
 linux (3.14.27-0pexip1) pexip; urgency=medium
 
   * New upstream release.
