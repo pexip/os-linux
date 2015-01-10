@@ -64,6 +64,7 @@ bugfix/powerpc/ppc64el-powernv-calls-to-support-little-endian.patch
 bugfix/mips/MIPS-SB1-Fix-excessive-kernel-warnings.patch
 bugfix/mips/MIPS-Fix-branch-emulation-of-branch-likely-instructi.patch
 bugfix/mips/MIPS-ptrace-Avoid-smp_processor_id-in-preemptible-co.patch
+bugfix/x86/kvm-CVE-2014-3690.patch
 
 # Miscellaneous bug fixes
 bugfix/all/misc-bmp085-Enable-building-as-a-module.patch
