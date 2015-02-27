@@ -13,8 +13,6 @@ linux (3.14.34-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2015-0239
   * d/p/bugfix/all/fs-CVE-2015-1420.patch:
     Backport fix for CVE-2015-1420
-  * d/p/bugfix/all/net-CVE-2015-1421.patch:
-    Backport fix for CVE-2015-1421
   * d/p/bugfix/all/CVE-2015-1593.patch:
     Backport fix for CVE-2015-1593
   * d/p/bugfix/all/net-llc-CVE-2015-2041.patch:

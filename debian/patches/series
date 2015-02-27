@@ -75,7 +75,6 @@ bugfix/all/fs-move-d_rcu-from-overlapping-d_child-to-overlapping-d_alias.patch
 bugfix/all/fs-deal-with-deadlock-in-d_walk.patch
 bugfix/x86/kvm-CVE-2015-0239.patch
 bugfix/all/fs-CVE-2015-1420.patch
-bugfix/all/net-CVE-2015-1421.patch
 bugfix/all/CVE-2015-1593.patch
 bugfix/all/net-llc-CVE-2015-2041.patch
 bugfix/all/net/rds-CVE-2015-2042.patch
