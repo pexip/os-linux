@@ -21,6 +21,8 @@ linux (3.14.34-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2015-1593
   * d/p/bugfix/all/net-llc-CVE-2015-2041.patch:
     Backport fix for CVE-2015-2041
+  * d/p/bugfix/all/net-rds-CVE-2015-2042.patch:
+    Backport fix for CVE-2015-2042
 
  -- John-Mark Bell <jmb@pexip.com>  Fri, 27 Feb 2015 13:14:26 +0000
 
