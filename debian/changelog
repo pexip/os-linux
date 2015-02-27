@@ -11,6 +11,8 @@ linux (3.14.34-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2014-8559
   * d/p/features/all/aufs3/aufs3-add.patch:
     Refresh following CVE-2014-8559 fixes
+  * d/p/bugfix/x86/kvm-CVE-2015-0239.patch:
+    Backport fix for CVE-2015-0239
 
  -- John-Mark Bell <jmb@pexip.com>  Fri, 27 Feb 2015 13:14:26 +0000
 
