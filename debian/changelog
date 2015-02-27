@@ -6,6 +6,11 @@ linux (3.14.34-0pexip1) pexip; urgency=medium
     Drop; merged upstream
   * d/p/bugfix/all/ext4-CVE-2014-8086.patch:
     Backport fix for CVE-2014-8086
+  * d/p/bugfix/all/fs-move-d_rcu-from-overlapping-d_child-to-overlapping-d_alias.patch,
+    d/p/bugfix/all/fs-deal-with-deadlock-in-d_walk.patch:
+    Backport fix for CVE-2014-8559
+  * d/p/features/all/aufs3/aufs3-add.patch:
+    Refresh following CVE-2014-8559 fixes
 
  -- John-Mark Bell <jmb@pexip.com>  Fri, 27 Feb 2015 13:14:26 +0000
 
