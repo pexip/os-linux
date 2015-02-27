@@ -4,6 +4,8 @@ linux (3.14.34-0pexip1) pexip; urgency=medium
   * d/p/bugfix/x86/kvm-CVE-2014-3690.patch,
     d/p/bugfix/s390/s390-3215-fix-hanging-console-issue.patch:
     Drop; merged upstream
+  * d/p/bugfix/all/ext4-CVE-2014-8086.patch:
+    Backport fix for CVE-2014-8086
 
  -- John-Mark Bell <jmb@pexip.com>  Fri, 27 Feb 2015 13:14:26 +0000
 
