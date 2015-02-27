@@ -75,6 +75,7 @@ bugfix/all/ext4-CVE-2014-8086.patch
 bugfix/all/fs-move-d_rcu-from-overlapping-d_child-to-overlapping-d_alias.patch 
 bugfix/all/fs-deal-with-deadlock-in-d_walk.patch
 bugfix/x86/kvm-CVE-2015-0239.patch
+bugfix/all/fs-CVE-2015-1420.patch
 
 # Miscellaneous features
 features/all/x86-memtest-WARN-if-bad-RAM-found.patch
