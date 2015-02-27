@@ -4,8 +4,6 @@ linux (3.14.34-0pexip1) pexip; urgency=medium
   * d/p/bugfix/x86/kvm-CVE-2014-3690.patch,
     d/p/bugfix/s390/s390-3215-fix-hanging-console-issue.patch:
     Drop; merged upstream
-  * d/p/bugfix/all/ext4-CVE-2014-8086.patch:
-    Backport fix for CVE-2014-8086
   * d/p/bugfix/all/fs-move-d_rcu-from-overlapping-d_child-to-overlapping-d_alias.patch,
     d/p/bugfix/all/fs-deal-with-deadlock-in-d_walk.patch:
     Backport fix for CVE-2014-8559
