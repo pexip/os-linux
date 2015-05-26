@@ -1,3 +1,17 @@
+linux (3.14.43-0pexip1) pexip; urgency=medium
+
+  * New upstream release.
+  * d/p/bugfix/all/fs-move-d_rcu-from-overlapping-d_child-to-overlapping-d_alias.patch,
+    d/p/bugfix/all/fs-deal-with-deadlock-in-d_walk.patch,
+    d/p/bugfix/x86/kvm-CVE-2015-0239.patch,
+    d/p/bugfix/all/CVE-2015-1593.patch,
+    d/p/bugfix/all/net-llc-CVE-2015-2041.patch,
+    d/p/bugfix/all/net-rds-CVE-2015-2042.patch,
+    d/p/bugfix/arm/bfa-Replace-large-udelay-with-mdelay.patch:
+    Drop; merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 26 May 2015 23:13:45 +0100
+
 linux (3.14.34-0pexip1) pexip; urgency=medium
 
   * New upstream release.
