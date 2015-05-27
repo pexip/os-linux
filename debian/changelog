@@ -13,6 +13,8 @@ linux (3.14.43-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2014-7822
   * d/p/bugfix/all/CVE-2014-9710.patch:
     Backport fix for CVE-2014-9710
+  * d/p/bugfix/all/CVE-2015-0274.patch:
+    Backport fix for CVE-2015-0274
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 26 May 2015 23:13:45 +0100
 
