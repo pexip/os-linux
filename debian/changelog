@@ -9,6 +9,8 @@ linux (3.14.43-0pexip1) pexip; urgency=medium
     d/p/bugfix/all/net-rds-CVE-2015-2042.patch,
     d/p/bugfix/arm/bfa-Replace-large-udelay-with-mdelay.patch:
     Drop; merged upstream
+  * d/p/bugfix/all/CVE-2014-7822.patch:
+    Backport fix for CVE-2014-7822
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 26 May 2015 23:13:45 +0100
 
