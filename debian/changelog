@@ -19,6 +19,11 @@ linux (3.14.43-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2015-2666
   * d/p/bugfix/all/CVE-2015-4036.patch:
     Backport fix for CVE-2015-4036
+  * d/p/bugfix/all/net-mitigate-ack-loops.patch,
+    d/p/bugfix/all/net-mitigate-ack-loops-tcp_request_sock.patch,
+    d/p/bugfix/all/net-mitigate-ack-loops-tcp_sock.patch,
+    d/p/bugfix/all/net-mitigate-ack-loops-tcp_timewait_sock.patch:
+    Backport mitigation against TCP ACK loops
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 26 May 2015 23:13:45 +0100
 

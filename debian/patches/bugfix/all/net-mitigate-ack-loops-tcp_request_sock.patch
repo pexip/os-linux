@@ -1,0 +1,67 @@
+From a9b2c06dbef48ed31cff1764c5ce824829106f4f Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Fri, 6 Feb 2015 16:04:39 -0500
+Subject: tcp: mitigate ACK loops for connections as tcp_request_sock
+
+In the SYN_RECV state, where the TCP connection is represented by
+tcp_request_sock, we now rate-limit SYNACKs in response to a client's
+retransmitted SYNs: we do not send a SYNACK in response to client SYN
+if it has been less than sysctl_tcp_invalid_ratelimit (default 500ms)
+since we last sent a SYNACK in response to a client's retransmitted
+SYN.
+
+This allows the vast majority of legitimate client connections to
+proceed unimpeded, even for the most aggressive platforms, iOS and
+MacOS, which actually retransmit SYNs 1-second intervals for several
+times in a row. They use SYN RTO timeouts following the progression:
+1,1,1,1,1,2,4,8,16,32.
+
+Reported-by: Avery Fay <avery@mixpanel.com>
+Signed-off-by: Neal Cardwell <ncardwell@google.com>
+Signed-off-by: Yuchung Cheng <ycheng@google.com>
+Signed-off-by: Eric Dumazet <edumazet@google.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/include/linux/tcp.h b/include/linux/tcp.h
+index 67309ec..bcc828d 100644
+--- a/include/linux/tcp.h
++++ b/include/linux/tcp.h
+@@ -115,6 +115,7 @@ struct tcp_request_sock {
+ 	u32				rcv_isn;
+ 	u32				snt_isn;
+ 	u32				snt_synack; /* synack sent time */
++	u32				last_oow_ack_time; /* last SYNACK */
+ 	u32				rcv_nxt; /* the ack # by SYNACK. For
+ 						  * FastOpen it's the seq#
+ 						  * after data-in-SYN.
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index b81f45c..da4196fb 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -1145,6 +1145,7 @@ static inline void tcp_openreq_init(struct request_sock *req,
+ 	tcp_rsk(req)->rcv_isn = TCP_SKB_CB(skb)->seq;
+ 	tcp_rsk(req)->rcv_nxt = TCP_SKB_CB(skb)->seq + 1;
+ 	tcp_rsk(req)->snt_synack = 0;
++	tcp_rsk(req)->last_oow_ack_time = 0;
+ 	req->mss = rx_opt->mss_clamp;
+ 	req->ts_recent = rx_opt->saw_tstamp ? rx_opt->rcv_tsval : 0;
+ 	ireq->tstamp_ok = rx_opt->tstamp_ok;
+diff --git a/net/ipv4/tcp_minisocks.c b/net/ipv4/tcp_minisocks.c
+index bc9216d..131aa49 100644
+--- a/net/ipv4/tcp_minisocks.c
++++ b/net/ipv4/tcp_minisocks.c
+@@ -605,7 +605,11 @@ struct sock *tcp_check_req(struct sock *sk, struct sk_buff *skb,
+ 		 * Reset timer after retransmitting SYNACK, similar to
+ 		 * the idea of fast retransmit in recovery.
+ 		 */
+-		if (!inet_rtx_syn_ack(sk, req))
++		if (!tcp_oow_rate_limited(sock_net(sk), skb,
++					  LINUX_MIB_TCPACKSKIPPEDSYNRECV,
++					  &tcp_rsk(req)->last_oow_ack_time) &&
++
++		    !inet_rtx_syn_ack(sk, req))
+ 			req->expires = min(TCP_TIMEOUT_INIT << req->num_timeout,
+ 					   TCP_RTO_MAX) + jiffies;
+ 		return NULL;
+-- 
+cgit v0.10.2
