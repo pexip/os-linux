@@ -1,3 +1,14 @@
+linux (3.14.48-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * d/p/bugfix/all/fs-CVE-2015-1420.patch,
+    d/p/bugfix/all/CVE-2014-7822.patch,
+    d/p/bugfix/all/CVE-2014-9710.patch,
+    d/p/bugfix/x86/CVE-2015-2666.patch:
+    Drop; merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Wed, 29 Jul 2015 23:49:37 +0100
+
 linux (3.14.43-0pexip1) pexip; urgency=medium
 
   * New upstream release.
