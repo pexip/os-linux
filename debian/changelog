@@ -20,6 +20,15 @@ linux (3.14.48-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2015-4692
   * d/p/bugfix/all/CVE-2015-5697.patch:
     Backport fix for CVE-2015-5697
+  * d/p/bugfix/x86/0001-x86-asm-entry-64-Fold-the-test_in_nmi-macro-into-its.patch,
+    d/p/bugfix/x86/0002-x86-asm-entry-64-Remove-a-redundant-jump.patch,
+    d/p/bugfix/x86/0004-x86-nmi-Enable-nested-do_nmi-handling-for-64-bit-ker.patch,
+    d/p/bugfix/x86/0005-x86-nmi-64-Remove-asm-code-that-saves-cr2.patch,
+    d/p/bugfix/x86/0006-x86-nmi-64-Switch-stacks-on-userspace-NMI-entry.patch,
+    d/p/bugfix/x86/0007-x86-nmi-64-Improve-nested-NMI-comments.patch,
+    d/p/bugfix/x86/0008-x86-nmi-64-Reorder-nested-NMI-checks.patch,
+    d/p/bugfix/x86/0009-x86-nmi-64-Use-DF-to-avoid-userspace-RSP-confusing-n.patch:
+    Backport fix for CVE-2015-3290, CVE-2015-3291, CVE-2015-5157
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 29 Jul 2015 23:49:37 +0100
 

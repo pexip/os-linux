@@ -85,6 +85,17 @@ bugfix/all/CVE-2015-4167.patch
 bugfix/x86/CVE-2015-4692.patch
 bugfix/all/CVE-2015-5697.patch
 
+# Patch series for CVE-2015-2390, CVE-2015-2391, and CVE-2015-5157
+# Source: http://kernel.ubuntu.com/git/ubuntu/ubuntu-trusty.git/log/?id=Ubuntu-3.13.0-61.100
+bugfix/x86/0001-x86-asm-entry-64-Fold-the-test_in_nmi-macro-into-its.patch
+bugfix/x86/0002-x86-asm-entry-64-Remove-a-redundant-jump.patch
+bugfix/x86/0004-x86-nmi-Enable-nested-do_nmi-handling-for-64-bit-ker.patch
+bugfix/x86/0005-x86-nmi-64-Remove-asm-code-that-saves-cr2.patch
+bugfix/x86/0006-x86-nmi-64-Switch-stacks-on-userspace-NMI-entry.patch
+bugfix/x86/0007-x86-nmi-64-Improve-nested-NMI-comments.patch
+bugfix/x86/0008-x86-nmi-64-Reorder-nested-NMI-checks.patch
+bugfix/x86/0009-x86-nmi-64-Use-DF-to-avoid-userspace-RSP-confusing-n.patch
+
 # Miscellaneous features
 features/all/x86-memtest-WARN-if-bad-RAM-found.patch
 features/all/efi-autoload-efivars.patch
