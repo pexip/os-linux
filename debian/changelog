@@ -6,6 +6,20 @@ linux (3.14.48-0pexip1) pexip; urgency=medium
     d/p/bugfix/all/CVE-2014-9710.patch,
     d/p/bugfix/x86/CVE-2015-2666.patch:
     Drop; merged upstream
+  * d/p/bugfix/all/CVE-2014-9729.patch:
+    Backport fix for CVE-2014-9729
+  * d/p/bugfix/all/CVE-2014-9730.patch:
+    Backport fix for CVE-2014-9730
+  * d/p/bugfix/all/CVE-2014-9731.patch:
+    Backport fix for CVE-2014-9731
+  * d/p/bugfix/all/CVE-2015-1333.patch:
+    Backport fix for CVE-2015-1333
+  * d/p/bugfix/all/CVE-2015-4167.patch:
+    Backport fix for CVE-2015-4167
+  * d/p/bugfix/x86/CVE-2015-4692.patch:
+    Backport fix for CVE-2015-4692
+  * d/p/bugfix/all/CVE-2015-5697.patch:
+    Backport fix for CVE-2015-5697
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 29 Jul 2015 23:49:37 +0100
 

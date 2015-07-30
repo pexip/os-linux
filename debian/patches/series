@@ -76,6 +76,14 @@ bugfix/all/net-mitigate-ack-loops.patch
 bugfix/all/net-mitigate-ack-loops-tcp_request_sock.patch
 bugfix/all/net-mitigate-ack-loops-tcp_sock.patch
 bugfix/all/net-mitigate-ack-loops-tcp_timewait_sock.patch
+bugfix/all/CVE-2014-9729.patch
+# Order matters here: 9730 depends on 9731
+bugfix/all/CVE-2014-9731.patch
+bugfix/all/CVE-2014-9730.patch
+bugfix/all/CVE-2015-1333.patch
+bugfix/all/CVE-2015-4167.patch
+bugfix/x86/CVE-2015-4692.patch
+bugfix/all/CVE-2015-5697.patch
 
 # Miscellaneous features
 features/all/x86-memtest-WARN-if-bad-RAM-found.patch
