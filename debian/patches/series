@@ -84,6 +84,7 @@ bugfix/all/CVE-2015-1333.patch
 bugfix/all/CVE-2015-4167.patch
 bugfix/x86/CVE-2015-4692.patch
 bugfix/all/CVE-2015-5697.patch
+bugfix/all/CVE-2012-4542.patch
 
 # Patch series for CVE-2015-2390, CVE-2015-2391, and CVE-2015-5157
 # Source: http://kernel.ubuntu.com/git/ubuntu/ubuntu-trusty.git/log/?id=Ubuntu-3.13.0-61.100

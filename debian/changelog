@@ -29,6 +29,8 @@ linux (3.14.48-0pexip1) pexip; urgency=medium
     d/p/bugfix/x86/0008-x86-nmi-64-Reorder-nested-NMI-checks.patch,
     d/p/bugfix/x86/0009-x86-nmi-64-Use-DF-to-avoid-userspace-RSP-confusing-n.patch:
     Backport fix for CVE-2015-3290, CVE-2015-3291, CVE-2015-5157
+  * d/p/bugfix/all/CVE-2012-4542.patch:
+    Fix for CVE-2012-4542
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 29 Jul 2015 23:49:37 +0100
 
