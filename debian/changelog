@@ -3,6 +3,10 @@ linux (3.14.49-0pexip1) pexip; urgency=medium
   * New upstream release
   * d/p/bugfix/all/CVE-2015-1333.patch:
     Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-5706.patch:
+    Backport fix for CVE-2015-5706
+  * d/p/bugfix/all/CVE-2015-5707.patch:
+    Backport fix for CVE-2015-5707
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 05 Aug 2015 00:35:21 +0100
 
