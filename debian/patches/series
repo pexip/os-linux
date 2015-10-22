@@ -168,3 +168,4 @@ debian/wireless-disable-regulatory.db-direct-loading.patch
 # ABI maintenance
 
 # Pexip fixes
+bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
