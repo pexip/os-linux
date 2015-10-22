@@ -31,6 +31,8 @@ linux (3.14.54-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2015-7613
   * d/p/bugfix/all/CVE-2015-7872-{a,b,c}.patch:
     Backport fix for CVE-2015-7872
+  * d/p/bugfix/all/e1000-disable-64bit-dma-on-vmware.patch:
+    Do not use 64bit DMA on VMware as it can result in NIC stalls.
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 20 Oct 2015 17:01:45 +0100
 
