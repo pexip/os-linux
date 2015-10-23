@@ -1,3 +1,15 @@
+linux (3.14.55-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * d/p/bugfix/all/CVE-2015-2925-{a,c}.patch,
+    d/p/bugfix/all/CVE-2015-5257.patch,
+    d/p/bugfix/all/CVE-2015-7613-b.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-2925-b.patch:
+    Refresh context
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 23 Oct 2015 13:52:51 +0100
+
 linux (3.14.54-0pexip1) pexip; urgency=medium
 
   * New upstream release

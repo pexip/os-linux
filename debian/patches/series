@@ -82,14 +82,10 @@ bugfix/all/CVE-2014-9731.patch
 bugfix/all/CVE-2014-9730.patch
 bugfix/all/CVE-2012-4542.patch
 bugfix/all/CVE-2015-0272.patch
-bugfix/all/CVE-2015-2925-a.patch
 bugfix/all/CVE-2015-2925-b.patch
-bugfix/all/CVE-2015-2925-c.patch
 bugfix/all/CVE-2015-5156.patch
-bugfix/all/CVE-2015-5257.patch
 bugfix/all/CVE-2015-6937.patch
 bugfix/all/CVE-2015-7613-a.patch
-bugfix/all/CVE-2015-7613-b.patch
 bugfix/all/CVE-2015-7872-a.patch
 bugfix/all/CVE-2015-7872-b.patch
 bugfix/all/CVE-2015-7872-c.patch
