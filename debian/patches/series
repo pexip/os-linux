@@ -85,6 +85,7 @@ bugfix/all/CVE-2015-0272.patch
 bugfix/all/CVE-2015-2925-b.patch
 bugfix/all/CVE-2015-5156.patch
 bugfix/all/CVE-2015-6937.patch
+bugfix/all/CVE-2015-6937-b.patch
 bugfix/all/CVE-2015-7613-a.patch
 bugfix/all/CVE-2015-7872-a.patch
 bugfix/all/CVE-2015-7872-b.patch
