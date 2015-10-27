@@ -1,6 +1,9 @@
 linux (3.14.56-0pexip1) pexip; urgency=medium
 
   * New upstream release
+  * d/p/bugfix/all/CVE-2015-XXXX.patch:
+    Backport fix for CVE-2015-XXXX (buffer overflow copying data 
+    from skbuff to userspace)
 
  -- John-Mark Bell <jmb@pexip.com>  Thu, 27 Oct 2015 11:27:51 +0000
 
