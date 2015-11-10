@@ -1,3 +1,13 @@
+linux (3.14.57-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * d/p/bugfix/all/CVE-2015-8019.patch:
+    Rename from CVE-2015-XXXX.patch now CVE has been allocated.
+  * d/p/bugfix/all/CVE-2015-4036.patch:
+    Drop; merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Thu, 10 Nov 2015 12:50:16 +0000
+
 linux (3.14.56-0pexip1) pexip; urgency=medium
 
   * New upstream release
