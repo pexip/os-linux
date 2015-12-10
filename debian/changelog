@@ -1,3 +1,13 @@
+linux (3.14.58-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * d/p/bugfix/all/CVE-2015-5156.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-6937.patch:
+    Drop; merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Thu, 10 Dec 2015 02:27:52 +0000
+
 linux (3.14.57-0pexip1) pexip; urgency=medium
 
   * New upstream release
