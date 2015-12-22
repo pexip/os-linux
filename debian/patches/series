@@ -100,6 +100,8 @@ bugfix/all/CVE-2013-7446.patch
 bugfix/all/CVE-2015-8543.patch
 bugfix/all/CVE-2015-8569.patch
 bugfix/all/CVE-2015-8575.patch
+bugfix/all/kobject-uevent-non-blocking-umh.patch
+bugfix/all/slub-hold-slab-mutex-for-sysfs-slab-add.patch
 
 # Miscellaneous features
 features/all/x86-memtest-WARN-if-bad-RAM-found.patch

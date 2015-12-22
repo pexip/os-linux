@@ -1,3 +1,12 @@
+linux (3.14.58-0pexip3) pexip; urgency=medium
+
+  * d/p/bugfix/all/kobject-uevent-non-blocking-umh.patch,
+    d/p/bugfix/all/slub-hold-slab-mutex-for-sysfs-slab-add.patch:
+    Backport fix for racy sysfs filename allocation in the slub
+    memory allocator.
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 22 Dec 2015 13:40:58 +0000
+
 linux (3.14.58-0pexip2) pexip; urgency=medium
 
   * d/p/bugfix/all/CVE-2013-7446.patch:

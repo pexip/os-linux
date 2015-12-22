@@ -1,0 +1,66 @@
+From 421af243b1a5ec2fe62f070d3b84d925301cc008 Mon Sep 17 00:00:00 2001
+From: Vladimir Davydov <vdavydov@parallels.com>
+Date: Thu, 3 Apr 2014 14:48:22 -0700
+Subject: slub: do not drop slab_mutex for sysfs_slab_add
+
+We release the slab_mutex while calling sysfs_slab_add from
+__kmem_cache_create since commit 66c4c35c6bc5 ("slub: Do not hold
+slub_lock when calling sysfs_slab_add()"), because kobject_uevent called
+by sysfs_slab_add might block waiting for the usermode helper to exec,
+which would result in a deadlock if we took the slab_mutex while
+executing it.
+
+However, apart from complicating synchronization rules, releasing the
+slab_mutex on kmem cache creation can result in a kmemcg-related race.
+The point is that we check if the memcg cache exists before going to
+__kmem_cache_create, but register the new cache in memcg subsys after
+it.  Since we can drop the mutex there, several threads can see that the
+memcg cache does not exist and proceed to creating it, which is wrong.
+
+Fortunately, recently kobject_uevent was patched to call the usermode
+helper with the UMH_NO_WAIT flag, making the deadlock impossible.
+Therefore there is no point in releasing the slab_mutex while calling
+sysfs_slab_add, so let's simplify kmem_cache_create synchronization and
+fix the kmemcg-race mentioned above by holding the slab_mutex during the
+whole cache creation path.
+
+Signed-off-by: Vladimir Davydov <vdavydov@parallels.com>
+Acked-by: Christoph Lameter <cl@linux.com>
+Cc: Greg KH <greg@kroah.com>
+Cc: Pekka Enberg <penberg@kernel.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ mm/slub.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/mm/slub.c b/mm/slub.c
+index 7611f14..fe6d7be 100644
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -3237,8 +3237,9 @@ int __kmem_cache_shutdown(struct kmem_cache *s)
+ 
+ 	if (!rc) {
+ 		/*
+-		 * We do the same lock strategy around sysfs_slab_add, see
+-		 * __kmem_cache_create. Because this is pretty much the last
++		 * Since slab_attr_store may take the slab_mutex, we should
++		 * release the lock while removing the sysfs entry in order to
++		 * avoid a deadlock. Because this is pretty much the last
+ 		 * operation we do and the lock will be released shortly after
+ 		 * that in slab_common.c, we could just move sysfs_slab_remove
+ 		 * to a later point in common code. We should do that when we
+@@ -3778,10 +3779,7 @@ int __kmem_cache_create(struct kmem_cache *s, unsigned long flags)
+ 		return 0;
+ 
+ 	memcg_propagate_slab_attrs(s);
+-	mutex_unlock(&slab_mutex);
+ 	err = sysfs_slab_add(s);
+-	mutex_lock(&slab_mutex);
+-
+ 	if (err)
+ 		kmem_cache_close(s);
+ 
+-- 
+cgit v0.11.2
+
