@@ -24,6 +24,8 @@ linux (3.14.59-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2015-8767
   * d/p/bugfix/all/CVE-2015-8785.patch:
     Backport fix for CVE-2015-8785
+  * d/p/bugfix/all/CVE-2016-0723.patch:
+    Backport fix for CVE-2016-0723
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 25 Jan 2016 10:46:34 +0000
 
