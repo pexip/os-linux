@@ -84,8 +84,6 @@ bugfix/all/CVE-2015-0272.patch
 bugfix/all/CVE-2015-2925-b.patch
 bugfix/all/CVE-2015-6937-b.patch
 bugfix/all/CVE-2015-7613-a.patch
-bugfix/all/CVE-2015-7872-a.patch
-bugfix/all/CVE-2015-7872-b.patch
 bugfix/all/CVE-2015-7872-c.patch
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/CVE-2015-8019.patch
@@ -96,10 +94,6 @@ bugfix/all/CVE-2015-7799-a.patch
 bugfix/all/CVE-2015-7799-b.patch
 bugfix/x86/CVE-2015-8104.patch
 bugfix/all/CVE-2015-8374.patch
-bugfix/all/CVE-2013-7446.patch
-bugfix/all/CVE-2015-8543.patch
-bugfix/all/CVE-2015-8569.patch
-bugfix/all/CVE-2015-8575.patch
 bugfix/all/kobject-uevent-non-blocking-umh.patch
 bugfix/all/slub-hold-slab-mutex-for-sysfs-slab-add.patch
 

@@ -1,3 +1,20 @@
+linux (3.14.59-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * d/p/bugfix/all/CVE-2015-7872-a.patch,
+    d/p/bugfix/all/CVE-2015-7872-b.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2013-7446.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-8543.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-8569.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-8575.patch:
+    Drop; merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 25 Jan 2016 10:46:34 +0000
+
 linux (3.14.58-0pexip3) pexip; urgency=medium
 
   * d/p/bugfix/all/kobject-uevent-non-blocking-umh.patch,
