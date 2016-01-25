@@ -100,6 +100,7 @@ bugfix/all/CVE-2013-4312.patch
 bugfix/x86/CVE-2015-7513.patch
 bugfix/all/CVE-2015-7566.patch
 bugfix/all/CVE-2015-8709.patch
+bugfix/all/CVE-2015-8767.patch
 
 # Miscellaneous features
 features/all/x86-memtest-WARN-if-bad-RAM-found.patch
