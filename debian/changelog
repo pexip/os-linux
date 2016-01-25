@@ -12,6 +12,8 @@ linux (3.14.59-0pexip1) pexip; urgency=medium
     Drop; merged upstream
   * d/p/bugfix/all/CVE-2015-8575.patch:
     Drop; merged upstream
+  * d/p/bugfix/all/CVE-2013-4312.patch:
+    Backport fix for CVE-2013-4312
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 25 Jan 2016 10:46:34 +0000
 
