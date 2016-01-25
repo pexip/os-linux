@@ -16,6 +16,8 @@ linux (3.14.59-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2013-4312
   * d/p/bugfix/x86/CVE-2015-7513.patch:
     Backport fix for CVE-2015-7513
+  * d/p/bugfix/all/CVE-2015-7566.patch:
+    Backport fix for CVE-2015-7566
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 25 Jan 2016 10:46:34 +0000
 
