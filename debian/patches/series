@@ -80,9 +80,7 @@ bugfix/all/CVE-2014-9729.patch
 bugfix/all/CVE-2014-9731.patch
 bugfix/all/CVE-2014-9730.patch
 bugfix/all/CVE-2012-4542.patch
-bugfix/all/CVE-2015-0272.patch
 bugfix/all/CVE-2015-2925-b.patch
-bugfix/all/CVE-2015-6937-b.patch
 bugfix/all/CVE-2015-7613-a.patch
 bugfix/all/CVE-2015-7872-c.patch
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
@@ -90,19 +88,13 @@ bugfix/all/CVE-2015-8019.patch
 bugfix/all/CVE-2015-7833.patch
 bugfix/x86/CVE-2015-5307-a.patch
 bugfix/x86/CVE-2015-5307-b.patch
-bugfix/all/CVE-2015-7799-a.patch
-bugfix/all/CVE-2015-7799-b.patch
 bugfix/x86/CVE-2015-8104.patch
 bugfix/all/CVE-2015-8374.patch
 bugfix/all/kobject-uevent-non-blocking-umh.patch
 bugfix/all/slub-hold-slab-mutex-for-sysfs-slab-add.patch
-bugfix/all/CVE-2013-4312.patch
 bugfix/x86/CVE-2015-7513.patch
-bugfix/all/CVE-2015-7566.patch
 bugfix/all/CVE-2015-8709.patch
 bugfix/all/CVE-2015-8767.patch
-bugfix/all/CVE-2015-8785.patch
-bugfix/all/CVE-2016-0723.patch
 
 # Miscellaneous features
 features/all/x86-memtest-WARN-if-bad-RAM-found.patch

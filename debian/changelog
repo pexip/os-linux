@@ -1,3 +1,25 @@
+linux (3.14.63-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * d/p/bugfix/all/CVE-2015-0272.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-6937-b.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-7799-{a,b}.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2013-4312.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-7566.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2015-8709.patch:
+    Refresh context
+  * d/p/bugfix/all/CVE-2015-8785.patch:
+    Drop; merged upstream
+  * d/p/bugfix/all/CVE-2016-0723.patch:
+    Drop; merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 07 Mar 2016 15:56:21 +0000
+
 linux (3.14.59-0pexip1) pexip; urgency=medium
 
   * New upstream release
