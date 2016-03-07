@@ -25,6 +25,8 @@ linux (3.14.63-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2016-2069
   * d/p/bugfix/all/CVE-2016-2847.patch:
     Backport fix for CVE-2016-2847
+  * d/p/bugfix/all/CVE-2016-XXXX.patch:
+    Backport fix for CVE-2016-XXXX (partial SMAP bypass)
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 07 Mar 2016 15:56:21 +0000
 
