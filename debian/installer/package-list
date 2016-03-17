@@ -79,20 +79,6 @@ Priority: standard
 Description: SCSI drivers
  This package contains SCSI drivers for the kernel.
 
-Package: scsi-common-modules
-Depends: kernel-image, scsi-core-modules, cdrom-core-modules
-Priority: standard
-Description: Very common SCSI drivers
- This package contains very common SCSI drivers for the kernel.
-
-Package: scsi-extra-modules
-Depends: scsi-modules, scsi-core-modules
-Priority: standard
-Description: Uncommon SCSI drivers
- This package contains uncommon SCSI drivers for the kernel.
- This includes SCSI RAID drivers, and some of the less common SCSI
- controllers.
-
 Package: loop-modules
 Depends: kernel-image
 Priority: standard
@@ -180,7 +166,7 @@ Description: NFS filesystem support
  This package contains the NFS filesystem module for the kernel.
 
 Package: md-modules
-Depends: kernel-image
+Depends: kernel-image, crc-modules
 Priority: extra
 Description: RAID and LVM support
  This package contains RAID and LVM modules for the kernel.
@@ -192,7 +178,7 @@ Description: Multipath support
  This package contains DM-Multipath modules for the kernel.
 
 Package: usb-modules
-Depends: kernel-image, nls-core-modules
+Depends: kernel-image, nls-core-modules, core-modules
 Priority: extra
 Description: USB support
  This package contains core USB drivers for the kernel.
@@ -210,13 +196,13 @@ Description: PCMCIA storage drivers
  This package contains PCMCIA storage drivers for the kernel.
 
 Package: fb-modules
-Depends: kernel-image
+Depends: kernel-image, i2c-modules
 Priority: extra
 Description: Frame buffer support
  This package contains Frame buffer drivers for the kernel.
 
 Package: input-modules
-Depends: kernel-image, usb-modules
+Depends: kernel-image, usb-modules, i2c-modules
 Priority: extra
 Description: Input devices support
  This package contains input device drivers for the kernel.
@@ -314,7 +300,7 @@ Description: MMC/SD/SDIO core modules
  This package contains core modules for MMC/SD/SDIO support.
 
 Package: mmc-modules
-Depends: kernel-image, core-modules, mmc-core-modules
+Depends: kernel-image, core-modules, mmc-core-modules, usb-modules, crc-modules
 Priority: extra
 Description: MMC/SD card modules
  This package contains modules needed to support MMC (multimedia) and
@@ -334,7 +320,7 @@ Description: squashfs modules
  This package contains squashfs modules.
 
 Package: speakup-modules
-Depends: kernel-image!
+Depends: kernel-image
 Priority: extra
 Description: speakup modules
  This package contains speakup modules.

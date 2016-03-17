@@ -1,7 +1,7 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:30:16 -0500
 Subject: input: gameport: Do not disable interrupts on PREEMPT_RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 Use the _nort() primitives.
 
@@ -9,12 +9,28 @@ Signed-off-by: Ingo Molnar <mingo@elte.hu>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 ---
- drivers/input/gameport/gameport.c |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/input/gameport/gameport.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
 --- a/drivers/input/gameport/gameport.c
 +++ b/drivers/input/gameport/gameport.c
-@@ -87,12 +87,12 @@ static int gameport_measure_speed(struct
+@@ -91,13 +91,13 @@ static int gameport_measure_speed(struct
+ 	tx = ~0;
+ 
+ 	for (i = 0; i < 50; i++) {
+-		local_irq_save(flags);
++		local_irq_save_nort(flags);
+ 		t1 = ktime_get_ns();
+ 		for (t = 0; t < 50; t++)
+ 			gameport_read(gameport);
+ 		t2 = ktime_get_ns();
+ 		t3 = ktime_get_ns();
+-		local_irq_restore(flags);
++		local_irq_restore_nort(flags);
+ 		udelay(i * 10);
+ 		t = (t2 - t1) - (t3 - t2);
+ 		if (t < tx)
+@@ -124,12 +124,12 @@ static int old_gameport_measure_speed(st
  	tx = 1 << 30;
  
  	for(i = 0; i < 50; i++) {
@@ -29,15 +45,15 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		udelay(i * 10);
  		if ((t = DELTA(t2,t1) - DELTA(t3,t2)) < tx) tx = t;
  	}
-@@ -111,11 +111,11 @@ static int gameport_measure_speed(struct
+@@ -148,11 +148,11 @@ static int old_gameport_measure_speed(st
  	tx = 1 << 30;
  
  	for(i = 0; i < 50; i++) {
 -		local_irq_save(flags);
 +		local_irq_save_nort(flags);
- 		rdtscl(t1);
+ 		t1 = rdtsc();
  		for (t = 0; t < 50; t++) gameport_read(gameport);
- 		rdtscl(t2);
+ 		t2 = rdtsc();
 -		local_irq_restore(flags);
 +		local_irq_restore_nort(flags);
  		udelay(i * 10);

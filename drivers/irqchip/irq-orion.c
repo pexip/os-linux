@@ -10,13 +10,12 @@
 
 #include <linux/io.h>
 #include <linux/irq.h>
+#include <linux/irqchip.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
 #include <asm/exception.h>
 #include <asm/mach/irq.h>
-
-#include "irqchip.h"
 
 /*
  * Orion SoC main interrupt controller
@@ -30,7 +29,7 @@
 
 static struct irq_domain *orion_irq_domain;
 
-static asmlinkage void
+static void
 __exception_irq_entry orion_handle_irq(struct pt_regs *regs)
 {
 	struct irq_domain_chip_generic *dgc = orion_irq_domain->gc;
@@ -42,10 +41,9 @@ __exception_irq_entry orion_handle_irq(struct pt_regs *regs)
 		u32 stat = readl_relaxed(gc->reg_base + ORION_IRQ_CAUSE) &
 			gc->mask_cache;
 		while (stat) {
-			u32 hwirq = ffs(stat) - 1;
-			u32 irq = irq_find_mapping(orion_irq_domain,
-						   gc->irq_base + hwirq);
-			handle_IRQ(irq, regs);
+			u32 hwirq = __fls(stat);
+			handle_domain_irq(orion_irq_domain,
+					  gc->irq_base + hwirq, regs);
 			stat &= ~(1 << hwirq);
 		}
 	}
@@ -108,16 +106,16 @@ IRQCHIP_DECLARE(orion_intc, "marvell,orion-intc", orion_irq_init);
 #define ORION_BRIDGE_IRQ_CAUSE	0x00
 #define ORION_BRIDGE_IRQ_MASK	0x04
 
-static void orion_bridge_irq_handler(unsigned int irq, struct irq_desc *desc)
+static void orion_bridge_irq_handler(struct irq_desc *desc)
 {
-	struct irq_domain *d = irq_get_handler_data(irq);
+	struct irq_domain *d = irq_desc_get_handler_data(desc);
 
 	struct irq_chip_generic *gc = irq_get_domain_generic_chip(d, 0);
 	u32 stat = readl_relaxed(gc->reg_base + ORION_BRIDGE_IRQ_CAUSE) &
 		   gc->mask_cache;
 
 	while (stat) {
-		u32 hwirq = ffs(stat) - 1;
+		u32 hwirq = __fls(stat);
 
 		generic_handle_irq(irq_find_mapping(d, gc->irq_base + hwirq));
 		stat &= ~(1 << hwirq);
@@ -199,8 +197,8 @@ static int __init orion_bridge_irq_init(struct device_node *np,
 	writel(0, gc->reg_base + ORION_BRIDGE_IRQ_MASK);
 	writel(0, gc->reg_base + ORION_BRIDGE_IRQ_CAUSE);
 
-	irq_set_handler_data(irq, domain);
-	irq_set_chained_handler(irq, orion_bridge_irq_handler);
+	irq_set_chained_handler_and_data(irq, orion_bridge_irq_handler,
+					 domain);
 
 	return 0;
 }

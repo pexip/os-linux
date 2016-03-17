@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -53,25 +53,24 @@ performance.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- arch/x86/include/asm/preempt.h |   18 ++++++++++++++-
- include/linux/ftrace_event.h   |    1 
- include/linux/preempt.h        |   42 +++++++++++++++++++++++++++++++++--
+ arch/x86/include/asm/preempt.h |   18 +++++++++++++-
+ include/linux/preempt.h        |   29 ++++++++++++++++++++++-
  include/linux/sched.h          |   37 ++++++++++++++++++++++++++++++
- kernel/Kconfig.preempt         |    6 +++++
- kernel/sched/core.c            |   49 ++++++++++++++++++++++++++++++++++++++++-
+ include/linux/thread_info.h    |   12 +++++++++
+ include/linux/trace_events.h   |    1 
+ kernel/Kconfig.preempt         |    6 ++++
+ kernel/sched/core.c            |   50 ++++++++++++++++++++++++++++++++++++++++-
  kernel/sched/fair.c            |   16 ++++++-------
  kernel/sched/features.h        |    3 ++
  kernel/sched/sched.h           |    9 +++++++
- kernel/trace/trace.c           |   41 ++++++++++++++++++++--------------
+ kernel/trace/trace.c           |   37 ++++++++++++++++++------------
  kernel/trace/trace.h           |    2 +
  kernel/trace/trace_output.c    |   13 +++++++++-
- 12 files changed, 206 insertions(+), 31 deletions(-)
+ 13 files changed, 204 insertions(+), 29 deletions(-)
 
-Index: linux-stable/arch/x86/include/asm/preempt.h
-===================================================================
---- linux-stable.orig/arch/x86/include/asm/preempt.h
-+++ linux-stable/arch/x86/include/asm/preempt.h
-@@ -97,17 +97,33 @@ static __always_inline void __preempt_co
+--- a/arch/x86/include/asm/preempt.h
++++ b/arch/x86/include/asm/preempt.h
+@@ -79,17 +79,33 @@ static __always_inline void __preempt_co
   * a decrement which hits zero means we have no preempt_count and should
   * reschedule.
   */
@@ -95,54 +94,20 @@ Index: linux-stable/arch/x86/include/asm/preempt.h
  /*
   * Returns true when we need to resched and can (barring IRQ state).
   */
- static __always_inline bool should_resched(void)
+ static __always_inline bool should_resched(int preempt_offset)
  {
 +#ifdef CONFIG_PREEMPT_LAZY
-+	return unlikely(!__this_cpu_read_4(__preempt_count) || \
++	return unlikely(raw_cpu_read_4(__preempt_count) == preempt_offset ||
 +			test_thread_flag(TIF_NEED_RESCHED_LAZY));
 +#else
- 	return unlikely(!__this_cpu_read_4(__preempt_count));
+ 	return unlikely(raw_cpu_read_4(__preempt_count) == preempt_offset);
 +#endif
  }
  
  #ifdef CONFIG_PREEMPT
-Index: linux-stable/include/linux/ftrace_event.h
-===================================================================
---- linux-stable.orig/include/linux/ftrace_event.h
-+++ linux-stable/include/linux/ftrace_event.h
-@@ -59,6 +59,7 @@ struct trace_entry {
- 	int			pid;
- 	unsigned short		migrate_disable;
- 	unsigned short		padding;
-+	unsigned char		preempt_lazy_count;
- };
- 
- #define FTRACE_MAX_EVENT						\
-Index: linux-stable/include/linux/preempt.h
-===================================================================
---- linux-stable.orig/include/linux/preempt.h
-+++ linux-stable/include/linux/preempt.h
-@@ -15,7 +15,18 @@
-  */
- #define PREEMPT_NEED_RESCHED	0x80000000
- 
--#define tif_need_resched() test_thread_flag(TIF_NEED_RESCHED)
-+#ifdef CONFIG_PREEMPT_LAZY
-+#define tif_need_resched() (test_thread_flag(TIF_NEED_RESCHED) || \
-+		test_thread_flag(TIF_NEED_RESCHED_LAZY))
-+#define tif_need_resched_now() (test_thread_flag(TIF_NEED_RESCHED))
-+#define tif_need_resched_lazy() (test_thread_flag(TIF_NEED_RESCHED_LAZY))
-+
-+#else
-+#define tif_need_resched() (test_thread_flag(TIF_NEED_RESCHED))
-+#define tif_need_resched_now() (test_thread_flag(TIF_NEED_RESCHED))
-+#define tif_need_resched_lazy() (0)
-+
-+#endif
- 
- #include <asm/preempt.h>
- 
-@@ -35,6 +46,20 @@ extern void preempt_count_sub(int val);
+--- a/include/linux/preempt.h
++++ b/include/linux/preempt.h
+@@ -153,6 +153,20 @@ extern void preempt_count_sub(int val);
  #define preempt_count_inc() preempt_count_add(1)
  #define preempt_count_dec() preempt_count_sub(1)
  
@@ -163,7 +128,7 @@ Index: linux-stable/include/linux/preempt.h
  #ifdef CONFIG_PREEMPT_COUNT
  
  #define preempt_disable() \
-@@ -43,6 +68,12 @@ do { \
+@@ -161,6 +175,12 @@ do { \
  	barrier(); \
  } while (0)
  
@@ -176,7 +141,7 @@ Index: linux-stable/include/linux/preempt.h
  #define sched_preempt_enable_no_resched() \
  do { \
  	barrier(); \
-@@ -71,6 +102,13 @@ do { \
+@@ -198,6 +218,13 @@ do { \
  		__preempt_schedule(); \
  } while (0)
  
@@ -187,10 +152,10 @@ Index: linux-stable/include/linux/preempt.h
 +	preempt_check_resched(); \
 +} while (0)
 +
- #else
+ #else /* !CONFIG_PREEMPT */
  #define preempt_enable() \
  do { \
-@@ -149,7 +187,7 @@ do { \
+@@ -264,7 +291,7 @@ do { \
  } while (0)
  #define preempt_fold_need_resched() \
  do { \
@@ -199,11 +164,9 @@ Index: linux-stable/include/linux/preempt.h
  		set_preempt_need_resched(); \
  } while (0)
  
-Index: linux-stable/include/linux/sched.h
-===================================================================
---- linux-stable.orig/include/linux/sched.h
-+++ linux-stable/include/linux/sched.h
-@@ -2668,6 +2668,43 @@ static inline int test_tsk_need_resched(
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -2967,6 +2967,43 @@ static inline int test_tsk_need_resched(
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -247,10 +210,39 @@ Index: linux-stable/include/linux/sched.h
  static inline int restart_syscall(void)
  {
  	set_tsk_thread_flag(current, TIF_SIGPENDING);
-Index: linux-stable/kernel/Kconfig.preempt
-===================================================================
---- linux-stable.orig/kernel/Kconfig.preempt
-+++ linux-stable/kernel/Kconfig.preempt
+--- a/include/linux/thread_info.h
++++ b/include/linux/thread_info.h
+@@ -102,7 +102,17 @@ static inline int test_ti_thread_flag(st
+ #define test_thread_flag(flag) \
+ 	test_ti_thread_flag(current_thread_info(), flag)
+ 
+-#define tif_need_resched() test_thread_flag(TIF_NEED_RESCHED)
++#ifdef CONFIG_PREEMPT_LAZY
++#define tif_need_resched()	(test_thread_flag(TIF_NEED_RESCHED) || \
++				 test_thread_flag(TIF_NEED_RESCHED_LAZY))
++#define tif_need_resched_now()	(test_thread_flag(TIF_NEED_RESCHED))
++#define tif_need_resched_lazy()	test_thread_flag(TIF_NEED_RESCHED_LAZY))
++
++#else
++#define tif_need_resched()	test_thread_flag(TIF_NEED_RESCHED)
++#define tif_need_resched_now()	test_thread_flag(TIF_NEED_RESCHED)
++#define tif_need_resched_lazy()	0
++#endif
+ 
+ #if defined TIF_RESTORE_SIGMASK && !defined HAVE_SET_RESTORE_SIGMASK
+ /*
+--- a/include/linux/trace_events.h
++++ b/include/linux/trace_events.h
+@@ -68,6 +68,7 @@ struct trace_entry {
+ 	int			pid;
+ 	unsigned short		migrate_disable;
+ 	unsigned short		padding;
++	unsigned char		preempt_lazy_count;
+ };
+ 
+ #define TRACE_EVENT_TYPE_MAX						\
+--- a/kernel/Kconfig.preempt
++++ b/kernel/Kconfig.preempt
 @@ -6,6 +6,12 @@ config PREEMPT_RT_BASE
  	bool
  	select PREEMPT
@@ -264,41 +256,40 @@ Index: linux-stable/kernel/Kconfig.preempt
  choice
  	prompt "Preemption Model"
  	default PREEMPT_NONE
-Index: linux-stable/kernel/sched/core.c
-===================================================================
---- linux-stable.orig/kernel/sched/core.c
-+++ linux-stable/kernel/sched/core.c
-@@ -539,6 +539,37 @@ void resched_task(struct task_struct *p)
- 		smp_send_reschedule(cpu);
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -603,6 +603,38 @@ void resched_curr(struct rq *rq)
+ 		trace_sched_wake_idle_without_ipi(cpu);
  }
  
 +#ifdef CONFIG_PREEMPT_LAZY
-+void resched_task_lazy(struct task_struct *p)
++void resched_curr_lazy(struct rq *rq)
 +{
++	struct task_struct *curr = rq->curr;
 +	int cpu;
 +
 +	if (!sched_feat(PREEMPT_LAZY)) {
-+		resched_task(p);
++		resched_curr(rq);
 +		return;
 +	}
 +
-+	lockdep_assert_held(&task_rq(p)->lock);
++	lockdep_assert_held(&rq->lock);
 +
-+	if (test_tsk_need_resched(p))
++	if (test_tsk_need_resched(curr))
 +		return;
 +
-+	if (test_tsk_need_resched_lazy(p))
++	if (test_tsk_need_resched_lazy(curr))
 +		return;
 +
-+	set_tsk_need_resched_lazy(p);
++	set_tsk_need_resched_lazy(curr);
 +
-+	cpu = task_cpu(p);
++	cpu = cpu_of(rq);
 +	if (cpu == smp_processor_id())
 +		return;
 +
 +	/* NEED_RESCHED_LAZY must be visible before we test polling */
 +	smp_mb();
-+	if (!tsk_is_polling(p))
++	if (!tsk_is_polling(curr))
 +		smp_send_reschedule(cpu);
 +}
 +#endif
@@ -306,7 +297,7 @@ Index: linux-stable/kernel/sched/core.c
  void resched_cpu(int cpu)
  {
  	struct rq *rq = cpu_rq(cpu);
-@@ -1882,6 +1913,9 @@ int sched_fork(unsigned long clone_flags
+@@ -2344,6 +2376,9 @@ int sched_fork(unsigned long clone_flags
  	p->on_cpu = 0;
  #endif
  	init_task_preempt_count(p);
@@ -316,7 +307,7 @@ Index: linux-stable/kernel/sched/core.c
  #ifdef CONFIG_SMP
  	plist_node_init(&p->pushable_tasks, MAX_PRIO);
  	RB_CLEAR_NODE(&p->pushable_dl_tasks);
-@@ -2664,6 +2698,7 @@ void migrate_disable(void)
+@@ -3142,6 +3177,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -324,23 +315,23 @@ Index: linux-stable/kernel/sched/core.c
  	pin_current_cpu();
  	p->migrate_disable = 1;
  	preempt_enable();
-@@ -2718,6 +2753,7 @@ void migrate_enable(void)
+@@ -3181,6 +3217,7 @@ void migrate_enable(void)
  
  	unpin_current_cpu();
  	preempt_enable();
 +	preempt_lazy_enable();
  }
  EXPORT_SYMBOL(migrate_enable);
- #else
-@@ -2845,6 +2881,7 @@ need_resched:
- 	put_prev_task(rq, prev);
- 	next = pick_next_task(rq);
+ #endif
+@@ -3318,6 +3355,7 @@ static void __sched notrace __schedule(b
+ 
+ 	next = pick_next_task(rq, prev);
  	clear_tsk_need_resched(prev);
 +	clear_tsk_need_resched_lazy(prev);
  	clear_preempt_need_resched();
- 	rq->skip_clock_update = 0;
+ 	rq->clock_skip_update = 0;
  
-@@ -2950,6 +2987,14 @@ asmlinkage void __sched notrace preempt_
+@@ -3463,6 +3501,14 @@ asmlinkage __visible void __sched notrac
  	if (likely(!preemptible()))
  		return;
  
@@ -349,13 +340,13 @@ Index: linux-stable/kernel/sched/core.c
 +	 * Check for lazy preemption
 +	 */
 +	if (current_thread_info()->preempt_lazy_count &&
-+			!test_thread_flag(TIF_NEED_RESCHED))
++	    !test_thread_flag(TIF_NEED_RESCHED))
 +		return;
 +#endif
  	do {
- 		__preempt_count_add(PREEMPT_ACTIVE);
+ 		preempt_disable_notrace();
  		/*
-@@ -4718,7 +4763,9 @@ void init_idle(struct task_struct *idle,
+@@ -5203,7 +5249,9 @@ void init_idle(struct task_struct *idle,
  
  	/* Set the preempt count _outside_ the spinlocks! */
  	init_idle_preempt_count(idle, cpu);
@@ -366,121 +357,113 @@ Index: linux-stable/kernel/sched/core.c
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-Index: linux-stable/kernel/sched/fair.c
-===================================================================
---- linux-stable.orig/kernel/sched/fair.c
-+++ linux-stable/kernel/sched/fair.c
-@@ -2679,7 +2679,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -3135,7 +3135,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
  	ideal_runtime = sched_slice(cfs_rq, curr);
  	delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
  	if (delta_exec > ideal_runtime) {
--		resched_task(rq_of(cfs_rq)->curr);
-+		resched_task_lazy(rq_of(cfs_rq)->curr);
+-		resched_curr(rq_of(cfs_rq));
++		resched_curr_lazy(rq_of(cfs_rq));
  		/*
  		 * The current task ran long enough, ensure it doesn't get
  		 * re-elected due to buddy favours.
-@@ -2703,7 +2703,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
+@@ -3159,7 +3159,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
  		return;
  
  	if (delta > ideal_runtime)
--		resched_task(rq_of(cfs_rq)->curr);
-+		resched_task_lazy(rq_of(cfs_rq)->curr);
+-		resched_curr(rq_of(cfs_rq));
++		resched_curr_lazy(rq_of(cfs_rq));
  }
  
  static void
-@@ -2824,7 +2824,7 @@ entity_tick(struct cfs_rq *cfs_rq, struc
+@@ -3299,7 +3299,7 @@ entity_tick(struct cfs_rq *cfs_rq, struc
  	 * validating it and just reschedule.
  	 */
  	if (queued) {
--		resched_task(rq_of(cfs_rq)->curr);
-+		resched_task_lazy(rq_of(cfs_rq)->curr);
+-		resched_curr(rq_of(cfs_rq));
++		resched_curr_lazy(rq_of(cfs_rq));
  		return;
  	}
  	/*
-@@ -3013,7 +3013,7 @@ static void __account_cfs_rq_runtime(str
+@@ -3481,7 +3481,7 @@ static void __account_cfs_rq_runtime(str
  	 * hierarchy can be throttled
  	 */
  	if (!assign_cfs_rq_runtime(cfs_rq) && likely(cfs_rq->curr))
--		resched_task(rq_of(cfs_rq)->curr);
-+		resched_task_lazy(rq_of(cfs_rq)->curr);
+-		resched_curr(rq_of(cfs_rq));
++		resched_curr_lazy(rq_of(cfs_rq));
  }
  
  static __always_inline
-@@ -3612,7 +3612,7 @@ static void hrtick_start_fair(struct rq
+@@ -4093,7 +4093,7 @@ static void hrtick_start_fair(struct rq
  
  		if (delta < 0) {
  			if (rq->curr == p)
--				resched_task(p);
-+				resched_task_lazy(p);
+-				resched_curr(rq);
++				resched_curr_lazy(rq);
  			return;
  		}
- 
-@@ -4477,7 +4477,7 @@ static void check_preempt_wakeup(struct
+ 		hrtick_start(rq, delta);
+@@ -5177,7 +5177,7 @@ static void check_preempt_wakeup(struct
  	return;
  
  preempt:
--	resched_task(curr);
-+	resched_task_lazy(curr);
+-	resched_curr(rq);
++	resched_curr_lazy(rq);
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -6965,7 +6965,7 @@ static void task_fork_fair(struct task_s
+@@ -7928,7 +7928,7 @@ static void task_fork_fair(struct task_s
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
--		resched_task(rq->curr);
-+		resched_task_lazy(rq->curr);
+-		resched_curr(rq);
++		resched_curr_lazy(rq);
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -6990,7 +6990,7 @@ prio_changed_fair(struct rq *rq, struct
+@@ -7953,7 +7953,7 @@ prio_changed_fair(struct rq *rq, struct
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
--			resched_task(rq->curr);
-+			resched_task_lazy(rq->curr);
+-			resched_curr(rq);
++			resched_curr_lazy(rq);
  	} else
  		check_preempt_curr(rq, p, 0);
  }
-Index: linux-stable/kernel/sched/features.h
-===================================================================
---- linux-stable.orig/kernel/sched/features.h
-+++ linux-stable/kernel/sched/features.h
-@@ -58,6 +58,9 @@ SCHED_FEAT(NONTASK_POWER, true)
- SCHED_FEAT(TTWU_QUEUE, true)
- #else
+--- a/kernel/sched/features.h
++++ b/kernel/sched/features.h
+@@ -47,6 +47,9 @@ SCHED_FEAT(NONTASK_CAPACITY, true)
+ 
+ #ifdef CONFIG_PREEMPT_RT_FULL
  SCHED_FEAT(TTWU_QUEUE, false)
 +# ifdef CONFIG_PREEMPT_LAZY
 +SCHED_FEAT(PREEMPT_LAZY, true)
 +# endif
- #endif
+ #else
  
- SCHED_FEAT(FORCE_SD_OVERLAP, false)
-Index: linux-stable/kernel/sched/sched.h
-===================================================================
---- linux-stable.orig/kernel/sched/sched.h
-+++ linux-stable/kernel/sched/sched.h
-@@ -1201,6 +1201,15 @@ extern void init_sched_dl_class(void);
- extern void resched_task(struct task_struct *p);
+ /*
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -1300,6 +1300,15 @@ extern void init_sched_fair_class(void);
+ extern void resched_curr(struct rq *rq);
  extern void resched_cpu(int cpu);
  
 +#ifdef CONFIG_PREEMPT_LAZY
-+extern void resched_task_lazy(struct task_struct *tsk);
++extern void resched_curr_lazy(struct rq *rq);
 +#else
-+static inline void resched_task_lazy(struct task_struct *tsk)
++static inline void resched_curr_lazy(struct rq *rq)
 +{
-+	resched_task(tsk);
++	resched_curr(rq);
 +}
 +#endif
 +
  extern struct rt_bandwidth def_rt_bandwidth;
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
-Index: linux-stable/kernel/trace/trace.c
-===================================================================
---- linux-stable.orig/kernel/trace/trace.c
-+++ linux-stable/kernel/trace/trace.c
-@@ -1541,6 +1541,7 @@ tracing_generic_entry_update(struct trac
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -1652,6 +1652,7 @@ tracing_generic_entry_update(struct trac
  	struct task_struct *tsk = current;
  
  	entry->preempt_count		= pc & 0xff;
@@ -488,7 +471,7 @@ Index: linux-stable/kernel/trace/trace.c
  	entry->pid			= (tsk) ? tsk->pid : 0;
  	entry->flags =
  #ifdef CONFIG_TRACE_IRQFLAGS_SUPPORT
-@@ -1550,7 +1551,8 @@ tracing_generic_entry_update(struct trac
+@@ -1661,7 +1662,8 @@ tracing_generic_entry_update(struct trac
  #endif
  		((pc & HARDIRQ_MASK) ? TRACE_FLAG_HARDIRQ : 0) |
  		((pc & SOFTIRQ_MASK) ? TRACE_FLAG_SOFTIRQ : 0) |
@@ -498,62 +481,56 @@ Index: linux-stable/kernel/trace/trace.c
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -2459,15 +2461,17 @@ get_total_entries(struct trace_buffer *b
+@@ -2557,15 +2559,17 @@ get_total_entries(struct trace_buffer *b
  
  static void print_lat_help_header(struct seq_file *m)
  {
--	seq_puts(m, "#                  _------=> CPU#            \n");
--	seq_puts(m, "#                 / _-----=> irqs-off        \n");
--	seq_puts(m, "#                | / _----=> need-resched    \n");
--	seq_puts(m, "#                || / _---=> hardirq/softirq \n");
--	seq_puts(m, "#                ||| / _--=> preempt-depth   \n");
--	seq_puts(m, "#                |||| / _--=> migrate-disable\n");
--	seq_puts(m, "#                ||||| /     delay           \n");
--	seq_puts(m, "#  cmd     pid   |||||| time  |   caller     \n");
--	seq_puts(m, "#     \\   /      |||||  \\   |   /          \n");
-+	seq_puts(m, "#                   _--------=> CPU#              \n");
-+	seq_puts(m, "#                  / _-------=> irqs-off          \n");
-+	seq_puts(m, "#                 | / _------=> need-resched      \n");
-+	seq_puts(m, "#                 || / _-----=> need-resched_lazy \n");
-+	seq_puts(m, "#                 ||| / _----=> hardirq/softirq   \n");
-+	seq_puts(m, "#                 |||| / _---=> preempt-depth     \n");
-+	seq_puts(m, "#                 ||||| / _--=> preempt-lazy-depth\n");
-+	seq_puts(m, "#                 |||||| / _-=> migrate-disable   \n");
-+	seq_puts(m, "#                 ||||||| /     delay             \n");
-+	seq_puts(m, "#  cmd     pid    |||||||| time  |   caller       \n");
-+	seq_puts(m, "#     \\   /      ||||||||  \\   |   /            \n");
+-	seq_puts(m, "#                  _------=> CPU#            \n"
+-		    "#                 / _-----=> irqs-off        \n"
+-		    "#                | / _----=> need-resched    \n"
+-		    "#                || / _---=> hardirq/softirq \n"
+-		    "#                ||| / _--=> preempt-depth   \n"
+-		    "#                |||| / _--=> migrate-disable\n"
+-		    "#                ||||| /     delay           \n"
+-		    "#  cmd     pid   |||||| time  |   caller     \n"
+-		    "#     \\   /      |||||  \\   |   /          \n");
++	seq_puts(m, "#                   _--------=> CPU#              \n"
++		    "#                  / _-------=> irqs-off          \n"
++		    "#                 | / _------=> need-resched      \n"
++		    "#                 || / _-----=> need-resched_lazy \n"
++		    "#                 ||| / _----=> hardirq/softirq   \n"
++		    "#                 |||| / _---=> preempt-depth     \n"
++		    "#                 ||||| / _--=> preempt-lazy-depth\n"
++		    "#                 |||||| / _-=> migrate-disable   \n"
++		    "#                 ||||||| /     delay             \n"
++		    "#  cmd     pid    |||||||| time  |   caller       \n"
++		    "#     \\   /      ||||||||  \\   |   /            \n");
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -2491,13 +2495,16 @@ static void print_func_help_header(struc
- static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file *m)
- {
+@@ -2591,11 +2595,14 @@ static void print_func_help_header_irq(s
  	print_event_info(buf, m);
--	seq_puts(m, "#                              _-----=> irqs-off\n");
--	seq_puts(m, "#                             / _----=> need-resched\n");
--	seq_puts(m, "#                            | / _---=> hardirq/softirq\n");
--	seq_puts(m, "#                            || / _--=> preempt-depth\n");
--	seq_puts(m, "#                            ||| /     delay\n");
--	seq_puts(m, "#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION\n");
--	seq_puts(m, "#              | |       |   ||||       |         |\n");
-+	seq_puts(m, "#                              _-------=> irqs-off          \n");
-+	seq_puts(m, "#                            /  _------=> need-resched      \n");
-+	seq_puts(m, "#                            |/  _-----=> need-resched_lazy \n");
-+	seq_puts(m, "#                            ||/  _----=> hardirq/softirq   \n");
-+	seq_puts(m, "#                            |||/  _---=> preempt-depth     \n");
-+	seq_puts(m, "#                            ||||/  _--=> preempt-lazy-depth\n");
-+	seq_puts(m, "#                            ||||| / _-=> migrate-disable   \n");
-+	seq_puts(m, "#                            |||||| /     delay\n");
-+	seq_puts(m, "#           TASK-PID   CPU#  ||||||  TIMESTAMP  FUNCTION\n");
-+	seq_puts(m, "#              | |       |   ||||||     |         |\n");
+ 	seq_puts(m, "#                              _-----=> irqs-off\n"
+ 		    "#                             / _----=> need-resched\n"
+-		    "#                            | / _---=> hardirq/softirq\n"
+-		    "#                            || / _--=> preempt-depth\n"
+-		    "#                            ||| /     delay\n"
+-		    "#           TASK-PID   CPU#  ||||    TIMESTAMP  FUNCTION\n"
+-		    "#              | |       |   ||||       |         |\n");
++		    "#                            |/  _-----=> need-resched_lazy\n"
++		    "#                            || / _---=> hardirq/softirq\n"
++		    "#                            ||| / _--=> preempt-depth\n"
++		    "#                            |||| /_--=> preempt-lazy-depth\n"
++		    "#                            |||||  _-=> migrate-disable   \n"
++		    "#                            ||||| /    delay\n"
++		    "#           TASK-PID   CPU#  ||||||    TIMESTAMP  FUNCTION\n"
++		    "#              | |       |   ||||||       |         |\n");
  }
  
  void
-Index: linux-stable/kernel/trace/trace.h
-===================================================================
---- linux-stable.orig/kernel/trace/trace.h
-+++ linux-stable/kernel/trace/trace.h
-@@ -118,6 +118,7 @@ struct kretprobe_trace_entry_head {
+--- a/kernel/trace/trace.h
++++ b/kernel/trace/trace.h
+@@ -117,6 +117,7 @@ struct kretprobe_trace_entry_head {
   *  NEED_RESCHED	- reschedule is requested
   *  HARDIRQ		- inside an interrupt handler
   *  SOFTIRQ		- inside a softirq handler
@@ -561,7 +538,7 @@ Index: linux-stable/kernel/trace/trace.h
   */
  enum trace_flag_type {
  	TRACE_FLAG_IRQS_OFF		= 0x01,
-@@ -126,6 +127,7 @@ enum trace_flag_type {
+@@ -125,6 +126,7 @@ enum trace_flag_type {
  	TRACE_FLAG_HARDIRQ		= 0x08,
  	TRACE_FLAG_SOFTIRQ		= 0x10,
  	TRACE_FLAG_PREEMPT_RESCHED	= 0x20,
@@ -569,11 +546,9 @@ Index: linux-stable/kernel/trace/trace.h
  };
  
  #define TRACE_BUF_SIZE		1024
-Index: linux-stable/kernel/trace/trace_output.c
-===================================================================
---- linux-stable.orig/kernel/trace/trace_output.c
-+++ linux-stable/kernel/trace/trace_output.c
-@@ -606,6 +606,7 @@ int trace_print_lat_fmt(struct trace_seq
+--- a/kernel/trace/trace_output.c
++++ b/kernel/trace/trace_output.c
+@@ -386,6 +386,7 @@ int trace_print_lat_fmt(struct trace_seq
  {
  	char hardsoft_irq;
  	char need_resched;
@@ -581,7 +556,7 @@ Index: linux-stable/kernel/trace/trace_output.c
  	char irqs_off;
  	int hardirq;
  	int softirq;
-@@ -634,6 +635,8 @@ int trace_print_lat_fmt(struct trace_seq
+@@ -413,6 +414,8 @@ int trace_print_lat_fmt(struct trace_seq
  		need_resched = '.';
  		break;
  	}
@@ -590,27 +565,26 @@ Index: linux-stable/kernel/trace/trace_output.c
  
  	hardsoft_irq =
  		(hardirq && softirq) ? 'H' :
-@@ -641,8 +644,9 @@ int trace_print_lat_fmt(struct trace_seq
+@@ -420,14 +423,20 @@ int trace_print_lat_fmt(struct trace_seq
  		softirq ? 's' :
  		'.';
  
--	if (!trace_seq_printf(s, "%c%c%c",
--			      irqs_off, need_resched, hardsoft_irq))
-+	if (!trace_seq_printf(s, "%c%c%c%c",
-+			      irqs_off, need_resched, need_resched_lazy,
-+			      hardsoft_irq))
- 		return 0;
+-	trace_seq_printf(s, "%c%c%c",
+-			 irqs_off, need_resched, hardsoft_irq);
++	trace_seq_printf(s, "%c%c%c%c",
++			 irqs_off, need_resched, need_resched_lazy,
++			 hardsoft_irq);
  
  	if (entry->preempt_count)
-@@ -650,6 +654,11 @@ int trace_print_lat_fmt(struct trace_seq
+ 		trace_seq_printf(s, "%x", entry->preempt_count);
  	else
- 		ret = trace_seq_putc(s, '.');
+ 		trace_seq_putc(s, '.');
  
 +	if (entry->preempt_lazy_count)
-+		ret = trace_seq_printf(s, "%x", entry->preempt_lazy_count);
++		trace_seq_printf(s, "%x", entry->preempt_lazy_count);
 +	else
-+		ret = trace_seq_putc(s, '.');
++		trace_seq_putc(s, '.');
 +
  	if (entry->migrate_disable)
- 		ret = trace_seq_printf(s, "%x", entry->migrate_disable);
+ 		trace_seq_printf(s, "%x", entry->migrate_disable);
  	else

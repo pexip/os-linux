@@ -167,6 +167,7 @@ struct iscsi_transport {
 				 struct iscsi_bus_flash_conn *fnode_conn);
 	int (*logout_flashnode_sid) (struct iscsi_cls_session *cls_sess);
 	int (*get_host_stats) (struct Scsi_Host *shost, char *buf, int len);
+	u8 (*check_protection)(struct iscsi_task *task, sector_t *sector);
 };
 
 /*
@@ -240,6 +241,7 @@ struct iscsi_cls_session {
 
 	/* recovery fields */
 	int recovery_tmo;
+	bool recovery_tmo_sysfs_override;
 	struct delayed_work recovery_work;
 
 	unsigned int target_id;

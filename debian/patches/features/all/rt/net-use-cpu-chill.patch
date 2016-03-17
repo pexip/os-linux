@@ -1,14 +1,14 @@
 Subject: net: Use cpu_chill() instead of cpu_relax()
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 07 Mar 2012 21:10:04 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
 make progress.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: stable-rt@vger.kernel.org
+
 ---
  net/packet/af_packet.c |    5 +++--
  net/rds/ib_rdma.c      |    3 ++-
@@ -24,7 +24,7 @@ Cc: stable-rt@vger.kernel.org
  #include <linux/kmod.h>
  #include <linux/slab.h>
  #include <linux/vmalloc.h>
-@@ -700,7 +701,7 @@ static void prb_retire_rx_blk_timer_expi
+@@ -695,7 +696,7 @@ static void prb_retire_rx_blk_timer_expi
  	if (BLOCK_NUM_PKTS(pbd)) {
  		while (atomic_read(&pkc->blk_fill_in_prog)) {
  			/* Waiting for skb_copy_bits to finish... */
@@ -33,7 +33,7 @@ Cc: stable-rt@vger.kernel.org
  		}
  	}
  
-@@ -951,7 +952,7 @@ static void prb_retire_current_block(str
+@@ -957,7 +958,7 @@ static void prb_retire_current_block(str
  		if (!(status & TP_STATUS_BLK_TMO)) {
  			while (atomic_read(&pkc->blk_fill_in_prog)) {
  				/* Waiting for skb_copy_bits to finish... */
@@ -52,7 +52,7 @@ Cc: stable-rt@vger.kernel.org
  
  #include "rds.h"
  #include "ib.h"
-@@ -286,7 +287,7 @@ static inline void wait_clean_list_grace
+@@ -313,7 +314,7 @@ static inline void wait_clean_list_grace
  	for_each_online_cpu(cpu) {
  		flag = &per_cpu(clean_list_grace, cpu);
  		while (test_bit(CLEAN_LIST_BUSY_BIT, flag))

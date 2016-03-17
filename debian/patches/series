@@ -1,12 +1,11 @@
 # Changes to support package build system
 debian/version.patch
+debian/uname-version-timestamp.patch
 debian/kernelvariables.patch
 debian/gitignore.patch
-debian/ia64-hardcode-arch-script-output.patch
 debian/mips-disable-werror.patch
 debian/arch-sh4-fix-uimage-build.patch
 debian/powerpcspe-omit-uimage.patch
-debian/ppc64el-disable-zImage.patch
 features/all/Kbuild-kconfig-Verbose-version-of-listnewconfig.patch
 
 # Fixes/improvements to firmware loading
@@ -17,16 +16,12 @@ bugfix/all/firmware_class-log-every-success-and-failure.patch
 bugfix/all/firmware-remove-redundant-log-messages-from-drivers.patch
 bugfix/all/radeon-firmware-is-required-for-drm-and-kms-on-r600-onward.patch
 
-# Patches and source files from aufs3 repository, imported with
-# debian/patches/features/all/aufs3/gen-patch.
-features/all/aufs3/aufs3-kbuild.patch
-features/all/aufs3/aufs3-base.patch
-features/all/aufs3/aufs3-mmap.patch
-features/all/aufs3/aufs3-standalone.patch
-features/all/aufs3/aufs3-add.patch
-# Debian-specific changes
-features/all/aufs3/aufs3-remove-circular-includes.patch
-debian/aufs3-mark-as-staging.patch
+# Patches from aufs4 repository, imported with
+# debian/patches/features/all/aufs4/gen-patch.  These are only the
+# changes needed to allow aufs to be built out-of-tree.
+features/all/aufs4/aufs4-base.patch
+features/all/aufs4/aufs4-mmap.patch
+features/all/aufs4/aufs4-standalone.patch
 
 # Change some defaults for security reasons
 debian/af_802154-Disable-auto-loading-as-mitigation-against.patch
@@ -42,80 +37,104 @@ debian/yama-disable-by-default.patch
 debian/add-sysctl-to-disallow-unprivileged-CLONE_NEWUSER-by-default.patch
 
 # Disable autoloading/probing of various drivers by default
-debian/cirrus-disable-modeset-by-default.patch
-debian/mgag200-disable-autoload.patch
 debian/cdc_ncm-cdc_mbim-use-ncm-by-default.patch
 debian/snd-pcsp-disable-autoload.patch
 bugfix/x86/viafb-autoload-on-olpc-xo1.5-only.patch
 
-# Support for microcode updates under Xen
-features/all/xen/microcode.patch
-features/all/xen/microcode-amd-fam15plus.patch
-features/all/xen/microcode-typo.patch
-features/all/xen/microcode-api-update.patch
-
 # Arch bug fixes
-bugfix/arm/omap-musb-choice.patch
-bugfix/mips/disable-advansys.patch
-bugfix/arm/ixp4xx_iobe.patch
-bugfix/m68k/ethernat-kconfig.patch
-bugfix/arm/bfa-Replace-large-udelay-with-mdelay.patch
-bugfix/powerpc/ppc64el-powernv-calls-to-support-little-endian.patch
-bugfix/mips/MIPS-SB1-Fix-excessive-kernel-warnings.patch
-bugfix/mips/MIPS-ZBOOT-add-missing-linux-string.h-include.patch
-bugfix/mips/MIPS-Fix-branch-emulation-of-branch-likely-instructi.patch
-bugfix/mips/MIPS-ptrace-Avoid-smp_processor_id-in-preemptible-co.patch
-bugfix/mips/MIPS-OCTEON-make-get_system_type-thread-safe.patch
-bugfix/mips/MIPS-O32-32-bit-Fix-bug-which-can-cause-incorrect-sy.patch
-bugfix/mips/MIPS-tlbex-fix-a-missing-statement-for-HUGETLB.patch
-bugfix/mips/MIPS-prevent-user-from-setting-FCSR-cause-bits.patch
+bugfix/mips/mips-math-emu-correctly-handle-nop-emulation.patch
+
+# Arch features
+features/mips/MIPS-increase-MAX-PHYSMEM-BITS-on-Loongson-3-only.patch
+features/mips/MIPS-Loongson-3-Add-Loongson-LS3A-RS780E-1-way-machi.patch
+features/mips/MIPS-octeon-Add-support-for-the-UBNT-E200-board.patch
+features/x86/x86-memtest-WARN-if-bad-RAM-found.patch
+features/x86/x86-make-x32-syscall-support-conditional.patch
+features/arm/rpi/pwm-bcm2835-calculate-scaler-in-config.patch
+features/arm/rpi/pwm-bcm2835-prevent-division-by-zero.patch
+features/arm/rpi/pwm-bcm2835-fix-email-address-specification.patch
+features/arm/rpi/drm-create-a-driver-hook-for-allocating-gem-object-s.patch
+features/arm/rpi/drm-vc4-add-a-bo-cache.patch
+features/arm/rpi/drm-vc4-add-create-and-map-bo-ioctls.patch
+features/arm/rpi/drm-vc4-add-an-api-for-creating-gpu-shaders-in-gem-b.patch
+features/arm/rpi/drm-vc4-fix-a-typo-in-a-v3d-debug-register.patch
+features/arm/rpi/drm-vc4-bind-and-initialize-the-v3d-engine.patch
+features/arm/rpi/drm-vc4-add-support-for-drawing-3d-frames.patch
+features/arm/rpi/drm-vc4-add-support-for-async-pageflips.patch
+features/arm/rpi/drm-vc4-add-an-interface-for-capturing-the-gpu-state.patch
+features/arm/rpi/drm-vc4-copy_to_user-returns-the-number-of-bytes-rem.patch
+features/arm/rpi/drm-vc4-allocate-enough-memory-in-vc4_save_hang_stat.patch
+features/arm/rpi/drm-vc4-fix-an-error-code.patch
+features/arm/rpi/dt-bindings-add-root-properties-for-raspberry-pi-2.patch
+features/arm/rpi/arm-bcm2835-add-a-compat-string-for-bcm2836-machine-.patch
+features/arm/rpi/arm-bcm2835-add-kconfig-support-for-bcm2836.patch
+features/arm/rpi/arm-bcm2835-define-two-new-packets-from-the-latest-f.patch
+features/arm/rpi/dt-bindings-add-rpi-power-domain-driver-bindings.patch
+features/arm/rpi/arm-bcm2835-add-rpi-power-domain-driver.patch
+features/arm/rpi/arm-bcm2835-split-the-dt-for-peripherals-from-the-dt.patch
+features/arm/rpi/arm-bcm2835-move-the-cpu-peripheral-include-out-of-c.patch
+features/arm/rpi/arm-bcm2835-add-devicetree-for-bcm2836-and-raspberry.patch
+features/arm/rpi/arm-bcm2835-add-the-auxiliary-clocks-to-the-device-t.patch
+features/sparc/hwrng-n2-attach-on-t5-m5-t7-m7-sparc-cpus.patch
+features/arm/arm-orion-move-watchdog-setup-to-mach-orion5x.patch
+features/arm/arm-orion-always-use-multi_irq_handler.patch
+features/arm/arm-orion-use-sparse_irq-everywhere.patch
+features/arm/arm-orion5x-clean-up-mach-.h-headers.patch
+features/arm/arm-orion5x-multiplatform-support.patch
+features/arm/device-tree/ARM-dts-imx6dlq-wandboard-revb1.dts-use-unique-model-id.patch
+features/arm/device-tree/ARM-dts-kirkwood-gpio-pin-fixes-for-linkstation-ls-wvl-vl.patch
+features/arm/device-tree/ARM-dts-kirkwood-gpio-pin-fixes-for-linkstation-ls-wxl-ws.patch
+features/arm/device-tree/ARM-dts-kirkwood-gpio-leds-fixes-for-linkstation-ls-wxl-w.patch
+features/arm/device-tree/ARM-dts-kirkwood-gpio-leds-fixes-for-linkstation-ls-wvl-v.patch
+features/arm/device-tree/ARM-dts-orion5x-gpio-pin-fixes-for-linkstation-lswtgl.patch
+features/arm/device-tree/ARM-dts-orion5x-fix-missing-mtdflash-linkstation-lswtgl.patch
+features/arm/device-tree/ARM-dts-kirkwood-relicense-dts-of-ls-wvl-vl-and-ls-wxl-ws.patch
+features/arm/device-tree/ARM-dts-kirkwood-split-lswxl-dts-to-linkstation-lswsxl-an.patch
+features/arm/device-tree/ARM-dts-kirkwood-split-lswvl-dts-to-linkstation-lsvl-and-.patch
+features/arm/device-tree/ARM-dts-kirkwood-add-for-buffalo-linkstation-ls-qvl.patch
+features/arm/device-tree/ARM-dts-orion5x-split-linkstation-lswtgl-into-common-and-.patch
+features/arm/device-tree/ARM-dts-orion5x-add-for-buffalo-linkstation-ls-gl.patch
+features/arm/novena/ARM-dts-imx6q-add-Novena-board.patch
+features/arm/novena/ARM-dts-imx6q-clean-up-unused-ipu2grp.patch
 
 # Miscellaneous bug fixes
 bugfix/all/misc-bmp085-Enable-building-as-a-module.patch
 bugfix/all/kbuild-use-nostdinc-in-compile-tests.patch
 bugfix/all/disable-some-marvell-phys.patch
-bugfix/all/bluetooth-allocate-static-minor-for-vhci.patch
+bugfix/all/rtsx_usb_ms-use-msleep_interruptible-in-polling-loop.patch
+bugfix/all/rt2x00-fix-monitor-mode-regression.patch
 
 # Miscellaneous features
-features/all/x86-memtest-WARN-if-bad-RAM-found.patch
-features/all/efi-autoload-efivars.patch
-features/all/mvsas-Recognise-device-subsystem-9485-9485-as-88SE94.patch
-features/all/support-Thinkpad-X1-Carbon-2nd-generation-s-adaptive.patch
-features/all/save-and-restore-adaptive-keyboard-mode-for-suspend-.patch
-features/all/ARM-sunxi-ahci-and-gmac.patch
-features/arm/0001-spi-sunxi-Add-Allwinner-A31-SPI-controller-driver.patch
-features/arm/0002-spi-sun6i-Fix-define-for-SUN6I_TFR_CTL_CS_MASK.patch
-features/arm/0003-spi-sun6i-Set-bits_per_word_mask-to-only-support-8-b.patch
-features/arm/ARM-dt-sun4i-Add-A10-SPI-controller-nodes.patch
-features/arm/PHY-sunxi-Add-driver-for-sunxi-usb-phy.patch
-features/arm/ARM-sun4i-dt-Add-bindings-for-USB-clocks.patch
-features/arm/ARM-sun4i-dt-Add-USB-host-bindings.patch
-bugfix/all/net-l2tp-don-t-fall-back-on-UDP-get-set-sockopt.patch
-features/mips/0001-MIPS-Loongson-Rename-PRID_IMP_LOONGSON1-and-PRID_IMP.patch
-features/mips/0002-MIPS-Loongson-Add-basic-Loongson-3-definition.patch
-features/mips/0003-MIPS-Loongson-Add-basic-Loongson-3-CPU-support.patch
-features/mips/0004-MIPS-Loongson-3-Add-Lemote-3A-machtypes-definition.patch
-features/mips/0005-MIPS-Loongson-Add-UEFI-like-firmware-interface-LEFI-.patch
-features/mips/0006-MIPS-Loongson-3-Add-HT-linked-PCI-support.patch
-features/mips/0007-MIPS-Loongson-3-Add-IRQ-init-and-dispatch-support.patch
-features/mips/0008-MIPS-Loongson-3-Add-serial-port-support.patch
-features/mips/0009-MIPS-Loongson-Add-swiotlb-to-support-All-Memory-DMA.patch
-features/mips/0010-MIPS-Loongson-Add-Loongson-3-Kconfig-options.patch
-features/mips/0011-MIPS-Loongson-3-Add-Loongson-3-SMP-support.patch
-features/mips/0012-MIPS-Loongson-3-Add-CPU-hotplug-support.patch
-features/mips/0013-MIPS-Loongson-Add-a-Loongson-3-default-config-file.patch
-features/mips/MIPS-Octeon-Add-PCIe2-support-in-arch_setup_msi_irq.patch
-features/mips/MIPS-octeon-Add-interface-mode-detection-for-Octeon-.patch
-features/mips/MIPS-Malta-Setup-PM-I-O-region-on-boot.patch
-features/mips/MIPS-Define-some-more-PIIX4-registers-values.patch
-features/mips/MIPS-Malta-add-suspend-state-entry-code.patch
-features/mips/MIPS-Malta-Let-PIIX4-respond-to-PCI-special-cycles.patch
-features/mips/MIPS-Malta-hang-on-halt.patch
-features/mips/MIPS-Malta-support-powering-down.patch
-features/mips/MIPS-Loongson-3-Add-Loongson-LS3A-RS780E-1-way-machi.patch
-bugfix/x86/x86-reject-x32-executables-if-x32-abi-not-supported.patch
-features/x86/x86-make-x32-syscall-support-conditional.patch
-bugfix/s390/s390-3215-fix-hanging-console-issue.patch
-debian/libata-avoid-abi-change-in-3.14.15.patch
-debian/mutex-avoid-abi-change-in-3.14.14.patch
-bugfix/all/net-sctp-inherit-auth_capable-on-INIT-collisions.patch
+
+# Hardening from grsecurity
+features/all/grsecurity/grsecurity-kconfig.patch
+# Disabled until we add code into the grsecurity/ directory
+#features/all/grsecurity/grsecurity-kbuild.patch
+features/all/grsecurity/grkernsec_perf_harden.patch
+
+# Security fixes
+bugfix/all/usbvision-fix-overflow-of-interfaces-array.patch
+bugfix/all/media-usbvision-fix-crash-on-detecting-device-with-i.patch
+bugfix/all/ptrace-being-capable-wrt-a-process-requires-mapped-uids-gids.patch
+bugfix/all/pipe-limit-the-per-user-amount-of-pages-allocated-in.patch
+bugfix/x86/x86-mm-page-align-the-_end-symbol-to-avoid-pfn-conve.patch
+bugfix/x86/x86-mm-pat-ensure-cpa-pfn-only-contains-page-frame-n.patch
+bugfix/x86/x86-efi-map-ram-into-the-identity-page-table-for-mix.patch
+bugfix/x86/x86-efi-hoist-page-table-switching-code-into-efi_cal.patch
+bugfix/x86/x86-efi-build-our-own-page-table-structures.patch
+bugfix/x86/x86-efi-setup-separate-efi-page-tables-in-kexec-path.patch
+debian/i386-686-pae-pci-set-pci-nobios-by-default.patch
+bugfix/arm/net-mv643xx_eth-fix-packet-corruption-with-tso-and-t.patch
+bugfix/x86/x86-efi-bgrt-fix-kernel-panic-when-mapping-bgrt-data.patch
+bugfix/x86/x86-efi-bgrt-replace-early_memremap-with-memremap.patch
+bugfix/all/uas-fix-high-order-alloc.patch
+debian/revert-cgroup-make-sure-a-parent-css-isn-t-offlined.patch
+debian/thermal-fix-abi-change-in-4.4.4.patch
+debian/ipv4-fix-abi-change-in-4.4.4.patch
+debian/ipv6-fix-abi-change-in-4.4.4.patch
+bugfix/x86/drm-i915-Fix-oops-caused-by-fbdev-initialization-fai.patch
+debian/revert-libata-align-ata_device-s-id-on-a-cacheline.patch
+debian/module-fix-abi-change-in-4.4.5.patch
+bugfix/x86/x86-efi-fix-boot-crash-by-always-mapping-boot-servic.patch
+bugfix/x86/x86-mm-pat-fix-boot-crash-when-1gb-pages-are-not-supported.patch
+bugfix/all/netfilter-x_tables-check-for-size-overflow.patch

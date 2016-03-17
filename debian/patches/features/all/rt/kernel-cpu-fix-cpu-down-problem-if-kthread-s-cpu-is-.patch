@@ -1,9 +1,7 @@
-From 24136a819693ae36039d6b4286bf1f775e062bcc Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 7 Jun 2013 22:37:06 +0200
-Subject: [PATCH] kernel/cpu: fix cpu down problem if kthread's cpu is
- going down
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: kernel/cpu: fix cpu down problem if kthread's cpu is going down
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 If kthread is pinned to CPUx and CPUx is going down then we get into
 trouble:
@@ -29,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -83,6 +83,7 @@ struct hotplug_pcp {
+@@ -109,6 +109,7 @@ struct hotplug_pcp {
  	int refcount;
  	int grab_lock;
  	struct completion synced;
@@ -37,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #ifdef CONFIG_PREEMPT_RT_FULL
  	/*
  	 * Note, on PREEMPT_RT, the hotplug lock must save the state of
-@@ -186,6 +187,7 @@ static int sync_unplug_thread(void *data
+@@ -212,6 +213,7 @@ static int sync_unplug_thread(void *data
  {
  	struct hotplug_pcp *hp = data;
  
@@ -45,7 +43,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	preempt_disable();
  	hp->unplug = current;
  	wait_for_pinned_cpus(hp);
-@@ -251,6 +253,14 @@ static void __cpu_unplug_sync(struct hot
+@@ -277,6 +279,14 @@ static void __cpu_unplug_sync(struct hot
  	wait_for_completion(&hp->synced);
  }
  
@@ -60,7 +58,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Start the sync_unplug_thread on the target cpu and wait for it to
   * complete.
-@@ -274,6 +284,7 @@ static int cpu_unplug_begin(unsigned int
+@@ -300,6 +310,7 @@ static int cpu_unplug_begin(unsigned int
  	tell_sched_cpu_down_begin(cpu);
  
  	init_completion(&hp->synced);
@@ -68,7 +66,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	hp->sync_tsk = kthread_create(sync_unplug_thread, hp, "sync_unplug/%d", cpu);
  	if (IS_ERR(hp->sync_tsk)) {
-@@ -289,8 +300,7 @@ static int cpu_unplug_begin(unsigned int
+@@ -315,8 +326,7 @@ static int cpu_unplug_begin(unsigned int
  	 * wait for tasks that are going to enter these sections and
  	 * we must not have them block.
  	 */
@@ -78,9 +76,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return 0;
  }
  
-@@ -615,6 +625,7 @@ static int __ref _cpu_down(unsigned int
- #endif
- 	synchronize_rcu();
+@@ -671,6 +681,7 @@ static int _cpu_down(unsigned int cpu, i
+ 	else
+ 		synchronize_rcu();
  
 +	__cpu_unplug_wait(cpu);
  	smpboot_park_threads(cpu);

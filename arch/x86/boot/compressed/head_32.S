@@ -29,6 +29,7 @@
 #include <asm/page_types.h>
 #include <asm/boot.h>
 #include <asm/asm-offsets.h>
+#include <asm/bootparam.h>
 
 	__HEAD
 ENTRY(startup_32)
@@ -42,33 +43,54 @@ ENTRY(startup_32)
 ENTRY(efi_pe_entry)
 	add	$0x4, %esp
 
+	call	1f
+1:	popl	%esi
+	subl	$1b, %esi
+
+	popl	%ecx
+	movl	%ecx, efi32_config(%esi)	/* Handle */
+	popl	%ecx
+	movl	%ecx, efi32_config+8(%esi)	/* EFI System table pointer */
+
+	/* Relocate efi_config->call() */
+	leal	efi32_config(%esi), %eax
+	add	%esi, 88(%eax)
+	pushl	%eax
+
 	call	make_boot_params
 	cmpl	$0, %eax
-	je	1f
-	movl	0x4(%esp), %esi
-	movl	(%esp), %ecx
-	pushl	%eax
-	pushl	%esi
-	pushl	%ecx
-
-	call	reloc
-reloc:
+	je	fail
+	movl	%esi, BP_code32_start(%eax)
 	popl	%ecx
-	subl	reloc, %ecx
-	movl	%ecx, BP_code32_start(%eax)
+	pushl	%eax
+	pushl	%ecx
+	jmp	2f		/* Skip efi_config initialization */
 
-	sub	$0x4, %esp
-
-ENTRY(efi_stub_entry)
+ENTRY(efi32_stub_entry)
 	add	$0x4, %esp
+	popl	%ecx
+	popl	%edx
+
+	call	1f
+1:	popl	%esi
+	subl	$1b, %esi
+
+	movl	%ecx, efi32_config(%esi)	/* Handle */
+	movl	%edx, efi32_config+8(%esi)	/* EFI System table pointer */
+
+	/* Relocate efi_config->call() */
+	leal	efi32_config(%esi), %eax
+	add	%esi, 88(%eax)
+	pushl	%eax
+2:
 	call	efi_main
 	cmpl	$0, %eax
 	movl	%eax, %esi
 	jne	2f
-1:
+fail:
 	/* EFI init failed, so hang. */
 	hlt
-	jmp	1b
+	jmp	fail
 2:
 	movl	BP_code32_start(%esi), %eax
 	leal	preferred_addr(%eax), %eax
@@ -81,7 +103,7 @@ preferred_addr:
 	 * Test KEEP_SEGMENTS flag to see if the bootloader is asking
 	 * us to not reload segments
 	 */
-	testb	$(1<<6), BP_loadflags(%esi)
+	testb	$KEEP_SEGMENTS, BP_loadflags(%esi)
 	jnz	1f
 
 	cli
@@ -186,7 +208,8 @@ relocated:
  * Do the decompression, and jump to the new kernel..
  */
 				/* push arguments for decompress_kernel: */
-	pushl	$z_output_len	/* decompressed length */
+	pushl	$z_run_size	/* size of kernel with .bss and .brk */
+	pushl	$z_output_len	/* decompressed length, end of relocs */
 	leal	z_extract_offset_negative(%ebx), %ebp
 	pushl	%ebp		/* output address */
 	pushl	$z_input_len	/* input_len */
@@ -196,13 +219,22 @@ relocated:
 	pushl	%eax		/* heap area */
 	pushl	%esi		/* real mode pointer */
 	call	decompress_kernel /* returns kernel location in %eax */
-	addl	$24, %esp
+	addl	$28, %esp
 
 /*
  * Jump to the decompressed kernel.
  */
 	xorl	%ebx, %ebx
 	jmp	*%eax
+
+#ifdef CONFIG_EFI_STUB
+	.data
+efi32_config:
+	.fill 11,8,0
+	.long efi_call_phys
+	.long 0
+	.byte 0
+#endif
 
 /*
  * Stack and heap for uncompression

@@ -16,10 +16,6 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *  General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
- *
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 
@@ -96,7 +92,12 @@ struct pci_dev *acpi_get_pci_dev(acpi_handle);
 /* Arch-defined function to add a bus to the system */
 
 struct pci_bus *pci_acpi_scan_root(struct acpi_pci_root *root);
+
+#ifdef CONFIG_X86
 void pci_acpi_crs_quirks(void);
+#else
+static inline void pci_acpi_crs_quirks(void) { }
+#endif
 
 /* --------------------------------------------------------------------------
                                     Processor
@@ -109,35 +110,13 @@ void pci_acpi_crs_quirks(void);
 /*--------------------------------------------------------------------------
                                   Dock Station
   -------------------------------------------------------------------------- */
-struct acpi_dock_ops {
-	acpi_notify_handler fixup;
-	acpi_notify_handler handler;
-	acpi_notify_handler uevent;
-};
 
 #ifdef CONFIG_ACPI_DOCK
-extern int is_dock_device(acpi_handle handle);
-extern int register_hotplug_dock_device(acpi_handle handle,
-					const struct acpi_dock_ops *ops,
-					void *context,
-					void (*init)(void *),
-					void (*release)(void *));
-extern void unregister_hotplug_dock_device(acpi_handle handle);
+extern int is_dock_device(struct acpi_device *adev);
 #else
-static inline int is_dock_device(acpi_handle handle)
+static inline int is_dock_device(struct acpi_device *adev)
 {
 	return 0;
-}
-static inline int register_hotplug_dock_device(acpi_handle handle,
-					       const struct acpi_dock_ops *ops,
-					       void *context,
-					       void (*init)(void *),
-					       void (*release)(void *))
-{
-	return -ENODEV;
-}
-static inline void unregister_hotplug_dock_device(acpi_handle handle)
-{
 }
 #endif /* CONFIG_ACPI_DOCK */
 

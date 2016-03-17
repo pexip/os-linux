@@ -91,7 +91,7 @@ static int pch_gbe_get_settings(struct net_device *netdev,
 	ecmd->advertising &= ~(ADVERTISED_TP | ADVERTISED_1000baseT_Half);
 
 	if (!netif_carrier_ok(adapter->netdev))
-		ethtool_cmd_speed_set(ecmd, -1);
+		ethtool_cmd_speed_set(ecmd, SPEED_UNKNOWN);
 	return ret;
 }
 
@@ -164,7 +164,6 @@ static void pch_gbe_get_drvinfo(struct net_device *netdev,
 	strlcpy(drvinfo->version, pch_driver_version, sizeof(drvinfo->version));
 	strlcpy(drvinfo->bus_info, pci_name(adapter->pdev),
 		sizeof(drvinfo->bus_info));
-	drvinfo->regdump_len = pch_gbe_get_regs_len(netdev);
 }
 
 /**
@@ -394,7 +393,7 @@ static void pch_gbe_get_pauseparam(struct net_device *netdev,
 }
 
 /**
- * pch_gbe_set_pauseparam - Set pause paramters
+ * pch_gbe_set_pauseparam - Set pause parameters
  * @netdev:  Network interface device structure
  * @pause:   Pause parameters structure
  * Returns:
@@ -508,5 +507,5 @@ static const struct ethtool_ops pch_gbe_ethtool_ops = {
 
 void pch_gbe_set_ethtool_ops(struct net_device *netdev)
 {
-	SET_ETHTOOL_OPS(netdev, &pch_gbe_ethtool_ops);
+	netdev->ethtool_ops = &pch_gbe_ethtool_ops;
 }

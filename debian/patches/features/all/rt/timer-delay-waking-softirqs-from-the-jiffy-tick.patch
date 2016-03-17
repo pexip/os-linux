@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 21 Aug 2009 11:56:45 +0200
 Subject: timer: delay waking softirqs from the jiffy tick
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 People were complaining about broken balancing with the recent -rt
 series.
@@ -54,21 +54,21 @@ Signed-off-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 ---
- kernel/timer.c |    2 +-
+ kernel/time/timer.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
---- a/kernel/timer.c
-+++ b/kernel/timer.c
-@@ -1393,13 +1393,13 @@ void update_process_times(int user_tick)
+--- a/kernel/time/timer.c
++++ b/kernel/time/timer.c
+@@ -1456,13 +1456,13 @@ void update_process_times(int user_tick)
  
  	/* Note: this timer irq context must be accounted for as well. */
  	account_process_tick(p, user_tick);
 +	scheduler_tick();
  	run_local_timers();
- 	rcu_check_callbacks(cpu, user_tick);
+ 	rcu_check_callbacks(user_tick);
  #ifdef CONFIG_IRQ_WORK
  	if (in_irq())
- 		irq_work_run();
+ 		irq_work_tick();
  #endif
 -	scheduler_tick();
  	run_posix_cpu_timers(p);

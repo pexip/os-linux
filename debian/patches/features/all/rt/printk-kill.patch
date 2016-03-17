@@ -1,21 +1,24 @@
-Subject: printk-kill.patch
+Subject: printk: Add a printk kill switch
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 22 Jul 2011 17:58:40 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Add a prinkt-kill-switch. This is used from (NMI) watchdog to ensure that
+it does not dead-lock with the early printk code.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- include/linux/printk.h |    3 +
- kernel/printk/printk.c |   79 ++++++++++++++++++++++++++++++++++---------------
- kernel/watchdog.c      |   15 ++++++++-
- 3 files changed, 71 insertions(+), 26 deletions(-)
+ include/linux/printk.h |    2 +
+ kernel/printk/printk.c |   79 ++++++++++++++++++++++++++++++++++++-------------
+ kernel/watchdog.c      |   10 ++++++
+ 3 files changed, 71 insertions(+), 20 deletions(-)
 
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
-@@ -109,9 +109,11 @@ int no_printk(const char *fmt, ...)
+@@ -117,9 +117,11 @@ int no_printk(const char *fmt, ...)
+ #ifdef CONFIG_EARLY_PRINTK
  extern asmlinkage __printf(1, 2)
  void early_printk(const char *fmt, ...);
- void early_vprintk(const char *fmt, va_list ap);
 +extern void printk_kill(void);
  #else
  static inline __printf(1, 2) __cold
@@ -23,25 +26,17 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +static inline void printk_kill(void) { }
  #endif
  
- #ifdef CONFIG_PRINTK
-@@ -145,7 +147,6 @@ extern int __printk_ratelimit(const char
- #define printk_ratelimit() __printk_ratelimit(__func__)
- extern bool printk_timed_ratelimit(unsigned long *caller_jiffies,
- 				   unsigned int interval_msec);
--
- extern int printk_delay_msec;
- extern int dmesg_restrict;
- extern int kptr_restrict;
+ typedef __printf(1, 0) int (*printk_func_t)(const char *fmt, va_list args);
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1483,6 +1483,55 @@ static size_t cont_print_text(char *text
- 	return textlen;
- }
+@@ -241,6 +241,58 @@ struct printk_log {
+  */
+ static DEFINE_RAW_SPINLOCK(logbuf_lock);
  
 +#ifdef CONFIG_EARLY_PRINTK
 +struct console *early_console;
 +
-+void early_vprintk(const char *fmt, va_list ap)
++static void early_vprintk(const char *fmt, va_list ap)
 +{
 +	if (early_console) {
 +		char buf[512];
@@ -73,6 +68,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +	printk_killswitch = true;
 +}
 +
++#ifdef CONFIG_PRINTK
 +static int forced_early_printk(const char *fmt, va_list ap)
 +{
 +	if (!printk_killswitch)
@@ -80,6 +76,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +	early_vprintk(fmt, ap);
 +	return 1;
 +}
++#endif
++
 +#else
 +static inline int forced_early_printk(const char *fmt, va_list ap)
 +{
@@ -87,12 +85,12 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +}
 +#endif
 +
- asmlinkage int vprintk_emit(int facility, int level,
- 			    const char *dict, size_t dictlen,
- 			    const char *fmt, va_list args)
-@@ -1496,6 +1545,13 @@ asmlinkage int vprintk_emit(int facility
- 	int this_cpu;
- 	int printed_len = 0;
+ #ifdef CONFIG_PRINTK
+ DECLARE_WAIT_QUEUE_HEAD(log_wait);
+ /* the next printk record to read by syslog(READ) or /proc/kmsg */
+@@ -1672,6 +1724,13 @@ asmlinkage int vprintk_emit(int facility
+ 	/* cpu currently holding logbuf_lock in this function */
+ 	static unsigned int logbuf_cpu = UINT_MAX;
  
 +	/*
 +	 * Fall back to early_printk if a debugging subsystem has
@@ -101,33 +99,30 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +	if (unlikely(forced_early_printk(fmt, args)))
 +		return 1;
 +
- 	boot_delay_msec(level);
- 	printk_delay();
- 
-@@ -1721,29 +1777,6 @@ static size_t cont_print_text(char *text
+ 	if (level == LOGLEVEL_SCHED) {
+ 		level = LOGLEVEL_DEFAULT;
+ 		in_sched = true;
+@@ -1961,26 +2020,6 @@ DEFINE_PER_CPU(printk_func_t, printk_fun
  
  #endif /* CONFIG_PRINTK */
  
 -#ifdef CONFIG_EARLY_PRINTK
 -struct console *early_console;
 -
--void early_vprintk(const char *fmt, va_list ap)
--{
--	if (early_console) {
--		char buf[512];
--		int n = vscnprintf(buf, sizeof(buf), fmt, ap);
--
--		early_console->write(early_console, buf, n);
--	}
--}
--
--asmlinkage void early_printk(const char *fmt, ...)
+-asmlinkage __visible void early_printk(const char *fmt, ...)
 -{
 -	va_list ap;
+-	char buf[512];
+-	int n;
+-
+-	if (!early_console)
+-		return;
 -
 -	va_start(ap, fmt);
--	early_vprintk(fmt, ap);
+-	n = vscnprintf(buf, sizeof(buf), fmt, ap);
 -	va_end(ap);
+-
+-	early_console->write(early_console, buf, n);
 -}
 -#endif
 -
@@ -136,7 +131,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  {
 --- a/kernel/watchdog.c
 +++ b/kernel/watchdog.c
-@@ -205,6 +205,8 @@ static int is_softlockup(unsigned long t
+@@ -299,6 +299,8 @@ static int is_softlockup(unsigned long t
  
  #ifdef CONFIG_HARDLOCKUP_DETECTOR
  
@@ -145,25 +140,25 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  static struct perf_event_attr wd_hw_attr = {
  	.type		= PERF_TYPE_HARDWARE,
  	.config		= PERF_COUNT_HW_CPU_CYCLES,
-@@ -239,10 +241,19 @@ static void watchdog_overflow_callback(s
+@@ -333,6 +335,13 @@ static void watchdog_overflow_callback(s
+ 		/* only print hardlockups once */
  		if (__this_cpu_read(hard_watchdog_warn) == true)
  			return;
- 
--		if (hardlockup_panic)
 +		/*
 +		 * If early-printk is enabled then make sure we do not
 +		 * lock up in printk() and kill console logging:
 +		 */
 +		printk_kill();
 +
-+		if (hardlockup_panic) {
- 			panic("Watchdog detected hard LOCKUP on cpu %d", this_cpu);
--		else
-+		} else {
-+			raw_spin_lock(&watchdog_output_lock);
- 			WARN(1, "Watchdog detected hard LOCKUP on cpu %d", this_cpu);
-+			raw_spin_unlock(&watchdog_output_lock);
-+		}
++		raw_spin_lock(&watchdog_output_lock);
  
- 		__this_cpu_write(hard_watchdog_warn, true);
- 		return;
+ 		pr_emerg("Watchdog detected hard LOCKUP on cpu %d", this_cpu);
+ 		print_modules();
+@@ -350,6 +359,7 @@ static void watchdog_overflow_callback(s
+ 				!test_and_set_bit(0, &hardlockup_allcpu_dumped))
+ 			trigger_allbutself_cpu_backtrace();
+ 
++		raw_spin_unlock(&watchdog_output_lock);
+ 		if (hardlockup_panic)
+ 			panic("Hard LOCKUP");
+ 

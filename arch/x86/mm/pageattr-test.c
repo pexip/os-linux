@@ -8,7 +8,9 @@
 #include <linux/kthread.h>
 #include <linux/random.h>
 #include <linux/kernel.h>
+#include <linux/init.h>
 #include <linux/mm.h>
+#include <linux/vmalloc.h>
 
 #include <asm/cacheflush.h>
 #include <asm/pgtable.h>
@@ -35,7 +37,7 @@ enum {
 
 static int pte_testbit(pte_t pte)
 {
-	return pte_flags(pte) & _PAGE_UNUSED1;
+	return pte_flags(pte) & _PAGE_SOFTW1;
 }
 
 struct split_state {
@@ -255,5 +257,4 @@ static int start_pageattr_test(void)
 
 	return 0;
 }
-
-module_init(start_pageattr_test);
+device_initcall(start_pageattr_test);

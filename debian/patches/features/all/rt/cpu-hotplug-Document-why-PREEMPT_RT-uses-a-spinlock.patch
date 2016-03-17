@@ -1,8 +1,7 @@
-From 107fb2b43f5c80686ee6454713f4963728ca2737 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Thu, 5 Dec 2013 09:16:52 -0500
-Subject: [PATCH] cpu hotplug: Document why PREEMPT_RT uses a spinlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: cpu hotplug: Document why PREEMPT_RT uses a spinlock
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 The patch:
 
@@ -40,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -84,6 +84,14 @@ struct hotplug_pcp {
+@@ -110,6 +110,14 @@ struct hotplug_pcp {
  	int grab_lock;
  	struct completion synced;
  #ifdef CONFIG_PREEMPT_RT_FULL

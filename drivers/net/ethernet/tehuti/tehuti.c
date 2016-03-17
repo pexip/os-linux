@@ -66,7 +66,7 @@
 
 #include "tehuti.h"
 
-static DEFINE_PCI_DEVICE_TABLE(bdx_pci_tbl) = {
+static const struct pci_device_id bdx_pci_tbl[] = {
 	{ PCI_VDEVICE(TEHUTI, 0x3009), },
 	{ PCI_VDEVICE(TEHUTI, 0x3010), },
 	{ PCI_VDEVICE(TEHUTI, 0x3014), },
@@ -1650,9 +1650,9 @@ static netdev_tx_t bdx_tx_transmit(struct sk_buff *skb,
 		    txd_mss);
 	}
 
-	if (vlan_tx_tag_present(skb)) {
+	if (skb_vlan_tag_present(skb)) {
 		/*Cut VLAN ID to 12 bits */
-		txd_vlan_id = vlan_tx_tag_get(skb) & BITS_MASK(12);
+		txd_vlan_id = skb_vlan_tag_get(skb) & BITS_MASK(12);
 		txd_vtag = 1;
 	}
 
@@ -2182,11 +2182,6 @@ bdx_get_drvinfo(struct net_device *netdev, struct ethtool_drvinfo *drvinfo)
 	strlcpy(drvinfo->fw_version, "N/A", sizeof(drvinfo->fw_version));
 	strlcpy(drvinfo->bus_info, pci_name(priv->pdev),
 		sizeof(drvinfo->bus_info));
-
-	drvinfo->n_stats = ((priv->stats_flag) ? ARRAY_SIZE(bdx_stat_names) : 0);
-	drvinfo->testinfo_len = 0;
-	drvinfo->regdump_len = 0;
-	drvinfo->eedump_len = 0;
 }
 
 /*
@@ -2413,7 +2408,7 @@ static void bdx_set_ethtool_ops(struct net_device *netdev)
 		.get_ethtool_stats = bdx_get_ethtool_stats,
 	};
 
-	SET_ETHTOOL_OPS(netdev, &bdx_ethtool_ops);
+	netdev->ethtool_ops = &bdx_ethtool_ops;
 }
 
 /**

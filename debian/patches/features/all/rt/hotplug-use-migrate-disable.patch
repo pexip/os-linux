@@ -1,7 +1,10 @@
-Subject: hotplug-use-migrate-disable.patch
+Subject: hotplug: Use migrate disable on unplug
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 19:35:29 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Migration needs to be disabled accross the unplug handling to make
+sure that the unplug thread is off the unplugged cpu.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -10,7 +13,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -400,14 +400,13 @@ static int __ref _cpu_down(unsigned int
+@@ -455,14 +455,13 @@ static int _cpu_down(unsigned int cpu, i
  	cpumask_andnot(cpumask, cpu_online_mask, cpumask_of(cpu));
  	set_cpus_allowed_ptr(current, cpumask);
  	free_cpumask_var(cpumask);
@@ -27,7 +30,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	cpu_hotplug_begin();
  	err = cpu_unplug_begin(cpu);
-@@ -476,6 +475,7 @@ static int __ref _cpu_down(unsigned int
+@@ -543,6 +542,7 @@ static int _cpu_down(unsigned int cpu, i
  out_release:
  	cpu_unplug_done(cpu);
  out_cancel:

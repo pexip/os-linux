@@ -34,6 +34,7 @@
 #include <linux/of_device.h>
 #include <linux/phy.h>
 #include <linux/memblock.h>
+#include <linux/fsl/guts.h>
 
 #include <linux/atomic.h>
 #include <asm/time.h>
@@ -51,7 +52,6 @@
 #include <asm/qe_ic.h>
 #include <asm/mpic.h>
 #include <asm/swiotlb.h>
-#include <asm/fsl_guts.h>
 #include "smp.h"
 
 #include "mpc85xx.h"
@@ -239,6 +239,7 @@ static void __init mpc85xx_mds_qe_init(void)
 	struct device_node *np;
 
 	mpc85xx_qe_init();
+	mpc85xx_qe_par_io_init();
 	mpc85xx_mds_reset_ucc_phys();
 
 	if (machine_is(p1021_mds)) {
@@ -391,6 +392,7 @@ define_machine(mpc8568_mds) {
 	.progress	= udbg_progress,
 #ifdef CONFIG_PCI
 	.pcibios_fixup_bus	= fsl_pcibios_fixup_bus,
+	.pcibios_fixup_phb      = fsl_pcibios_fixup_phb,
 #endif
 };
 
@@ -412,6 +414,7 @@ define_machine(mpc8569_mds) {
 	.progress	= udbg_progress,
 #ifdef CONFIG_PCI
 	.pcibios_fixup_bus	= fsl_pcibios_fixup_bus,
+	.pcibios_fixup_phb      = fsl_pcibios_fixup_phb,
 #endif
 };
 
@@ -434,6 +437,7 @@ define_machine(p1021_mds) {
 	.progress	= udbg_progress,
 #ifdef CONFIG_PCI
 	.pcibios_fixup_bus	= fsl_pcibios_fixup_bus,
+	.pcibios_fixup_phb      = fsl_pcibios_fixup_phb,
 #endif
 };
 

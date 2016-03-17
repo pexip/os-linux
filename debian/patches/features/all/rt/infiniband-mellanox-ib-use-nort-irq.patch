@@ -1,7 +1,7 @@
 From: Sven-Thorsten Dietrich <sdietrich@novell.com>
 Date: Fri, 3 Jul 2009 08:30:35 -0500
 Subject: infiniband: Mellanox IB driver patch use _nort() primitives
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 Fixes in_atomic stack-dump, when Mellanox module is loaded into the RT
 Kernel.
@@ -21,21 +21,21 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/drivers/infiniband/ulp/ipoib/ipoib_multicast.c
 +++ b/drivers/infiniband/ulp/ipoib/ipoib_multicast.c
-@@ -804,7 +804,7 @@ void ipoib_mcast_restart_task(struct wor
+@@ -847,7 +847,7 @@ void ipoib_mcast_restart_task(struct wor
  
- 	ipoib_mcast_stop_thread(dev, 0);
+ 	ipoib_dbg_mcast(priv, "restarting multicast task\n");
  
 -	local_irq_save(flags);
 +	local_irq_save_nort(flags);
  	netif_addr_lock(dev);
  	spin_lock(&priv->lock);
  
-@@ -886,7 +886,7 @@ void ipoib_mcast_restart_task(struct wor
+@@ -929,7 +929,7 @@ void ipoib_mcast_restart_task(struct wor
  
  	spin_unlock(&priv->lock);
  	netif_addr_unlock(dev);
 -	local_irq_restore(flags);
 +	local_irq_restore_nort(flags);
  
- 	/* We have to cancel outside of the spinlock */
- 	list_for_each_entry_safe(mcast, tmcast, &remove_list, list) {
+ 	/*
+ 	 * make sure the in-flight joins have finished before we attempt

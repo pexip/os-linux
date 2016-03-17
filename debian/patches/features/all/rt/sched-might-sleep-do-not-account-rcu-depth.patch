@@ -1,17 +1,20 @@
-Subject: sched-might-sleep-do-not-account-rcu-depth.patch
+Subject: sched: Do not account rcu_preempt_depth on RT in might_sleep()
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 07 Jun 2011 09:19:06 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+RT changes the rcu_preempt_depth semantics, so we cannot check for it
+in might_sleep().
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
  include/linux/rcupdate.h |    7 +++++++
- kernel/sched/core.c      |    3 ++-
- 2 files changed, 9 insertions(+), 1 deletion(-)
+ kernel/sched/core.c      |    2 +-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
 
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
-@@ -190,6 +190,11 @@ void synchronize_rcu(void);
+@@ -292,6 +292,11 @@ void synchronize_rcu(void);
   * types of kernel builds, the rcu_read_lock() nesting depth is unknowable.
   */
  #define rcu_preempt_depth() (current->rcu_read_lock_nesting)
@@ -23,7 +26,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  #else /* #ifdef CONFIG_PREEMPT_RCU */
  
-@@ -213,6 +218,8 @@ static inline int rcu_preempt_depth(void
+@@ -317,6 +322,8 @@ static inline int rcu_preempt_depth(void
  	return 0;
  }
  
@@ -34,13 +37,12 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /* Internal to kernel */
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7052,7 +7052,8 @@ void __init sched_init(void)
+@@ -7667,7 +7667,7 @@ void __init sched_init(void)
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  static inline int preempt_count_equals(int preempt_offset)
  {
--	int nested = (preempt_count() & ~PREEMPT_ACTIVE) + rcu_preempt_depth();
-+	int nested = (preempt_count() & ~PREEMPT_ACTIVE) +
-+		sched_rcu_preempt_depth();
+-	int nested = preempt_count() + rcu_preempt_depth();
++	int nested = preempt_count() + sched_rcu_preempt_depth();
  
  	return (nested == preempt_offset);
  }

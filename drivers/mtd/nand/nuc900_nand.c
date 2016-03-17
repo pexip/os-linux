@@ -10,7 +10,6 @@
  */
 
 #include <linux/slab.h>
-#include <linux/init.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
@@ -152,7 +151,8 @@ static void nuc900_nand_command_lp(struct mtd_info *mtd, unsigned int command,
 	if (column != -1 || page_addr != -1) {
 
 		if (column != -1) {
-			if (chip->options & NAND_BUSWIDTH_16)
+			if (chip->options & NAND_BUSWIDTH_16 &&
+					!nand_opcode_8bits(command))
 				column >>= 1;
 			write_addr_reg(nand, column);
 			write_addr_reg(nand, column >> 8 | ENDADDR);
@@ -250,7 +250,7 @@ static int nuc900_nand_probe(struct platform_device *pdev)
 	chip = &(nuc900_nand->chip);
 
 	nuc900_nand->mtd.priv	= chip;
-	nuc900_nand->mtd.owner	= THIS_MODULE;
+	nuc900_nand->mtd.dev.parent = &pdev->dev;
 	spin_lock_init(&nuc900_nand->lock);
 
 	nuc900_nand->clk = devm_clk_get(&pdev->dev, NULL);
@@ -300,7 +300,6 @@ static struct platform_driver nuc900_nand_driver = {
 	.remove		= nuc900_nand_remove,
 	.driver		= {
 		.name	= "nuc900-fmi",
-		.owner	= THIS_MODULE,
 	},
 };
 

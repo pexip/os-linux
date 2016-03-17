@@ -1,27 +1,17 @@
-Subject: arm-enable-highmem-for-rt.patch
+Subject: arm: Enable highmem for rt
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 13 Feb 2013 11:03:11 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+fixup highmem for ARM.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- arch/arm/Kconfig                 |    2 -
- arch/arm/include/asm/switch_to.h |    8 +++++++
- arch/arm/mm/highmem.c            |   41 +++++++++++++++++++++++++++++++++++++--
+ arch/arm/include/asm/switch_to.h |    8 +++++
+ arch/arm/mm/highmem.c            |   56 +++++++++++++++++++++++++++++++++------
  include/linux/highmem.h          |    1 
- 4 files changed, 49 insertions(+), 3 deletions(-)
+ 3 files changed, 57 insertions(+), 8 deletions(-)
 
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -1789,7 +1789,7 @@ config HAVE_ARCH_PFN_VALID
- 
- config HIGHMEM
- 	bool "High Memory Support"
--	depends on MMU && !PREEMPT_RT_FULL
-+	depends on MMU
- 	help
- 	  The address space of ARM processors is only 4 Gigabytes large
- 	  and it has to accommodate user address space, kernel address
 --- a/arch/arm/include/asm/switch_to.h
 +++ b/arch/arm/include/asm/switch_to.h
 @@ -3,6 +3,13 @@
@@ -38,17 +28,29 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
   * For v7 SMP cores running a preemptible kernel we may be pre-empted
   * during a TLB maintenance operation, so execute an inner-shareable dsb
-@@ -22,6 +29,7 @@ extern struct task_struct *__switch_to(s
- 
+@@ -25,6 +32,7 @@ extern struct task_struct *__switch_to(s
  #define switch_to(prev,next,last)					\
  do {									\
+ 	__complete_pending_tlbi();					\
 +	switch_kmaps(prev, next);					\
  	last = __switch_to(prev,task_thread_info(prev), task_thread_info(next));	\
  } while (0)
  
 --- a/arch/arm/mm/highmem.c
 +++ b/arch/arm/mm/highmem.c
-@@ -38,6 +38,7 @@ EXPORT_SYMBOL(kunmap);
+@@ -34,6 +34,11 @@ static inline pte_t get_fixmap_pte(unsig
+ 	return *ptep;
+ }
+ 
++static unsigned int fixmap_idx(int type)
++{
++	return FIX_KMAP_BEGIN + type + KM_TYPE_NR * smp_processor_id();
++}
++
+ void *kmap(struct page *page)
+ {
+ 	might_sleep();
+@@ -54,12 +59,13 @@ EXPORT_SYMBOL(kunmap);
  
  void *kmap_atomic(struct page *page)
  {
@@ -56,19 +58,40 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	unsigned int idx;
  	unsigned long vaddr;
  	void *kmap;
-@@ -76,7 +77,10 @@ void *kmap_atomic(struct page *page)
+ 	int type;
+ 
+-	preempt_disable();
++	preempt_disable_nort();
+ 	pagefault_disable();
+ 	if (!PageHighMem(page))
+ 		return page_address(page);
+@@ -79,7 +85,7 @@ void *kmap_atomic(struct page *page)
+ 
+ 	type = kmap_atomic_idx_push();
+ 
+-	idx = FIX_KMAP_BEGIN + type + KM_TYPE_NR * smp_processor_id();
++	idx = fixmap_idx(type);
+ 	vaddr = __fix_to_virt(idx);
+ #ifdef CONFIG_DEBUG_HIGHMEM
+ 	/*
+@@ -93,7 +99,10 @@ void *kmap_atomic(struct page *page)
  	 * in place, so the contained TLB flush ensures the TLB is updated
  	 * with the new mapping.
  	 */
--	set_top_pte(vaddr, mk_pte(page, kmap_prot));
+-	set_fixmap_pte(idx, mk_pte(page, kmap_prot));
 +#ifdef CONFIG_PREEMPT_RT_FULL
 +	current->kmap_pte[type] = pte;
 +#endif
-+	set_top_pte(vaddr, pte);
++	set_fixmap_pte(idx, pte);
  
  	return (void *)vaddr;
  }
-@@ -93,6 +97,9 @@ void __kunmap_atomic(void *kvaddr)
+@@ -106,10 +115,13 @@ void __kunmap_atomic(void *kvaddr)
+ 
+ 	if (kvaddr >= (void *)FIXADDR_START) {
+ 		type = kmap_atomic_idx();
+-		idx = FIX_KMAP_BEGIN + type + KM_TYPE_NR * smp_processor_id();
++		idx = fixmap_idx(type);
  
  		if (cache_is_vivt())
  			__cpuc_flush_dcache_area((void *)vaddr, PAGE_SIZE);
@@ -76,33 +99,45 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +		current->kmap_pte[type] = __pte(0);
 +#endif
  #ifdef CONFIG_DEBUG_HIGHMEM
- 		BUG_ON(vaddr != __fix_to_virt(FIX_KMAP_BEGIN + idx));
+ 		BUG_ON(vaddr != __fix_to_virt(idx));
  #else
-@@ -110,6 +117,7 @@ EXPORT_SYMBOL(__kunmap_atomic);
+@@ -122,28 +134,56 @@ void __kunmap_atomic(void *kvaddr)
+ 		kunmap_high(pte_page(pkmap_page_table[PKMAP_NR(vaddr)]));
+ 	}
+ 	pagefault_enable();
+-	preempt_enable();
++	preempt_enable_nort();
+ }
+ EXPORT_SYMBOL(__kunmap_atomic);
  
  void *kmap_atomic_pfn(unsigned long pfn)
  {
 +	pte_t pte = pfn_pte(pfn, kmap_prot);
  	unsigned long vaddr;
  	int idx, type;
+ 	struct page *page = pfn_to_page(pfn);
  
-@@ -121,7 +129,10 @@ void *kmap_atomic_pfn(unsigned long pfn)
+-	preempt_disable();
++	preempt_disable_nort();
+ 	pagefault_disable();
+ 	if (!PageHighMem(page))
+ 		return page_address(page);
+ 
+ 	type = kmap_atomic_idx_push();
+-	idx = FIX_KMAP_BEGIN + type + KM_TYPE_NR * smp_processor_id();
++	idx = fixmap_idx(type);
+ 	vaddr = __fix_to_virt(idx);
  #ifdef CONFIG_DEBUG_HIGHMEM
- 	BUG_ON(!pte_none(get_top_pte(vaddr)));
+ 	BUG_ON(!pte_none(get_fixmap_pte(vaddr)));
  #endif
--	set_top_pte(vaddr, pfn_pte(pfn, kmap_prot));
+-	set_fixmap_pte(idx, pfn_pte(pfn, kmap_prot));
 +#ifdef CONFIG_PREEMPT_RT_FULL
 +	current->kmap_pte[type] = pte;
 +#endif
-+	set_top_pte(vaddr, pte);
++	set_fixmap_pte(idx, pte);
  
  	return (void *)vaddr;
  }
-@@ -135,3 +146,29 @@ struct page *kmap_atomic_to_page(const v
- 
- 	return pte_page(get_top_pte(vaddr));
- }
-+
 +#if defined CONFIG_PREEMPT_RT_FULL
 +void switch_kmaps(struct task_struct *prev_p, struct task_struct *next_p)
 +{
@@ -112,19 +147,18 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +	 * Clear @prev's kmap_atomic mappings
 +	 */
 +	for (i = 0; i < prev_p->kmap_idx; i++) {
-+		int idx = i + KM_TYPE_NR * smp_processor_id();
++		int idx = fixmap_idx(i);
 +
-+		set_top_pte(__fix_to_virt(FIX_KMAP_BEGIN + idx), __pte(0));
++		set_fixmap_pte(idx, __pte(0));
 +	}
 +	/*
 +	 * Restore @next_p's kmap_atomic mappings
 +	 */
 +	for (i = 0; i < next_p->kmap_idx; i++) {
-+		int idx = i + KM_TYPE_NR * smp_processor_id();
++		int idx = fixmap_idx(i);
 +
 +		if (!pte_none(next_p->kmap_pte[i]))
-+			set_top_pte(__fix_to_virt(FIX_KMAP_BEGIN + idx),
-+					next_p->kmap_pte[i]);
++			set_fixmap_pte(idx, next_p->kmap_pte[i]);
 +	}
 +}
 +#endif

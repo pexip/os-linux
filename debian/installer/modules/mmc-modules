@@ -1,6 +1,5 @@
 mmc_block
-sdhci
-sdhci-pci ?
-sdhci-acpi ?
-ricoh_mmc ?
-tifm_sd ?
+drivers/mmc/host/**
+
+# Adds a dependency on pcmcia-modules
+sdricoh_cs -

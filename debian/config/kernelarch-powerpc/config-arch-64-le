@@ -1,19 +1,16 @@
 ##
 ## file: arch/powerpc/Kconfig
 ##
-## choice: Page size
-# CONFIG_PPC_4K_PAGES is not set
-CONFIG_PPC_64K_PAGES=y
-## end choice
+# CONFIG_CMDLINE_BOOL is not set
 
 ##
 ## file: arch/powerpc/platforms/Kconfig.cputype
 ##
+CONFIG_NR_CPUS=2048
 ## choice: Endianness selection
 # CONFIG_CPU_BIG_ENDIAN is not set
 CONFIG_CPU_LITTLE_ENDIAN=y
 ## end choice
-CONFIG_NR_CPUS=2048
 
 ##
 ## file: arch/powerpc/platforms/powermac/Kconfig
@@ -31,4 +28,10 @@ CONFIG_NR_CPUS=2048
 CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
 # CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
 ## end choice
+
+##
+## file: kernel/power/Kconfig
+##
+#. See #789070
+# CONFIG_HIBERNATION is not set
 

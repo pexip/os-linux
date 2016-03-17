@@ -1,7 +1,7 @@
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Wed, 13 Feb 2013 09:26:05 -0500
-Subject: [PATCH] acpi/rt: Convert acpi_gbl_hardware lock back to a raw_spinlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: acpi/rt: Convert acpi_gbl_hardware lock back to a raw_spinlock_t
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 We hit the following bug with 3.6-rt:
 
@@ -60,7 +60,7 @@ Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
 Cc: John Kacur <jkacur@gmail.com>
 Cc: Clark Williams <clark@redhat.com>
 Link: http://lkml.kernel.org/r/1360765565.23152.5.camel@gandalf.local.home
-Cc: stable-rt@vger.kernel.org
+
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
@@ -68,18 +68,18 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  drivers/acpi/acpica/hwregs.c    |    4 ++--
  drivers/acpi/acpica/hwxface.c   |    4 ++--
  drivers/acpi/acpica/utmutex.c   |    4 ++--
- include/acpi/platform/aclinux.h |   14 ++++++++++++++
- 5 files changed, 21 insertions(+), 7 deletions(-)
+ include/acpi/platform/aclinux.h |   15 +++++++++++++++
+ 5 files changed, 22 insertions(+), 7 deletions(-)
 
 --- a/drivers/acpi/acpica/acglobal.h
 +++ b/drivers/acpi/acpica/acglobal.h
-@@ -253,7 +253,7 @@ ACPI_EXTERN u8 acpi_gbl_global_lock_pend
+@@ -116,7 +116,7 @@ ACPI_GLOBAL(u8, acpi_gbl_global_lock_pen
   * interrupt level
   */
- ACPI_EXTERN acpi_spinlock acpi_gbl_gpe_lock;	/* For GPE data structs and registers */
--ACPI_EXTERN acpi_spinlock acpi_gbl_hardware_lock;	/* For ACPI H/W except GPE registers */
-+ACPI_EXTERN acpi_raw_spinlock acpi_gbl_hardware_lock;	/* For ACPI H/W except GPE registers */
- ACPI_EXTERN acpi_spinlock acpi_gbl_reference_count_lock;
+ ACPI_GLOBAL(acpi_spinlock, acpi_gbl_gpe_lock);	/* For GPE data structs and registers */
+-ACPI_GLOBAL(acpi_spinlock, acpi_gbl_hardware_lock);	/* For ACPI H/W except GPE registers */
++ACPI_GLOBAL(acpi_raw_spinlock, acpi_gbl_hardware_lock);	/* For ACPI H/W except GPE registers */
+ ACPI_GLOBAL(acpi_spinlock, acpi_gbl_reference_count_lock);
  
  /* Mutex for _OSI support */
 --- a/drivers/acpi/acpica/hwregs.c
@@ -99,7 +99,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -	acpi_os_release_lock(acpi_gbl_hardware_lock, lock_flags);
 +	raw_spin_unlock_irqrestore(acpi_gbl_hardware_lock, lock_flags);
  
- 	if (ACPI_FAILURE(status))
+ 	if (ACPI_FAILURE(status)) {
  		goto exit;
 --- a/drivers/acpi/acpica/hwxface.c
 +++ b/drivers/acpi/acpica/hwxface.c
@@ -132,7 +132,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (ACPI_FAILURE (status)) {
  		return_ACPI_STATUS (status);
  	}
-@@ -141,7 +141,7 @@ void acpi_ut_mutex_terminate(void)
+@@ -156,7 +156,7 @@ void acpi_ut_mutex_terminate(void)
  	/* Delete the spinlocks */
  
  	acpi_os_delete_lock(acpi_gbl_gpe_lock);
@@ -143,31 +143,32 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* Delete the reader/writer lock */
 --- a/include/acpi/platform/aclinux.h
 +++ b/include/acpi/platform/aclinux.h
-@@ -73,6 +73,7 @@
+@@ -127,6 +127,7 @@
  
  #define acpi_cache_t                        struct kmem_cache
  #define acpi_spinlock                       spinlock_t *
-+#define acpi_raw_spinlock		    raw_spinlock_t *
++#define acpi_raw_spinlock		raw_spinlock_t *
  #define acpi_cpu_flags                      unsigned long
  
- #else				/* !__KERNEL__ */
-@@ -210,6 +211,19 @@ static inline acpi_thread_id acpi_os_get
- 	})
+ /* Use native linux version of acpi_os_allocate_zeroed */
+@@ -145,6 +146,20 @@
+ #define ACPI_USE_ALTERNATE_PROTOTYPE_acpi_os_get_thread_id
  #define ACPI_USE_ALTERNATE_PROTOTYPE_acpi_os_create_lock
  
 +#define acpi_os_create_raw_lock(__handle)			\
 +({								\
-+	raw_spinlock_t *lock = ACPI_ALLOCATE(sizeof(*lock));	\
++	 raw_spinlock_t *lock = ACPI_ALLOCATE(sizeof(*lock));	\
 +								\
-+	if (lock) {						\
++	 if (lock) {						\
 +		*(__handle) = lock;				\
 +		raw_spin_lock_init(*(__handle));		\
-+	}							\
-+	lock ? AE_OK : AE_NO_MEMORY;				\
-+})
++	 }							\
++	 lock ? AE_OK : AE_NO_MEMORY;				\
++ })
 +
 +#define acpi_os_delete_raw_lock(__handle)	kfree(__handle)
 +
- void __iomem *acpi_os_map_memory(acpi_physical_address where, acpi_size length);
- #define ACPI_USE_ALTERNATE_PROTOTYPE_acpi_os_map_memory
- 
++
+ /*
+  * OSL interfaces used by debugger/disassembler
+  */

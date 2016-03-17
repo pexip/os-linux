@@ -1,7 +1,7 @@
 Subject: rwlocks: Fix section mismatch
 From: John Kacur <jkacur@redhat.com>
 Date: Mon, 19 Sep 2011 11:09:27 +0200 (CEST)
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 This fixes the following build error for the preempt-rt kernel.
 
@@ -22,8 +22,6 @@ This is a short term solution for rt only.
 The longer term solution would be to push the cache aligned DEFINE_RWLOCK
 to mainline. If there are objections, then we could create a
 DEFINE_RWLOCK_CACHE_ALIGNED or something of that nature.
-
-Comments? Objections?
 
 Signed-off-by: John Kacur <jkacur@redhat.com>
 Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>
@@ -47,7 +45,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif /* __LINUX_RWLOCK_TYPES_H */
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -94,7 +94,7 @@ int max_threads;		/* tunable limit on nr
+@@ -108,7 +108,7 @@ int max_threads;		/* tunable limit on nr
  
  DEFINE_PER_CPU(unsigned long, process_counts) = 0;
  

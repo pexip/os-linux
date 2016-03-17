@@ -1,11 +1,7 @@
-From 4b82f1531c59f7c2f6e4deca57d74ad732a05cdd Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 20 Sep 2013 14:31:54 +0200
-Subject: [PATCH RT] arm/unwind: use a raw_spin_lock
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: arm/unwind: use a raw_spin_lock
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 Mostly unwind is done with irqs enabled however SLUB may call it with
 irqs disabled while creating a new SLUB cache.
@@ -27,7 +23,7 @@ interrupts and then
           ->unwind_find_idx()
            =>spin_lock_irqsave(&unwind_lock);
 
-Cc: stable-rt@vger.kernel.org
+
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  arch/arm/kernel/unwind.c |   14 +++++++-------
@@ -35,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/arch/arm/kernel/unwind.c
 +++ b/arch/arm/kernel/unwind.c
-@@ -87,7 +87,7 @@ extern const struct unwind_idx __start_u
+@@ -93,7 +93,7 @@ extern const struct unwind_idx __start_u
  static const struct unwind_idx *__origin_unwind_idx;
  extern const struct unwind_idx __stop_unwind_idx[];
  
@@ -44,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static LIST_HEAD(unwind_tables);
  
  /* Convert a prel31 symbol to an absolute address */
-@@ -195,7 +195,7 @@ static const struct unwind_idx *unwind_f
+@@ -201,7 +201,7 @@ static const struct unwind_idx *unwind_f
  		/* module unwind tables */
  		struct unwind_table *table;
  
@@ -53,7 +49,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		list_for_each_entry(table, &unwind_tables, list) {
  			if (addr >= table->begin_addr &&
  			    addr < table->end_addr) {
-@@ -207,7 +207,7 @@ static const struct unwind_idx *unwind_f
+@@ -213,7 +213,7 @@ static const struct unwind_idx *unwind_f
  				break;
  			}
  		}
@@ -62,7 +58,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  
  	pr_debug("%s: idx = %p\n", __func__, idx);
-@@ -469,9 +469,9 @@ struct unwind_table *unwind_table_add(un
+@@ -529,9 +529,9 @@ struct unwind_table *unwind_table_add(un
  	tab->begin_addr = text_addr;
  	tab->end_addr = text_addr + text_size;
  
@@ -74,7 +70,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return tab;
  }
-@@ -483,9 +483,9 @@ void unwind_table_del(struct unwind_tabl
+@@ -543,9 +543,9 @@ void unwind_table_del(struct unwind_tabl
  	if (!tab)
  		return;
  

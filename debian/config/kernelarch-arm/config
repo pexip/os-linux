@@ -4,6 +4,14 @@
 CONFIG_MMU=y
 CONFIG_AEABI=y
 # CONFIG_OABI_COMPAT is not set
+CONFIG_CPU_SW_DOMAIN_PAN=y
+CONFIG_KEXEC=y
+
+##
+## file: arch/arm/crypto/Kconfig
+##
+CONFIG_CRYPTO_SHA1_ARM=m
+CONFIG_CRYPTO_AES_ARM=m
 
 ##
 ## file: arch/arm/Kconfig.debug
@@ -16,12 +24,6 @@ CONFIG_EARLY_PRINTK=y
 ##
 #. Support Thumb user binaries
 CONFIG_ARM_THUMB=y
-
-##
-## file: crypto/Kconfig
-##
-CONFIG_CRYPTO_SHA1_ARM=m
-CONFIG_CRYPTO_AES_ARM=m
 
 ##
 ## file: drivers/input/misc/Kconfig

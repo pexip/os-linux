@@ -25,7 +25,7 @@
 #include <linux/seq_file.h>
 #include <linux/slab.h>
 #include <linux/smp.h>
-#include <linux/debugfs.h>
+#include <linux/tracefs.h>
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
@@ -81,13 +81,13 @@
  */
 #define convert_rloc_to_loc(dl, offs)	((u32)(dl) + (offs))
 
-static inline void *get_rloc_data(u32 *dl)
+static nokprobe_inline void *get_rloc_data(u32 *dl)
 {
 	return (u8 *)dl + get_rloc_offs(*dl);
 }
 
 /* For data_loc conversion */
-static inline void *get_loc_data(u32 *dl, void *ent)
+static nokprobe_inline void *get_loc_data(u32 *dl, void *ent)
 {
 	return (u8 *)ent + get_rloc_offs(*dl);
 }
@@ -136,9 +136,8 @@ typedef u32 string_size;
 
 /* Printing  in basic type function template */
 #define DECLARE_BASIC_PRINT_TYPE_FUNC(type)				\
-__kprobes int PRINT_TYPE_FUNC_NAME(type)(struct trace_seq *s,		\
-					 const char *name,		\
-					 void *data, void *ent);	\
+int PRINT_TYPE_FUNC_NAME(type)(struct trace_seq *s, const char *name,	\
+				void *data, void *ent);			\
 extern const char PRINT_TYPE_FMT_NAME(type)[]
 
 DECLARE_BASIC_PRINT_TYPE_FUNC(u8);
@@ -230,13 +229,6 @@ ASSIGN_FETCH_FUNC(file_offset, ftype),			\
 #define FETCH_TYPE_STRING	0
 #define FETCH_TYPE_STRSIZE	1
 
-/*
- * Fetch type information table.
- * It's declared as a weak symbol due to conditional compilation.
- */
-extern __weak const struct fetch_type kprobes_fetch_type_table[];
-extern __weak const struct fetch_type uprobes_fetch_type_table[];
-
 #ifdef CONFIG_KPROBE_EVENT
 struct symbol_cache;
 unsigned long update_symbol_cache(struct symbol_cache *sc);
@@ -280,12 +272,17 @@ struct probe_arg {
 
 struct trace_probe {
 	unsigned int			flags;	/* For TP_FLAG_* */
-	struct ftrace_event_class	class;
-	struct ftrace_event_call	call;
+	struct trace_event_class	class;
+	struct trace_event_call		call;
 	struct list_head 		files;
 	ssize_t				size;	/* trace entry size */
 	unsigned int			nr_args;
 	struct probe_arg		args[];
+};
+
+struct event_file_link {
+	struct trace_event_file		*file;
+	struct list_head		list;
 };
 
 static inline bool trace_probe_is_enabled(struct trace_probe *tp)
@@ -298,26 +295,39 @@ static inline bool trace_probe_is_registered(struct trace_probe *tp)
 	return !!(tp->flags & TP_FLAG_REGISTERED);
 }
 
-static inline __kprobes void call_fetch(struct fetch_param *fprm,
+static nokprobe_inline void call_fetch(struct fetch_param *fprm,
 				 struct pt_regs *regs, void *dest)
 {
 	return fprm->fn(regs, fprm->data, dest);
 }
 
 /* Check the name is good for event/group/fields */
-static inline int is_good_name(const char *name)
+static inline bool is_good_name(const char *name)
 {
 	if (!isalpha(*name) && *name != '_')
-		return 0;
+		return false;
 	while (*++name != '\0') {
 		if (!isalpha(*name) && !isdigit(*name) && *name != '_')
-			return 0;
+			return false;
 	}
-	return 1;
+	return true;
+}
+
+static inline struct event_file_link *
+find_event_file_link(struct trace_probe *tp, struct trace_event_file *file)
+{
+	struct event_file_link *link;
+
+	list_for_each_entry(link, &tp->files, list)
+		if (link->file == file)
+			return link;
+
+	return NULL;
 }
 
 extern int traceprobe_parse_probe_arg(char *arg, ssize_t *size,
-		   struct probe_arg *parg, bool is_return, bool is_kprobe);
+		   struct probe_arg *parg, bool is_return, bool is_kprobe,
+		   const struct fetch_type *ftbl);
 
 extern int traceprobe_conflict_field_name(const char *name,
 			       struct probe_arg *args, int narg);
@@ -334,7 +344,7 @@ extern ssize_t traceprobe_probes_write(struct file *file,
 extern int traceprobe_command(const char *buf, int (*createfn)(int, char**));
 
 /* Sum up total data length for dynamic arraies (strings) */
-static inline __kprobes int
+static nokprobe_inline int
 __get_data_size(struct trace_probe *tp, struct pt_regs *regs)
 {
 	int i, ret = 0;
@@ -350,7 +360,7 @@ __get_data_size(struct trace_probe *tp, struct pt_regs *regs)
 }
 
 /* Store the value of each argument */
-static inline __kprobes void
+static nokprobe_inline void
 store_trace_args(int ent_size, struct trace_probe *tp, struct pt_regs *regs,
 		 u8 *data, int maxlen)
 {

@@ -1,7 +1,13 @@
-Subject: sched-rt-mutex-wakeup.patch
+Subject: sched: Add saved_state for tasks blocked on sleeping locks
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Spinlocks are state preserving in !RT. RT changes the state when a
+task gets blocked on a lock. So we need to remember the state before
+the lock contention. If a regular wakeup (not a RTmutex related
+wakeup) happens, the saved_state is updated to running. When the lock
+sleep is done, the saved state is restored.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -12,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1161,6 +1161,7 @@ enum perf_event_task_context {
+@@ -1378,6 +1378,7 @@ struct tlbflush_unmap_batch {
  
  struct task_struct {
  	volatile long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
@@ -20,7 +26,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	void *stack;
  	atomic_t usage;
  	unsigned int flags;	/* per process flags, defined below */
-@@ -2206,6 +2207,7 @@ extern void xtime_update(unsigned long t
+@@ -2483,6 +2484,7 @@ extern void xtime_update(unsigned long t
  
  extern int wake_up_state(struct task_struct *tsk, unsigned int state);
  extern int wake_up_process(struct task_struct *tsk);
@@ -30,7 +36,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
   extern void kick_process(struct task_struct *tsk);
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1610,8 +1610,25 @@ try_to_wake_up(struct task_struct *p, un
+@@ -1949,8 +1949,25 @@ try_to_wake_up(struct task_struct *p, un
  	 */
  	smp_mb__before_spinlock();
  	raw_spin_lock_irqsave(&p->pi_lock, flags);
@@ -55,9 +61,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +	if (!(wake_flags & WF_LOCK_SLEEPER))
 +		p->saved_state = TASK_RUNNING;
  
- 	success = 1; /* we're going to change ->state */
- 	cpu = task_cpu(p);
-@@ -1708,6 +1725,18 @@ int wake_up_process(struct task_struct *
+ 	trace_sched_waking(p);
+ 
+@@ -2083,6 +2100,18 @@ int wake_up_process(struct task_struct *
  }
  EXPORT_SYMBOL(wake_up_process);
  
@@ -78,7 +84,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	return try_to_wake_up(p, state, 0);
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1047,6 +1047,7 @@ static inline void finish_lock_switch(st
+@@ -1100,6 +1100,7 @@ static inline void finish_lock_switch(st
  #define WF_SYNC		0x01		/* waker goes to sleep after wakeup */
  #define WF_FORK		0x02		/* child wakeup after fork */
  #define WF_MIGRATED	0x4		/* internal use, task got migrated */
