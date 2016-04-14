@@ -16,6 +16,8 @@ linux (3.14.66-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2016-3951
   * d/p/bugfix/all/CVE-2015-7515.patch:
     Backport fix for CVE-2015-7515
+  * d/p/bugfix/all/CVE-2016-0821.patch:
+    Backport fix for CVE-2016-0821
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 13 Apr 2016 17:39:43 +0100
 
