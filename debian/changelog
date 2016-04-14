@@ -5,6 +5,8 @@ linux (3.14.66-0pexip1) pexip; urgency=medium
     Refresh context
   * d/p/bugfix/all/CVE-2016-XXXX.patch:
     Drop; merged upstream (no CVE allocated)
+  * d/p/bugfix/all/CVE-2016-3139.patch:
+    Backport fix for CVE-2016-3139
 
  -- John-Mark Bell <jmb@pexip.com>  Wed, 13 Apr 2016 17:39:43 +0100
 
