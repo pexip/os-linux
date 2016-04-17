@@ -1171,17 +1171,11 @@ err_fw:
 	netdev->netdev_ops = &kaweth_netdev_ops;
 	netdev->watchdog_timeo = KAWETH_TX_TIMEOUT;
 	netdev->mtu = le16_to_cpu(kaweth->configuration.segment_size);
-	SET_ETHTOOL_OPS(netdev, &ops);
+	netdev->ethtool_ops = &ops;
 
 	/* kaweth is zeroed as part of alloc_netdev */
 	INIT_DELAYED_WORK(&kaweth->lowmem_work, kaweth_resubmit_tl);
 	usb_set_intfdata(intf, kaweth);
-
-#if 0
-// dma_supported() is deeply broken on almost all architectures
-	if (dma_supported (dev, 0xffffffffffffffffULL))
-		kaweth->net->features |= NETIF_F_HIGHDMA;
-#endif
 
 	SET_NETDEV_DEV(netdev, dev);
 	if (register_netdev(netdev) != 0) {
@@ -1276,7 +1270,7 @@ static int usb_start_wait_urb(struct urb *urb, int timeout, int* actual_length)
         awd.done = 0;
 
         urb->context = &awd;
-        status = usb_submit_urb(urb, GFP_NOIO);
+        status = usb_submit_urb(urb, GFP_ATOMIC);
         if (status) {
                 // something went wrong
                 usb_free_urb(urb);

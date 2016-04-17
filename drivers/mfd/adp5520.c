@@ -20,7 +20,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
-#include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
@@ -352,7 +351,6 @@ MODULE_DEVICE_TABLE(i2c, adp5520_id);
 static struct i2c_driver adp5520_driver = {
 	.driver = {
 		.name	= "adp5520",
-		.owner	= THIS_MODULE,
 		.pm	= &adp5520_pm,
 	},
 	.probe		= adp5520_probe,

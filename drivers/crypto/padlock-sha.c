@@ -23,7 +23,7 @@
 #include <linux/kernel.h>
 #include <linux/scatterlist.h>
 #include <asm/cpu_device_id.h>
-#include <asm/i387.h>
+#include <asm/fpu/api.h>
 
 struct padlock_sha_desc {
 	struct shash_desc fallback;
@@ -211,7 +211,7 @@ static int padlock_sha256_final(struct shash_desc *desc, u8 *out)
 static int padlock_cra_init(struct crypto_tfm *tfm)
 {
 	struct crypto_shash *hash = __crypto_shash_cast(tfm);
-	const char *fallback_driver_name = tfm->__crt_alg->cra_name;
+	const char *fallback_driver_name = crypto_tfm_alg_name(tfm);
 	struct padlock_sha_ctx *ctx = crypto_tfm_ctx(tfm);
 	struct crypto_shash *fallback_tfm;
 	int err = -ENOMEM;

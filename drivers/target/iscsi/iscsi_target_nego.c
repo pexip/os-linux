@@ -23,7 +23,7 @@
 #include <target/target_core_fabric.h>
 #include <target/iscsi/iscsi_transport.h>
 
-#include "iscsi_target_core.h"
+#include <target/iscsi/iscsi_target_core.h>
 #include "iscsi_target_parameters.h"
 #include "iscsi_target_login.h"
 #include "iscsi_target_nego.h"
@@ -341,7 +341,6 @@ static int iscsi_target_check_first_request(
 static int iscsi_target_do_tx_login_io(struct iscsi_conn *conn, struct iscsi_login *login)
 {
 	u32 padding = 0;
-	struct iscsi_session *sess = conn->sess;
 	struct iscsi_login_rsp *login_rsp;
 
 	login_rsp = (struct iscsi_login_rsp *) login->rsp;
@@ -353,7 +352,7 @@ static int iscsi_target_do_tx_login_io(struct iscsi_conn *conn, struct iscsi_log
 	login_rsp->itt			= login->init_task_tag;
 	login_rsp->statsn		= cpu_to_be32(conn->stat_sn++);
 	login_rsp->exp_cmdsn		= cpu_to_be32(conn->sess->exp_cmd_sn);
-	login_rsp->max_cmdsn		= cpu_to_be32(conn->sess->max_cmd_sn);
+	login_rsp->max_cmdsn		= cpu_to_be32((u32) atomic_read(&conn->sess->max_cmd_sn));
 
 	pr_debug("Sending Login Response, Flags: 0x%02x, ITT: 0x%08x,"
 		" ExpCmdSN; 0x%08x, MaxCmdSN: 0x%08x, StatSN: 0x%08x, Length:"
@@ -382,10 +381,6 @@ static int iscsi_target_do_tx_login_io(struct iscsi_conn *conn, struct iscsi_log
 		goto err;
 
 	login->rsp_length		= 0;
-	mutex_lock(&sess->cmdsn_mutex);
-	login_rsp->exp_cmdsn		= cpu_to_be32(sess->exp_cmd_sn);
-	login_rsp->max_cmdsn		= cpu_to_be32(sess->max_cmd_sn);
-	mutex_unlock(&sess->cmdsn_mutex);
 
 	return 0;
 
@@ -408,7 +403,7 @@ err:
 	return -1;
 }
 
-static void iscsi_target_sk_data_ready(struct sock *sk, int count)
+static void iscsi_target_sk_data_ready(struct sock *sk)
 {
 	struct iscsi_conn *conn = sk->sk_user_data;
 	bool rc;
@@ -437,7 +432,7 @@ static void iscsi_target_sk_data_ready(struct sock *sk, int count)
 	}
 
 	rc = schedule_delayed_work(&conn->login_work, 0);
-	if (rc == false) {
+	if (!rc) {
 		pr_debug("iscsi_target_sk_data_ready, schedule_delayed_work"
 			 " got false\n");
 	}
@@ -546,7 +541,7 @@ static void iscsi_target_do_login_rx(struct work_struct *work)
 	state = (tpg->tpg_state == TPG_STATE_ACTIVE);
 	spin_unlock(&tpg->tpg_state_lock);
 
-	if (state == false) {
+	if (!state) {
 		pr_debug("iscsi_target_do_login_rx: tpg_state != TPG_STATE_ACTIVE\n");
 		iscsi_target_restore_sock_callbacks(conn);
 		iscsi_target_login_drop(conn, login);
@@ -561,7 +556,7 @@ static void iscsi_target_do_login_rx(struct work_struct *work)
 		state = iscsi_target_sk_state_check(sk);
 		read_unlock_bh(&sk->sk_callback_lock);
 
-		if (state == false) {
+		if (!state) {
 			pr_debug("iscsi_target_do_login_rx, TCP state CLOSE\n");
 			iscsi_target_restore_sock_callbacks(conn);
 			iscsi_target_login_drop(conn, login);
@@ -806,6 +801,12 @@ static int iscsi_target_handle_csg_zero(
 		}
 
 		goto do_auth;
+	} else if (!payload_length) {
+		pr_err("Initiator sent zero length security payload,"
+		       " login failed\n");
+		iscsit_tx_login_rsp(conn, ISCSI_STATUS_CLS_INITIATOR_ERR,
+				    ISCSI_LOGIN_STATUS_AUTH_FAILED);
+		return -1;
 	}
 
 	if (login->first_request)

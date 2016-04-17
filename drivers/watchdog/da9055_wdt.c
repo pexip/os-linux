@@ -151,10 +151,8 @@ static int da9055_wdt_probe(struct platform_device *pdev)
 
 	driver_data = devm_kzalloc(&pdev->dev, sizeof(*driver_data),
 				   GFP_KERNEL);
-	if (!driver_data) {
-		dev_err(da9055->dev, "Failed to allocate watchdog device\n");
+	if (!driver_data)
 		return -ENOMEM;
-	}
 
 	driver_data->da9055 = da9055;
 
@@ -163,6 +161,7 @@ static int da9055_wdt_probe(struct platform_device *pdev)
 	da9055_wdt->timeout = DA9055_DEF_TIMEOUT;
 	da9055_wdt->info = &da9055_wdt_info;
 	da9055_wdt->ops = &da9055_wdt_ops;
+	da9055_wdt->parent = &pdev->dev;
 	watchdog_set_nowayout(da9055_wdt, nowayout);
 	watchdog_set_drvdata(da9055_wdt, driver_data);
 

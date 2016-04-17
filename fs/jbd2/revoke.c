@@ -92,6 +92,7 @@
 #include <linux/init.h>
 #include <linux/bio.h>
 #include <linux/log2.h>
+#include <linux/hash.h>
 #endif
 
 static struct kmem_cache *jbd2_revoke_record_cache;
@@ -130,16 +131,9 @@ static void flush_descriptor(journal_t *, struct buffer_head *, int, int);
 
 /* Utility functions to maintain the revoke table */
 
-/* Borrowed from buffer.c: this is a tried and tested block hash function */
 static inline int hash(journal_t *journal, unsigned long long block)
 {
-	struct jbd2_revoke_table_s *table = journal->j_revoke;
-	int hash_shift = table->hash_shift;
-	int hash = (int)block ^ (int)((block >> 31) >> 1);
-
-	return ((hash << (hash_shift - 6)) ^
-		(hash >> 13) ^
-		(hash << (hash_shift - 12))) & (table->hash_size - 1);
+	return hash_64(block, journal->j_revoke->hash_shift);
 }
 
 static int insert_revoke_hash(journal_t *journal, unsigned long long blocknr,
@@ -147,11 +141,13 @@ static int insert_revoke_hash(journal_t *journal, unsigned long long blocknr,
 {
 	struct list_head *hash_list;
 	struct jbd2_revoke_record_s *record;
+	gfp_t gfp_mask = GFP_NOFS;
 
-repeat:
-	record = kmem_cache_alloc(jbd2_revoke_record_cache, GFP_NOFS);
+	if (journal_oom_retry)
+		gfp_mask |= __GFP_NOFAIL;
+	record = kmem_cache_alloc(jbd2_revoke_record_cache, gfp_mask);
 	if (!record)
-		goto oom;
+		return -ENOMEM;
 
 	record->sequence = seq;
 	record->blocknr = blocknr;
@@ -160,13 +156,6 @@ repeat:
 	list_add(&record->hash, hash_list);
 	spin_unlock(&journal->j_revoke_lock);
 	return 0;
-
-oom:
-	if (!journal_oom_retry)
-		return -ENOMEM;
-	jbd_debug(1, "ENOMEM in %s, retrying\n", __func__);
-	yield();
-	goto repeat;
 }
 
 /* Find a revoke record in the journal's hash table. */
@@ -600,7 +589,7 @@ static void write_one_revoke_record(journal_t *journal,
 	if (jbd2_journal_has_csum_v2or3(journal))
 		csum_size = sizeof(struct jbd2_journal_revoke_tail);
 
-	if (JBD2_HAS_INCOMPAT_FEATURE(journal, JBD2_FEATURE_INCOMPAT_64BIT))
+	if (jbd2_has_feature_64bit(journal))
 		sz = 8;
 	else
 		sz = 4;
@@ -630,7 +619,7 @@ static void write_one_revoke_record(journal_t *journal,
 		*descriptorp = descriptor;
 	}
 
-	if (JBD2_HAS_INCOMPAT_FEATURE(journal, JBD2_FEATURE_INCOMPAT_64BIT))
+	if (jbd2_has_feature_64bit(journal))
 		* ((__be64 *)(&descriptor->b_data[offset])) =
 			cpu_to_be64(record->blocknr);
 	else

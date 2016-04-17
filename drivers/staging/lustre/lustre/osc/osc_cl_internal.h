@@ -46,13 +46,12 @@
 #ifndef OSC_CL_INTERNAL_H
 #define OSC_CL_INTERNAL_H
 
-# include <linux/libcfs/libcfs.h>
+#include "../../include/linux/libcfs/libcfs.h"
 
-#include <obd.h>
+#include "../include/obd.h"
 /* osc_build_res_name() */
-#include <obd_ost.h>
-#include <cl_object.h>
-#include <lclient.h>
+#include "../include/cl_object.h"
+#include "../include/lclient.h"
 #include "osc_internal.h"
 
 /** \defgroup osc osc
@@ -118,7 +117,7 @@ struct osc_object {
 	 * True if locking against this stripe got -EUSERS.
 	 */
 	int		oo_contended;
-	cfs_time_t	 oo_contention_time;
+	unsigned long	 oo_contention_time;
 	/**
 	 * List of pages in transfer.
 	 */
@@ -176,7 +175,16 @@ static inline void osc_object_unlock(struct osc_object *obj)
 
 static inline int osc_object_is_locked(struct osc_object *obj)
 {
+#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
 	return spin_is_locked(&obj->oo_lock);
+#else
+	/*
+	 * It is not perfect to return true all the time.
+	 * But since this function is only used for assertion
+	 * and checking, it seems OK.
+	 */
+	return 1;
+#endif
 }
 
 /*
@@ -321,7 +329,6 @@ struct osc_lock {
 	struct osc_io	   *ols_owner;
 };
 
-
 /**
  * Page state private for osc layer.
  */
@@ -378,7 +385,7 @@ struct osc_page {
 	/**
 	 * Submit time - the time when the page is starting RPC. For debugging.
 	 */
-	cfs_time_t	    ops_submit_time;
+	unsigned long	    ops_submit_time;
 
 	/**
 	 * A lock of which we hold a reference covers this page. Only used by
@@ -426,7 +433,7 @@ void osc_page_submit(const struct lu_env *env, struct osc_page *opg,
 		     enum cl_req_type crt, int brw_flags);
 int osc_cancel_async_page(const struct lu_env *env, struct osc_page *ops);
 int osc_set_async_flags(struct osc_object *obj, struct osc_page *opg,
-			obd_flag async_flags);
+			u32 async_flags);
 int osc_prep_async_page(struct osc_object *osc, struct osc_page *ops,
 			struct page *page, loff_t offset);
 int osc_queue_async_io(const struct lu_env *env, struct cl_io *io,
@@ -446,7 +453,7 @@ int osc_cache_writeback_range(const struct lu_env *env, struct osc_object *obj,
 int osc_cache_wait_range(const struct lu_env *env, struct osc_object *obj,
 			 pgoff_t start, pgoff_t end);
 void osc_io_unplug(const struct lu_env *env, struct client_obd *cli,
-		   struct osc_object *osc, pdl_policy_t pol);
+		   struct osc_object *osc);
 
 void osc_object_set_contended  (struct osc_object *obj);
 void osc_object_clear_contended(struct osc_object *obj);
@@ -670,7 +677,7 @@ struct osc_extent {
 
 int osc_extent_finish(const struct lu_env *env, struct osc_extent *ext,
 		      int sent, int rc);
-int osc_extent_release(const struct lu_env *env, struct osc_extent *ext);
+void osc_extent_release(const struct lu_env *env, struct osc_extent *ext);
 
 /** @} osc */
 

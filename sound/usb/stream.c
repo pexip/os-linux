@@ -92,6 +92,7 @@ static void snd_usb_init_substream(struct snd_usb_stream *as,
 	subs->direction = stream;
 	subs->dev = as->chip->dev;
 	subs->txfr_quirk = as->chip->txfr_quirk;
+	subs->tx_length_quirk = as->chip->tx_length_quirk;
 	subs->speed = snd_usb_get_speed(subs->dev);
 	subs->pkt_offset_adj = 0;
 
@@ -315,9 +316,7 @@ static struct snd_pcm_chmap_elem *convert_chmap(int channels, unsigned int bits,
 /*
  * add this endpoint to the chip instance.
  * if a stream with the same endpoint already exists, append to it.
- * if not, create a new pcm stream. note, fp is added to the substream
- * fmt_list and will be freed on the chip instance release. do not free
- * fp or do remove it from the substream fmt_list to avoid double-free.
+ * if not, create a new pcm stream.
  */
 int snd_usb_add_audio_stream(struct snd_usb_audio *chip,
 			     int stream,
@@ -379,7 +378,15 @@ int snd_usb_add_audio_stream(struct snd_usb_audio *chip,
 
 	snd_usb_init_substream(as, stream, fp);
 
-	list_add(&as->list, &chip->pcm_list);
+	/*
+	 * Keep using head insertion for M-Audio Audiophile USB (tm) which has a
+	 * fix to swap capture stream order in conf/cards/USB-audio.conf
+	 */
+	if (chip->usb_id == USB_ID(0x0763, 0x2003))
+		list_add(&as->list, &chip->pcm_list);
+	else
+		list_add_tail(&as->list, &chip->pcm_list);
+
 	chip->pcm_devs++;
 
 	snd_usb_proc_pcm_format_add(as);
@@ -413,10 +420,9 @@ static int parse_uac_endpoint_attributes(struct snd_usb_audio *chip,
 
 	if (!csep || csep->bLength < 7 ||
 	    csep->bDescriptorSubtype != UAC_EP_GENERAL) {
-		snd_printk(KERN_WARNING "%d:%u:%d : no or invalid"
-			   " class specific endpoint descriptor\n",
-			   chip->dev->devnum, iface_no,
-			   altsd->bAlternateSetting);
+		usb_audio_warn(chip,
+			       "%u:%d : no or invalid class specific endpoint descriptor\n",
+			       iface_no, altsd->bAlternateSetting);
 		return 0;
 	}
 
@@ -535,8 +541,8 @@ int snd_usb_parse_audio_interface(struct snd_usb_audio *chip, int iface_no)
 		/* get audio formats */
 		switch (protocol) {
 		default:
-			snd_printdd(KERN_WARNING "%d:%u:%d: unknown interface protocol %#02x, assuming v1\n",
-				    dev->devnum, iface_no, altno, protocol);
+			dev_dbg(&dev->dev, "%u:%d: unknown interface protocol %#02x, assuming v1\n",
+				iface_no, altno, protocol);
 			protocol = UAC_VERSION_1;
 			/* fall through */
 
@@ -546,14 +552,16 @@ int snd_usb_parse_audio_interface(struct snd_usb_audio *chip, int iface_no)
 			struct uac_input_terminal_descriptor *iterm;
 
 			if (!as) {
-				snd_printk(KERN_ERR "%d:%u:%d : UAC_AS_GENERAL descriptor not found\n",
-					   dev->devnum, iface_no, altno);
+				dev_err(&dev->dev,
+					"%u:%d : UAC_AS_GENERAL descriptor not found\n",
+					iface_no, altno);
 				continue;
 			}
 
 			if (as->bLength < sizeof(*as)) {
-				snd_printk(KERN_ERR "%d:%u:%d : invalid UAC_AS_GENERAL desc\n",
-					   dev->devnum, iface_no, altno);
+				dev_err(&dev->dev,
+					"%u:%d : invalid UAC_AS_GENERAL desc\n",
+					iface_no, altno);
 				continue;
 			}
 
@@ -576,14 +584,16 @@ int snd_usb_parse_audio_interface(struct snd_usb_audio *chip, int iface_no)
 				snd_usb_find_csint_desc(alts->extra, alts->extralen, NULL, UAC_AS_GENERAL);
 
 			if (!as) {
-				snd_printk(KERN_ERR "%d:%u:%d : UAC_AS_GENERAL descriptor not found\n",
-					   dev->devnum, iface_no, altno);
+				dev_err(&dev->dev,
+					"%u:%d : UAC_AS_GENERAL descriptor not found\n",
+					iface_no, altno);
 				continue;
 			}
 
 			if (as->bLength < sizeof(*as)) {
-				snd_printk(KERN_ERR "%d:%u:%d : invalid UAC_AS_GENERAL desc\n",
-					   dev->devnum, iface_no, altno);
+				dev_err(&dev->dev,
+					"%u:%d : invalid UAC_AS_GENERAL desc\n",
+					iface_no, altno);
 				continue;
 			}
 
@@ -609,8 +619,9 @@ int snd_usb_parse_audio_interface(struct snd_usb_audio *chip, int iface_no)
 				break;
 			}
 
-			snd_printk(KERN_ERR "%d:%u:%d : bogus bTerminalLink %d\n",
-				   dev->devnum, iface_no, altno, as->bTerminalLink);
+			dev_err(&dev->dev,
+				"%u:%d : bogus bTerminalLink %d\n",
+				iface_no, altno, as->bTerminalLink);
 			continue;
 		}
 		}
@@ -618,14 +629,16 @@ int snd_usb_parse_audio_interface(struct snd_usb_audio *chip, int iface_no)
 		/* get format type */
 		fmt = snd_usb_find_csint_desc(alts->extra, alts->extralen, NULL, UAC_FORMAT_TYPE);
 		if (!fmt) {
-			snd_printk(KERN_ERR "%d:%u:%d : no UAC_FORMAT_TYPE desc\n",
-				   dev->devnum, iface_no, altno);
+			dev_err(&dev->dev,
+				"%u:%d : no UAC_FORMAT_TYPE desc\n",
+				iface_no, altno);
 			continue;
 		}
 		if (((protocol == UAC_VERSION_1) && (fmt->bLength < 8)) ||
 		    ((protocol == UAC_VERSION_2) && (fmt->bLength < 6))) {
-			snd_printk(KERN_ERR "%d:%u:%d : invalid UAC_FORMAT_TYPE desc\n",
-				   dev->devnum, iface_no, altno);
+			dev_err(&dev->dev,
+				"%u:%d : invalid UAC_FORMAT_TYPE desc\n",
+				iface_no, altno);
 			continue;
 		}
 
@@ -646,7 +659,7 @@ int snd_usb_parse_audio_interface(struct snd_usb_audio *chip, int iface_no)
 
 		fp = kzalloc(sizeof(*fp), GFP_KERNEL);
 		if (! fp) {
-			snd_printk(KERN_ERR "cannot malloc\n");
+			dev_err(&dev->dev, "cannot malloc\n");
 			return -ENOMEM;
 		}
 
@@ -664,7 +677,6 @@ int snd_usb_parse_audio_interface(struct snd_usb_audio *chip, int iface_no)
 					* (fp->maxpacksize & 0x7ff);
 		fp->attributes = parse_uac_endpoint_attributes(chip, alts, protocol, iface_no);
 		fp->clock = clock;
-		INIT_LIST_HEAD(&fp->list);
 
 		/* some quirks for attributes here */
 
@@ -710,10 +722,9 @@ int snd_usb_parse_audio_interface(struct snd_usb_audio *chip, int iface_no)
 			chconfig = 0;
 		fp->chmap = convert_chmap(fp->channels, chconfig, protocol);
 
-		snd_printdd(KERN_INFO "%d:%u:%d: add audio endpoint %#x\n", dev->devnum, iface_no, altno, fp->endpoint);
+		dev_dbg(&dev->dev, "%u:%d: add audio endpoint %#x\n", iface_no, altno, fp->endpoint);
 		err = snd_usb_add_audio_stream(chip, stream, fp);
 		if (err < 0) {
-			list_del(&fp->list); /* unlink for avoiding double-free */
 			kfree(fp->rate_table);
 			kfree(fp->chmap);
 			kfree(fp);

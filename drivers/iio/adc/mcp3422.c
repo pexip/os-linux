@@ -1,10 +1,11 @@
 /*
- * mcp3422.c - driver for the Microchip mcp3422/3/4 chip family
+ * mcp3422.c - driver for the Microchip mcp3422/3/4/6/7/8 chip family
  *
  * Copyright (C) 2013, Angelo Compagnucci
  * Author: Angelo Compagnucci <angelo.compagnucci@gmail.com>
  *
  * Datasheet: http://ww1.microchip.com/downloads/en/devicedoc/22088b.pdf
+ *            http://ww1.microchip.com/downloads/en/DeviceDoc/22226a.pdf
  *
  * This driver exports the value of analog input voltage to sysfs, the
  * voltage unit is nV.
@@ -87,6 +88,7 @@ static const int mcp3422_sign_extend[4] = {
 /* Client data (each client gets its own) */
 struct mcp3422 {
 	struct i2c_client *i2c;
+	u8 id;
 	u8 config;
 	u8 pga[4];
 	struct mutex lock;
@@ -229,6 +231,8 @@ static int mcp3422_write_raw(struct iio_dev *iio,
 			temp = MCP3422_SRATE_15;
 			break;
 		case 3:
+			if (adc->id > 4)
+				return -EINVAL;
 			temp = MCP3422_SRATE_3;
 			break;
 		default:
@@ -262,6 +266,17 @@ static int mcp3422_write_raw_get_fmt(struct iio_dev *indio_dev,
 	}
 }
 
+static ssize_t mcp3422_show_samp_freqs(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct mcp3422 *adc = iio_priv(dev_to_iio_dev(dev));
+
+	if (adc->id > 4)
+		return sprintf(buf, "240 60 15\n");
+
+	return sprintf(buf, "240 60 15 3\n");
+}
+
 static ssize_t mcp3422_show_scales(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -275,12 +290,13 @@ static ssize_t mcp3422_show_scales(struct device *dev,
 		mcp3422_scales[sample_rate][3]);
 }
 
-static IIO_CONST_ATTR_SAMP_FREQ_AVAIL("240 60 15 3");
+static IIO_DEVICE_ATTR(sampling_frequency_available, S_IRUGO,
+		mcp3422_show_samp_freqs, NULL, 0);
 static IIO_DEVICE_ATTR(in_voltage_scale_available, S_IRUGO,
 		mcp3422_show_scales, NULL, 0);
 
 static struct attribute *mcp3422_attributes[] = {
-	&iio_const_attr_sampling_frequency_available.dev_attr.attr,
+	&iio_dev_attr_sampling_frequency_available.dev_attr.attr,
 	&iio_dev_attr_in_voltage_scale_available.dev_attr.attr,
 	NULL,
 };
@@ -326,6 +342,7 @@ static int mcp3422_probe(struct i2c_client *client,
 
 	adc = iio_priv(indio_dev);
 	adc->i2c = client;
+	adc->id = (u8)(id->driver_data);
 
 	mutex_init(&adc->lock);
 
@@ -334,13 +351,16 @@ static int mcp3422_probe(struct i2c_client *client,
 	indio_dev->modes = INDIO_DIRECT_MODE;
 	indio_dev->info = &mcp3422_info;
 
-	switch ((unsigned int)(id->driver_data)) {
+	switch (adc->id) {
 	case 2:
 	case 3:
+	case 6:
+	case 7:
 		indio_dev->channels = mcp3422_channels;
 		indio_dev->num_channels = ARRAY_SIZE(mcp3422_channels);
 		break;
 	case 4:
+	case 8:
 		indio_dev->channels = mcp3424_channels;
 		indio_dev->num_channels = ARRAY_SIZE(mcp3424_channels);
 		break;
@@ -366,6 +386,9 @@ static const struct i2c_device_id mcp3422_id[] = {
 	{ "mcp3422", 2 },
 	{ "mcp3423", 3 },
 	{ "mcp3424", 4 },
+	{ "mcp3426", 6 },
+	{ "mcp3427", 7 },
+	{ "mcp3428", 8 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, mcp3422_id);
@@ -381,7 +404,6 @@ MODULE_DEVICE_TABLE(of, mcp3422_of_match);
 static struct i2c_driver mcp3422_driver = {
 	.driver = {
 		.name = "mcp3422",
-		.owner = THIS_MODULE,
 		.of_match_table = of_match_ptr(mcp3422_of_match),
 	},
 	.probe = mcp3422_probe,
@@ -390,5 +412,5 @@ static struct i2c_driver mcp3422_driver = {
 module_i2c_driver(mcp3422_driver);
 
 MODULE_AUTHOR("Angelo Compagnucci <angelo.compagnucci@gmail.com>");
-MODULE_DESCRIPTION("Microchip mcp3422/3/4 driver");
+MODULE_DESCRIPTION("Microchip mcp3422/3/4/6/7/8 driver");
 MODULE_LICENSE("GPL v2");

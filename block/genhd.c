@@ -8,6 +8,7 @@
 #include <linux/kdev_t.h>
 #include <linux/kernel.h>
 #include <linux/blkdev.h>
+#include <linux/backing-dev.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/proc_fs.h>
@@ -629,6 +630,7 @@ void add_disk(struct gendisk *disk)
 	WARN_ON(retval);
 
 	disk_add_events(disk);
+	blk_integrity_add(disk);
 }
 EXPORT_SYMBOL(add_disk);
 
@@ -637,6 +639,7 @@ void del_gendisk(struct gendisk *disk)
 	struct disk_part_iter piter;
 	struct hd_struct *part;
 
+	blk_integrity_del(disk);
 	disk_del_events(disk);
 
 	/* invalidate stuff */
@@ -653,7 +656,6 @@ void del_gendisk(struct gendisk *disk)
 	disk->flags &= ~GENHD_FL_UP;
 
 	sysfs_remove_link(&disk_to_dev(disk)->kobj, "bdi");
-	bdi_unregister(&disk->queue->backing_dev_info);
 	blk_unregister_queue(disk);
 	blk_unregister_region(disk_devt(disk), disk->minors);
 
@@ -1110,8 +1112,7 @@ static void disk_release(struct device *dev)
 	disk_release_events(disk);
 	kfree(disk->random);
 	disk_replace_part_tbl(disk, NULL);
-	free_part_stats(&disk->part0);
-	free_part_info(&disk->part0);
+	hd_free_part(&disk->part0);
 	if (disk->queue)
 		blk_put_queue(disk->queue);
 	kfree(disk);
@@ -1285,7 +1286,11 @@ struct gendisk *alloc_disk_node(int minors, int node_id)
 		 * converted to make use of bd_mutex and sequence counters.
 		 */
 		seqcount_init(&disk->part0.nr_sects_seq);
-		hd_ref_init(&disk->part0);
+		if (hd_ref_init(&disk->part0)) {
+			hd_free_part(&disk->part0);
+			kfree(disk);
+			return NULL;
+		}
 
 		disk->minors = minors;
 		rand_initialize_disk(disk);
@@ -1552,7 +1557,7 @@ void disk_flush_events(struct gendisk *disk, unsigned int mask)
 /**
  * disk_clear_events - synchronously check, clear and return pending events
  * @disk: disk to fetch and clear events from
- * @mask: mask of events to be fetched and clearted
+ * @mask: mask of events to be fetched and cleared
  *
  * Disk events are synchronously checked and pending events in @mask
  * are cleared and returned.  This ignores the block count.

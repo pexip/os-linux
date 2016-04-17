@@ -2433,15 +2433,6 @@ int ata_pci_sff_activate_host(struct ata_host *host,
 		mask = (1 << 2) | (1 << 0);
 		if ((tmp8 & mask) != mask)
 			legacy_mode = 1;
-#if defined(CONFIG_NO_ATA_LEGACY)
-		/* Some platforms with PCI limits cannot address compat
-		   port space. In that case we punt if their firmware has
-		   left a device in compatibility mode */
-		if (legacy_mode) {
-			printk(KERN_ERR "ata: Compatibility mode ATA is not supported on this platform, skipping.\n");
-			return -EOPNOTSUPP;
-		}
-#endif
 	}
 
 	if (!devres_open_group(dev, NULL, GFP_KERNEL))
@@ -3219,11 +3210,11 @@ void ata_pci_bmdma_init(struct ata_host *host)
 	 * ->sff_irq_clear method.  Try to initialize bmdma_addr
 	 * regardless of dma masks.
 	 */
-	rc = pci_set_dma_mask(pdev, ATA_DMA_MASK);
+	rc = dma_set_mask(&pdev->dev, ATA_DMA_MASK);
 	if (rc)
 		ata_bmdma_nodma(host, "failed to set dma mask");
 	if (!rc) {
-		rc = pci_set_consistent_dma_mask(pdev, ATA_DMA_MASK);
+		rc = dma_set_coherent_mask(&pdev->dev, ATA_DMA_MASK);
 		if (rc)
 			ata_bmdma_nodma(host,
 					"failed to set consistent dma mask");

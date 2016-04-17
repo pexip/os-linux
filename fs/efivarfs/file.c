@@ -22,7 +22,7 @@ static ssize_t efivarfs_file_write(struct file *file,
 	u32 attributes;
 	struct inode *inode = file->f_mapping->host;
 	unsigned long datasize = count - sizeof(attributes);
-	ssize_t bytes = 0;
+	ssize_t bytes;
 	bool set = false;
 
 	if (count < sizeof(attributes))
@@ -34,14 +34,9 @@ static ssize_t efivarfs_file_write(struct file *file,
 	if (attributes & ~(EFI_VARIABLE_MASK))
 		return -EINVAL;
 
-	data = kmalloc(datasize, GFP_KERNEL);
-	if (!data)
-		return -ENOMEM;
-
-	if (copy_from_user(data, userbuf + sizeof(attributes), datasize)) {
-		bytes = -EFAULT;
-		goto out;
-	}
+	data = memdup_user(userbuf + sizeof(attributes), datasize);
+	if (IS_ERR(data))
+		return PTR_ERR(data);
 
 	bytes = efivar_entry_set_get_size(var, attributes, &datasize,
 					  data, &set);
@@ -53,8 +48,8 @@ static ssize_t efivarfs_file_write(struct file *file,
 
 	if (bytes == -ENOENT) {
 		drop_nlink(inode);
-		d_delete(file->f_dentry);
-		dput(file->f_dentry);
+		d_delete(file->f_path.dentry);
+		dput(file->f_path.dentry);
 	} else {
 		mutex_lock(&inode->i_mutex);
 		i_size_write(inode, datasize + sizeof(attributes));
@@ -154,8 +149,7 @@ efivarfs_ioc_setxflags(struct file *file, void __user *arg)
 		return error;
 
 	mutex_lock(&inode->i_mutex);
-	inode->i_flags &= ~S_IMMUTABLE;
-	inode->i_flags |= i_flags;
+	inode_set_flags(inode, i_flags, S_IMMUTABLE);
 	mutex_unlock(&inode->i_mutex);
 
 	mnt_drop_write_file(file);

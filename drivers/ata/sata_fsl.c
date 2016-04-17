@@ -45,7 +45,8 @@ enum {
 	SATA_FSL_MAX_PRD_DIRECT	= 16,	/* Direct PRDT entries */
 
 	SATA_FSL_HOST_FLAGS	= (ATA_FLAG_SATA | ATA_FLAG_PIO_DMA |
-				ATA_FLAG_PMP | ATA_FLAG_NCQ | ATA_FLAG_AN),
+				   ATA_FLAG_PMP | ATA_FLAG_NCQ |
+				   ATA_FLAG_AN | ATA_FLAG_NO_LOG_PAGE),
 
 	SATA_FSL_MAX_CMDS	= SATA_FSL_QUEUE_DEPTH,
 	SATA_FSL_CMD_HDR_SIZE	= 16,	/* 4 DWORDS */
@@ -734,13 +735,12 @@ static int sata_fsl_port_start(struct ata_port *ap)
 	if (!pp)
 		return -ENOMEM;
 
-	mem = dma_alloc_coherent(dev, SATA_FSL_PORT_PRIV_DMA_SZ, &mem_dma,
-				 GFP_KERNEL);
+	mem = dma_zalloc_coherent(dev, SATA_FSL_PORT_PRIV_DMA_SZ, &mem_dma,
+				  GFP_KERNEL);
 	if (!mem) {
 		kfree(pp);
 		return -ENOMEM;
 	}
-	memset(mem, 0, SATA_FSL_PORT_PRIV_DMA_SZ);
 
 	pp->cmdslot = mem;
 	pp->cmdslot_paddr = mem_dma;
@@ -773,20 +773,6 @@ static int sata_fsl_port_start(struct ata_port *ap)
 	VPRINTK("HStatus = 0x%x\n", ioread32(hcr_base + HSTATUS));
 	VPRINTK("HControl = 0x%x\n", ioread32(hcr_base + HCONTROL));
 	VPRINTK("CHBA  = 0x%x\n", ioread32(hcr_base + CHBA));
-
-#ifdef CONFIG_MPC8315_DS
-	/*
-	 * Workaround for 8315DS board 3gbps link-up issue,
-	 * currently limit SATA port to GEN1 speed
-	 */
-	sata_fsl_scr_read(&ap->link, SCR_CONTROL, &temp);
-	temp &= ~(0xF << 4);
-	temp |= (0x1 << 4);
-	sata_fsl_scr_write(&ap->link, SCR_CONTROL, temp);
-
-	sata_fsl_scr_read(&ap->link, SCR_CONTROL, &temp);
-	dev_warn(dev, "scr_control, speed limited to %x\n", temp);
-#endif
 
 	return 0;
 }
@@ -883,6 +869,8 @@ try_offline_again:
 	 * PHY reset should remain asserted for atleast 1ms
 	 */
 	ata_msleep(ap, 1);
+
+	sata_set_spd(link);
 
 	/*
 	 * Now, bring the host controller online again, this can take time
@@ -1588,7 +1576,7 @@ static int sata_fsl_remove(struct platform_device *ofdev)
 	return 0;
 }
 
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_SLEEP
 static int sata_fsl_suspend(struct platform_device *op, pm_message_t state)
 {
 	struct ata_host *host = platform_get_drvdata(op);
@@ -1639,12 +1627,11 @@ MODULE_DEVICE_TABLE(of, fsl_sata_match);
 static struct platform_driver fsl_sata_driver = {
 	.driver = {
 		.name = "fsl-sata",
-		.owner = THIS_MODULE,
 		.of_match_table = fsl_sata_match,
 	},
 	.probe		= sata_fsl_probe,
 	.remove		= sata_fsl_remove,
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_SLEEP
 	.suspend	= sata_fsl_suspend,
 	.resume		= sata_fsl_resume,
 #endif

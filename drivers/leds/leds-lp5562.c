@@ -13,7 +13,6 @@
 #include <linux/delay.h>
 #include <linux/firmware.h>
 #include <linux/i2c.h>
-#include <linux/init.h>
 #include <linux/leds.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
@@ -347,9 +346,9 @@ static void lp5562_write_program_memory(struct lp55xx_chip *chip,
 /* check the size of program count */
 static inline bool _is_pc_overflow(struct lp55xx_predef_pattern *ptn)
 {
-	return (ptn->size_r >= LP5562_PROGRAM_LENGTH ||
-		ptn->size_g >= LP5562_PROGRAM_LENGTH ||
-		ptn->size_b >= LP5562_PROGRAM_LENGTH);
+	return ptn->size_r >= LP5562_PROGRAM_LENGTH ||
+	       ptn->size_g >= LP5562_PROGRAM_LENGTH ||
+	       ptn->size_b >= LP5562_PROGRAM_LENGTH;
 }
 
 static int lp5562_run_predef_led_pattern(struct lp55xx_chip *chip, int mode)
@@ -516,20 +515,19 @@ static int lp5562_probe(struct i2c_client *client,
 	int ret;
 	struct lp55xx_chip *chip;
 	struct lp55xx_led *led;
-	struct lp55xx_platform_data *pdata;
+	struct lp55xx_platform_data *pdata = dev_get_platdata(&client->dev);
 	struct device_node *np = client->dev.of_node;
 
-	if (!dev_get_platdata(&client->dev)) {
+	if (!pdata) {
 		if (np) {
-			ret = lp55xx_of_populate_pdata(&client->dev, np);
-			if (ret < 0)
-				return ret;
+			pdata = lp55xx_of_populate_pdata(&client->dev, np);
+			if (IS_ERR(pdata))
+				return PTR_ERR(pdata);
 		} else {
 			dev_err(&client->dev, "no platform data\n");
 			return -EINVAL;
 		}
 	}
-	pdata = dev_get_platdata(&client->dev);
 
 	chip = devm_kzalloc(&client->dev, sizeof(*chip), GFP_KERNEL);
 	if (!chip)

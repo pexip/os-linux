@@ -2,6 +2,8 @@
  *
  * Copyright (C) 2013 Texas Instruments
  *
+ * Module Author: Mugunthan V N <mugunthanvnm@ti.com>
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * version 2 as published by the Free Software Foundation.
@@ -13,7 +15,7 @@
  */
 
 #include <linux/platform_device.h>
-#include <linux/module.h>
+#include <linux/init.h>
 #include <linux/netdevice.h>
 #include <linux/phy.h>
 #include <linux/of.h>
@@ -28,6 +30,8 @@
 
 #define AM33XX_GMII_SEL_RMII2_IO_CLK_EN	BIT(7)
 #define AM33XX_GMII_SEL_RMII1_IO_CLK_EN	BIT(6)
+
+#define GMII_SEL_MODE_MASK		0x3
 
 struct cpsw_phy_sel_priv {
 	struct device	*dev;
@@ -65,7 +69,7 @@ static void cpsw_gmii_sel_am3352(struct cpsw_phy_sel_priv *priv,
 		break;
 	};
 
-	mask = 0x3 << (slave * 2) | BIT(slave + 6);
+	mask = GMII_SEL_MODE_MASK << (slave * 2) | BIT(slave + 6);
 	mode <<= slave * 2;
 
 	if (priv->rmii_clock_external) {
@@ -74,6 +78,55 @@ static void cpsw_gmii_sel_am3352(struct cpsw_phy_sel_priv *priv,
 		else
 			mode |= AM33XX_GMII_SEL_RMII2_IO_CLK_EN;
 	}
+
+	reg &= ~mask;
+	reg |= mode;
+
+	writel(reg, priv->gmii_sel);
+}
+
+static void cpsw_gmii_sel_dra7xx(struct cpsw_phy_sel_priv *priv,
+				 phy_interface_t phy_mode, int slave)
+{
+	u32 reg;
+	u32 mask;
+	u32 mode = 0;
+
+	reg = readl(priv->gmii_sel);
+
+	switch (phy_mode) {
+	case PHY_INTERFACE_MODE_RMII:
+		mode = AM33XX_GMII_SEL_MODE_RMII;
+		break;
+
+	case PHY_INTERFACE_MODE_RGMII:
+	case PHY_INTERFACE_MODE_RGMII_ID:
+	case PHY_INTERFACE_MODE_RGMII_RXID:
+	case PHY_INTERFACE_MODE_RGMII_TXID:
+		mode = AM33XX_GMII_SEL_MODE_RGMII;
+		break;
+
+	case PHY_INTERFACE_MODE_MII:
+	default:
+		mode = AM33XX_GMII_SEL_MODE_MII;
+		break;
+	};
+
+	switch (slave) {
+	case 0:
+		mask = GMII_SEL_MODE_MASK;
+		break;
+	case 1:
+		mask = GMII_SEL_MODE_MASK << 4;
+		mode <<= 4;
+		break;
+	default:
+		dev_err(priv->dev, "invalid slave number...\n");
+		return;
+	}
+
+	if (priv->rmii_clock_external)
+		dev_err(priv->dev, "RMII External clock is not supported\n");
 
 	reg &= ~mask;
 	reg |= mode;
@@ -112,9 +165,16 @@ static const struct of_device_id cpsw_phy_sel_id_table[] = {
 		.compatible	= "ti,am3352-cpsw-phy-sel",
 		.data		= &cpsw_gmii_sel_am3352,
 	},
+	{
+		.compatible	= "ti,dra7xx-cpsw-phy-sel",
+		.data		= &cpsw_gmii_sel_dra7xx,
+	},
+	{
+		.compatible	= "ti,am43xx-cpsw-phy-sel",
+		.data		= &cpsw_gmii_sel_am3352,
+	},
 	{}
 };
-MODULE_DEVICE_TABLE(of, cpsw_phy_sel_id_table);
 
 static int cpsw_phy_sel_probe(struct platform_device *pdev)
 {
@@ -132,6 +192,7 @@ static int cpsw_phy_sel_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
+	priv->dev = &pdev->dev;
 	priv->cpsw_phy_sel = of_id->data;
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "gmii-sel");
@@ -151,11 +212,7 @@ static struct platform_driver cpsw_phy_sel_driver = {
 	.probe		= cpsw_phy_sel_probe,
 	.driver		= {
 		.name	= "cpsw-phy-sel",
-		.owner	= THIS_MODULE,
 		.of_match_table = cpsw_phy_sel_id_table,
 	},
 };
-
-module_platform_driver(cpsw_phy_sel_driver);
-MODULE_AUTHOR("Mugunthan V N <mugunthanvnm@ti.com>");
-MODULE_LICENSE("GPL v2");
+builtin_platform_driver(cpsw_phy_sel_driver);
