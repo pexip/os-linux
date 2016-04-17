@@ -10,7 +10,7 @@ Build-Depends-Indep: xz-utils, xmlto
 Vcs-Svn: svn://anonscm.debian.org/svn/kernel/dists/trunk/linux/
 Vcs-Browser: http://anonscm.debian.org/viewvc/kernel/dists/trunk/linux/
 Homepage: https://www.kernel.org/
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
 
 Package: linux-source-3.14
 Architecture: all
