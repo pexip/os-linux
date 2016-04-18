@@ -1,5 +1,4 @@
 Package: linux-image-@abiname@@localversion@
-Build-Profiles: <!stage1>
 Depends: kmod, linux-base, ${misc:Depends}
 Recommends: firmware-linux-free, ${kernel:Recommends}
 Suggests: linux-doc-@version@, debian-kernel-handbook

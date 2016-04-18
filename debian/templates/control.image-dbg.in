@@ -1,5 +1,4 @@
 Package: linux-image-@abiname@@localversion@-dbg
-Build-Profiles: <!stage1>
 Depends: ${misc:Depends}
 Section: debug
 Priority: extra
