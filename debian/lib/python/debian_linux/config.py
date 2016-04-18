@@ -255,7 +255,7 @@ if __name__ == '__main__':
     sys.path.append('debian/lib/python')
     config = ConfigCoreDump(open('debian/config.defines.dump', 'rb'))
     for section, items in sorted(config.items(), key=lambda a:tuple(i or '' for i in a[0])):
-        print(u"[%s]" % (section,))
+        print("[%s]" % (section,))
         for item, value in sorted(items.items()):
-            print(u"%s: %s" % (item, value))
+            print("%s: %s" % (item, value))
         print()

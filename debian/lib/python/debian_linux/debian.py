@@ -74,7 +74,7 @@ $
     def __init__(self, version):
         match = self._version_re.match(version)
         if match is None:
-            raise RuntimeError(u"Invalid debian version")
+            raise RuntimeError("Invalid debian version")
         self.epoch = None
         if match.group("epoch") is not None:
             self.epoch = int(match.group("epoch"))
@@ -87,19 +87,19 @@ $
     @property
     def complete(self):
         if self.epoch is not None:
-            return u"%d:%s" % (self.epoch, self.complete_noepoch)
+            return "%d:%s" % (self.epoch, self.complete_noepoch)
         return self.complete_noepoch
 
     @property
     def complete_noepoch(self):
         if self.revision is not None:
-            return u"%s-%s" % (self.upstream, self.revision)
+            return "%s-%s" % (self.upstream, self.revision)
         return self.upstream
 
     @property
     def debian(self):
         from warnings import warn
-        warn(u"debian argument was replaced by revision", DeprecationWarning, stacklevel=2)
+        warn("debian argument was replaced by revision", DeprecationWarning, stacklevel=2)
         return self.revision
 
 
@@ -152,7 +152,7 @@ $
         super(VersionLinux, self).__init__(version)
         match = self._version_linux_re.match(version)
         if match is None:
-            raise RuntimeError(u"Invalid debian linux version")
+            raise RuntimeError("Invalid debian linux version")
         d = match.groupdict()
         self.linux_modifier = d['modifier']
         self.linux_version = d['version']
@@ -210,7 +210,7 @@ class PackageDescription(object):
         self.short = []
         self.long = []
         if value is not None:
-            short, long = value.split(u"\n", 1)
+            short, long = value.split("\n", 1)
             self.append(long)
             self.append_short(short)
 
@@ -226,10 +226,10 @@ class PackageDescription(object):
     def append(self, str):
         str = str.strip()
         if str:
-            self.long.extend(str.split(u"\n.\n"))
+            self.long.extend(str.split("\n.\n"))
 
     def append_short(self, str):
-        for i in [i.strip() for i in str.split(u",")]:
+        for i in [i.strip() for i in str.split(",")]:
             if i:
                 self.short.append(i)
 
@@ -259,7 +259,7 @@ class PackageRelation(list):
         if isinstance(value, str):
             value = PackageRelationGroup(value, override_arches)
         elif not isinstance(value, PackageRelationGroup):
-            raise ValueError(u"got %s" % type(value))
+            raise ValueError("got %s" % type(value))
         j = self._search_value(value)
         if j:
             j._update_arches(value)
@@ -378,7 +378,7 @@ class PackageRelationEntry(object):
     def parse(self, value):
         match = self._re.match(value)
         if match is None:
-            raise RuntimeError(u"Can't parse dependency %s" % value)
+            raise RuntimeError("Can't parse dependency %s" % value)
         match = match.groups()
         self.name = match[0]
         if match[1] is not None:

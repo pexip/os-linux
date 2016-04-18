@@ -73,7 +73,7 @@ def _read_rfc822(f, cls):
                 e[last] = '\n'.join(lines)
             i = line.find(':')
             if i < 0:
-                raise ValueError(u"Not a header, not a continuation: ``%s''" % line)
+                raise ValueError("Not a header, not a continuation: ``%s''" % line)
             last = line[:i]
             lines = [line[i + 1:].lstrip()]
         if last:

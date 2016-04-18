@@ -296,5 +296,5 @@ class Gencontrol(object):
     def write_rfc822(self, f, list):
         for entry in list:
             for key, value in entry.items():
-                f.write(u"%s: %s\n" % (key, value))
+                f.write("%s: %s\n" % (key, value))
             f.write('\n')
