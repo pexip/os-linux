@@ -111,7 +111,6 @@ struct thread_struct {
  */
 #define start_thread(regs, pc, usp) do {				   \
 	unsigned int *argc = (unsigned int *) bprm->exec;		   \
-	set_fs(USER_DS);						   \
 	current->thread.int_depth = 1;					   \
 	/* Force this process down to user land */			   \
 	regs->ctx.SaveMask = TBICTX_PRIV_BIT;				   \
@@ -155,6 +154,7 @@ unsigned long get_wchan(struct task_struct *p);
 #define user_stack_pointer(regs)        ((regs)->ctx.AX[0].U0)
 
 #define cpu_relax()     barrier()
+#define cpu_relax_lowlatency()  cpu_relax()
 
 extern void setup_priv(void);
 

@@ -1,23 +1,24 @@
-Subject: timekeeping-split-jiffies-lock.patch
+Subject: timekeeping: Split jiffies seqlock
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
+it can be taken in atomic context on RT.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- kernel/time/jiffies.c       |    7 ++++---
- kernel/time/tick-common.c   |   10 ++++++----
- kernel/time/tick-internal.h |    3 ++-
- kernel/time/tick-sched.c    |   19 ++++++++++++-------
- kernel/time/timekeeping.c   |    6 ++++--
+ kernel/time/jiffies.c     |    7 ++++---
+ kernel/time/tick-common.c |   10 ++++++----
+ kernel/time/tick-sched.c  |   19 ++++++++++++-------
+ kernel/time/timekeeping.c |    6 ++++--
+ kernel/time/timekeeping.h |    3 ++-
  5 files changed, 28 insertions(+), 17 deletions(-)
 
-Index: linux-stable/kernel/time/jiffies.c
-===================================================================
---- linux-stable.orig/kernel/time/jiffies.c
-+++ linux-stable/kernel/time/jiffies.c
-@@ -73,7 +73,8 @@ static struct clocksource clocksource_ji
- 	.shift		= JIFFIES_SHIFT,
+--- a/kernel/time/jiffies.c
++++ b/kernel/time/jiffies.c
+@@ -74,7 +74,8 @@ static struct clocksource clocksource_ji
+ 	.max_cycles	= 10,
  };
  
 -__cacheline_aligned_in_smp DEFINE_SEQLOCK(jiffies_lock);
@@ -26,7 +27,7 @@ Index: linux-stable/kernel/time/jiffies.c
  
  #if (BITS_PER_LONG < 64)
  u64 get_jiffies_64(void)
-@@ -82,9 +83,9 @@ u64 get_jiffies_64(void)
+@@ -83,9 +84,9 @@ u64 get_jiffies_64(void)
  	u64 ret;
  
  	do {
@@ -38,11 +39,9 @@ Index: linux-stable/kernel/time/jiffies.c
  	return ret;
  }
  EXPORT_SYMBOL(get_jiffies_64);
-Index: linux-stable/kernel/time/tick-common.c
-===================================================================
---- linux-stable.orig/kernel/time/tick-common.c
-+++ linux-stable/kernel/time/tick-common.c
-@@ -78,13 +78,15 @@ int tick_is_oneshot_available(void)
+--- a/kernel/time/tick-common.c
++++ b/kernel/time/tick-common.c
+@@ -79,13 +79,15 @@ int tick_is_oneshot_available(void)
  static void tick_periodic(int cpu)
  {
  	if (tick_do_timer_cpu == cpu) {
@@ -60,7 +59,7 @@ Index: linux-stable/kernel/time/tick-common.c
  		update_wall_time();
  	}
  
-@@ -146,9 +148,9 @@ void tick_setup_periodic(struct clock_ev
+@@ -157,9 +159,9 @@ void tick_setup_periodic(struct clock_ev
  		ktime_t next;
  
  		do {
@@ -70,26 +69,10 @@ Index: linux-stable/kernel/time/tick-common.c
 -		} while (read_seqretry(&jiffies_lock, seq));
 +		} while (read_seqcount_retry(&jiffies_seq, seq));
  
- 		clockevents_set_mode(dev, CLOCK_EVT_MODE_ONESHOT);
+ 		clockevents_switch_state(dev, CLOCK_EVT_STATE_ONESHOT);
  
-Index: linux-stable/kernel/time/tick-internal.h
-===================================================================
---- linux-stable.orig/kernel/time/tick-internal.h
-+++ linux-stable/kernel/time/tick-internal.h
-@@ -4,7 +4,8 @@
- #include <linux/hrtimer.h>
- #include <linux/tick.h>
- 
--extern seqlock_t jiffies_lock;
-+extern raw_spinlock_t jiffies_lock;
-+extern seqcount_t jiffies_seq;
- 
- #define CS_NAME_LEN	32
- 
-Index: linux-stable/kernel/time/tick-sched.c
-===================================================================
---- linux-stable.orig/kernel/time/tick-sched.c
-+++ linux-stable/kernel/time/tick-sched.c
+--- a/kernel/time/tick-sched.c
++++ b/kernel/time/tick-sched.c
 @@ -62,7 +62,8 @@ static void tick_do_update_jiffies64(kti
  		return;
  
@@ -132,24 +115,22 @@ Index: linux-stable/kernel/time/tick-sched.c
  	return period;
  }
  
-@@ -540,10 +545,10 @@ static ktime_t tick_nohz_stop_sched_tick
+@@ -578,10 +583,10 @@ static ktime_t tick_nohz_stop_sched_tick
  
  	/* Read jiffies and the time when jiffies were updated last */
  	do {
 -		seq = read_seqbegin(&jiffies_lock);
 +		seq = read_seqcount_begin(&jiffies_seq);
- 		last_update = last_jiffies_update;
- 		last_jiffies = jiffies;
+ 		basemono = last_jiffies_update.tv64;
+ 		basejiff = jiffies;
 -	} while (read_seqretry(&jiffies_lock, seq));
 +	} while (read_seqcount_retry(&jiffies_seq, seq));
+ 	ts->last_jiffies = basejiff;
  
- 	if (rcu_needs_cpu(cpu, &rcu_delta_jiffies) ||
- 	    arch_needs_cpu(cpu) || irq_work_needs_cpu()) {
-Index: linux-stable/kernel/time/timekeeping.c
-===================================================================
---- linux-stable.orig/kernel/time/timekeeping.c
-+++ linux-stable/kernel/time/timekeeping.c
-@@ -1735,8 +1735,10 @@ EXPORT_SYMBOL(hardpps);
+ 	if (rcu_needs_cpu(basemono, &next_rcu) ||
+--- a/kernel/time/timekeeping.c
++++ b/kernel/time/timekeeping.c
+@@ -2048,8 +2048,10 @@ EXPORT_SYMBOL(hardpps);
   */
  void xtime_update(unsigned long ticks)
  {
@@ -162,3 +143,15 @@ Index: linux-stable/kernel/time/timekeeping.c
 +	raw_spin_unlock(&jiffies_lock);
  	update_wall_time();
  }
+--- a/kernel/time/timekeeping.h
++++ b/kernel/time/timekeeping.h
+@@ -19,7 +19,8 @@ extern void timekeeping_resume(void);
+ extern void do_timer(unsigned long ticks);
+ extern void update_wall_time(void);
+ 
+-extern seqlock_t jiffies_lock;
++extern raw_spinlock_t jiffies_lock;
++extern seqcount_t jiffies_seq;
+ 
+ #define CS_NAME_LEN	32
+ 

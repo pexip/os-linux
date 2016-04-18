@@ -2,11 +2,12 @@ Section: kernel
 Priority: optional
 Maintainer: Pexip AS <packaging@pexip.com>
 XSBC-Pexip-Original-Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
-XSBC-Pexip-Original-Uploaders: Bastian Blank <waldi@debian.org>, Frederik Schüler <fs@debian.org>, maximilian attems <maks@debian.org>, Ben Hutchings <ben@decadent.org.uk>
-Standards-Version: 3.9.4
-Build-Depends: debhelper, cpio, module-init-tools, python, python-six, lzma [armel], kernel-wedge, quilt, patchutils, bc
-Build-Depends-Indep: xz-utils, xmlto
-Vcs-Svn: svn://anonscm.debian.org/svn/kernel/dists/trunk/linux/
-Vcs-Browser: http://anonscm.debian.org/viewvc/kernel/dists/trunk/linux/
+XSBC-Pexip-Original-Uploaders: Bastian Blank <waldi@debian.org>, maximilian attems <maks@debian.org>, Ben Hutchings <ben@decadent.org.uk>
+Standards-Version: 3.9.5
+Build-Depends: debhelper, python3:any, quilt,
+ cpio <!stage1>, module-init-tools <!stage1>, xz-utils <!stage1>, kernel-wedge (>= 2.93~) <!stage1>, bc <!stage1>
+Build-Depends-Indep: patchutils <!stage1>, xmlto <!stage1>
+Vcs-Git: https://anonscm.debian.org/git/kernel/linux.git
+Vcs-Browser: https://anonscm.debian.org/cgit/kernel/linux.git
 Homepage: https://www.kernel.org/
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch

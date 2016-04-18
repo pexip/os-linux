@@ -41,6 +41,7 @@ void nf_conntrack_cleanup_end(void);
 
 bool nf_ct_get_tuple(const struct sk_buff *skb, unsigned int nhoff,
 		     unsigned int dataoff, u_int16_t l3num, u_int8_t protonum,
+		     struct net *net,
 		     struct nf_conntrack_tuple *tuple,
 		     const struct nf_conntrack_l3proto *l3proto,
 		     const struct nf_conntrack_l4proto *l4proto);
@@ -52,7 +53,8 @@ bool nf_ct_invert_tuple(struct nf_conntrack_tuple *inverse,
 
 /* Find a connection corresponding to a tuple. */
 struct nf_conntrack_tuple_hash *
-nf_conntrack_find_get(struct net *net, u16 zone,
+nf_conntrack_find_get(struct net *net,
+		      const struct nf_conntrack_zone *zone,
 		      const struct nf_conntrack_tuple *tuple);
 
 int __nf_conntrack_confirm(struct sk_buff *skb);
@@ -72,11 +74,18 @@ static inline int nf_conntrack_confirm(struct sk_buff *skb)
 	return ret;
 }
 
-int
+void
 print_tuple(struct seq_file *s, const struct nf_conntrack_tuple *tuple,
             const struct nf_conntrack_l3proto *l3proto,
             const struct nf_conntrack_l4proto *proto);
 
-extern spinlock_t nf_conntrack_lock ;
+#ifdef CONFIG_LOCKDEP
+# define CONNTRACK_LOCKS 8
+#else
+# define CONNTRACK_LOCKS 1024
+#endif
+extern spinlock_t nf_conntrack_locks[CONNTRACK_LOCKS];
+
+extern spinlock_t nf_conntrack_expect_lock;
 
 #endif /* _NF_CONNTRACK_CORE_H */

@@ -1,8 +1,7 @@
-From 180cdb93d796bf52c919f5e3df30af83aa6d46ca Mon Sep 17 00:00:00 2001
 From: Yang Shi <yang.shi@windriver.com>
 Date: Mon, 16 Sep 2013 14:09:19 -0700
-Subject: [PATCH] hrtimer: Move schedule_work call to helper thread
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: hrtimer: Move schedule_work call to helper thread
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 When run ltp leapsec_timer test, the following call trace is caught:
 
@@ -47,15 +46,15 @@ makes a similar change.
 add a helper thread which does the call to schedule_work and wake up that
 thread instead of calling schedule_work directly.
 
-Cc: stable-rt@vger.kernel.org
+
 Signed-off-by: Yang Shi <yang.shi@windriver.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/hrtimer.c |   40 ++++++++++++++++++++++++++++++++++++++++
+ kernel/time/hrtimer.c |   40 ++++++++++++++++++++++++++++++++++++++++
  1 file changed, 40 insertions(+)
 
---- a/kernel/hrtimer.c
-+++ b/kernel/hrtimer.c
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
 @@ -48,6 +48,7 @@
  #include <linux/sched/rt.h>
  #include <linux/sched/deadline.h>
@@ -64,7 +63,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/freezer.h>
  
  #include <asm/uaccess.h>
-@@ -742,6 +743,44 @@ static void clock_was_set_work(struct wo
+@@ -713,6 +714,44 @@ static void clock_was_set_work(struct wo
  
  static DECLARE_WORK(hrtimer_work, clock_was_set_work);
  
@@ -109,7 +108,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Called from timekeeping and resume code to reprogramm the hrtimer
   * interrupt device on all cpus.
-@@ -750,6 +789,7 @@ void clock_was_set_delayed(void)
+@@ -721,6 +760,7 @@ void clock_was_set_delayed(void)
  {
  	schedule_work(&hrtimer_work);
  }

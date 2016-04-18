@@ -18,7 +18,6 @@
 #include <linux/err.h>
 #include <linux/interrupt.h>
 #include <linux/spi/spi.h>
-#include <linux/workqueue.h>
 #include <linux/mutex.h>
 
 #define HSSPI_GLOBAL_CTRL_REG			0x0
@@ -77,6 +76,7 @@
 #define HSSPI_FIFO_REG(x)			(0x200 + (x) * 0x200)
 
 
+#define HSSPI_OP_MULTIBIT			BIT(11)
 #define HSSPI_OP_CODE_SHIFT			13
 #define HSSPI_OP_SLEEP				(0 << HSSPI_OP_CODE_SHIFT)
 #define HSSPI_OP_READ_WRITE			(1 << HSSPI_OP_CODE_SHIFT)
@@ -172,15 +172,18 @@ static int bcm63xx_hsspi_do_txrx(struct spi_device *spi, struct spi_transfer *t)
 	if (opcode != HSSPI_OP_READ)
 		step_size -= HSSPI_OPCODE_LEN;
 
-	__raw_writel(0 << MODE_CTRL_PREPENDBYTE_CNT_SHIFT |
-		     2 << MODE_CTRL_MULTIDATA_WR_STRT_SHIFT |
-		     2 << MODE_CTRL_MULTIDATA_RD_STRT_SHIFT | 0xff,
+	if ((opcode == HSSPI_OP_READ && t->rx_nbits == SPI_NBITS_DUAL) ||
+	    (opcode == HSSPI_OP_WRITE && t->tx_nbits == SPI_NBITS_DUAL))
+		opcode |= HSSPI_OP_MULTIBIT;
+
+	__raw_writel(1 << MODE_CTRL_MULTIDATA_WR_SIZE_SHIFT |
+		     1 << MODE_CTRL_MULTIDATA_RD_SIZE_SHIFT | 0xff,
 		     bs->regs + HSSPI_PROFILE_MODE_CTRL_REG(chip_select));
 
 	while (pending > 0) {
 		int curr_step = min_t(int, step_size, pending);
 
-		init_completion(&bs->done);
+		reinit_completion(&bs->done);
 		if (tx) {
 			memcpy_toio(bs->fifo + HSSPI_OPCODE_LEN, tx, curr_step);
 			tx += curr_step;
@@ -369,12 +372,14 @@ static int bcm63xx_hsspi_probe(struct platform_device *pdev)
 	bs->fifo = (u8 __iomem *)(bs->regs + HSSPI_FIFO_REG(0));
 
 	mutex_init(&bs->bus_mutex);
+	init_completion(&bs->done);
 
 	master->bus_num = HSSPI_BUS_NUM;
 	master->num_chipselect = 8;
 	master->setup = bcm63xx_hsspi_setup;
 	master->transfer_one_message = bcm63xx_hsspi_transfer_one;
-	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
+	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH |
+			    SPI_RX_DUAL | SPI_TX_DUAL;
 	master->bits_per_word_mask = SPI_BPW_MASK(8);
 	master->auto_runtime_pm = true;
 
@@ -453,14 +458,12 @@ static int bcm63xx_hsspi_resume(struct device *dev)
 }
 #endif
 
-static const struct dev_pm_ops bcm63xx_hsspi_pm_ops = {
-	SET_SYSTEM_SLEEP_PM_OPS(bcm63xx_hsspi_suspend, bcm63xx_hsspi_resume)
-};
+static SIMPLE_DEV_PM_OPS(bcm63xx_hsspi_pm_ops, bcm63xx_hsspi_suspend,
+			 bcm63xx_hsspi_resume);
 
 static struct platform_driver bcm63xx_hsspi_driver = {
 	.driver = {
 		.name	= "bcm63xx-hsspi",
-		.owner	= THIS_MODULE,
 		.pm	= &bcm63xx_hsspi_pm_ops,
 	},
 	.probe		= bcm63xx_hsspi_probe,

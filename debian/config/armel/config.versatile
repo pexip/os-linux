@@ -9,13 +9,11 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
 CONFIG_CMDLINE=""
 # CONFIG_XIP_KERNEL is not set
-CONFIG_KEXEC=y
 CONFIG_ATAGS_PROC=y
 CONFIG_FPE_NWFPE=y
 # CONFIG_FPE_NWFPE_XP is not set
 # CONFIG_FPE_FASTFPE is not set
 CONFIG_VFP=y
-# CONFIG_ARTHUR is not set
 
 ##
 ## file: arch/arm/Kconfig.debug
@@ -68,7 +66,6 @@ CONFIG_SATA_VIA=m
 # CONFIG_PATA_ATIIXP is not set
 # CONFIG_PATA_CMD64X is not set
 # CONFIG_PATA_CS5520 is not set
-# CONFIG_PATA_CS5530 is not set
 # CONFIG_PATA_CYPRESS is not set
 # CONFIG_PATA_EFAR is not set
 # CONFIG_PATA_HPT366 is not set
@@ -168,7 +165,6 @@ CONFIG_SERIO_LIBPS2=y
 ##
 # CONFIG_NET_FC is not set
 CONFIG_IFB=m
-# CONFIG_NETPOLL_TRAP is not set
 
 ##
 ## file: drivers/net/arcnet/Kconfig
@@ -231,11 +227,6 @@ CONFIG_SUNDANCE=m
 ## file: drivers/net/ethernet/hp/Kconfig
 ##
 CONFIG_HP100=m
-
-##
-## file: drivers/net/ethernet/icplus/Kconfig
-##
-# CONFIG_IP1000 is not set
 
 ##
 ## file: drivers/net/ethernet/intel/Kconfig
@@ -369,9 +360,19 @@ CONFIG_USB_UHCI_HCD=m
 # CONFIG_USB_R8A66597_HCD is not set
 
 ##
-## file: drivers/video/Kconfig
+## file: drivers/video/backlight/Kconfig
 ##
-CONFIG_VIDEO_OUTPUT_CONTROL=m
+CONFIG_BACKLIGHT_CLASS_DEVICE=m
+
+##
+## file: drivers/video/console/Kconfig
+##
+CONFIG_FRAMEBUFFER_CONSOLE=y
+CONFIG_FRAMEBUFFER_CONSOLE_ROTATION=y
+
+##
+## file: drivers/video/fbdev/Kconfig
+##
 CONFIG_FB=y
 CONFIG_FIRMWARE_EDID=y
 CONFIG_FB_MODE_HELPERS=y
@@ -403,17 +404,6 @@ CONFIG_FB_SM501=m
 CONFIG_FB_VIRTUAL=m
 
 ##
-## file: drivers/video/backlight/Kconfig
-##
-CONFIG_BACKLIGHT_CLASS_DEVICE=m
-
-##
-## file: drivers/video/console/Kconfig
-##
-CONFIG_FRAMEBUFFER_CONSOLE=y
-CONFIG_FRAMEBUFFER_CONSOLE_ROTATION=y
-
-##
 ## file: drivers/virtio/Kconfig
 ##
 CONFIG_VIRTIO_PCI=y
@@ -426,7 +416,6 @@ CONFIG_ENABLE_WARN_DEPRECATED=y
 CONFIG_ENABLE_MUST_CHECK=y
 CONFIG_UNUSED_SYMBOLS=y
 # CONFIG_HEADERS_CHECK is not set
-# CONFIG_FRAME_POINTER is not set
 CONFIG_DEBUG_BUGVERBOSE=y
 
 ##

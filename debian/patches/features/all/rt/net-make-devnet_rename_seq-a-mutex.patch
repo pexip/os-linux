@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Mar 2013 18:06:20 +0100
-Subject: [PATCH] net: Add a mutex around devnet_rename_seq
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: net: Add a mutex around devnet_rename_seq
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 On RT write_seqcount_begin() disables preemption and device_rename()
 allocates memory with GFP_KERNEL and grabs later the sysfs_mutex
@@ -22,7 +22,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -178,6 +178,7 @@ static unsigned int napi_gen_id;
+@@ -186,6 +186,7 @@ static unsigned int napi_gen_id;
  static DEFINE_HASHTABLE(napi_hash, 8);
  
  static seqcount_t devnet_rename_seq;
@@ -30,7 +30,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  static inline void dev_base_seq_inc(struct net *net)
  {
-@@ -828,7 +829,8 @@ int netdev_get_name(struct net *net, cha
+@@ -884,7 +885,8 @@ int netdev_get_name(struct net *net, cha
  	strcpy(name, dev->name);
  	rcu_read_unlock();
  	if (read_seqcount_retry(&devnet_rename_seq, seq)) {
@@ -40,7 +40,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		goto retry;
  	}
  
-@@ -1094,30 +1096,28 @@ int dev_change_name(struct net_device *d
+@@ -1153,20 +1155,17 @@ int dev_change_name(struct net_device *d
  	if (dev->flags & IFF_UP)
  		return -EBUSY;
  
@@ -65,10 +65,12 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +	if (err < 0)
 +		goto outunlock;
  
- rollback:
- 	ret = device_rename(&dev->dev, dev->name);
+ 	if (oldname[0] && !strchr(oldname, '%'))
+ 		netdev_info(dev, "renamed from %s\n", oldname);
+@@ -1179,11 +1178,12 @@ int dev_change_name(struct net_device *d
  	if (ret) {
  		memcpy(dev->name, oldname, IFNAMSIZ);
+ 		dev->name_assign_type = old_assign_type;
 -		write_seqcount_end(&devnet_rename_seq);
 -		return ret;
 +		err = ret;
@@ -81,7 +83,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	netdev_adjacent_rename_links(dev, oldname);
  
-@@ -1138,7 +1138,8 @@ int dev_change_name(struct net_device *d
+@@ -1204,7 +1204,8 @@ int dev_change_name(struct net_device *d
  		/* err >= 0 after dev_alloc_name() or stores the first errno */
  		if (err >= 0) {
  			err = ret;
@@ -90,8 +92,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +			__raw_write_seqcount_begin(&devnet_rename_seq);
  			memcpy(dev->name, oldname, IFNAMSIZ);
  			memcpy(oldname, newname, IFNAMSIZ);
- 			goto rollback;
-@@ -1149,6 +1150,11 @@ int dev_change_name(struct net_device *d
+ 			dev->name_assign_type = old_assign_type;
+@@ -1217,6 +1218,11 @@ int dev_change_name(struct net_device *d
  	}
  
  	return err;

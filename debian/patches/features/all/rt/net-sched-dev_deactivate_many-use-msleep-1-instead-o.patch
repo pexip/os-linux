@@ -1,9 +1,7 @@
-From dc0674747e073c118c1e822b2af22bb4d1513211 Mon Sep 17 00:00:00 2001
 From: Marc Kleine-Budde <mkl@pengutronix.de>
 Date: Wed, 5 Mar 2014 00:49:47 +0100
-Subject: [PATCH] net: sched: dev_deactivate_many(): use msleep(1) instead of
- yield() to wait for outstanding qdisc_run calls
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: net: sched: Use msleep() instead of yield()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 On PREEMPT_RT enabled systems the interrupt handler run as threads at prio 50
 (by default). If a high priority userspace process tries to shut down a busy
@@ -40,7 +38,7 @@ the interrupt thread time to finish, similar to other changes contained in the
 rt patch set. Using wait_for_completion() instead would probably be a better
 solution.
 
-Cc: stable-rt@vger.kernel.org
+
 Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
@@ -49,7 +47,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -850,7 +850,7 @@ void dev_deactivate_many(struct list_hea
+@@ -890,7 +890,7 @@ void dev_deactivate_many(struct list_hea
  	/* Wait for outstanding qdisc_run calls. */
  	list_for_each_entry(dev, head, close_list)
  		while (some_qdisc_is_busy(dev))

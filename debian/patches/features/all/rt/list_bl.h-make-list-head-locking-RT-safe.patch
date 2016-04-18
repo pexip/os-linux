@@ -1,7 +1,7 @@
 From: Paul Gortmaker <paul.gortmaker@windriver.com>
 Date: Fri, 21 Jun 2013 15:07:25 -0400
-Subject: [PATCH] list_bl.h: make list head locking RT safe
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: list_bl: Make list head locking RT safe
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 As per changes in include/linux/jbd_common.h for avoiding the
 bit_spin_locks on RT ("fs: jbd/jbd2: Make state lock and journal
@@ -44,7 +44,7 @@ Since we are only taking the lock during short lived list operations,
 lets assume for now that it being raw won't be a significant latency
 concern.
 
-Cc: stable-rt@vger.kernel.org
+
 Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
@@ -86,7 +86,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static inline void INIT_HLIST_BL_NODE(struct hlist_bl_node *h)
  {
-@@ -117,12 +127,26 @@ static inline void hlist_bl_del_init(str
+@@ -118,12 +128,26 @@ static inline void hlist_bl_del_init(str
  
  static inline void hlist_bl_lock(struct hlist_bl_head *b)
  {

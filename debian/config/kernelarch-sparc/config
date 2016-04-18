@@ -30,7 +30,6 @@ CONFIG_CRYPTO_DES_SPARC64=m
 ##
 CONFIG_PATA_ALI=m
 CONFIG_PATA_CS5520=m
-CONFIG_PATA_CS5530=m
 CONFIG_PATA_NETCELL=m
 CONFIG_PATA_NS87415=m
 CONFIG_PATA_PDC2027X=m
@@ -113,6 +112,7 @@ CONFIG_USB_HID=y
 # CONFIG_SENSORS_F71805F is not set
 # CONFIG_SENSORS_GL518SM is not set
 # CONFIG_SENSORS_GL520SM is not set
+# CONFIG_SENSORS_MAX1619 is not set
 # CONFIG_SENSORS_LM63 is not set
 # CONFIG_SENSORS_LM75 is not set
 # CONFIG_SENSORS_LM77 is not set
@@ -123,7 +123,6 @@ CONFIG_USB_HID=y
 # CONFIG_SENSORS_LM87 is not set
 # CONFIG_SENSORS_LM90 is not set
 # CONFIG_SENSORS_LM92 is not set
-# CONFIG_SENSORS_MAX1619 is not set
 # CONFIG_SENSORS_PC87360 is not set
 # CONFIG_SENSORS_PCF8591 is not set
 # CONFIG_SENSORS_SIS5595 is not set
@@ -138,7 +137,6 @@ CONFIG_USB_HID=y
 ## file: drivers/i2c/Kconfig
 ##
 CONFIG_I2C=m
-CONFIG_I2C_CHARDEV=m
 # CONFIG_I2C_STUB is not set
 # CONFIG_I2C_DEBUG_CORE is not set
 # CONFIG_I2C_DEBUG_ALGO is not set
@@ -221,11 +219,6 @@ CONFIG_SERIO_LIBPS2=y
 # CONFIG_INPUT_TOUCHSCREEN is not set
 
 ##
-## file: drivers/media/parport/Kconfig
-##
-# CONFIG_MEDIA_PARPORT_SUPPORT is not set
-
-##
 ## file: drivers/media/pci/cx88/Kconfig
 ##
 # CONFIG_VIDEO_CX88 is not set
@@ -249,11 +242,6 @@ CONFIG_SERIO_LIBPS2=y
 # CONFIG_RADIO_MAXIRADIO is not set
 
 ##
-## file: drivers/message/i2o/Kconfig
-##
-# CONFIG_I2O is not set
-
-##
 ## file: drivers/mmc/Kconfig
 ##
 # CONFIG_MMC is not set
@@ -267,7 +255,6 @@ CONFIG_SERIO_LIBPS2=y
 ## file: drivers/net/Kconfig
 ##
 CONFIG_NET_FC=y
-# CONFIG_NETPOLL_TRAP is not set
 
 ##
 ## file: drivers/net/arcnet/Kconfig
@@ -434,7 +421,6 @@ CONFIG_SCSI_IPR=m
 CONFIG_SCSI_QLOGIC_1280=m
 CONFIG_SCSI_QLOGICPTI=m
 CONFIG_SCSI_DC395x=m
-# CONFIG_SCSI_DC390T is not set
 CONFIG_SCSI_SUNESP=m
 
 ##
@@ -479,7 +465,17 @@ CONFIG_USB_UHCI_HCD=m
 # CONFIG_USB_SL811_HCD is not set
 
 ##
-## file: drivers/video/Kconfig
+## file: drivers/video/backlight/Kconfig
+##
+# CONFIG_BACKLIGHT_LCD_SUPPORT is not set
+
+##
+## file: drivers/video/console/Kconfig
+##
+CONFIG_FRAMEBUFFER_CONSOLE=y
+
+##
+## file: drivers/video/fbdev/Kconfig
 ##
 CONFIG_FB=y
 CONFIG_FB_MODE_HELPERS=y
@@ -521,19 +517,15 @@ CONFIG_FB_ATY_GX=y
 # CONFIG_FB_VIRTUAL is not set
 
 ##
-## file: drivers/video/backlight/Kconfig
-##
-# CONFIG_BACKLIGHT_LCD_SUPPORT is not set
-
-##
-## file: drivers/video/console/Kconfig
-##
-CONFIG_FRAMEBUFFER_CONSOLE=y
-
-##
 ## file: drivers/w1/Kconfig
 ##
 # CONFIG_W1 is not set
+
+##
+## file: init/Kconfig
+##
+CONFIG_SGETMASK_SYSCALL=y
+CONFIG_SYSFS_SYSCALL=y
 
 ##
 ## file: lib/xz/Kconfig
@@ -553,11 +545,6 @@ CONFIG_SPARSEMEM_MANUAL=y
 ## file: net/ax25/Kconfig
 ##
 # CONFIG_HAMRADIO is not set
-
-##
-## file: net/bluetooth/Kconfig
-##
-# CONFIG_BT is not set
 
 ##
 ## file: net/decnet/Kconfig

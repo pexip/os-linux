@@ -1,6 +1,21 @@
 [abi]
-abiname: 3pexip1
+abiname: 1
 ignore-changes:
+# Not used by OOT modules
+ __scm_destroy
+ __scm_send
+ scm_detach_fds
+ scm_fp_dup
+ efivar_validate
+ get_thermal_instance
+ inet_csk_reqsk_queue_add
+ tcp_req_err
+ module:drivers/gpu/drm/drm_kms_helper
+ module:drivers/hv/hv_vmbus
+ module:drivers/md/dm-snapshot
+ module:drivers/mmc/host/sdhci
+ module:drivers/mmc/host/sdhci*
+ module:net/ceph/libceph
 
 [base]
 arches:
@@ -11,7 +26,6 @@ arches:
  armhf
  hppa
  i386
- ia64
  m68k
  mips
  mipsel
@@ -28,7 +42,7 @@ arches:
  sparc
  sparc64
  x32
-compiler: gcc-4.8
+compiler: gcc-4.9
 featuresets:
  none
  rt
@@ -44,14 +58,13 @@ part-long-xen: This kernel also runs on a Xen hypervisor.
 
 [image]
 initramfs-generators: initramfs-tools initramfs-fallback
-type: plain
 
 [relations]
 # compilers
-gcc-4.4: gcc-4.4
-gcc-4.6: gcc-4.6
-gcc-4.7: gcc-4.7
-gcc-4.8: gcc-4.8
+gcc-4.6: gcc-4.6 <!stage1>
+gcc-4.8: gcc-4.8 <!stage1>
+gcc-4.9: gcc-4.9 <!stage1>
+gcc-5: gcc-5 <!stage1>
 
 # initramfs-generators
 initramfs-fallback: linux-initramfs-tool

@@ -1,7 +1,7 @@
 Subject: completion: Use simple wait queues
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -9,12 +9,57 @@ contention on the waitqueue lock.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- include/linux/completion.h |    9 ++++-----
- include/linux/uprobes.h    |    1 +
- kernel/sched/completion.c  |   34 +++++++++++++++++-----------------
- kernel/sched/core.c        |   10 ++++++++--
- 4 files changed, 30 insertions(+), 24 deletions(-)
+ drivers/net/wireless/orinoco/orinoco_usb.c |    2 -
+ drivers/usb/gadget/function/f_fs.c         |    2 -
+ drivers/usb/gadget/legacy/inode.c          |    4 +--
+ include/linux/completion.h                 |    9 +++-----
+ include/linux/uprobes.h                    |    1 
+ kernel/sched/completion.c                  |   32 ++++++++++++++---------------
+ kernel/sched/core.c                        |   10 +++++++--
+ 7 files changed, 33 insertions(+), 27 deletions(-)
 
+--- a/drivers/net/wireless/orinoco/orinoco_usb.c
++++ b/drivers/net/wireless/orinoco/orinoco_usb.c
+@@ -697,7 +697,7 @@ static void ezusb_req_ctx_wait(struct ez
+ 			while (!ctx->done.done && msecs--)
+ 				udelay(1000);
+ 		} else {
+-			wait_event_interruptible(ctx->done.wait,
++			swait_event_interruptible(ctx->done.wait,
+ 						 ctx->done.done);
+ 		}
+ 		break;
+--- a/drivers/usb/gadget/function/f_fs.c
++++ b/drivers/usb/gadget/function/f_fs.c
+@@ -1405,7 +1405,7 @@ static void ffs_data_put(struct ffs_data
+ 		pr_info("%s(): freeing\n", __func__);
+ 		ffs_data_clear(ffs);
+ 		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
+-		       waitqueue_active(&ffs->ep0req_completion.wait));
++		       swaitqueue_active(&ffs->ep0req_completion.wait));
+ 		kfree(ffs->dev_name);
+ 		kfree(ffs);
+ 	}
+--- a/drivers/usb/gadget/legacy/inode.c
++++ b/drivers/usb/gadget/legacy/inode.c
+@@ -345,7 +345,7 @@ ep_io (struct ep_data *epdata, void *buf
+ 	spin_unlock_irq (&epdata->dev->lock);
+ 
+ 	if (likely (value == 0)) {
+-		value = wait_event_interruptible (done.wait, done.done);
++		value = swait_event_interruptible (done.wait, done.done);
+ 		if (value != 0) {
+ 			spin_lock_irq (&epdata->dev->lock);
+ 			if (likely (epdata->ep != NULL)) {
+@@ -354,7 +354,7 @@ ep_io (struct ep_data *epdata, void *buf
+ 				usb_ep_dequeue (epdata->ep, epdata->req);
+ 				spin_unlock_irq (&epdata->dev->lock);
+ 
+-				wait_event (done.wait, done.done);
++				swait_event (done.wait, done.done);
+ 				if (epdata->status == -ECONNRESET)
+ 					epdata->status = -EINTR;
+ 			} else {
 --- a/include/linux/completion.h
 +++ b/include/linux/completion.h
 @@ -7,8 +7,7 @@
@@ -128,9 +173,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	return timeout;
  }
  
-@@ -267,12 +267,12 @@ bool try_wait_for_completion(struct comp
- 	unsigned long flags;
- 	int ret = 1;
+@@ -277,12 +277,12 @@ bool try_wait_for_completion(struct comp
+ 	if (!READ_ONCE(x->done))
+ 		return 0;
  
 -	spin_lock_irqsave(&x->wait.lock, flags);
 +	raw_spin_lock_irqsave(&x->wait.lock, flags);
@@ -143,22 +188,18 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	return ret;
  }
  EXPORT_SYMBOL(try_wait_for_completion);
-@@ -290,10 +290,10 @@ bool completion_done(struct completion *
- 	unsigned long flags;
- 	int ret = 1;
- 
--	spin_lock_irqsave(&x->wait.lock, flags);
-+	raw_spin_lock_irqsave(&x->wait.lock, flags);
- 	if (!x->done)
- 		ret = 0;
--	spin_unlock_irqrestore(&x->wait.lock, flags);
-+	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
- 	return ret;
+@@ -311,7 +311,7 @@ bool completion_done(struct completion *
+ 	 * after it's acquired the lock.
+ 	 */
+ 	smp_rmb();
+-	spin_unlock_wait(&x->wait.lock);
++	raw_spin_unlock_wait(&x->wait.lock);
+ 	return true;
  }
  EXPORT_SYMBOL(completion_done);
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2689,7 +2689,10 @@ void migrate_disable(void)
+@@ -3102,7 +3102,10 @@ void migrate_disable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG
@@ -170,7 +211,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif
  
  	if (p->migrate_disable) {
-@@ -2720,7 +2723,10 @@ void migrate_enable(void)
+@@ -3129,7 +3132,10 @@ void migrate_enable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG

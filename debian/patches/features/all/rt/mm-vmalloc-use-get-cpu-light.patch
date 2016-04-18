@@ -1,7 +1,10 @@
-Subject: mm-vmalloc.patch
+Subject: mm/vmalloc: Another preempt disable region which sucks
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 11:39:36 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Avoid the preempt disable version of get_cpu_var(). The inner-lock should
+provide enough serialisation.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -10,54 +13,54 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -796,7 +796,7 @@ static struct vmap_block *new_vmap_block
+@@ -821,7 +821,7 @@ static void *new_vmap_block(unsigned int
  	struct vmap_block *vb;
  	struct vmap_area *va;
  	unsigned long vb_idx;
 -	int node, err;
 +	int node, err, cpu;
+ 	void *vaddr;
  
  	node = numa_node_id();
- 
-@@ -834,11 +834,12 @@ static struct vmap_block *new_vmap_block
+@@ -864,11 +864,12 @@ static void *new_vmap_block(unsigned int
  	BUG_ON(err);
  	radix_tree_preload_end();
  
 -	vbq = &get_cpu_var(vmap_block_queue);
 +	cpu = get_cpu_light();
-+	vbq = &__get_cpu_var(vmap_block_queue);
++	vbq = this_cpu_ptr(&vmap_block_queue);
  	spin_lock(&vbq->lock);
- 	list_add_rcu(&vb->free_list, &vbq->free);
+ 	list_add_tail_rcu(&vb->free_list, &vbq->free);
  	spin_unlock(&vbq->lock);
 -	put_cpu_var(vmap_block_queue);
 +	put_cpu_light();
  
- 	return vb;
+ 	return vaddr;
  }
-@@ -906,6 +907,7 @@ static void *vb_alloc(unsigned long size
+@@ -937,6 +938,7 @@ static void *vb_alloc(unsigned long size
  	struct vmap_block *vb;
- 	unsigned long addr = 0;
+ 	void *vaddr = NULL;
  	unsigned int order;
-+	int cpu = 0;
++	int cpu;
  
- 	BUG_ON(size & ~PAGE_MASK);
+ 	BUG_ON(offset_in_page(size));
  	BUG_ON(size > PAGE_SIZE*VMAP_MAX_ALLOC);
-@@ -921,7 +923,8 @@ static void *vb_alloc(unsigned long size
+@@ -951,7 +953,8 @@ static void *vb_alloc(unsigned long size
+ 	order = get_order(size);
  
- again:
  	rcu_read_lock();
 -	vbq = &get_cpu_var(vmap_block_queue);
 +	cpu = get_cpu_light();
-+	vbq = &__get_cpu_var(vmap_block_queue);
++	vbq = this_cpu_ptr(&vmap_block_queue);
  	list_for_each_entry_rcu(vb, &vbq->free, free_list) {
- 		int i;
+ 		unsigned long pages_off;
  
-@@ -945,7 +948,7 @@ static void *vb_alloc(unsigned long size
- 		spin_unlock(&vb->lock);
+@@ -974,7 +977,7 @@ static void *vb_alloc(unsigned long size
+ 		break;
  	}
  
 -	put_cpu_var(vmap_block_queue);
 +	put_cpu_light();
  	rcu_read_unlock();
  
- 	if (!addr) {
+ 	/* Allocate new block if nothing was found */

@@ -39,8 +39,9 @@ static int finish_range(handle_t *handle, struct inode *inode,
 	newext.ee_block = cpu_to_le32(lb->first_block);
 	newext.ee_len   = cpu_to_le16(lb->last_block - lb->first_block + 1);
 	ext4_ext_store_pblock(&newext, lb->first_pblock);
-	path = ext4_ext_find_extent(inode, lb->first_block, NULL, 0);
-
+	/* Locking only for convinience since we are operating on temp inode */
+	down_write(&EXT4_I(inode)->i_data_sem);
+	path = ext4_find_extent(inode, lb->first_block, NULL, 0);
 	if (IS_ERR(path)) {
 		retval = PTR_ERR(path);
 		path = NULL;
@@ -61,7 +62,9 @@ static int finish_range(handle_t *handle, struct inode *inode,
 	 */
 	if (needed && ext4_handle_has_enough_credits(handle,
 						EXT4_RESERVE_TRANS_BLOCKS)) {
+		up_write((&EXT4_I(inode)->i_data_sem));
 		retval = ext4_journal_restart(handle, needed);
+		down_write((&EXT4_I(inode)->i_data_sem));
 		if (retval)
 			goto err_out;
 	} else if (needed) {
@@ -70,17 +73,18 @@ static int finish_range(handle_t *handle, struct inode *inode,
 			/*
 			 * IF not able to extend the journal restart the journal
 			 */
+			up_write((&EXT4_I(inode)->i_data_sem));
 			retval = ext4_journal_restart(handle, needed);
+			down_write((&EXT4_I(inode)->i_data_sem));
 			if (retval)
 				goto err_out;
 		}
 	}
-	retval = ext4_ext_insert_extent(handle, inode, path, &newext, 0);
+	retval = ext4_ext_insert_extent(handle, inode, &path, &newext, 0);
 err_out:
-	if (path) {
-		ext4_ext_drop_refs(path);
-		kfree(path);
-	}
+	up_write((&EXT4_I(inode)->i_data_sem));
+	ext4_ext_drop_refs(path);
+	kfree(path);
 	lb->first_pblock = 0;
 	return retval;
 }
@@ -444,8 +448,7 @@ int ext4_ext_migrate(struct inode *inode)
 	 * If the filesystem does not support extents, or the inode
 	 * already is extent-based, error out.
 	 */
-	if (!EXT4_HAS_INCOMPAT_FEATURE(inode->i_sb,
-				       EXT4_FEATURE_INCOMPAT_EXTENTS) ||
+	if (!ext4_has_feature_extents(inode->i_sb) ||
 	    (ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
 		return -EINVAL;
 
@@ -471,7 +474,7 @@ int ext4_ext_migrate(struct inode *inode)
 		EXT4_INODES_PER_GROUP(inode->i_sb)) + 1;
 	owner[0] = i_uid_read(inode);
 	owner[1] = i_gid_read(inode);
-	tmp_inode = ext4_new_inode(handle, inode->i_sb->s_root->d_inode,
+	tmp_inode = ext4_new_inode(handle, d_inode(inode->i_sb->s_root),
 				   S_IFREG, NULL, goal, owner);
 	if (IS_ERR(tmp_inode)) {
 		retval = PTR_ERR(tmp_inode);
@@ -505,7 +508,7 @@ int ext4_ext_migrate(struct inode *inode)
 	 * with i_data_sem held to prevent racing with block
 	 * allocation.
 	 */
-	down_read((&EXT4_I(inode)->i_data_sem));
+	down_read(&EXT4_I(inode)->i_data_sem);
 	ext4_set_inode_state(inode, EXT4_STATE_EXT_MIGRATE);
 	up_read((&EXT4_I(inode)->i_data_sem));
 
@@ -588,7 +591,7 @@ err_out:
 
 	/*
 	 * set the  i_blocks count to zero
-	 * so that the ext4_delete_inode does the
+	 * so that the ext4_evict_inode() does the
 	 * right job
 	 *
 	 * We don't need to take the i_lock because
@@ -621,13 +624,11 @@ int ext4_ind_migrate(struct inode *inode)
 	handle_t			*handle;
 	int				ret;
 
-	if (!EXT4_HAS_INCOMPAT_FEATURE(inode->i_sb,
-				       EXT4_FEATURE_INCOMPAT_EXTENTS) ||
+	if (!ext4_has_feature_extents(inode->i_sb) ||
 	    (!ext4_test_inode_flag(inode, EXT4_INODE_EXTENTS)))
 		return -EINVAL;
 
-	if (EXT4_HAS_RO_COMPAT_FEATURE(inode->i_sb,
-				       EXT4_FEATURE_RO_COMPAT_BIGALLOC))
+	if (ext4_has_feature_bigalloc(inode->i_sb))
 		return -EOPNOTSUPP;
 
 	/*

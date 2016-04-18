@@ -1,7 +1,9 @@
-Subject: lockdep-rt.patch
+Subject: lockdep: Make it RT aware
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 18:51:23 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+teach lockdep that we don't really do softirqs on -RT.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -39,7 +41,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #if defined(CONFIG_IRQSOFF_TRACER) || \
 --- a/kernel/locking/lockdep.c
 +++ b/kernel/locking/lockdep.c
-@@ -3543,6 +3543,7 @@ static void check_flags(unsigned long fl
+@@ -3525,6 +3525,7 @@ static void check_flags(unsigned long fl
  		}
  	}
  
@@ -47,7 +49,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
  	 * We dont accurately track softirq state in e.g.
  	 * hardirq contexts (such as on 4KSTACKS), so only
-@@ -3557,6 +3558,7 @@ static void check_flags(unsigned long fl
+@@ -3539,6 +3540,7 @@ static void check_flags(unsigned long fl
  			DEBUG_LOCKS_WARN_ON(!current->softirqs_enabled);
  		}
  	}

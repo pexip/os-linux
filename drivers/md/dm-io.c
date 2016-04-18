@@ -33,7 +33,6 @@ struct dm_io_client {
 struct io {
 	unsigned long error_bits;
 	atomic_t count;
-	struct completion *wait;
 	struct dm_io_client *client;
 	io_notify_fn callback;
 	void *context;
@@ -66,8 +65,7 @@ struct dm_io_client *dm_io_client_create(void)
 	return client;
 
    bad:
-	if (client->pool)
-		mempool_destroy(client->pool);
+	mempool_destroy(client->pool);
 	kfree(client);
 	return ERR_PTR(-ENOMEM);
 }
@@ -112,36 +110,36 @@ static void retrieve_io_and_region_from_bio(struct bio *bio, struct io **io,
  * We need an io object to keep track of the number of bios that
  * have been dispatched for a particular io.
  *---------------------------------------------------------------*/
+static void complete_io(struct io *io)
+{
+	unsigned long error_bits = io->error_bits;
+	io_notify_fn fn = io->callback;
+	void *context = io->context;
+
+	if (io->vma_invalidate_size)
+		invalidate_kernel_vmap_range(io->vma_invalidate_address,
+					     io->vma_invalidate_size);
+
+	mempool_free(io, io->client->pool);
+	fn(error_bits, context);
+}
+
 static void dec_count(struct io *io, unsigned int region, int error)
 {
 	if (error)
 		set_bit(region, &io->error_bits);
 
-	if (atomic_dec_and_test(&io->count)) {
-		if (io->vma_invalidate_size)
-			invalidate_kernel_vmap_range(io->vma_invalidate_address,
-						     io->vma_invalidate_size);
-
-		if (io->wait)
-			complete(io->wait);
-
-		else {
-			unsigned long r = io->error_bits;
-			io_notify_fn fn = io->callback;
-			void *context = io->context;
-
-			mempool_free(io, io->client->pool);
-			fn(r, context);
-		}
-	}
+	if (atomic_dec_and_test(&io->count))
+		complete_io(io);
 }
 
-static void endio(struct bio *bio, int error)
+static void endio(struct bio *bio)
 {
 	struct io *io;
 	unsigned region;
+	int error;
 
-	if (error && bio_data_dir(bio) == READ)
+	if (bio->bi_error && bio_data_dir(bio) == READ)
 		zero_fill_bio(bio);
 
 	/*
@@ -149,6 +147,7 @@ static void endio(struct bio *bio, int error)
 	 */
 	retrieve_io_and_region_from_bio(bio, &io, &region);
 
+	error = bio->bi_error;
 	bio_put(bio);
 
 	dec_count(io, region, error);
@@ -316,7 +315,7 @@ static void do_region(int rw, unsigned region, struct dm_io_region *where,
 		if ((rw & REQ_DISCARD) || (rw & REQ_WRITE_SAME))
 			num_bvecs = 1;
 		else
-			num_bvecs = min_t(int, bio_get_nr_vecs(where->bdev),
+			num_bvecs = min_t(int, BIO_MAX_PAGES,
 					  dm_sector_div_up(remaining, (PAGE_SIZE >> SECTOR_SHIFT)));
 
 		bio = bio_alloc_bioset(GFP_NOIO, num_bvecs, io->client->bios);
@@ -389,41 +388,51 @@ static void dispatch_io(int rw, unsigned int num_regions,
 	dec_count(io, 0, 0);
 }
 
+struct sync_io {
+	unsigned long error_bits;
+	struct completion wait;
+};
+
+static void sync_io_complete(unsigned long error, void *context)
+{
+	struct sync_io *sio = context;
+
+	sio->error_bits = error;
+	complete(&sio->wait);
+}
+
 static int sync_io(struct dm_io_client *client, unsigned int num_regions,
 		   struct dm_io_region *where, int rw, struct dpages *dp,
 		   unsigned long *error_bits)
 {
-	/*
-	 * gcc <= 4.3 can't do the alignment for stack variables, so we must
-	 * align it on our own.
-	 * volatile prevents the optimizer from removing or reusing
-	 * "io_" field from the stack frame (allowed in ANSI C).
-	 */
-	volatile char io_[sizeof(struct io) + __alignof__(struct io) - 1];
-	struct io *io = (struct io *)PTR_ALIGN(&io_, __alignof__(struct io));
-	DECLARE_COMPLETION_ONSTACK(wait);
+	struct io *io;
+	struct sync_io sio;
 
 	if (num_regions > 1 && (rw & RW_MASK) != WRITE) {
 		WARN_ON(1);
 		return -EIO;
 	}
 
+	init_completion(&sio.wait);
+
+	io = mempool_alloc(client->pool, GFP_NOIO);
 	io->error_bits = 0;
 	atomic_set(&io->count, 1); /* see dispatch_io() */
-	io->wait = &wait;
 	io->client = client;
+	io->callback = sync_io_complete;
+	io->context = &sio;
 
 	io->vma_invalidate_address = dp->vma_invalidate_address;
 	io->vma_invalidate_size = dp->vma_invalidate_size;
 
 	dispatch_io(rw, num_regions, where, dp, io, 1);
 
-	wait_for_completion_io(&wait);
+	wait_for_completion_io(&sio.wait);
 
 	if (error_bits)
-		*error_bits = io->error_bits;
+		*error_bits = sio.error_bits;
 
-	return io->error_bits ? -EIO : 0;
+	return sio.error_bits ? -EIO : 0;
 }
 
 static int async_io(struct dm_io_client *client, unsigned int num_regions,
@@ -441,7 +450,6 @@ static int async_io(struct dm_io_client *client, unsigned int num_regions,
 	io = mempool_alloc(client->pool, GFP_NOIO);
 	io->error_bits = 0;
 	atomic_set(&io->count, 1); /* see dispatch_io() */
-	io->wait = NULL;
 	io->client = client;
 	io->callback = fn;
 	io->context = context;
@@ -494,9 +502,9 @@ static int dp_init(struct dm_io_request *io_req, struct dpages *dp,
  * New collapsed (a)synchronous interface.
  *
  * If the IO is asynchronous (i.e. it has notify.fn), you must either unplug
- * the queue with blk_unplug() some time later or set REQ_SYNC in
-io_req->bi_rw. If you fail to do one of these, the IO will be submitted to
- * the disk after q->unplug_delay, which defaults to 3ms in blk-settings.c.
+ * the queue with blk_unplug() some time later or set REQ_SYNC in io_req->bi_rw.
+ * If you fail to do one of these, the IO will be submitted to the disk after
+ * q->unplug_delay, which defaults to 3ms in blk-settings.c.
  */
 int dm_io(struct dm_io_request *io_req, unsigned num_regions,
 	  struct dm_io_region *where, unsigned long *sync_error_bits)

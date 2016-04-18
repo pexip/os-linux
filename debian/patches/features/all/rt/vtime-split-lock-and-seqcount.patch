@@ -1,7 +1,10 @@
-Subject: vtime-split-lock-and-seqcount.patch
+Subject: vtime: Split lock and seqcount
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 23 Jul 2013 15:45:51 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Replace vtime_seqlock seqlock with a simple seqcounter and a rawlock
+so it can taken in atomic context on RT.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -12,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 46 insertions(+), 25 deletions(-)
 --- a/include/linux/init_task.h
 +++ b/include/linux/init_task.h
-@@ -147,7 +147,8 @@ extern struct task_group root_task_group
+@@ -150,7 +150,8 @@ extern struct task_group root_task_group
  
  #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
  # define INIT_VTIME(tsk)						\
@@ -24,9 +27,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #else
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1295,7 +1295,8 @@ struct task_struct {
- 	struct cputime prev_cputime;
- #endif
+@@ -1521,7 +1521,8 @@ struct task_struct {
+ 	cputime_t gtime;
+ 	struct prev_cputime prev_cputime;
  #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
 -	seqlock_t vtime_seqlock;
 +	raw_spinlock_t vtime_lock;
@@ -36,9 +39,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		VTIME_SLEEPING = 0,
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1243,7 +1243,8 @@ static struct task_struct *copy_process(
- 	p->prev_cputime.utime = p->prev_cputime.stime = 0;
- #endif
+@@ -1349,7 +1349,8 @@ static struct task_struct *copy_process(
+ 	prev_cputime_init(&p->prev_cputime);
+ 
  #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
 -	seqlock_init(&p->vtime_seqlock);
 +	raw_spin_lock_init(&p->vtime_lock);
@@ -48,7 +51,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif
 --- a/kernel/sched/cputime.c
 +++ b/kernel/sched/cputime.c
-@@ -655,37 +655,45 @@ static void __vtime_account_system(struc
+@@ -696,37 +696,45 @@ static void __vtime_account_system(struc
  
  void vtime_account_system(struct task_struct *tsk)
  {
@@ -102,7 +105,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  void vtime_guest_enter(struct task_struct *tsk)
-@@ -697,19 +705,23 @@ void vtime_guest_enter(struct task_struc
+@@ -738,19 +746,23 @@ void vtime_guest_enter(struct task_struc
  	 * synchronization against the reader (task_gtime())
  	 * that can thus safely catch up with a tickless delta.
  	 */
@@ -130,7 +133,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  EXPORT_SYMBOL_GPL(vtime_guest_exit);
  
-@@ -722,24 +734,30 @@ void vtime_account_idle(struct task_stru
+@@ -763,24 +775,30 @@ void vtime_account_idle(struct task_stru
  
  void arch_vtime_task_switch(struct task_struct *prev)
  {
@@ -167,8 +170,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  cputime_t task_gtime(struct task_struct *t)
-@@ -748,13 +766,13 @@ cputime_t task_gtime(struct task_struct
- 	cputime_t gtime;
+@@ -792,13 +810,13 @@ cputime_t task_gtime(struct task_struct
+ 		return t->gtime;
  
  	do {
 -		seq = read_seqbegin(&t->vtime_seqlock);
@@ -183,7 +186,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	return gtime;
  }
-@@ -777,7 +795,7 @@ fetch_task_cputime(struct task_struct *t
+@@ -821,7 +839,7 @@ fetch_task_cputime(struct task_struct *t
  		*udelta = 0;
  		*sdelta = 0;
  
@@ -192,7 +195,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  		if (u_dst)
  			*u_dst = *u_src;
-@@ -801,7 +819,7 @@ fetch_task_cputime(struct task_struct *t
+@@ -845,7 +863,7 @@ fetch_task_cputime(struct task_struct *t
  			if (t->vtime_snap_whence == VTIME_SYS)
  				*sdelta = delta;
  		}

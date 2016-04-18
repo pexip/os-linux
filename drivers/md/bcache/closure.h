@@ -38,7 +38,7 @@
  * they are running owned by the thread that is running them. Otherwise, suppose
  * you submit some bios and wish to have a function run when they all complete:
  *
- * foo_endio(struct bio *bio, int error)
+ * foo_endio(struct bio *bio)
  * {
  *	closure_put(cl);
  * }
@@ -243,7 +243,7 @@ static inline void set_closure_fn(struct closure *cl, closure_fn *fn,
 	cl->fn = fn;
 	cl->wq = wq;
 	/* between atomic_dec() in closure_put() */
-	smp_mb__before_atomic_dec();
+	smp_mb__before_atomic();
 }
 
 static inline void closure_queue(struct closure *cl)
@@ -320,7 +320,6 @@ static inline void closure_wake_up(struct closure_waitlist *list)
 do {									\
 	set_closure_fn(_cl, _fn, _wq);					\
 	closure_sub(_cl, CLOSURE_RUNNING + 1);				\
-	return;								\
 } while (0)
 
 /**
@@ -349,7 +348,6 @@ do {									\
 do {									\
 	set_closure_fn(_cl, _fn, _wq);					\
 	closure_queue(_cl);						\
-	return;								\
 } while (0)
 
 /**
@@ -365,7 +363,6 @@ do {									\
 do {									\
 	set_closure_fn(_cl, _destructor, NULL);				\
 	closure_sub(_cl, CLOSURE_RUNNING - CLOSURE_DESTRUCTOR + 1);	\
-	return;								\
 } while (0)
 
 /**

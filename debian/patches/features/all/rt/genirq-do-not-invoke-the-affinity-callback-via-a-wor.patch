@@ -1,8 +1,7 @@
-From 76666dbbdd40e963e7df84c123fc9aea4a2bcc69 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Aug 2013 17:48:46 +0200
-Subject: [PATCH] genirq: do not invoke the affinity callback via a workqueue
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: genirq: Do not invoke the affinity callback via a workqueue on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 Joe Korty reported, that __irq_set_affinity_locked() schedules a
 workqueue while holding a rawlock which results in a might_sleep()
@@ -12,15 +11,21 @@ wakeup() a process while holding the lock.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/interrupt.h |    1 
+ include/linux/interrupt.h |    2 +
  kernel/irq/manage.c       |   79 ++++++++++++++++++++++++++++++++++++++++++++--
- 2 files changed, 77 insertions(+), 3 deletions(-)
+ 2 files changed, 78 insertions(+), 3 deletions(-)
 
-Index: linux-stable/include/linux/interrupt.h
-===================================================================
---- linux-stable.orig/include/linux/interrupt.h
-+++ linux-stable/include/linux/interrupt.h
-@@ -257,6 +257,7 @@ struct irq_affinity_notify {
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -206,6 +206,7 @@ extern void resume_device_irqs(void);
+  * @irq:		Interrupt to which notification applies
+  * @kref:		Reference count, for internal use
+  * @work:		Work item, for internal use
++ * @list:		List item for deferred callbacks
+  * @notify:		Function to be called on change.  This will be
+  *			called in process context.
+  * @release:		Function to be called on release.  This will be
+@@ -217,6 +218,7 @@ struct irq_affinity_notify {
  	unsigned int irq;
  	struct kref kref;
  	struct work_struct work;
@@ -28,11 +33,9 @@ Index: linux-stable/include/linux/interrupt.h
  	void (*notify)(struct irq_affinity_notify *, const cpumask_t *mask);
  	void (*release)(struct kref *ref);
  };
-Index: linux-stable/kernel/irq/manage.c
-===================================================================
---- linux-stable.orig/kernel/irq/manage.c
-+++ linux-stable/kernel/irq/manage.c
-@@ -145,6 +145,62 @@ static inline void
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -183,6 +183,62 @@ static inline void
  irq_get_pending(struct cpumask *mask, struct irq_desc *desc) { }
  #endif
  
@@ -95,7 +98,7 @@ Index: linux-stable/kernel/irq/manage.c
  int irq_do_set_affinity(struct irq_data *data, const struct cpumask *mask,
  			bool force)
  {
-@@ -183,7 +239,17 @@ int irq_set_affinity_locked(struct irq_d
+@@ -222,7 +278,17 @@ int irq_set_affinity_locked(struct irq_d
  
  	if (desc->affinity_notify) {
  		kref_get(&desc->affinity_notify->kref);
@@ -113,7 +116,7 @@ Index: linux-stable/kernel/irq/manage.c
  	}
  	irqd_set(data, IRQD_AFFINITY_SET);
  
-@@ -218,10 +284,8 @@ int irq_set_affinity_hint(unsigned int i
+@@ -260,10 +326,8 @@ int irq_set_affinity_hint(unsigned int i
  }
  EXPORT_SYMBOL_GPL(irq_set_affinity_hint);
  
@@ -125,7 +128,7 @@ Index: linux-stable/kernel/irq/manage.c
  	struct irq_desc *desc = irq_to_desc(notify->irq);
  	cpumask_var_t cpumask;
  	unsigned long flags;
-@@ -243,6 +307,13 @@ out:
+@@ -285,6 +349,13 @@ static void irq_affinity_notify(struct w
  	kref_put(&notify->kref, notify->release);
  }
  
@@ -139,7 +142,7 @@ Index: linux-stable/kernel/irq/manage.c
  /**
   *	irq_set_affinity_notifier - control notification of IRQ affinity changes
   *	@irq:		Interrupt for which to enable/disable notification
-@@ -272,6 +343,8 @@ irq_set_affinity_notifier(unsigned int i
+@@ -314,6 +385,8 @@ irq_set_affinity_notifier(unsigned int i
  		notify->irq = irq;
  		kref_init(&notify->kref);
  		INIT_WORK(&notify->work, irq_affinity_notify);

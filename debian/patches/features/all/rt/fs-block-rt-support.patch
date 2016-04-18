@@ -1,7 +1,9 @@
-Subject: fs-block-rt-support.patch
+Subject: block: Turn off warning which is bogus on RT
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 14 Jun 2011 17:05:09 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+On -RT the context is always with IRQs enabled. Ignore this warning on -RT.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -10,7 +12,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -197,7 +197,7 @@ EXPORT_SYMBOL(blk_delay_queue);
+@@ -233,7 +233,7 @@ EXPORT_SYMBOL(blk_start_queue_async);
   **/
  void blk_start_queue(struct request_queue *q)
  {

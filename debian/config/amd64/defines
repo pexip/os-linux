@@ -1,22 +1,20 @@
-[abi]
-ignore-changes:
- module:arch/x86/kvm/*
-
 [base]
+compiler: gcc-4.6
 featuresets:
  none
  rt
 kernel-arch: x86
-compiler: gcc-4.6
 
 [build]
 debug-info: true
 image-file: arch/x86/boot/bzImage
+vdso: true
 
 [image]
-bootloaders: grub-pc extlinux lilo
+bootloaders: grub-pc grub-efi extlinux
 configs:
 install-stem: vmlinuz
+breaks: xserver-xorg-input-vmmouse (<< 1:13.0.99)
 
 [relations]
 headers%gcc-4.6: linux-compiler-gcc-4.6-x86

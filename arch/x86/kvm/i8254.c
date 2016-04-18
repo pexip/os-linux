@@ -35,6 +35,7 @@
 #include <linux/kvm_host.h>
 #include <linux/slab.h>
 
+#include "ioapic.h"
 #include "irq.h"
 #include "i8254.h"
 #include "x86.h"
@@ -244,7 +245,7 @@ static void kvm_pit_ack_irq(struct kvm_irq_ack_notifier *kian)
 		 * PIC is being reset.  Handle it gracefully here
 		 */
 		atomic_inc(&ps->pending);
-	else if (value > 0 && ps->reinject)
+	else if (value > 0)
 		/* in this case, we had multiple outstanding pit interrupts
 		 * that we needed to inject.  Reinject
 		 */
@@ -287,9 +288,7 @@ static void pit_do_work(struct kthread_work *work)
 	 * last one has been acked.
 	 */
 	spin_lock(&ps->inject_lock);
-	if (!ps->reinject)
-		inject = 1;
-	else if (ps->irq_ack) {
+	if (ps->irq_ack) {
 		ps->irq_ack = 0;
 		inject = 1;
 	}
@@ -318,10 +317,10 @@ static enum hrtimer_restart pit_timer_fn(struct hrtimer *data)
 	struct kvm_kpit_state *ps = container_of(data, struct kvm_kpit_state, timer);
 	struct kvm_pit *pt = ps->kvm->arch.vpit;
 
-	if (ps->reinject)
+	if (ps->reinject || !atomic_read(&ps->pending)) {
 		atomic_inc(&ps->pending);
-
-	queue_kthread_work(&pt->worker, &pt->expired);
+		queue_kthread_work(&pt->worker, &pt->expired);
+	}
 
 	if (ps->is_periodic) {
 		hrtimer_add_expires_ns(&ps->timer, ps->period);
@@ -335,7 +334,8 @@ static void create_pit_timer(struct kvm *kvm, u32 val, int is_period)
 	struct kvm_kpit_state *ps = &kvm->arch.vpit->pit_state;
 	s64 interval;
 
-	if (!irqchip_in_kernel(kvm) || ps->flags & KVM_PIT_FLAGS_HPET_LEGACY)
+	if (!ioapic_in_kernel(kvm) ||
+	    ps->flags & KVM_PIT_FLAGS_HPET_LEGACY)
 		return;
 
 	interval = muldiv64(val, NSEC_PER_SEC, KVM_PIT_FREQ);
@@ -420,6 +420,7 @@ void kvm_pit_load_count(struct kvm *kvm, int channel, u32 val, int hpet_legacy_s
 	u8 saved_mode;
 	if (hpet_legacy_start) {
 		/* save existing mode for later reenablement */
+		WARN_ON(channel != 0);
 		saved_mode = kvm->arch.vpit->pit_state.channels[0].mode;
 		kvm->arch.vpit->pit_state.channels[0].mode = 0xff; /* disable timer */
 		pit_load_count(kvm, channel, val);
@@ -445,7 +446,8 @@ static inline int pit_in_range(gpa_t addr)
 		(addr < KVM_PIT_BASE_ADDRESS + KVM_PIT_MEM_LENGTH));
 }
 
-static int pit_ioport_write(struct kvm_io_device *this,
+static int pit_ioport_write(struct kvm_vcpu *vcpu,
+				struct kvm_io_device *this,
 			    gpa_t addr, int len, const void *data)
 {
 	struct kvm_pit *pit = dev_to_pit(this);
@@ -521,7 +523,8 @@ static int pit_ioport_write(struct kvm_io_device *this,
 	return 0;
 }
 
-static int pit_ioport_read(struct kvm_io_device *this,
+static int pit_ioport_read(struct kvm_vcpu *vcpu,
+			   struct kvm_io_device *this,
 			   gpa_t addr, int len, void *data)
 {
 	struct kvm_pit *pit = dev_to_pit(this);
@@ -591,7 +594,8 @@ static int pit_ioport_read(struct kvm_io_device *this,
 	return 0;
 }
 
-static int speaker_ioport_write(struct kvm_io_device *this,
+static int speaker_ioport_write(struct kvm_vcpu *vcpu,
+				struct kvm_io_device *this,
 				gpa_t addr, int len, const void *data)
 {
 	struct kvm_pit *pit = speaker_to_pit(this);
@@ -608,8 +612,9 @@ static int speaker_ioport_write(struct kvm_io_device *this,
 	return 0;
 }
 
-static int speaker_ioport_read(struct kvm_io_device *this,
-			       gpa_t addr, int len, void *data)
+static int speaker_ioport_read(struct kvm_vcpu *vcpu,
+				   struct kvm_io_device *this,
+				   gpa_t addr, int len, void *data)
 {
 	struct kvm_pit *pit = speaker_to_pit(this);
 	struct kvm_kpit_state *pit_state = &pit->pit_state;

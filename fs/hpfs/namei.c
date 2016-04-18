@@ -227,8 +227,6 @@ static int hpfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode, de
 	int err;
 	if ((err = hpfs_chk_name(name, &len))) return err==-ENOENT ? -EINVAL : err;
 	if (hpfs_sb(dir->i_sb)->sb_eas < 2) return -EPERM;
-	if (!new_valid_dev(rdev))
-		return -EINVAL;
 	hpfs_lock(dir->i_sb);
 	err = -ENOSPC;
 	fnode = hpfs_alloc_fnode(dir->i_sb, hpfs_i(dir)->i_dno, &fno, &bh);
@@ -374,15 +372,14 @@ static int hpfs_unlink(struct inode *dir, struct dentry *dentry)
 	unsigned len = dentry->d_name.len;
 	struct quad_buffer_head qbh;
 	struct hpfs_dirent *de;
-	struct inode *inode = dentry->d_inode;
+	struct inode *inode = d_inode(dentry);
 	dnode_secno dno;
 	int r;
-	int rep = 0;
 	int err;
 
 	hpfs_lock(dir->i_sb);
 	hpfs_adjust_length(name, &len);
-again:
+
 	err = -ENOENT;
 	de = map_dirent(dir, hpfs_i(dir)->i_dno, name, len, &dno, &qbh);
 	if (!de)
@@ -402,33 +399,9 @@ again:
 		hpfs_error(dir->i_sb, "there was error when removing dirent");
 		err = -EFSERROR;
 		break;
-	case 2:		/* no space for deleting, try to truncate file */
-
+	case 2:		/* no space for deleting */
 		err = -ENOSPC;
-		if (rep++)
-			break;
-
-		dentry_unhash(dentry);
-		if (!d_unhashed(dentry)) {
-			hpfs_unlock(dir->i_sb);
-			return -ENOSPC;
-		}
-		if (generic_permission(inode, MAY_WRITE) ||
-		    !S_ISREG(inode->i_mode) ||
-		    get_write_access(inode)) {
-			d_rehash(dentry);
-		} else {
-			struct iattr newattrs;
-			/*printk("HPFS: truncating file before delete.\n");*/
-			newattrs.ia_size = 0;
-			newattrs.ia_valid = ATTR_SIZE | ATTR_CTIME;
-			err = notify_change(dentry, &newattrs, NULL);
-			put_write_access(inode);
-			if (!err)
-				goto again;
-		}
-		hpfs_unlock(dir->i_sb);
-		return -ENOSPC;
+		break;
 	default:
 		drop_nlink(inode);
 		err = 0;
@@ -450,7 +423,7 @@ static int hpfs_rmdir(struct inode *dir, struct dentry *dentry)
 	unsigned len = dentry->d_name.len;
 	struct quad_buffer_head qbh;
 	struct hpfs_dirent *de;
-	struct inode *inode = dentry->d_inode;
+	struct inode *inode = d_inode(dentry);
 	dnode_secno dno;
 	int n_items = 0;
 	int err;
@@ -541,8 +514,8 @@ static int hpfs_rename(struct inode *old_dir, struct dentry *old_dentry,
 	unsigned old_len = old_dentry->d_name.len;
 	const unsigned char *new_name = new_dentry->d_name.name;
 	unsigned new_len = new_dentry->d_name.len;
-	struct inode *i = old_dentry->d_inode;
-	struct inode *new_inode = new_dentry->d_inode;
+	struct inode *i = d_inode(old_dentry);
+	struct inode *new_inode = d_inode(new_dentry);
 	struct quad_buffer_head qbh, qbh1;
 	struct hpfs_dirent *dep, *nde;
 	struct hpfs_dirent de;

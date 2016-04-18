@@ -1,5 +1,5 @@
 /*
- *  linux/arch/x86_64/kernel/head.S -- start in 32bit and switch to 64bit
+ *  linux/arch/x86/kernel/head_64.S -- start in 32bit and switch to 64bit
  *
  *  Copyright (C) 2000 Andrea Arcangeli <andrea@suse.de> SuSE
  *  Copyright (C) 2000 Pavel Machek <pavel@suse.cz>
@@ -56,7 +56,7 @@ startup_64:
 	 * %rsi holds a physical pointer to real_mode_data.
 	 *
 	 * We come here either directly from a 64bit bootloader, or from
-	 * arch/x86_64/boot/compressed/head.S.
+	 * arch/x86/boot/compressed/head_64.S.
 	 *
 	 * We only come here initially at boot nothing else comes here.
 	 *
@@ -149,7 +149,7 @@ startup_64:
 	leaq	level2_kernel_pgt(%rip), %rdi
 	leaq	4096(%rdi), %r8
 	/* See if it is a valid page table entry */
-1:	testq	$1, 0(%rdi)
+1:	testb	$1, 0(%rdi)
 	jz	2f
 	addq	%rbp, 0(%rdi)
 	/* Go to the next page */
@@ -354,7 +354,7 @@ early_idt_handler_common:
 	cld
 
 	cmpl $2,(%rsp)		# X86_TRAP_NMI
-	je is_nmi		# Ignore NMI
+	je .Lis_nmi		# Ignore NMI
 
 	cmpl $2,early_recursion_flag(%rip)
 	jz  1f
@@ -419,7 +419,7 @@ early_idt_handler_common:
 	popq %rcx
 	popq %rax
 	decl early_recursion_flag(%rip)
-is_nmi:
+.Lis_nmi:
 	addq $16,%rsp		# drop vector number and error code
 	INTERRUPT_RETURN
 ENDPROC(early_idt_handler_common)
@@ -529,3 +529,4 @@ ENTRY(phys_base)
 	__PAGE_ALIGNED_BSS
 NEXT_PAGE(empty_zero_page)
 	.skip PAGE_SIZE
+

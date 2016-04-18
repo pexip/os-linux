@@ -1,16 +1,7 @@
 Date: Wed, 26 Jun 2013 15:28:11 -0400
 From: Steven Rostedt <rostedt@goodmis.org>
-To: linux-kernel@vger.kernel.org,
- linux-rt-users <linux-rt-users@vger.kernel.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>,
- Carsten Emde <C.Emde@osadl.org>,
- Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
- Clark Williams <clark.williams@gmail.com>,
- "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
-Subject: [RFC][PATCH RT 5/6] rt,ntp: Move call to schedule_delayed_work() to helper thread
-References: <20130626192806.107564905@goodmis.org>
-Content-Disposition: inline; filename=ntp-sched-delay-thread.patch
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: rt,ntp: Move call to schedule_delayed_work() to helper thread
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 The ntp code for notify_cmos_timer() is called from a hard interrupt
 context. schedule_delayed_work() under PREEMPT_RT_FULL calls spinlocks
@@ -30,8 +21,8 @@ needed. This will be a todo.
 Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
 
 ---
- kernel/time/ntp.c |   40 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
+ kernel/time/ntp.c |   43 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
 
 --- a/kernel/time/ntp.c
 +++ b/kernel/time/ntp.c
@@ -43,8 +34,8 @@ Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
  #include <linux/math64.h>
  #include <linux/timex.h>
  #include <linux/time.h>
-@@ -517,10 +518,49 @@ static void sync_cmos_clock(struct work_
- 	schedule_delayed_work(&sync_cmos_work, timespec_to_jiffies(&next));
+@@ -562,10 +563,52 @@ static void sync_cmos_clock(struct work_
+ 			   &sync_cmos_work, timespec64_to_jiffies(&next));
  }
  
 +#ifdef CONFIG_PREEMPT_RT_FULL
@@ -61,7 +52,8 @@ Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
 +		set_current_state(TASK_INTERRUPTIBLE);
 +		if (do_cmos_delay) {
 +			do_cmos_delay = false;
-+			schedule_delayed_work(&sync_cmos_work, 0);
++			queue_delayed_work(system_power_efficient_wq,
++					   &sync_cmos_work, 0);
 +		}
 +		schedule();
 +	}
@@ -84,10 +76,12 @@ Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
 +	return 0;
 +}
 +early_initcall(create_cmos_delay_thread);
++
 +#else
++
  void ntp_notify_cmos_timer(void)
  {
- 	schedule_delayed_work(&sync_cmos_work, 0);
+ 	queue_delayed_work(system_power_efficient_wq, &sync_cmos_work, 0);
  }
 +#endif /* CONFIG_PREEMPT_RT_FULL */
  

@@ -1,7 +1,10 @@
-Subject: scsi-fcoe-rt-aware.patch
+Subject: scsi/fcoe: Make RT aware.
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 12 Nov 2011 14:00:48 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Do not disable preemption while taking sleeping locks. All user look safe
+for migrate_diable() only.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -45,7 +48,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	return rc;
  }
-@@ -1768,11 +1768,11 @@ static inline int fcoe_filter_frames(str
+@@ -1766,11 +1766,11 @@ static inline int fcoe_filter_frames(str
  		return 0;
  	}
  
@@ -59,7 +62,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	return -EINVAL;
  }
  
-@@ -1848,13 +1848,13 @@ static void fcoe_recv_frame(struct sk_bu
+@@ -1846,13 +1846,13 @@ static void fcoe_recv_frame(struct sk_bu
  		goto drop;
  
  	if (!fcoe_filter_frames(lport, fp)) {
@@ -97,7 +100,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		/* Removes fcf from current list */
 --- a/drivers/scsi/libfc/fc_exch.c
 +++ b/drivers/scsi/libfc/fc_exch.c
-@@ -816,10 +816,10 @@ static struct fc_exch *fc_exch_em_alloc(
+@@ -814,10 +814,10 @@ static struct fc_exch *fc_exch_em_alloc(
  	}
  	memset(ep, 0, sizeof(*ep));
  

@@ -1,7 +1,7 @@
 Subject: rcu: Make ksoftirqd do RCU quiescent states
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Wed, 5 Oct 2011 11:45:18 -0700
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 Implementing RCU-bh in terms of RCU-preempt makes the system vulnerable
 to network-based denial-of-service attacks.  This patch therefore
@@ -24,49 +24,54 @@ Link: http://lkml.kernel.org/r/20111005184518.GA21601@linux.vnet.ibm.com
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 ---
- include/linux/rcupdate.h |    6 ------
+ include/linux/rcupdate.h |    4 ----
  kernel/rcu/tree.c        |    9 ++++++++-
  kernel/rcu/tree_plugin.h |    8 +++++++-
- kernel/softirq.c         |   18 ++++++++++++------
- 4 files changed, 27 insertions(+), 14 deletions(-)
+ 3 files changed, 15 insertions(+), 6 deletions(-)
 
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
-@@ -229,13 +229,7 @@ static inline int rcu_preempt_depth(void
- /* Internal to kernel */
+@@ -334,11 +334,7 @@ static inline int rcu_preempt_depth(void
  void rcu_init(void);
- void rcu_sched_qs(int cpu);
--
+ void rcu_end_inkernel_boot(void);
+ void rcu_sched_qs(void);
 -#ifdef CONFIG_PREEMPT_RT_FULL
--static inline void rcu_bh_qs(int cpu) { }
+-static inline void rcu_bh_qs(void) { }
 -#else
- void rcu_bh_qs(int cpu);
+ void rcu_bh_qs(void);
 -#endif
--
- void rcu_check_callbacks(int cpu, int user);
+ void rcu_check_callbacks(int user);
  struct notifier_block;
- void rcu_idle_enter(void);
+ int rcu_cpu_notify(struct notifier_block *self,
 --- a/kernel/rcu/tree.c
 +++ b/kernel/rcu/tree.c
-@@ -199,7 +199,14 @@ void rcu_sched_qs(int cpu)
- 	rdp->passed_quiesce = 1;
+@@ -266,7 +266,14 @@ void rcu_sched_qs(void)
+ 	}
  }
  
 -#ifndef CONFIG_PREEMPT_RT_FULL
 +#ifdef CONFIG_PREEMPT_RT_FULL
-+static void rcu_preempt_qs(int cpu);
++static void rcu_preempt_qs(void);
 +
-+void rcu_bh_qs(int cpu)
++void rcu_bh_qs(void)
 +{
-+	rcu_preempt_qs(cpu);
++	rcu_preempt_qs();
 +}
 +#else
- void rcu_bh_qs(int cpu)
+ void rcu_bh_qs(void)
  {
- 	struct rcu_data *rdp = &per_cpu(rcu_bh_data, cpu);
+ 	if (__this_cpu_read(rcu_bh_data.cpu_no_qs.s)) {
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
-@@ -1575,7 +1575,7 @@ static void rcu_prepare_kthreads(int cpu
+@@ -28,6 +28,7 @@
+ #include <linux/gfp.h>
+ #include <linux/oom.h>
+ #include <linux/smpboot.h>
++#include <linux/jiffies.h>
+ #include "../time/tick-internal.h"
+ 
+ #ifdef CONFIG_RCU_BOOST
+@@ -1346,7 +1347,7 @@ static void rcu_prepare_kthreads(int cpu
  
  #endif /* #else #ifdef CONFIG_RCU_BOOST */
  
@@ -75,17 +80,17 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  /*
   * Check to see if any future RCU-related work will need to be done
-@@ -1591,6 +1591,9 @@ int rcu_needs_cpu(int cpu, unsigned long
- 	*delta_jiffies = ULONG_MAX;
- 	return rcu_cpu_has_callbacks(cpu, NULL);
+@@ -1363,7 +1364,9 @@ int rcu_needs_cpu(u64 basemono, u64 *nex
+ 	return IS_ENABLED(CONFIG_RCU_NOCB_CPU_ALL)
+ 	       ? 0 : rcu_cpu_has_callbacks(NULL);
  }
-+#endif	/* !defined(CONFIG_RCU_FAST_NO_HZ) || defined(CONFIG_PREEMPT_RT_FULL) */
-+
-+#if !defined(CONFIG_RCU_FAST_NO_HZ)
++#endif /* !defined(CONFIG_RCU_FAST_NO_HZ) || defined(CONFIG_PREEMPT_RT_FULL) */
  
++#if !defined(CONFIG_RCU_FAST_NO_HZ)
  /*
   * Because we do not have RCU_FAST_NO_HZ, don't bother cleaning up
-@@ -1688,6 +1691,8 @@ static bool rcu_try_advance_all_cbs(void
+  * after it.
+@@ -1459,6 +1462,8 @@ static bool __maybe_unused rcu_try_advan
  	return cbs_ready;
  }
  
@@ -94,73 +99,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
   * Allow the CPU to enter dyntick-idle mode unless it has callbacks ready
   * to invoke.  If the CPU has callbacks, try to advance them.  Tell the
-@@ -1726,6 +1731,7 @@ int rcu_needs_cpu(int cpu, unsigned long
- 	}
+@@ -1504,6 +1509,7 @@ int rcu_needs_cpu(u64 basemono, u64 *nex
+ 	*nextevt = basemono + dj * TICK_NSEC;
  	return 0;
  }
-+#endif	/* #ifndef CONFIG_PREEMPT_RT_FULL */
++#endif /* #ifndef CONFIG_PREEMPT_RT_FULL */
  
  /*
   * Prepare a CPU for idle from an RCU perspective.  The first major task
---- a/kernel/softirq.c
-+++ b/kernel/softirq.c
-@@ -141,7 +141,7 @@ static void wakeup_softirqd(void)
- 		wake_up_process(tsk);
- }
- 
--static void handle_pending_softirqs(u32 pending, int cpu)
-+static void handle_pending_softirqs(u32 pending, int cpu, int need_rcu_bh_qs)
- {
- 	struct softirq_action *h = softirq_vec;
- 	unsigned int prev_count = preempt_count();
-@@ -167,7 +167,8 @@ static void handle_pending_softirqs(u32
- 			       prev_count, preempt_count());
- 			preempt_count_set(prev_count);
- 		}
--		rcu_bh_qs(cpu);
-+		if (need_rcu_bh_qs)
-+			rcu_bh_qs(cpu);
- 		h++;
- 		pending >>= softirq_bit;
- 	}
-@@ -349,7 +350,7 @@ asmlinkage void __do_softirq(void)
- 	/* Reset the pending bitmask before enabling irqs */
- 	set_softirq_pending(0);
- 
--	handle_pending_softirqs(pending, cpu);
-+	handle_pending_softirqs(pending, cpu, 1);
- 
- 	pending = local_softirq_pending();
- 	if (pending) {
-@@ -398,7 +399,12 @@ static void ksoftirqd_clr_sched_params(u
- static DEFINE_LOCAL_IRQ_LOCK(local_softirq_lock);
- static DEFINE_PER_CPU(struct task_struct *, local_softirq_runner);
- 
--asmlinkage void __do_softirq(void);
-+static void __do_softirq_common(int need_rcu_bh_qs);
-+
-+asmlinkage __do_softirq(void)
-+{
-+	__do_softirq_common(0);
-+}
- 
- void __init softirq_early_init(void)
- {
-@@ -507,7 +513,7 @@ asmlinkage void __do_softirq(void)
- 
- 	lockdep_softirq_enter();
- 
--	handle_pending_softirqs(pending, cpu);
-+	handle_pending_softirqs(pending, cpu, need_rcu_bh_qs);
- 
- 	pending = local_softirq_pending();
- 	if (pending)
-@@ -546,7 +552,7 @@ static int __thread_do_softirq(int cpu)
- 	 * schedule!
- 	 */
- 	if (local_softirq_pending())
--		__do_softirq();
-+		__do_softirq_common(cpu >= 0);
- 	local_unlock(local_softirq_lock);
- 	unpin_current_cpu();
- 	preempt_disable();

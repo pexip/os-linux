@@ -1,7 +1,7 @@
 Subject: net: Avoid livelock in net_tx_action() on RT
 From: Steven Rostedt <srostedt@redhat.com>
 Date: Thu, 06 Oct 2011 10:48:39 -0400
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 qdisc_lock is taken w/o disabling interrupts or bottom halfs. So code
 holding a qdisc_lock() can be interrupted and softirqs can run on the
@@ -45,7 +45,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3308,6 +3308,36 @@ int netif_rx_ni(struct sk_buff *skb)
+@@ -3638,6 +3638,36 @@ int netif_rx_ni(struct sk_buff *skb)
  }
  EXPORT_SYMBOL(netif_rx_ni);
  
@@ -81,13 +81,13 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +
  static void net_tx_action(struct softirq_action *h)
  {
- 	struct softnet_data *sd = &__get_cpu_var(softnet_data);
-@@ -3349,7 +3379,7 @@ static void net_tx_action(struct softirq
+ 	struct softnet_data *sd = this_cpu_ptr(&softnet_data);
+@@ -3679,7 +3709,7 @@ static void net_tx_action(struct softirq
  			head = head->next_sched;
  
  			root_lock = qdisc_lock(q);
 -			if (spin_trylock(root_lock)) {
 +			if (take_root_lock(root_lock)) {
- 				smp_mb__before_clear_bit();
+ 				smp_mb__before_atomic();
  				clear_bit(__QDISC_STATE_SCHED,
  					  &q->state);

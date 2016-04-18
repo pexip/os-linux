@@ -56,7 +56,7 @@ static void lovsub_req_completion(const struct lu_env *env,
 	struct lovsub_req *lsr;
 
 	lsr = cl2lovsub_req(slice);
-	OBD_SLAB_FREE_PTR(lsr, lovsub_req_kmem);
+	kmem_cache_free(lovsub_req_kmem, lsr);
 }
 
 /**
@@ -67,7 +67,7 @@ static void lovsub_req_completion(const struct lu_env *env,
 static void lovsub_req_attr_set(const struct lu_env *env,
 				const struct cl_req_slice *slice,
 				const struct cl_object *obj,
-				struct cl_req_attr *attr, obd_valid flags)
+				struct cl_req_attr *attr, u64 flags)
 {
 	struct lovsub_object *subobj;
 
@@ -131,8 +131,12 @@ static struct lu_device *lovsub_device_free(const struct lu_env *env,
 	struct lovsub_device *lsd  = lu2lovsub_dev(d);
 	struct lu_device     *next = cl2lu_dev(lsd->acid_next);
 
+	if (atomic_read(&d->ld_ref) && d->ld_site) {
+		LIBCFS_DEBUG_MSG_DATA_DECL(msgdata, D_ERROR, NULL);
+		lu_site_print(env, d->ld_site, &msgdata, lu_cdebug_printer);
+	}
 	cl_device_fini(lu2cl_dev(d));
-	OBD_FREE_PTR(lsd);
+	kfree(lsd);
 	return next;
 }
 
@@ -142,7 +146,7 @@ static int lovsub_req_init(const struct lu_env *env, struct cl_device *dev,
 	struct lovsub_req *lsr;
 	int result;
 
-	OBD_SLAB_ALLOC_PTR_GFP(lsr, lovsub_req_kmem, __GFP_IO);
+	lsr = kmem_cache_alloc(lovsub_req_kmem, GFP_NOFS | __GFP_ZERO);
 	if (lsr != NULL) {
 		cl_req_slice_add(req, &lsr->lsrq_cl, dev, &lovsub_req_ops);
 		result = 0;
@@ -168,7 +172,7 @@ static struct lu_device *lovsub_device_alloc(const struct lu_env *env,
 	struct lu_device     *d;
 	struct lovsub_device *lsd;
 
-	OBD_ALLOC_PTR(lsd);
+	lsd = kzalloc(sizeof(*lsd), GFP_NOFS);
 	if (lsd != NULL) {
 		int result;
 
@@ -200,6 +204,5 @@ struct lu_device_type lovsub_device_type = {
 	.ldt_ops      = &lovsub_device_type_ops,
 	.ldt_ctx_tags = LCT_CL_THREAD
 };
-
 
 /** @} lov */

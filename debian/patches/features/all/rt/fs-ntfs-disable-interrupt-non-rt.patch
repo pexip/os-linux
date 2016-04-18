@@ -1,7 +1,7 @@
 From: Mike Galbraith <efault@gmx.de>
 Date: Fri, 3 Jul 2009 08:44:12 -0500
 Subject: fs: ntfs: disable interrupt only on !RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 On Sat, 2007-10-27 at 11:44 +0200, Ingo Molnar wrote:
 > * Nick Piggin <nickpiggin@yahoo.com.au> wrote:
@@ -42,7 +42,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/fs/ntfs/aops.c
 +++ b/fs/ntfs/aops.c
-@@ -144,13 +144,13 @@ static void ntfs_end_buffer_async_read(s
+@@ -143,13 +143,13 @@ static void ntfs_end_buffer_async_read(s
  		recs = PAGE_CACHE_SIZE / rec_size;
  		/* Should have been verified before we got here... */
  		BUG_ON(!recs);

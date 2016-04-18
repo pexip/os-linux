@@ -1,8 +1,7 @@
-From de8fa902784181346b91bd121fba824a588fa99c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 3 May 2014 11:00:29 +0200
-Subject: [PATCH] blk-mq: revert raw locks, post pone notifier to POST_DEAD
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: blk-mq: revert raw locks, post pone notifier to POST_DEAD
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 The blk_mq_cpu_notify_lock should be raw because some CPU down levels
 are called with interrupts off. The notifier itself calls currently one
@@ -21,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/block/blk-mq-cpu.c
 +++ b/block/blk-mq-cpu.c
-@@ -11,7 +11,7 @@
+@@ -16,7 +16,7 @@
  #include "blk-mq.h"
  
  static LIST_HEAD(blk_mq_cpu_notify_list);
@@ -30,25 +29,28 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static int blk_mq_main_cpu_notify(struct notifier_block *self,
  				  unsigned long action, void *hcpu)
-@@ -19,12 +19,15 @@ static int blk_mq_main_cpu_notify(struct
- 	unsigned int cpu = (unsigned long) hcpu;
+@@ -25,7 +25,10 @@ static int blk_mq_main_cpu_notify(struct
  	struct blk_mq_cpu_notifier *notify;
+ 	int ret = NOTIFY_OK;
  
 -	raw_spin_lock(&blk_mq_cpu_notify_lock);
-+	if (action != CPU_POST_DEAD && action != CPU_POST_DEAD)
++	if (action != CPU_POST_DEAD)
 +		return NOTIFY_OK;
 +
 +	spin_lock(&blk_mq_cpu_notify_lock);
  
- 	list_for_each_entry(notify, &blk_mq_cpu_notify_list, list)
- 		notify->notify(notify->data, action, cpu);
+ 	list_for_each_entry(notify, &blk_mq_cpu_notify_list, list) {
+ 		ret = notify->notify(notify->data, action, cpu);
+@@ -33,7 +36,7 @@ static int blk_mq_main_cpu_notify(struct
+ 			break;
+ 	}
  
 -	raw_spin_unlock(&blk_mq_cpu_notify_lock);
 +	spin_unlock(&blk_mq_cpu_notify_lock);
- 	return NOTIFY_OK;
+ 	return ret;
  }
  
-@@ -32,16 +35,16 @@ void blk_mq_register_cpu_notifier(struct
+@@ -41,16 +44,16 @@ void blk_mq_register_cpu_notifier(struct
  {
  	BUG_ON(!notifier->notify);
  
@@ -71,12 +73,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void blk_mq_init_cpu_notifier(struct blk_mq_cpu_notifier *notifier,
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -971,7 +971,7 @@ static void blk_mq_hctx_notify(void *dat
- 	struct blk_mq_ctx *ctx;
- 	LIST_HEAD(tmp);
+@@ -1640,7 +1640,7 @@ static int blk_mq_hctx_notify(void *data
+ {
+ 	struct blk_mq_hw_ctx *hctx = data;
  
--	if (action != CPU_DEAD && action != CPU_DEAD_FROZEN)
-+	if (action != CPU_POST_DEAD && action != CPU_POST_DEAD)
- 		return;
+-	if (action == CPU_DEAD || action == CPU_DEAD_FROZEN)
++	if (action == CPU_POST_DEAD)
+ 		return blk_mq_hctx_cpu_offline(hctx, cpu);
  
  	/*

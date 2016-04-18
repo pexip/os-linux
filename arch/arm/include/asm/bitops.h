@@ -25,9 +25,7 @@
 
 #include <linux/compiler.h>
 #include <linux/irqflags.h>
-
-#define smp_mb__before_clear_bit()	smp_mb()
-#define smp_mb__after_clear_bit()	smp_mb()
+#include <asm/barrier.h>
 
 /*
  * These functions are the basis of our bit ops.
@@ -37,9 +35,9 @@
 static inline void ____atomic_set_bit(unsigned int bit, volatile unsigned long *p)
 {
 	unsigned long flags;
-	unsigned long mask = 1UL << (bit & 31);
+	unsigned long mask = BIT_MASK(bit);
 
-	p += bit >> 5;
+	p += BIT_WORD(bit);
 
 	raw_local_irq_save(flags);
 	*p |= mask;
@@ -49,9 +47,9 @@ static inline void ____atomic_set_bit(unsigned int bit, volatile unsigned long *
 static inline void ____atomic_clear_bit(unsigned int bit, volatile unsigned long *p)
 {
 	unsigned long flags;
-	unsigned long mask = 1UL << (bit & 31);
+	unsigned long mask = BIT_MASK(bit);
 
-	p += bit >> 5;
+	p += BIT_WORD(bit);
 
 	raw_local_irq_save(flags);
 	*p &= ~mask;
@@ -61,9 +59,9 @@ static inline void ____atomic_clear_bit(unsigned int bit, volatile unsigned long
 static inline void ____atomic_change_bit(unsigned int bit, volatile unsigned long *p)
 {
 	unsigned long flags;
-	unsigned long mask = 1UL << (bit & 31);
+	unsigned long mask = BIT_MASK(bit);
 
-	p += bit >> 5;
+	p += BIT_WORD(bit);
 
 	raw_local_irq_save(flags);
 	*p ^= mask;
@@ -75,9 +73,9 @@ ____atomic_test_and_set_bit(unsigned int bit, volatile unsigned long *p)
 {
 	unsigned long flags;
 	unsigned int res;
-	unsigned long mask = 1UL << (bit & 31);
+	unsigned long mask = BIT_MASK(bit);
 
-	p += bit >> 5;
+	p += BIT_WORD(bit);
 
 	raw_local_irq_save(flags);
 	res = *p;
@@ -92,9 +90,9 @@ ____atomic_test_and_clear_bit(unsigned int bit, volatile unsigned long *p)
 {
 	unsigned long flags;
 	unsigned int res;
-	unsigned long mask = 1UL << (bit & 31);
+	unsigned long mask = BIT_MASK(bit);
 
-	p += bit >> 5;
+	p += BIT_WORD(bit);
 
 	raw_local_irq_save(flags);
 	res = *p;
@@ -109,9 +107,9 @@ ____atomic_test_and_change_bit(unsigned int bit, volatile unsigned long *p)
 {
 	unsigned long flags;
 	unsigned int res;
-	unsigned long mask = 1UL << (bit & 31);
+	unsigned long mask = BIT_MASK(bit);
 
-	p += bit >> 5;
+	p += BIT_WORD(bit);
 
 	raw_local_irq_save(flags);
 	res = *p;

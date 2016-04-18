@@ -1,7 +1,9 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
-Subject: [PATCH] powerpc-preempt-lazy-support.patch
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: powerpc: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Implement the powerpc pieces for lazy preempt.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -14,8 +16,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
-@@ -133,6 +133,7 @@ config PPC
- 	select GENERIC_CLOCKEVENTS
+@@ -142,6 +142,7 @@ config PPC
+ 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
  	select GENERIC_STRNCPY_FROM_USER
  	select GENERIC_STRNLEN_USER
 +	select HAVE_PREEMPT_LAZY
@@ -24,16 +26,16 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	select CLONE_BACKWARDS
 --- a/arch/powerpc/include/asm/thread_info.h
 +++ b/arch/powerpc/include/asm/thread_info.h
-@@ -43,6 +43,8 @@ struct thread_info {
+@@ -42,6 +42,8 @@ struct thread_info {
  	int		cpu;			/* cpu we're on */
  	int		preempt_count;		/* 0 => preemptable,
  						   <0 => BUG */
-+	int		preempt_lazy_count;	/* 0 => preemptable,
++	int		preempt_lazy_count;	 /* 0 => preemptable,
 +						   <0 => BUG */
- 	struct restart_block restart_block;
  	unsigned long	local_flags;		/* private flags for thread */
  
-@@ -88,8 +90,7 @@ static inline struct thread_info *curren
+ 	/* low level flags - has atomic operations done on it */
+@@ -82,8 +84,7 @@ static inline struct thread_info *curren
  #define TIF_SYSCALL_TRACE	0	/* syscall trace active */
  #define TIF_SIGPENDING		1	/* signal pending */
  #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
@@ -43,7 +45,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define TIF_32BIT		4	/* 32 bit binary */
  #define TIF_RESTORE_TM		5	/* need to restore TM FP/VEC/VSX */
  #define TIF_SYSCALL_AUDIT	7	/* syscall auditing active */
-@@ -107,6 +108,8 @@ static inline struct thread_info *curren
+@@ -101,6 +102,8 @@ static inline struct thread_info *curren
  #if defined(CONFIG_PPC64)
  #define TIF_ELF2ABI		18	/* function descriptors must die! */
  #endif
@@ -52,12 +54,12 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  /* as above, but as bit values */
  #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
-@@ -125,14 +128,16 @@ static inline struct thread_info *curren
+@@ -119,14 +122,16 @@ static inline struct thread_info *curren
  #define _TIF_SYSCALL_TRACEPOINT	(1<<TIF_SYSCALL_TRACEPOINT)
  #define _TIF_EMULATE_STACK_STORE	(1<<TIF_EMULATE_STACK_STORE)
  #define _TIF_NOHZ		(1<<TIF_NOHZ)
 +#define _TIF_NEED_RESCHED_LAZY	(1<<TIF_NEED_RESCHED_LAZY)
- #define _TIF_SYSCALL_T_OR_A	(_TIF_SYSCALL_TRACE | _TIF_SYSCALL_AUDIT | \
+ #define _TIF_SYSCALL_DOTRACE	(_TIF_SYSCALL_TRACE | _TIF_SYSCALL_AUDIT | \
  				 _TIF_SECCOMP | _TIF_SYSCALL_TRACEPOINT | \
  				 _TIF_NOHZ)
  
@@ -72,7 +74,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /* Don't move TLF_NAPPING without adjusting the code in entry_32.S */
 --- a/arch/powerpc/kernel/asm-offsets.c
 +++ b/arch/powerpc/kernel/asm-offsets.c
-@@ -158,6 +158,7 @@ int main(void)
+@@ -160,6 +160,7 @@ int main(void)
  	DEFINE(TI_FLAGS, offsetof(struct thread_info, flags));
  	DEFINE(TI_LOCAL_FLAGS, offsetof(struct thread_info, local_flags));
  	DEFINE(TI_PREEMPT, offsetof(struct thread_info, preempt_count));
@@ -82,7 +84,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/arch/powerpc/kernel/entry_32.S
 +++ b/arch/powerpc/kernel/entry_32.S
-@@ -890,7 +890,14 @@ user_exc_return:		/* r10 contains MSR_KE
+@@ -818,7 +818,14 @@ user_exc_return:		/* r10 contains MSR_KE
  	cmpwi	0,r0,0		/* if non-zero, just restore regs and return */
  	bne	restore
  	andi.	r8,r8,_TIF_NEED_RESCHED
@@ -97,7 +99,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	lwz	r3,_MSR(r1)
  	andi.	r0,r3,MSR_EE	/* interrupts off? */
  	beq	restore		/* don't schedule if so */
-@@ -901,11 +908,11 @@ user_exc_return:		/* r10 contains MSR_KE
+@@ -829,11 +836,11 @@ user_exc_return:		/* r10 contains MSR_KE
  	 */
  	bl	trace_hardirqs_off
  #endif
@@ -112,7 +114,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef CONFIG_TRACE_IRQFLAGS
  	/* And now, to properly rebalance the above, we tell lockdep they
  	 * are being turned back on, which will happen when we return
-@@ -1226,7 +1233,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_NEED_PAIRE
+@@ -1154,7 +1161,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_NEED_PAIRE
  #endif /* !(CONFIG_4xx || CONFIG_BOOKE) */
  
  do_work:			/* r10 contains MSR_KERNEL here */
@@ -121,7 +123,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	beq	do_user_signal
  
  do_resched:			/* r10 contains MSR_KERNEL here */
-@@ -1247,7 +1254,7 @@ do_resched:			/* r10 contains MSR_KERNEL
+@@ -1175,7 +1182,7 @@ do_resched:			/* r10 contains MSR_KERNEL
  	MTMSRD(r10)		/* disable interrupts */
  	CURRENT_THREAD_INFO(r9, r1)
  	lwz	r9,TI_FLAGS(r9)
@@ -132,16 +134,16 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	beq	restore_user
 --- a/arch/powerpc/kernel/entry_64.S
 +++ b/arch/powerpc/kernel/entry_64.S
-@@ -659,7 +659,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_DSCR)
+@@ -683,7 +683,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_DSCR)
  #else
  	beq	restore
  #endif
 -1:	andi.	r0,r4,_TIF_NEED_RESCHED
 +1:	andi.	r0,r4,_TIF_NEED_RESCHED_MASK
  	beq	2f
- 	bl	.restore_interrupts
+ 	bl	restore_interrupts
  	SCHEDULE_USER
-@@ -715,10 +715,18 @@ END_FTR_SECTION_IFSET(CPU_FTR_DSCR)
+@@ -745,10 +745,18 @@ END_FTR_SECTION_IFSET(CPU_FTR_DSCR)
  
  #ifdef CONFIG_PREEMPT
  	/* Check if we need to preempt */
@@ -161,7 +163,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	cmpwi	cr1,r8,0
  	ld	r0,SOFTE(r1)
  	cmpdi	r0,0
-@@ -735,7 +743,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_DSCR)
+@@ -765,7 +773,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_DSCR)
  	/* Re-test flags and eventually loop */
  	CURRENT_THREAD_INFO(r9, r1)
  	ld	r4,TI_FLAGS(r9)

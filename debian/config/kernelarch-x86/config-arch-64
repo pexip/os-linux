@@ -2,17 +2,19 @@
 ## file: arch/x86/Kconfig
 ##
 CONFIG_64BIT=y
+# CONFIG_ZONE_DMA is not set
 CONFIG_SMP=y
 CONFIG_X86_X2APIC=y
 CONFIG_CALGARY_IOMMU=y
 CONFIG_CALGARY_IOMMU_ENABLED_BY_DEFAULT=y
 # CONFIG_MAXSMP is not set
 CONFIG_NR_CPUS=512
-CONFIG_DIRECT_GBPAGES=y
+CONFIG_X86_16BIT=y
 CONFIG_NUMA=y
 CONFIG_AMD_NUMA=y
 CONFIG_X86_64_ACPI_NUMA=y
 CONFIG_NUMA_EMU=y
+CONFIG_EFI_MIXED=y
 CONFIG_PCI_MMCONFIG=y
 CONFIG_ISA_DMA_API=y
 CONFIG_X86_X32=y
@@ -30,9 +32,15 @@ CONFIG_GENERIC_CPU=y
 ## end choice
 
 ##
+## file: arch/x86/xen/Kconfig
+##
+CONFIG_XEN_512GB=y
+
+##
 ## file: crypto/Kconfig
 ##
 CONFIG_CRYPTO_CRCT10DIF_PCLMUL=m
+CONFIG_CRYPTO_POLY1305_X86_64=m
 CONFIG_CRYPTO_SHA1_SSSE3=m
 CONFIG_CRYPTO_SHA256_SSSE3=m
 CONFIG_CRYPTO_SHA512_SSSE3=m
@@ -44,7 +52,9 @@ CONFIG_CRYPTO_CAMELLIA_AESNI_AVX_X86_64=m
 CONFIG_CRYPTO_CAMELLIA_AESNI_AVX2_X86_64=m
 CONFIG_CRYPTO_CAST5_AVX_X86_64=m
 CONFIG_CRYPTO_CAST6_AVX_X86_64=m
+CONFIG_CRYPTO_DES3_EDE_X86_64=m
 CONFIG_CRYPTO_SALSA20_X86_64=m
+CONFIG_CRYPTO_CHACHA20_X86_64=m
 CONFIG_CRYPTO_SERPENT_SSE2_X86_64=m
 CONFIG_CRYPTO_SERPENT_AVX_X86_64=m
 CONFIG_CRYPTO_SERPENT_AVX2_X86_64=m
@@ -68,6 +78,11 @@ CONFIG_BLK_DEV_RSXX=m
 CONFIG_AGP=y
 #. Needed by GART_IOMMU
 CONFIG_AGP_AMD64=y
+
+##
+## file: drivers/dma/Kconfig
+##
+CONFIG_INTEL_MIC_X100_DMA=m
 
 ##
 ## file: drivers/edac/Kconfig
@@ -104,8 +119,17 @@ CONFIG_MAC_EMUMOUSEBTN=y
 ##
 ## file: drivers/misc/mic/Kconfig
 ##
+CONFIG_INTEL_MIC_BUS=m
+CONFIG_SCIF_BUS=m
 CONFIG_INTEL_MIC_HOST=m
 # CONFIG_INTEL_MIC_CARD is not set
+CONFIG_SCIF=m
+CONFIG_MIC_COSM=m
+
+##
+## file: drivers/net/Kconfig
+##
+CONFIG_FUJITSU_ES=m
 
 ##
 ## file: drivers/net/ethernet/realtek/Kconfig
@@ -116,6 +140,11 @@ CONFIG_INTEL_MIC_HOST=m
 ## file: drivers/net/wireless/ipw2x00/Kconfig
 ##
 # CONFIG_IPW2100 is not set
+
+##
+## file: drivers/nvdimm/Kconfig
+##
+CONFIG_NVDIMM_PFN=y
 
 ##
 ## file: drivers/scsi/Kconfig
@@ -129,7 +158,7 @@ CONFIG_MOXA_INTELLIO=m
 CONFIG_ISI=m
 
 ##
-## file: drivers/video/Kconfig
+## file: drivers/video/fbdev/Kconfig
 ##
 CONFIG_FB_MATROX_G=y
 CONFIG_FB_MATROX_MAVEN=m
@@ -140,6 +169,12 @@ CONFIG_FB_MATROX_MAVEN=m
 ## file: init/Kconfig
 ##
 CONFIG_RCU_FANOUT=64
+CONFIG_KALLSYMS_ALL=y
+
+##
+## file: kernel/livepatch/Kconfig
+##
+CONFIG_LIVEPATCH=y
 
 ##
 ## file: lib/Kconfig.debug
@@ -154,6 +189,7 @@ CONFIG_SPARSEMEM_MANUAL=y
 ## end choice
 CONFIG_SPARSEMEM_VMEMMAP=y
 # CONFIG_MOVABLE_NODE is not set
+CONFIG_ZONE_DEVICE=y
 
 ##
 ## file: security/Kconfig

@@ -1,7 +1,7 @@
 Subject: timer-fd: Prevent live lock
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 25 Jan 2012 11:08:40 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 If hrtimer_try_to_cancel() requires a retry, then depending on the
 priority setting te retry loop might prevent timer callback completion
@@ -10,14 +10,14 @@ non RT kernel.
 
 Reported-by: Sankara Muthukrishnan <sankara.m@gmail.com>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: stable-rt@vger.kernel.org
+
 ---
  fs/timerfd.c |    5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 --- a/fs/timerfd.c
 +++ b/fs/timerfd.c
-@@ -380,7 +380,10 @@ static int do_timerfd_settime(int ufd, i
+@@ -450,7 +450,10 @@ static int do_timerfd_settime(int ufd, i
  				break;
  		}
  		spin_unlock_irq(&ctx->wqh.lock);

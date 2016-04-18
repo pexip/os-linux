@@ -872,14 +872,6 @@
 #define NOVITUS_BONO_E_PID		0x6010
 
 /*
- * ICPDAS I-756*U devices
- */
-#define ICPDAS_VID			0x1b5c
-#define ICPDAS_I7560U_PID		0x0103
-#define ICPDAS_I7561U_PID		0x0104
-#define ICPDAS_I7563U_PID		0x0105
-
-/*
  * RT Systems programming cables for various ham radios
  */
 #define RTSYSTEMS_VID		0x2100	/* Vendor ID */
@@ -1382,7 +1374,7 @@
 #define FTDI_CTI_NANO_PID	0xF60B
 
 /*
- * ZeitControl cardsystems GmbH rfid-readers http://zeitconrol.de
+ * ZeitControl cardsystems GmbH rfid-readers http://zeitcontrol.de
  */
 /* TagTracer MIFARE*/
 #define FTDI_ZEITCONTROL_TAGTRACE_MIFARE_PID	0xF7C0

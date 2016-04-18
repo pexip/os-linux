@@ -280,7 +280,7 @@ static void rionet_outb_msg_event(struct rio_mport *mport, void *dev_id, int mbo
 	struct net_device *ndev = dev_id;
 	struct rionet_private *rnet = netdev_priv(ndev);
 
-	spin_lock(&rnet->tx_lock);
+	spin_lock(&rnet->lock);
 
 	if (netif_msg_intr(rnet))
 		printk(KERN_INFO
@@ -299,7 +299,7 @@ static void rionet_outb_msg_event(struct rio_mport *mport, void *dev_id, int mbo
 	if (rnet->tx_cnt < RIONET_TX_RING_SIZE)
 		netif_wake_queue(ndev);
 
-	spin_unlock(&rnet->tx_lock);
+	spin_unlock(&rnet->lock);
 }
 
 static int rionet_open(struct net_device *ndev)
@@ -396,7 +396,7 @@ static int rionet_close(struct net_device *ndev)
 	return 0;
 }
 
-static int rionet_remove_dev(struct device *dev, struct subsys_interface *sif)
+static void rionet_remove_dev(struct device *dev, struct subsys_interface *sif)
 {
 	struct rio_dev *rdev = to_rio_dev(dev);
 	unsigned char netid = rdev->net->hport->id;
@@ -416,8 +416,6 @@ static int rionet_remove_dev(struct device *dev, struct subsys_interface *sif)
 			}
 		}
 	}
-
-	return 0;
 }
 
 static void rionet_get_drvinfo(struct net_device *ndev,
@@ -493,7 +491,8 @@ static int rionet_setup_netdev(struct rio_mport *mport, struct net_device *ndev)
 	ndev->netdev_ops = &rionet_netdev_ops;
 	ndev->mtu = RIO_MAX_MSG_SIZE - 14;
 	ndev->features = NETIF_F_LLTX;
-	SET_ETHTOOL_OPS(ndev, &rionet_ethtool_ops);
+	SET_NETDEV_DEV(ndev, &mport->dev);
+	ndev->ethtool_ops = &rionet_ethtool_ops;
 
 	spin_lock_init(&rnet->lock);
 	spin_lock_init(&rnet->tx_lock);

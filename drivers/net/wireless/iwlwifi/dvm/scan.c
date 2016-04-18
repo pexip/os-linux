@@ -59,7 +59,7 @@ static int iwl_send_scan_abort(struct iwl_priv *priv)
 	int ret;
 	struct iwl_host_cmd cmd = {
 		.id = REPLY_SCAN_ABORT_CMD,
-		.flags = CMD_SYNC | CMD_WANT_SKB,
+		.flags = CMD_WANT_SKB,
 	};
 	__le32 *status;
 
@@ -247,9 +247,8 @@ void iwl_scan_cancel_timeout(struct iwl_priv *priv, unsigned long ms)
 }
 
 /* Service response to REPLY_SCAN_CMD (0x80) */
-static int iwl_rx_reply_scan(struct iwl_priv *priv,
-			      struct iwl_rx_cmd_buffer *rxb,
-			      struct iwl_device_cmd *cmd)
+static void iwl_rx_reply_scan(struct iwl_priv *priv,
+			      struct iwl_rx_cmd_buffer *rxb)
 {
 #ifdef CONFIG_IWLWIFI_DEBUG
 	struct iwl_rx_packet *pkt = rxb_addr(rxb);
@@ -257,13 +256,11 @@ static int iwl_rx_reply_scan(struct iwl_priv *priv,
 
 	IWL_DEBUG_SCAN(priv, "Scan request status = 0x%x\n", notif->status);
 #endif
-	return 0;
 }
 
 /* Service SCAN_START_NOTIFICATION (0x82) */
-static int iwl_rx_scan_start_notif(struct iwl_priv *priv,
-				    struct iwl_rx_cmd_buffer *rxb,
-				    struct iwl_device_cmd *cmd)
+static void iwl_rx_scan_start_notif(struct iwl_priv *priv,
+				    struct iwl_rx_cmd_buffer *rxb)
 {
 	struct iwl_rx_packet *pkt = rxb_addr(rxb);
 	struct iwl_scanstart_notification *notif = (void *)pkt->data;
@@ -277,14 +274,11 @@ static int iwl_rx_scan_start_notif(struct iwl_priv *priv,
 		       le32_to_cpu(notif->tsf_high),
 		       le32_to_cpu(notif->tsf_low),
 		       notif->status, notif->beacon_timer);
-
-	return 0;
 }
 
 /* Service SCAN_RESULTS_NOTIFICATION (0x83) */
-static int iwl_rx_scan_results_notif(struct iwl_priv *priv,
-				      struct iwl_rx_cmd_buffer *rxb,
-				      struct iwl_device_cmd *cmd)
+static void iwl_rx_scan_results_notif(struct iwl_priv *priv,
+				      struct iwl_rx_cmd_buffer *rxb)
 {
 #ifdef CONFIG_IWLWIFI_DEBUG
 	struct iwl_rx_packet *pkt = rxb_addr(rxb);
@@ -303,13 +297,11 @@ static int iwl_rx_scan_results_notif(struct iwl_priv *priv,
 		       le32_to_cpu(notif->statistics[0]),
 		       le32_to_cpu(notif->tsf_low) - priv->scan_start_tsf);
 #endif
-	return 0;
 }
 
 /* Service SCAN_COMPLETE_NOTIFICATION (0x84) */
-static int iwl_rx_scan_complete_notif(struct iwl_priv *priv,
-				       struct iwl_rx_cmd_buffer *rxb,
-				       struct iwl_device_cmd *cmd)
+static void iwl_rx_scan_complete_notif(struct iwl_priv *priv,
+				       struct iwl_rx_cmd_buffer *rxb)
 {
 	struct iwl_rx_packet *pkt = rxb_addr(rxb);
 	struct iwl_scancomplete_notification *scan_notif = (void *)pkt->data;
@@ -356,7 +348,6 @@ static int iwl_rx_scan_complete_notif(struct iwl_priv *priv,
 		queue_work(priv->workqueue,
 			   &priv->bt_traffic_change_work);
 	}
-	return 0;
 }
 
 void iwl_setup_rx_scan_handlers(struct iwl_priv *priv)
@@ -639,7 +630,6 @@ static int iwlagn_request_scan(struct iwl_priv *priv, struct ieee80211_vif *vif)
 	struct iwl_host_cmd cmd = {
 		.id = REPLY_SCAN_CMD,
 		.len = { sizeof(struct iwl_scan_cmd), },
-		.flags = CMD_SYNC,
 	};
 	struct iwl_scan_cmd *scan;
 	struct iwl_rxon_context *ctx = &priv->contexts[IWL_RXON_CTX_BSS];

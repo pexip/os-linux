@@ -27,7 +27,8 @@ CONFIG_BLK_DEV_SD=y
 # CONFIG_VGA_CONSOLE is not set
 
 ##
-## file: fs/ext4/Kconfig
+## file: init/Kconfig
 ##
-CONFIG_EXT4_FS=y
+CONFIG_SGETMASK_SYSCALL=y
+CONFIG_SYSFS_SYSCALL=y
 

@@ -1,8 +1,7 @@
-From linux-rt-users-owner@vger.kernel.org Thu Nov  7 03:07:12 2013
 From:	Tiejun Chen <tiejun.chen@windriver.com>
-Subject: [v1][PATCH] cpu_down: move migrate_enable() back
+Subject: cpu_down: move migrate_enable() back
 Date:	Thu, 7 Nov 2013 10:06:07 +0800
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
 
 Commit 08c1ab68, "hotplug-use-migrate-disable.patch", intends to
 use migrate_enable()/migrate_disable() to replace that combination
@@ -28,7 +27,7 @@ _cpu_down()
 
 So we should move migrate_enable() as the original scheme.
 
-Cc: stable-rt@vger.kernel.org
+
 Signed-off-by: Tiejun Chen <tiejun.chen@windriver.com>
 ---
  kernel/cpu.c |    2 +-
@@ -36,7 +35,7 @@ Signed-off-by: Tiejun Chen <tiejun.chen@windriver.com>
 
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -601,6 +601,7 @@ static int __ref _cpu_down(unsigned int
+@@ -657,6 +657,7 @@ static int _cpu_down(unsigned int cpu, i
  		err = -EBUSY;
  		goto restore_cpus;
  	}
@@ -44,7 +43,7 @@ Signed-off-by: Tiejun Chen <tiejun.chen@windriver.com>
  
  	cpu_hotplug_begin();
  	err = cpu_unplug_begin(cpu);
-@@ -673,7 +674,6 @@ static int __ref _cpu_down(unsigned int
+@@ -741,7 +742,6 @@ static int _cpu_down(unsigned int cpu, i
  out_release:
  	cpu_unplug_done(cpu);
  out_cancel:

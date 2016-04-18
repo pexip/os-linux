@@ -1,7 +1,10 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:51 -0500
-Subject: mm: convert swap to percpu locked
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Subject: mm/swap: Convert to percpu locked
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+Replace global locks (get_cpu + local_irq_save) with "local_locks()".
+Currently there is one of for "rotate" and one for "swap".
 
 Signed-off-by: Ingo Molnar <mingo@elte.hu>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
@@ -17,12 +20,12 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #include <linux/gfp.h>
  #include <linux/uio.h>
 +#include <linux/locallock.h>
+ #include <linux/hugetlb.h>
+ #include <linux/page_idle.h>
  
- #include "internal.h"
- 
-@@ -44,6 +45,9 @@ static DEFINE_PER_CPU(struct pagevec, lr
+@@ -46,6 +47,9 @@ static DEFINE_PER_CPU(struct pagevec, lr
  static DEFINE_PER_CPU(struct pagevec, lru_rotate_pvecs);
- static DEFINE_PER_CPU(struct pagevec, lru_deactivate_pvecs);
+ static DEFINE_PER_CPU(struct pagevec, lru_deactivate_file_pvecs);
  
 +static DEFINE_LOCAL_IRQ_LOCK(rotate_lock);
 +static DEFINE_LOCAL_IRQ_LOCK(swapvec_lock);
@@ -30,13 +33,13 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
   * This path almost never happens for VM activity - pages are normally
   * freed via pagevecs.  But it gets used by networking.
-@@ -440,11 +444,11 @@ void rotate_reclaimable_page(struct page
+@@ -481,11 +485,11 @@ void rotate_reclaimable_page(struct page
  		unsigned long flags;
  
  		page_cache_get(page);
 -		local_irq_save(flags);
 +		local_lock_irqsave(rotate_lock, flags);
- 		pvec = &__get_cpu_var(lru_rotate_pvecs);
+ 		pvec = this_cpu_ptr(&lru_rotate_pvecs);
  		if (!pagevec_add(pvec, page))
  			pagevec_move_tail(pvec);
 -		local_irq_restore(flags);
@@ -44,7 +47,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  }
  
-@@ -495,12 +499,13 @@ static bool need_activate_page_drain(int
+@@ -536,12 +540,13 @@ static bool need_activate_page_drain(int
  void activate_page(struct page *page)
  {
  	if (PageLRU(page) && !PageActive(page) && !PageUnevictable(page)) {
@@ -60,7 +63,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  }
  
-@@ -526,7 +531,7 @@ void activate_page(struct page *page)
+@@ -567,7 +572,7 @@ void activate_page(struct page *page)
  
  static void __lru_cache_activate_page(struct page *page)
  {
@@ -69,7 +72,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	int i;
  
  	/*
-@@ -548,7 +553,7 @@ static void __lru_cache_activate_page(st
+@@ -589,7 +594,7 @@ static void __lru_cache_activate_page(st
  		}
  	}
  
@@ -78,9 +81,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  /*
-@@ -588,13 +593,13 @@ EXPORT_SYMBOL(mark_page_accessed);
-  */
- void __lru_cache_add(struct page *page)
+@@ -630,13 +635,13 @@ EXPORT_SYMBOL(mark_page_accessed);
+ 
+ static void __lru_cache_add(struct page *page)
  {
 -	struct pagevec *pvec = &get_cpu_var(lru_add_pvec);
 +	struct pagevec *pvec = &get_locked_var(swapvec_lock, lru_add_pvec);
@@ -92,9 +95,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 -	put_cpu_var(lru_add_pvec);
 +	put_locked_var(swapvec_lock, lru_add_pvec);
  }
- EXPORT_SYMBOL(__lru_cache_add);
  
-@@ -717,9 +722,9 @@ void lru_add_drain_cpu(int cpu)
+ /**
+@@ -816,9 +821,9 @@ void lru_add_drain_cpu(int cpu)
  		unsigned long flags;
  
  		/* No harm done if a racing interrupt already did this */
@@ -105,19 +108,19 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +		local_unlock_irqrestore(rotate_lock, flags);
  	}
  
- 	pvec = &per_cpu(lru_deactivate_pvecs, cpu);
-@@ -747,18 +752,19 @@ void deactivate_page(struct page *page)
+ 	pvec = &per_cpu(lru_deactivate_file_pvecs, cpu);
+@@ -846,18 +851,19 @@ void deactivate_file_page(struct page *p
  		return;
  
  	if (likely(get_page_unless_zero(page))) {
--		struct pagevec *pvec = &get_cpu_var(lru_deactivate_pvecs);
+-		struct pagevec *pvec = &get_cpu_var(lru_deactivate_file_pvecs);
 +		struct pagevec *pvec = &get_locked_var(swapvec_lock,
-+						       lru_deactivate_pvecs);
++						       lru_deactivate_file_pvecs);
  
  		if (!pagevec_add(pvec, page))
- 			pagevec_lru_move_fn(pvec, lru_deactivate_fn, NULL);
--		put_cpu_var(lru_deactivate_pvecs);
-+		put_locked_var(swapvec_lock, lru_deactivate_pvecs);
+ 			pagevec_lru_move_fn(pvec, lru_deactivate_file_fn, NULL);
+-		put_cpu_var(lru_deactivate_file_pvecs);
++		put_locked_var(swapvec_lock, lru_deactivate_file_pvecs);
  	}
  }
  

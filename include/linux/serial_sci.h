@@ -1,6 +1,7 @@
 #ifndef __LINUX_SERIAL_SCI_H
 #define __LINUX_SERIAL_SCI_H
 
+#include <linux/bitops.h>
 #include <linux/serial_core.h>
 #include <linux/sh_dma.h>
 
@@ -10,45 +11,16 @@
 
 #define SCIx_NOT_SUPPORTED	(-1)
 
-#define SCSCR_TIE	(1 << 7)
-#define SCSCR_RIE	(1 << 6)
-#define SCSCR_TE	(1 << 5)
-#define SCSCR_RE	(1 << 4)
-#define SCSCR_REIE	(1 << 3)	/* not supported by all parts */
-#define SCSCR_TOIE	(1 << 2)	/* not supported by all parts */
-#define SCSCR_CKE1	(1 << 1)
-#define SCSCR_CKE0	(1 << 0)
+/* Serial Control Register (@ = not supported by all parts) */
+#define SCSCR_TIE	BIT(7)	/* Transmit Interrupt Enable */
+#define SCSCR_RIE	BIT(6)	/* Receive Interrupt Enable */
+#define SCSCR_TE	BIT(5)	/* Transmit Enable */
+#define SCSCR_RE	BIT(4)	/* Receive Enable */
+#define SCSCR_REIE	BIT(3)	/* Receive Error Interrupt Enable @ */
+#define SCSCR_TOIE	BIT(2)	/* Timeout Interrupt Enable @ */
+#define SCSCR_CKE1	BIT(1)	/* Clock Enable 1 */
+#define SCSCR_CKE0	BIT(0)	/* Clock Enable 0 */
 
-/* SCxSR SCI */
-#define SCI_TDRE  0x80
-#define SCI_RDRF  0x40
-#define SCI_ORER  0x20
-#define SCI_FER   0x10
-#define SCI_PER   0x08
-#define SCI_TEND  0x04
-
-#define SCI_DEFAULT_ERROR_MASK (SCI_PER | SCI_FER)
-
-/* SCxSR SCIF, HSCIF */
-#define SCIF_ER    0x0080
-#define SCIF_TEND  0x0040
-#define SCIF_TDFE  0x0020
-#define SCIF_BRK   0x0010
-#define SCIF_FER   0x0008
-#define SCIF_PER   0x0004
-#define SCIF_RDF   0x0002
-#define SCIF_DR    0x0001
-
-#define SCIF_DEFAULT_ERROR_MASK (SCIF_PER | SCIF_FER | SCIF_ER | SCIF_BRK)
-
-/* SCSPTR, optional */
-#define SCSPTR_RTSIO	(1 << 7)
-#define SCSPTR_CTSIO	(1 << 5)
-#define SCSPTR_SPB2IO	(1 << 1)
-#define SCSPTR_SPB2DT	(1 << 0)
-
-/* HSSRR HSCIF */
-#define HSCIF_SRE	0x8000
 
 enum {
 	SCIx_PROBE_REGTYPE,
@@ -68,19 +40,6 @@ enum {
 	SCIx_NR_REGTYPES,
 };
 
-/*
- * SCI register subset common for all port types.
- * Not all registers will exist on all parts.
- */
-enum {
-	SCSMR, SCBRR, SCSCR, SCxSR,
-	SCFCR, SCFDR, SCxTDR, SCxRDR,
-	SCLSR, SCTFDR, SCRFDR, SCSPTR,
-	HSSRR,
-
-	SCIx_NR_REGS,
-};
-
 struct device;
 
 struct plat_sci_port_ops {
@@ -90,7 +49,7 @@ struct plat_sci_port_ops {
 /*
  * Port-specific capabilities
  */
-#define SCIx_HAVE_RTSCTS	(1 << 0)
+#define SCIx_HAVE_RTSCTS	BIT(0)
 
 /*
  * Platform device specific platform_data struct

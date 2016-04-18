@@ -1,7 +1,11 @@
-Subject: drivers-tty-fix-omap-lock-crap.patch
+Subject: tty/serial/omap: Make the locking RT aware
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 28 Jul 2011 13:32:57 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/3.14/patches-3.14.12-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+
+The lock is a sleeping lock and local_irq_save() is not the
+optimsation we are looking for. Redo it to make it work on -RT and
+non-RT.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -10,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/drivers/tty/serial/omap-serial.c
 +++ b/drivers/tty/serial/omap-serial.c
-@@ -1266,13 +1266,10 @@ serial_omap_console_write(struct console
+@@ -1257,13 +1257,10 @@ serial_omap_console_write(struct console
  
  	pm_runtime_get_sync(up->dev);
  
@@ -27,7 +31,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	/*
  	 * First save the IER then disable the interrupts
-@@ -1301,8 +1298,7 @@ serial_omap_console_write(struct console
+@@ -1292,8 +1289,7 @@ serial_omap_console_write(struct console
  	pm_runtime_mark_last_busy(up->dev);
  	pm_runtime_put_autosuspend(up->dev);
  	if (locked)

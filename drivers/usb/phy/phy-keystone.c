@@ -18,7 +18,7 @@
 
 #include <linux/module.h>
 #include <linux/platform_device.h>
-#include <linux/usb/usb_phy_gen_xceiv.h>
+#include <linux/usb/usb_phy_generic.h>
 #include <linux/io.h>
 #include <linux/of.h>
 
@@ -35,7 +35,7 @@
 #define PHY_REF_SSP_EN			BIT(29)
 
 struct keystone_usbphy {
-	struct usb_phy_gen_xceiv	usb_phy_gen;
+	struct usb_phy_generic	usb_phy_gen;
 	void __iomem			*phy_ctrl;
 };
 
@@ -96,11 +96,7 @@ static int keystone_usbphy_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, k_phy);
 
-	ret = usb_add_phy_dev(&k_phy->usb_phy_gen.phy);
-	if (ret)
-		return ret;
-
-	return 0;
+	return usb_add_phy_dev(&k_phy->usb_phy_gen.phy);
 }
 
 static int keystone_usbphy_remove(struct platform_device *pdev)
@@ -123,7 +119,6 @@ static struct platform_driver keystone_usbphy_driver = {
 	.remove         = keystone_usbphy_remove,
 	.driver         = {
 		.name   = "keystone-usbphy",
-		.owner  = THIS_MODULE,
 		.of_match_table = keystone_usbphy_ids,
 	},
 };
