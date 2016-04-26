@@ -1,6 +1,43 @@
 linux (4.4.6-1pexip1) pexip; urgency=medium
 
   * New upstream release.
+  * debian/patches/bugfix/all/CVE-2012-4542.patch,
+    debian/patches/bugfix/all/CVE-2016-3156.patch,
+    debian/patches/bugfix/x86/CVE-2016-3157.patch
+    debian/patches/bugfix/all/CVE-2016-3951-a.patch,
+    debian/patches/bugfix/all/e1000-disable-64bit-dma-on-vmware.patch:
+    Adjust context for new upstream
+  * debian/patches/bugfix/all/CVE-2014-9729.patch,
+    debian/patches/bugfix/all/CVE-2014-9730.patch,
+    debian/patches/bugfix/all/CVE-2014-9731.patch,
+    debian/patches/bugfix/all/CVE-2015-0274.patch,
+    debian/patches/bugfix/all/CVE-2015-2925-b.patch,
+    debian/patches/bugfix/all/CVE-2015-7515.patch,
+    debian/patches/bugfix/all/CVE-2015-7613-a.patch,
+    debian/patches/bugfix/all/CVE-2015-7833.patch,
+    debian/patches/bugfix/all/CVE-2015-7872-c.patch,
+    debian/patches/bugfix/all/CVE-2015-8019.patch,
+    debian/patches/bugfix/all/CVE-2015-8374.patch,
+    debian/patches/bugfix/all/CVE-2015-8709.patch,
+    debian/patches/bugfix/all/CVE-2015-8767.patch,
+    debian/patches/bugfix/all/CVE-2015-8816.patch,
+    debian/patches/bugfix/all/CVE-2016-0774.patch,
+    debian/patches/bugfix/all/CVE-2016-0821.patch,
+    debian/patches/bugfix/all/CVE-2016-2847.patch,
+    debian/patches/bugfix/all/CVE-2016-3139.patch,
+    debian/patches/bugfix/all/kobject-uevent-non-blocking-umh.patch,
+    debian/patches/bugfix/all/net-mitigate-ack-loops-tcp_request_sock.patch,
+    debian/patches/bugfix/all/net-mitigate-ack-loops-tcp_sock.patch,
+    debian/patches/bugfix/all/net-mitigate-ack-loops-tcp_timewait_sock.patch,
+    debian/patches/bugfix/all/net-mitigate-ack-loops.patch,
+    debian/patches/bugfix/all/slub-hold-slab-mutex-for-sysfs-slab-add.patch,
+    debian/patches/bugfix/x86/CVE-2015-5307-a.patch,
+    debian/patches/bugfix/x86/CVE-2015-5307-b.patch,
+    debian/patches/bugfix/x86/CVE-2015-7513.patch,
+    debian/patches/bugfix/x86/CVE-2015-8104.patch,
+    debian/patches/bugfix/x86/CVE-2016-2069.patch,
+    debian/patches/bugfix/x86/standardize_mmap_rnd_usage.patch:
+    Drop: merged upstream
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 18 Apr 2016 11:44:27 +0100
 

@@ -140,45 +140,12 @@ bugfix/x86/x86-mm-pat-fix-boot-crash-when-1gb-pages-are-not-supported.patch
 bugfix/all/netfilter-x_tables-check-for-size-overflow.patch
 
 # Pexip fixes
-# TODO: triage these for 4.4.x
 #bugfix/all/net-revert-redundant-mtup-init.patch
-#bugfix/all/CVE-2015-0274.patch
-#bugfix/all/net-mitigate-ack-loops.patch
-#bugfix/all/net-mitigate-ack-loops-tcp_request_sock.patch
-#bugfix/all/net-mitigate-ack-loops-tcp_sock.patch
-#bugfix/all/net-mitigate-ack-loops-tcp_timewait_sock.patch
-#bugfix/all/CVE-2014-9729.patch
-# Order matters here: 9730 depends on 9731
-#bugfix/all/CVE-2014-9731.patch
-#bugfix/all/CVE-2014-9730.patch
-#bugfix/all/CVE-2012-4542.patch
-#bugfix/all/CVE-2015-2925-b.patch
-#bugfix/all/CVE-2015-7613-a.patch
-#bugfix/all/CVE-2015-7872-c.patch
-#bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
-#bugfix/all/CVE-2015-8019.patch
-#bugfix/all/CVE-2015-7833.patch
-#bugfix/x86/CVE-2015-5307-a.patch
-#bugfix/x86/CVE-2015-5307-b.patch
-#bugfix/x86/CVE-2015-8104.patch
-#bugfix/all/CVE-2015-8374.patch
-#bugfix/all/kobject-uevent-non-blocking-umh.patch
-#bugfix/all/slub-hold-slab-mutex-for-sysfs-slab-add.patch
-#bugfix/x86/CVE-2015-7513.patch
-#bugfix/all/CVE-2015-8709.patch
-#bugfix/all/CVE-2015-8767.patch
-#bugfix/all/CVE-2015-8816.patch
-#bugfix/all/CVE-2016-0774.patch
-#bugfix/x86/CVE-2016-2069.patch
-#bugfix/all/CVE-2016-2847.patch
-#bugfix/all/CVE-2016-3139.patch
-#bugfix/all/CVE-2016-3156.patch
-# CVE-2016-3672 depends on this next one
-#bugfix/x86/standardize_mmap_rnd_usage.patch
-#bugfix/x86/CVE-2016-3672.patch
-#bugfix/all/CVE-2016-3951-a.patch
-#bugfix/all/CVE-2016-3951-b.patch
-#bugfix/all/CVE-2015-7515.patch
-#bugfix/all/CVE-2016-0821.patch
-#bugfix/x86/CVE-2016-3157.patch
+bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
+bugfix/all/CVE-2012-4542.patch
+bugfix/all/CVE-2016-3156.patch
+bugfix/x86/CVE-2016-3157.patch
+bugfix/x86/CVE-2016-3672.patch
+bugfix/all/CVE-2016-3951-a.patch
+bugfix/all/CVE-2016-3951-b.patch
 
