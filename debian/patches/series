@@ -114,7 +114,6 @@ features/all/grsecurity/grkernsec_perf_harden.patch
 
 # Security fixes
 bugfix/all/usbvision-fix-overflow-of-interfaces-array.patch
-bugfix/all/media-usbvision-fix-crash-on-detecting-device-with-i.patch
 bugfix/all/ptrace-being-capable-wrt-a-process-requires-mapped-uids-gids.patch
 bugfix/all/pipe-limit-the-per-user-amount-of-pages-allocated-in.patch
 bugfix/x86/x86-mm-page-align-the-_end-symbol-to-avoid-pfn-conve.patch
@@ -127,7 +126,6 @@ debian/i386-686-pae-pci-set-pci-nobios-by-default.patch
 bugfix/arm/net-mv643xx_eth-fix-packet-corruption-with-tso-and-t.patch
 bugfix/x86/x86-efi-bgrt-fix-kernel-panic-when-mapping-bgrt-data.patch
 bugfix/x86/x86-efi-bgrt-replace-early_memremap-with-memremap.patch
-bugfix/all/uas-fix-high-order-alloc.patch
 debian/revert-cgroup-make-sure-a-parent-css-isn-t-offlined.patch
 debian/thermal-fix-abi-change-in-4.4.4.patch
 debian/ipv4-fix-abi-change-in-4.4.4.patch
@@ -143,9 +141,6 @@ bugfix/all/netfilter-x_tables-check-for-size-overflow.patch
 #bugfix/all/net-revert-redundant-mtup-init.patch
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/CVE-2012-4542.patch
-bugfix/all/CVE-2016-3156.patch
-bugfix/x86/CVE-2016-3157.patch
 bugfix/x86/CVE-2016-3672.patch
 bugfix/all/CVE-2016-3951-a.patch
-bugfix/all/CVE-2016-3951-b.patch
 

@@ -1,3 +1,18 @@
+linux (4.4.8-0pexip1) pexip; urgency=medium
+
+  * New upstream release.
+  * debian/patches/bugfix/all/firmware-remove-redundant-log-messages-from-drivers.patch,
+    debian/patches/bugfix/all/usbvision-fix-overflow-of-interfaces-array.patch:
+    Adjust context for new upstream
+  * debian/patches/bugfix/all/CVE-2016-3156.patch,
+    debian/patches/bugfix/x86/CVE-2016-3157.patch,
+    debian/patches/bugfix/all/CVE-2016-3951-b.patch,
+    debian/patches/bugfix/all/media-usbvision-fix-crash-on-detecting-device-with-i.patch,
+    debian/patches/bugfix/all/uas-fix-high-order-alloc.patch:
+    Drop: merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 26 Apr 2016 02:44:31 +0100
+
 linux (4.4.6-1pexip1) pexip; urgency=medium
 
   * New upstream release.
