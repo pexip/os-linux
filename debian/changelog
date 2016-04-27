@@ -12,6 +12,11 @@ linux (4.4.8-0pexip1) pexip; urgency=medium
     Drop: merged upstream
   * debian/patches/bugfix/all/CVE-2015-8553.patch:
     Backport fix for CVE-2015-8553
+  * debian/patches/bugfix/all/ext4-fix-races-between-page-faults-and-hole-punching.patch,
+    debian/patches/bugfix/all/ext4-move-unlocked-dio-protection.patch,
+    debian/patches/bugfix/all/ext4-fix-races-between-buffered-IO-and-collapse_insert-range.patch,
+    debian/patches/bugfix/all/ext4-fix-races-of-writeback-with-punch-hole-and-zero-range.patch:
+    Backport fix for CVE-2015-8839
   * debian/patches/bugfix/all/CVE-2016-2187.patch:
     Backport fix for CVE-2016-2187
   * debian/patches/bugfix/all/netfilter-x_tables-validate-e-target-offset-early.patch,
