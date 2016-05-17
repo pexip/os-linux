@@ -98,7 +98,6 @@ features/arm/novena/ARM-dts-imx6q-add-Novena-board.patch
 features/arm/novena/ARM-dts-imx6q-clean-up-unused-ipu2grp.patch
 
 # Miscellaneous bug fixes
-bugfix/all/misc-bmp085-Enable-building-as-a-module.patch
 bugfix/all/kbuild-use-nostdinc-in-compile-tests.patch
 bugfix/all/disable-some-marvell-phys.patch
 bugfix/all/rtsx_usb_ms-use-msleep_interruptible-in-polling-loop.patch
@@ -142,17 +141,9 @@ bugfix/all/netfilter-x_tables-check-for-size-overflow.patch
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/CVE-2012-4542.patch
 bugfix/all/CVE-2015-8553.patch
-# CVE-2015-8839
-bugfix/all/ext4-fix-races-between-page-faults-and-hole-punching.patch
-bugfix/all/ext4-move-unlocked-dio-protection.patch
-bugfix/all/ext4-fix-races-between-buffered-IO-and-collapse_insert-range.patch
-bugfix/all/ext4-fix-races-of-writeback-with-punch-hole-and-zero-range.patch
-bugfix/all/CVE-2016-2187.patch
 # CVE-2016-3134
 bugfix/all/netfilter-x_tables-validate-e-target-offset-early.patch
 bugfix/all/netfilter-x_tables-make-sure-e-next_offset-covers-remaining-blob-size.patch
 bugfix/all/netfilter-x_tables-fix-unconditional-helper.patch
 bugfix/x86/CVE-2016-3672.patch
 bugfix/all/CVE-2016-3951-a.patch
-bugfix/all/CVE-2016-3955.patch
-bugfix/x86/CVE-2016-3961.patch

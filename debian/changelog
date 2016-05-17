@@ -1,3 +1,18 @@
+linux (4.4.10-0pexip1) pexip; urgency=medium
+
+  * New upstream release.
+  * debian/patches/bugfix/all/misc-bmp085-Enable-building-as-a-module.patch,
+    debian/patches/bugfix/all/CVE-2016-2187.patch,
+    debian/patches/bugfix/all/ext4-fix-races-between-page-faults-and-hole-punching.patch,
+    debian/patches/bugfix/all/ext4-move-unlocked-dio-protection.patch,
+    debian/patches/bugfix/all/ext4-fix-races-between-buffered-IO-and-collapse_insert-range.patch,
+    debian/patches/bugfix/all/ext4-fix-races-of-writeback-with-punch-hole-and-zero-range.patch,
+    debian/patches/bugfix/all/CVE-2016-3955.patch,
+    debian/patches/bugfix/all/CVE-2016-3961.patch:
+    Drop: merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 17 May 2016 15:20:12 +0100
+
 linux (4.4.8-0pexip1) pexip; urgency=medium
 
   * New upstream release.
