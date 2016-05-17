@@ -16,6 +16,8 @@ linux (4.4.10-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2016-3713
   * debian/patches/bugfix/all/CVE-2016-4482.patch:
     Backport fix for CVE-2016-4482
+  * debian/patches/bugfix/all/CVE-2016-4485.patch:
+    Backport fix for CVE-2016-4485
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 17 May 2016 15:20:12 +0100
 

@@ -150,3 +150,4 @@ bugfix/x86/CVE-2016-3672.patch
 bugfix/x86/CVE-2016-3713.patch
 bugfix/all/CVE-2016-3951-a.patch
 bugfix/all/CVE-2016-4482.patch
+bugfix/all/CVE-2016-4485.patch
