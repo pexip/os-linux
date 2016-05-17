@@ -141,6 +141,7 @@ bugfix/all/netfilter-x_tables-check-for-size-overflow.patch
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/CVE-2012-4542.patch
 bugfix/all/CVE-2015-8553.patch
+bugfix/all/CVE-2016-0758.patch
 # CVE-2016-3134
 bugfix/all/netfilter-x_tables-validate-e-target-offset-early.patch
 bugfix/all/netfilter-x_tables-make-sure-e-next_offset-covers-remaining-blob-size.patch
