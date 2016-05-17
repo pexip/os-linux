@@ -12,6 +12,8 @@ linux (4.4.10-0pexip1) pexip; urgency=medium
     Drop: merged upstream
   * debian/patches/bugfix/all/CVE-2016-0758.patch:
     Backport fix for CVE-2016-0758
+  * debian/patches/bugfix/x86/CVE-2016-3713.patch:
+    Backport fix for CVE-2016-3713
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 17 May 2016 15:20:12 +0100
 

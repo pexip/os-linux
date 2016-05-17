@@ -147,4 +147,5 @@ bugfix/all/netfilter-x_tables-validate-e-target-offset-early.patch
 bugfix/all/netfilter-x_tables-make-sure-e-next_offset-covers-remaining-blob-size.patch
 bugfix/all/netfilter-x_tables-fix-unconditional-helper.patch
 bugfix/x86/CVE-2016-3672.patch
+bugfix/x86/CVE-2016-3713.patch
 bugfix/all/CVE-2016-3951-a.patch
