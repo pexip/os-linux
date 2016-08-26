@@ -114,7 +114,6 @@ features/all/grsecurity/grkernsec_perf_harden.patch
 # Security fixes
 bugfix/all/usbvision-fix-overflow-of-interfaces-array.patch
 bugfix/all/ptrace-being-capable-wrt-a-process-requires-mapped-uids-gids.patch
-bugfix/all/pipe-limit-the-per-user-amount-of-pages-allocated-in.patch
 bugfix/x86/x86-mm-page-align-the-_end-symbol-to-avoid-pfn-conve.patch
 bugfix/x86/x86-mm-pat-ensure-cpa-pfn-only-contains-page-frame-n.patch
 bugfix/x86/x86-efi-map-ram-into-the-identity-page-table-for-mix.patch
@@ -143,17 +142,3 @@ bugfix/all/CVE-2012-4542.patch
 bugfix/all/CVE-2015-8553.patch
 bugfix/all/CVE-2016-0758.patch
 # CVE-2016-3134
-bugfix/all/netfilter-x_tables-validate-e-target-offset-early.patch
-bugfix/all/netfilter-x_tables-make-sure-e-next_offset-covers-remaining-blob-size.patch
-bugfix/all/netfilter-x_tables-fix-unconditional-helper.patch
-bugfix/x86/CVE-2016-3672.patch
-bugfix/x86/CVE-2016-3713.patch
-bugfix/all/CVE-2016-3951-a.patch
-bugfix/all/CVE-2016-4482.patch
-bugfix/all/CVE-2016-4485.patch
-bugfix/all/CVE-2016-4486.patch
-bugfix/all/CVE-2016-4557.patch
-bugfix/all/CVE-2016-4558.patch
-bugfix/all/CVE-2016-4569.patch
-bugfix/all/CVE-2016-4578-a.patch
-bugfix/all/CVE-2016-4578-b.patch

@@ -1,3 +1,27 @@
+linux (4.4.19-0pexip1) pexip; urgency=medium
+
+  * New upstream release.
+  * debian/patches/debian/kernelvariables.patch:
+    Adjust context
+  * debian/patches/bugfix/all/pipe-limit-the-per-user-amount-of-pages-allocated-in.patch,
+    debian/patches/bugfix/all/netfilter-x_tables-validate-e-target-offset-early.patch,
+    debian/patches/bugfix/all/netfilter-x_tables-make-sure-e-next_offset-covers-remaining-blob-size.patch,
+    debian/patches/bugfix/all/netfilter-x_tables-fix-unconditional-helper.patch,
+    debian/patches/bugfix/x86/CVE-2016-3672.patch,
+    debian/patches/bugfix/x86/CVE-2016-3713.patch,
+    debian/patches/bugfix/all/CVE-2016-3951-a.patch,
+    debian/patches/bugfix/all/CVE-2016-4482.patch,
+    debian/patches/bugfix/all/CVE-2016-4485.patch,
+    debian/patches/bugfix/all/CVE-2016-4486.patch,
+    debian/patches/bugfix/all/CVE-2016-4557.patch,
+    debian/patches/bugfix/all/CVE-2016-4558.patch,
+    debian/patches/bugfix/all/CVE-2016-4569.patch,
+    debian/patches/bugfix/all/CVE-2016-4578-a.patch,
+    debian/patches/bugfix/all/CVE-2016-4578-b.patch:
+    Drop: merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 25 Aug 2016 12:23:15 +0100
+
 linux (4.4.10-0pexip1) pexip; urgency=medium
 
   * New upstream release.
