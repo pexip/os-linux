@@ -1,3 +1,14 @@
+linux (4.4.27-0pexip1) pexip; urgency=medium
+
+  * New upstream release.
+  * debian/patches/bugfix/all/kbuild-use-nostdinc-in-compile-tests.patch:
+    Adjust context
+  * debian/patches/bugfix/all/netfilter-x_tables-check-for-size-overflow.patch,
+    debian/patches/bugfix/all/CVE-2016-0758.patch:
+    Drop: merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 24 Oct 2016 12:40:29 +0100
+
 linux (4.4.19-0pexip1) pexip; urgency=medium
 
   * New upstream release.

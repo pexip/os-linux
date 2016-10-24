@@ -133,12 +133,9 @@ debian/revert-libata-align-ata_device-s-id-on-a-cacheline.patch
 debian/module-fix-abi-change-in-4.4.5.patch
 bugfix/x86/x86-efi-fix-boot-crash-by-always-mapping-boot-servic.patch
 bugfix/x86/x86-mm-pat-fix-boot-crash-when-1gb-pages-are-not-supported.patch
-bugfix/all/netfilter-x_tables-check-for-size-overflow.patch
 
 # Pexip fixes
 #bugfix/all/net-revert-redundant-mtup-init.patch
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/CVE-2012-4542.patch
 bugfix/all/CVE-2015-8553.patch
-bugfix/all/CVE-2016-0758.patch
-# CVE-2016-3134

@@ -65,7 +65,7 @@ the kernel.
 --- a/Makefile
 +++ b/Makefile
 @@ -614,6 +614,8 @@ else
- KBUILD_CFLAGS	+= -O2
+ endif
  endif
  
 +NOSTDINC_FLAGS += -nostdinc
