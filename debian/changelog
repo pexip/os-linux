@@ -10,6 +10,8 @@ linux (4.4.27-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2016-5728
   * debian/patches/bugfix/all/CVE-2016-7039.patch:
     Backport fix for CVE-2016-7039
+  * debian/patches/bugfix/all/CVE-2016-7042.patch:
+    Backport fix for CVE-2016-7042
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 24 Oct 2016 12:40:29 +0100
 
