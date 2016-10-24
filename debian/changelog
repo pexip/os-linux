@@ -6,6 +6,8 @@ linux (4.4.27-0pexip1) pexip; urgency=medium
   * debian/patches/bugfix/all/netfilter-x_tables-check-for-size-overflow.patch,
     debian/patches/bugfix/all/CVE-2016-0758.patch:
     Drop: merged upstream
+  * debian/patches/bugfix/all/CVE-2016-5728.patch:
+    Backport fix for CVE-2016-5728
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 24 Oct 2016 12:40:29 +0100
 
