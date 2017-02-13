@@ -137,5 +137,8 @@ bugfix/x86/x86-mm-pat-fix-boot-crash-when-1gb-pages-are-not-supported.patch
 #bugfix/all/net-revert-redundant-mtup-init.patch
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/CVE-2012-4542.patch
+bugfix/all/CVE-2015-1350-a.patch
+bugfix/all/CVE-2015-1350-b.patch
+bugfix/all/CVE-2015-1350-c.patch
 bugfix/all/CVE-2015-8553.patch
 bugfix/all/CVE-2016-5728.patch

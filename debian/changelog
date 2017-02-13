@@ -8,6 +8,8 @@ linux (4.4.48-0pexip1) pexip; urgency=medium
     Drop: merged upstream
   * debian/patches/bugfix/all/ptrace-being-capable-wrt-a-process-requires-mapped-uids-gids.patch:
     Drop: obsoleted by bfedb58 upstream
+  * debian/patches/bugfix/all/CVE-2015-1350-{a,b,c}.patch:
+    Backport fix for CVE-2015-1350
 
  -- John-Mark Bell <jmb@pexip.com>  Thu, 09 Feb 2017 19:06:48 +0000
 
