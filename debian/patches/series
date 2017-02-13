@@ -113,7 +113,6 @@ features/all/grsecurity/grkernsec_perf_harden.patch
 
 # Security fixes
 bugfix/all/usbvision-fix-overflow-of-interfaces-array.patch
-bugfix/all/ptrace-being-capable-wrt-a-process-requires-mapped-uids-gids.patch
 bugfix/x86/x86-mm-page-align-the-_end-symbol-to-avoid-pfn-conve.patch
 bugfix/x86/x86-mm-pat-ensure-cpa-pfn-only-contains-page-frame-n.patch
 bugfix/x86/x86-efi-map-ram-into-the-identity-page-table-for-mix.patch
@@ -140,7 +139,3 @@ bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/CVE-2012-4542.patch
 bugfix/all/CVE-2015-8553.patch
 bugfix/all/CVE-2016-5728.patch
-bugfix/all/CVE-2016-7039.patch
-bugfix/all/CVE-2016-7042.patch
-bugfix/all/CVE-2016-7097.patch
-bugfix/all/CVE-2016-8666.patch
