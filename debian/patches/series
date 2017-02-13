@@ -148,3 +148,4 @@ bugfix/all/CVE-2016-7917.patch
 bugfix/all/CVE-2016-8632.patch
 bugfix/all/CVE-2016-9083.patch
 bugfix/x86/CVE-2017-2596.patch
+bugfix/all/CVE-2017-2618.patch
