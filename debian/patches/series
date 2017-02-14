@@ -152,3 +152,4 @@ bugfix/x86/CVE-2017-2596.patch
 bugfix/all/CVE-2017-2618.patch
 bugfix/all/CVE-2017-5897.patch
 bugfix/all/CVE-2017-5970.patch
+bugfix/all/CVE-2017-5986.patch
