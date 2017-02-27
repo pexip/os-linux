@@ -6,6 +6,8 @@ linux (4.4.52-0pexip1) pexip; urgency=medium
     debian/patches/bugfix/all/CVE-2017-5970.patch,
     debian/patches/bugfix/all/CVE-2017-5986.patch:
     Drop: merged upstream
+  * debian/patches/bugfix/all/CVE-2017-6001.patch:
+    Backport fix for CVE-2017-6001
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 27 Feb 2017 10:57:53 +0000
 
