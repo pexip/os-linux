@@ -1,3 +1,14 @@
+linux (4.4.52-0pexip1) pexip; urgency=medium
+
+  * New upstream release.
+  * debian/patches/bugfix/all/CVE-2017-2618.patch,
+    debian/patches/bugfix/all/CVE-2017-5897.patch,
+    debian/patches/bugfix/all/CVE-2017-5970.patch,
+    debian/patches/bugfix/all/CVE-2017-5986.patch:
+    Drop: merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 27 Feb 2017 10:57:53 +0000
+
 linux (4.4.48-0pexip1) pexip; urgency=medium
 
   * New upstream release.
