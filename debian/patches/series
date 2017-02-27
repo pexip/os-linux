@@ -151,3 +151,4 @@ bugfix/all/CVE-2016-9083.patch
 bugfix/x86/CVE-2017-2596.patch
 bugfix/all/CVE-2017-5669.patch
 bugfix/all/CVE-2017-6001.patch
+bugfix/all/CVE-2017-6353.patch
