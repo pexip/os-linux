@@ -3,6 +3,8 @@ linux (4.4.53-0pexip1) pexip; urgency=medium
   * New upstream release.
   * debian/patches/bugfix/all/CVE-2017-5669.patch:
     Drop: merged upstream
+  * debian/patches/bugfix/all/CVE-2017-2636.patch:
+    Backport fix for CVE-2017-2636
  
  -- John-Mark Bell <jmb@pexip.com>  Mon, 13 Mar 2017 14:46:34 +0000
 
