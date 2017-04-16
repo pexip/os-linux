@@ -204,8 +204,8 @@ class Gencontrol(Base):
                                        kw_proc.returncode)
 
                 # kernel-wedge currently chokes on Build-Profiles so add it now
-                #for package in udeb_packages:
-                #    package['Build-Profiles'] = '<!stage1>'
+                for package in udeb_packages:
+                    package['Build-Profiles'] = '<!stage1>'
 
                 self.merge_packages(packages, udeb_packages, arch)
 

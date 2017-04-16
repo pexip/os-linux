@@ -1,4 +1,5 @@
 Package: @source_package@-source-@version@
+Build-Profiles: <!stage1>
 Architecture: all
 Section: kernel
 Depends: binutils, xz-utils, ${misc:Depends}
@@ -13,6 +14,7 @@ Description: Linux kernel source for version @version@ with Debian patches
  upstream maintainers.
 
 Package: @source_package@-support-@abiname@
+Build-Profiles: <!stage1>
 Architecture: all
 Section: devel
 Depends: ${python3:Depends}, ${misc:Depends}

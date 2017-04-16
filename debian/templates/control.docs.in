@@ -1,4 +1,5 @@
 Package: @source_package@-doc-@version@
+Build-Profiles: <!stage1>
 Architecture: all
 Depends: ${misc:Depends}
 Section: doc
@@ -12,6 +13,7 @@ Description: Linux kernel specific documentation for version @version@
  for the detailed description of the contents.
 
 Package: @source_package@-manual-@version@
+Build-Profiles: <!stage1>
 Architecture: all
 Depends: ${misc:Depends}
 Section: doc
