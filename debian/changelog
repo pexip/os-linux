@@ -19,6 +19,8 @@ linux (4.4.74-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2017-7495
   * debian/patches/bugfix/all/CVE-2017-9150.patch:
     Backport fix for CVE-2017-9150
+  * debian/patches/bugfix/all/CVE-2017-1000365.patch:
+    Backport fix for CVE-2017-1000365
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 26 Jun 2017 12:28:04 +0100
 
