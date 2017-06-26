@@ -143,12 +143,3 @@ bugfix/all/CVE-2015-1350-c.patch
 bugfix/all/CVE-2015-1350-d.patch
 bugfix/all/CVE-2015-8553.patch
 bugfix/all/CVE-2016-5728.patch
-bugfix/all/CVE-2016-6213.patch
-bugfix/all/CVE-2016-7913.patch
-bugfix/all/CVE-2016-7917.patch
-bugfix/all/CVE-2016-8632.patch
-bugfix/all/CVE-2016-9083.patch
-bugfix/x86/CVE-2017-2596.patch
-bugfix/all/CVE-2017-2636.patch
-bugfix/all/CVE-2017-6001.patch
-bugfix/all/CVE-2017-6353.patch

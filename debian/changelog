@@ -1,3 +1,19 @@
+linux (4.4.74-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * debian/patches/bugfix/all/CVE-2016-6213.patch,
+    debian/patches/bugfix/all/CVE-2016-7913.patch,
+    debian/patches/bugfix/all/CVE-2016-7917.patch,
+    debian/patches/bugfix/all/CVE-2016-8632.patch,
+    debian/patches/bugfix/all/CVE-2016-9083.patch,
+    debian/patches/bugfix/x86/CVE-2017-2596.patch,
+    debian/patches/bugfix/all/CVE-2017-2636.patch,
+    debian/patches/bugfix/all/CVE-2017-6001.patch,
+    debian/patches/bugfix/all/CVE-2017-6353.patch:
+    Drop: merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 26 Jun 2017 12:28:04 +0100
+
 linux (4.4.53-0pexip2) pexip; urgency=medium
 
   * Reinstate modern build infrastructure
