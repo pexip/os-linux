@@ -1,0 +1,40 @@
+diff --git a/include/uapi/linux/snmp.h b/include/uapi/linux/snmp.h
+index 25a9ad8bc..47e2e92ed 100644
+--- a/include/uapi/linux/snmp.h
++++ b/include/uapi/linux/snmp.h
+@@ -315,6 +315,7 @@ enum
+ 	LINUX_MIB_XFRMFWDHDRERROR,		/* XfrmFwdHdrError*/
+ 	LINUX_MIB_XFRMOUTSTATEINVALID,		/* XfrmOutStateInvalid */
+ 	LINUX_MIB_XFRMACQUIREERROR,		/* XfrmAcquireError */
++	LINUX_MIB_XFRMOUTINPROGRESS,		/* XfrmOutInProgress */
+ 	__LINUX_MIB_XFRMMAX
+ };
+ 
+diff --git a/net/xfrm/xfrm_output.c b/net/xfrm/xfrm_output.c
+index ff4a91fca..8af5cce25 100644
+--- a/net/xfrm/xfrm_output.c
++++ b/net/xfrm/xfrm_output.c
+@@ -100,8 +100,10 @@ static int xfrm_output_one(struct sk_buff *skb, int err)
+ 		skb_dst_force(skb);
+ 
+ 		err = x->type->output(x, skb);
+-		if (err == -EINPROGRESS)
++		if (err == -EINPROGRESS) {
++			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTINPROGRESS);
+ 			goto out;
++		}
+ 
+ resume:
+ 		if (err) {
+diff --git a/net/xfrm/xfrm_proc.c b/net/xfrm/xfrm_proc.c
+index 9c4fbd893..da275772a 100644
+--- a/net/xfrm/xfrm_proc.c
++++ b/net/xfrm/xfrm_proc.c
+@@ -45,6 +45,7 @@ static const struct snmp_mib xfrm_mib_list[] = {
+ 	SNMP_MIB_ITEM("XfrmFwdHdrError", LINUX_MIB_XFRMFWDHDRERROR),
+ 	SNMP_MIB_ITEM("XfrmOutStateInvalid", LINUX_MIB_XFRMOUTSTATEINVALID),
+ 	SNMP_MIB_ITEM("XfrmAcquireError", LINUX_MIB_XFRMACQUIREERROR),
++	SNMP_MIB_ITEM("XfrmOutInProgress", LINUX_MIB_XFRMOUTINPROGRESS),
+ 	SNMP_MIB_SENTINEL
+ };
+ 

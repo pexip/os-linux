@@ -1,3 +1,13 @@
+linux (4.4.74-0pexip2) pexip; urgency=medium
+
+  * debian/patches/features/all/xfrm-inprogress-stats.patch:
+    Add patch to expose the number of SKBs that get dropped
+    because xfrm_output_one detects EINPROGRESS.
+  * debian/config/config:
+    Enable XFRM statistics
+
+ -- John-Mark Bell <jmb@pexip.com>  Sat, 05 Aug 2017 12:24:47 +0100
+
 linux (4.4.74-0pexip1) pexip; urgency=medium
 
   * New upstream release
