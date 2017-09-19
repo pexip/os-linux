@@ -147,3 +147,4 @@ bugfix/all/CVE-2017-0605.patch
 bugfix/all/CVE-2017-7495.patch
 bugfix/all/CVE-2017-9150.patch
 features/all/xfrm-inprogress-stats.patch
+bugfix/all/CVE-2017-10911.patch
