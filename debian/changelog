@@ -8,6 +8,8 @@ linux (4.4.88-0pexip1) pexip; urgency=medium
     Backport fix for CVE-2017-10911
   * debian/patches/bugfix/all/CVE-2017-11472.patch:
     Backport fix for CVE-2017-11472
+  * debian/patches/bugfix/all/CVE-2017-12153.patch:
+    Backport fix for CVE-2017-12153
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 19 Sep 2017 15:03:31 +0100
 
