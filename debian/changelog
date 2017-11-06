@@ -1,3 +1,12 @@
+linux (4.4.96-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * debian/patches/bugfix/all/CVE-2017-12153.patch,
+    debian/patches/bugfix/all/CVE-2017-14106.patch:
+    Drop: merged upstream
+
+ -- Vincent Sanders <vince@pexip.com>  Mon, 06 Nov 2017 13:53:31 +0000
+
 linux (4.4.88-0pexip1) pexip; urgency=medium
 
   * New upstream release
