@@ -6,6 +6,8 @@ linux (4.4.103-0pexip1) pexip; urgency=medium
     debian/patches/bugfix/all/CVE-2017-10911.patch,
     debian/patches/bugfix/all/CVE-2017-13080.patch:
     Drop: merged upstream
+  * debian/patches/bugfix/all/CVE-2017-16939.patch:
+    Backport fix for CVE-2017-16939
 
  -- Vincent Sanders <vince@pexip.com>  Fri, 01 Dec 2017 13:53:31 +0000
 
