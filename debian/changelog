@@ -8,6 +8,8 @@ linux (4.4.103-0pexip1) pexip; urgency=medium
     Drop: merged upstream
   * debian/patches/bugfix/all/CVE-2017-16939.patch:
     Backport fix for CVE-2017-16939
+  * debian/patches/bugfix/all/CVE-2017-17052.patch:
+    Backport fix for CVE-2017-17052
 
  -- Vincent Sanders <vince@pexip.com>  Fri, 01 Dec 2017 13:53:31 +0000
 
