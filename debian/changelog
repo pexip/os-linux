@@ -1,3 +1,11 @@
+linux (4.4.110-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * debian/config/kernelarch-x86/config-arch-64:
+    Explicitly enable CONFIG_PAGE_TABLE_ISOLATION
+
+ -- John-Mark Bell <jmb@pexip.com>  Sat, 06 Jan 2018 15:08:20 +0000
+
 linux (4.4.108-0pexip1) pexip; urgency=medium
 
   * New upstream release
