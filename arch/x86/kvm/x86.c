@@ -759,7 +759,8 @@ int kvm_set_cr4(struct kvm_vcpu *vcpu, unsigned long cr4)
 			return 1;
 
 		/* PCID can not be enabled when cr3[11:0]!=000H or EFER.LMA=0 */
-		if ((kvm_read_cr3(vcpu) & X86_CR3_PCID_MASK) || !is_long_mode(vcpu))
+		if ((kvm_read_cr3(vcpu) & X86_CR3_PCID_ASID_MASK) ||
+		    !is_long_mode(vcpu))
 			return 1;
 	}
 
@@ -6941,7 +6942,7 @@ int kvm_arch_vcpu_ioctl_set_regs(struct kvm_vcpu *vcpu, struct kvm_regs *regs)
 #endif
 
 	kvm_rip_write(vcpu, regs->rip);
-	kvm_set_rflags(vcpu, regs->rflags);
+	kvm_set_rflags(vcpu, regs->rflags | X86_EFLAGS_FIXED);
 
 	vcpu->arch.exception.pending = false;
 
