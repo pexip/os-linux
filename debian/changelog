@@ -1,3 +1,10 @@
+linux (4.4.110-0pexip2) pexip; urgency=medium
+
+  * debian/config/kernelarch-x86/config:
+    Disable X86_SYSFB and FB_SIMPLE: handover not supported
+
+ -- John-Mark Bell <jmb@pexip.com>  Mon, 08 Jan 2018 17:01:20 +0000
+
 linux (4.4.110-0pexip1) pexip; urgency=medium
 
   * New upstream release
