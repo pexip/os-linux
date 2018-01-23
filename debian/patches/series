@@ -112,7 +112,6 @@ features/all/grsecurity/grsecurity-kconfig.patch
 features/all/grsecurity/grkernsec_perf_harden.patch
 
 # Security fixes
-bugfix/all/usbvision-fix-overflow-of-interfaces-array.patch
 bugfix/x86/x86-mm-page-align-the-_end-symbol-to-avoid-pfn-conve.patch
 bugfix/x86/x86-mm-pat-ensure-cpa-pfn-only-contains-page-frame-n.patch
 bugfix/x86/x86-efi-map-ram-into-the-identity-page-table-for-mix.patch

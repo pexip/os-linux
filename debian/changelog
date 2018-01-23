@@ -1,3 +1,15 @@
+linux (4.4.113-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * debian/config/kernelarch-x86/config-arch-64:
+    Explicitly enable CONFIG_RETPOLINE
+  * debian/control, debian/config/defines:
+    Build-depend on retpoline-capable compiler
+  * debian/patches/bugfix/all/usbvision-fix-overflow-of-interfaces-array.patch:
+    Drop: merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 23 Jan 2018 20:34:59 +0000
+
 linux (4.4.110-0pexip2) pexip; urgency=medium
 
   * debian/config/kernelarch-x86/config:

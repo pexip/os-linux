@@ -62,7 +62,7 @@ initramfs-generators: initramfs-tools initramfs-fallback
 [relations]
 # compilers
 gcc-4.8: gcc-4.8 <!stage1>
-gcc-4.9: gcc-4.9 <!stage1>
+gcc-4.9: gcc-4.9 (>= 4.9.2-10pexip2~) <!stage1>
 gcc-5: gcc-5 <!stage1>
 
 # initramfs-generators
