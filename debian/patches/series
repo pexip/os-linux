@@ -153,3 +153,4 @@ bugfix/x86/x86-entry-64-clear-extra-registers-beyond-syscall-arguments.patch
 bugfix/x86/x86-entry-64-clear-registers-for-exceptions-interrupts.patch
 bugfix/x86/x86-entry-64-compat-clear-registers-for-compat-syscalls.patch
 bugfix/x86/x86-speculation-fix-up-array_index_nospec_mask-asm-constraint.patch
+bugfix/x86/bpf-x86-implement-retpoline-for-tail-call.patch

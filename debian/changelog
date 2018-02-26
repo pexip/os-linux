@@ -16,6 +16,8 @@ linux (4.4.118-0pexip1) pexip; urgency=medium
     Backport: clear registers on syscall/exception/interrupt
   * debian/patches/bugfix/x86/x86-speculation-fix-up-array_index_nospec_mask-asm-constraint.patch:
     Backport: fix up asm constraint in array_index_nospec_mask()
+  * debian/patches/bugfix/x86/bpf-x86-implement-retpoline-for-tail-call.patch:
+    Backport: retpoline bpf jit tail calls
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 26 Feb 2018 11:31:14 +0000
 
