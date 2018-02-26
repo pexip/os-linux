@@ -1,6 +1,13 @@
 linux (4.4.118-0pexip1) pexip; urgency=medium
 
   * New upstream release
+  * debian/patches/bugfix/x86/x86-reorganise-smap-handling-in-userspace-accesses.patch,
+    debian/patches/bugfix/x86/x86-fix-smap-in-32-bit-environments.patch:
+    Backport: prerequisite for __uaccess_begin_nospec/uaccess_try_nospec
+  * debian/patches/bugfix/x86/x86-introduce-__uaccess_begin_nospec-and-uaccess_try_nospec.patch,
+    debian/patches/bugfix/x86/x86-usercopy-replace-open-coded-stac-clac-with-__uaccess_begin-end.patch,
+    debian/patches/bugfix/x86/x86-uaccess-use-__uaccess_begin_nospec-and-uaccess_try_nospec.patch:
+    Backport: protect mis-speculation after __get_user() et. al.
 
  -- John-Mark Bell <jmb@pexip.com>  Mon, 26 Feb 2018 11:31:14 +0000
 
