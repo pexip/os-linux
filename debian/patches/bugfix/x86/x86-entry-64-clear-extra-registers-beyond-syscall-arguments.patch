@@ -1,0 +1,127 @@
+From 8e1eb3fa009aa7c0b944b3c8b26b07de0efb3200 Mon Sep 17 00:00:00 2001
+From: Dan Williams <dan.j.williams@intel.com>
+Date: Mon, 5 Feb 2018 17:18:05 -0800
+Subject: x86/entry/64: Clear extra registers beyond syscall arguments, to
+ reduce speculation attack surface
+
+At entry userspace may have (maliciously) populated the extra registers
+outside the syscall calling convention with arbitrary values that could
+be useful in a speculative execution (Spectre style) attack.
+
+Clear these registers to minimize the kernel's attack surface.
+
+Note, this only clears the extra registers and not the unused
+registers for syscalls less than 6 arguments, since those registers are
+likely to be clobbered well before their values could be put to use
+under speculation.
+
+Note, Linus found that the XOR instructions can be executed with
+minimized cost if interleaved with the PUSH instructions, and Ingo's
+analysis found that R10 and R11 should be included in the register
+clearing beyond the typical 'extra' syscall calling convention
+registers.
+
+Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
+Reported-by: Andi Kleen <ak@linux.intel.com>
+Signed-off-by: Dan Williams <dan.j.williams@intel.com>
+Cc: <stable@vger.kernel.org>
+Cc: Andy Lutomirski <luto@kernel.org>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: Brian Gerst <brgerst@gmail.com>
+Cc: Denys Vlasenko <dvlasenk@redhat.com>
+Cc: H. Peter Anvin <hpa@zytor.com>
+Cc: Josh Poimboeuf <jpoimboe@redhat.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Link: http://lkml.kernel.org/r/151787988577.7847.16733592218894189003.stgit@dwillia2-desk3.amr.corp.intel.com
+[ Made small improvements to the changelog and the code comments. ]
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+[jmb: backport to 4.4]
+---
+ arch/x86/entry/entry_64.S | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
+index c752abe..065a71b 100644
+--- a/arch/x86/entry/entry_64.S
++++ b/arch/x86/entry/entry_64.S
+@@ -171,13 +171,26 @@ GLOBAL(entry_SYSCALL_64_after_swapgs)
+ 	pushq	%r8				/* pt_regs->r8 */
+ 	pushq	%r9				/* pt_regs->r9 */
+ 	pushq	%r10				/* pt_regs->r10 */
++	/*
++	 * Clear extra registers that a speculation attack might
++	 * otherwise want to exploit. Interleave XOR with PUSH
++	 * for better uop scheduling:
++	 */
++	xorq	%r10, %r10			/* nospec   r10 */
+ 	pushq	%r11				/* pt_regs->r11 */
++	xorq	%r11, %r11			/* nospec   r11 */
+ 	pushq	%rbx				/* pt_regs->rbx */
++	xorl	%ebx, %ebx			/* nospec   rbx */
+ 	pushq	%rbp				/* pt_regs->rbp */
++	xorl	%ebp, %ebp			/* nospec   rbp */
+ 	pushq	%r12				/* pt_regs->r12 */
++	xorq	%r12, %r12			/* nospec   r12 */
+ 	pushq	%r13				/* pt_regs->r13 */
++	xorq	%r13, %r13			/* nospec   r13 */
+ 	pushq	%r14				/* pt_regs->r14 */
++	xorq	%r14, %r14			/* nospec   r14 */
+ 	pushq	%r15				/* pt_regs->r15 */
++	xorq	%r15, %r15			/* nospec   r15 */
+ 
+ 	testl	$_TIF_WORK_SYSCALL_ENTRY, ASM_THREAD_INFO(TI_flags, %rsp, SIZEOF_PTREGS)
+ 	jnz	tracesys
+@@ -184,7 +197,7 @@ GLOBAL(entry_SYSCALL_64_after_swapgs)
+ system_call_fast_compare_end:
+ #endif
+ 	ja	1f				/* return -ENOSYS (already in pt_regs->ax) */
+-	movq	%r10, %rcx
++	movq	R10(%rsp), %rcx
+ #ifdef CONFIG_RETPOLINE
+ 	movq	sys_call_table(, %rax, 8), %rax
+ 	call	__x86_indirect_thunk_rax
+@@ -219,6 +232,7 @@ GLOBAL(entry_SYSCALL_64_after_swapgs)
+ 	movq	RIP(%rsp), %rcx
+ 	movq	EFLAGS(%rsp), %r11
+ 	RESTORE_C_REGS_EXCEPT_RCX_R11
++	RESTORE_EXTRA_REGS
+ 	/*
+ 	 * This opens a window where we have a user CR3, but are
+ 	 * running in the kernel.  This makes using the CS
+@@ -249,6 +263,7 @@
+ GLOBAL(int_ret_from_sys_call_irqs_off)
+ 	TRACE_IRQS_ON
+ 	ENABLE_INTERRUPTS(CLBR_NONE)
++	RESTORE_EXTRA_REGS
+ 	jmp int_ret_from_sys_call
+ 
+ 	/* Do syscall entry tracing */
+@@ -274,7 +289,6 @@ GLOBAL(int_ret_from_sys_call_irqs_off)
+ 	 * the value it wants us to use in the table lookup.
+ 	 */
+ 	RESTORE_C_REGS_EXCEPT_RAX
+-	RESTORE_EXTRA_REGS
+ #if __SYSCALL_MASK == ~0
+ 	cmpq	$__NR_syscall_max, %rax
+ #else
+@@ -282,7 +296,7 @@ GLOBAL(int_ret_from_sys_call_irqs_off)
+ system_call_trace_compare_end:
+ #endif
+ 	ja	1f				/* return -ENOSYS (already in pt_regs->ax) */
+-	movq	%r10, %rcx			/* fixup for C */
++	movq	R10(%rsp), %rcx			/* fixup for C */
+ #ifdef CONFIG_RETPOLINE
+ 	movq	sys_call_table(, %rax, 8), %rax
+ 	call	__x86_indirect_thunk_rax
+@@ -292,6 +306,7 @@ GLOBAL(int_ret_from_sys_call_irqs_off)
+ 	movq	%rax, RAX(%rsp)
+ 1:
+ 	/* Use IRET because user could have changed pt_regs->foo */
++	RESTORE_EXTRA_REGS
+ 
+ /*
+  * Syscall return path ending with IRET.
+-- 
+cgit v1.1
+

@@ -148,4 +148,7 @@ bugfix/x86/x86-fix-smap-in-32-bit-environments.patch
 bugfix/x86/x86-introduce-__uaccess_begin_nospec-and-uaccess_try_nospec.patch
 bugfix/x86/x86-usercopy-replace-open-coded-stac-clac-with-__uaccess_begin-end.patch
 bugfix/x86/x86-uaccess-use-__uaccess_begin_nospec-and-uaccess_try_nospec.patch
-
+bugfix/x86/x86-entry-64-push-extra-regs-right-away.patch
+bugfix/x86/x86-entry-64-clear-extra-registers-beyond-syscall-arguments.patch
+bugfix/x86/x86-entry-64-clear-registers-for-exceptions-interrupts.patch
+bugfix/x86/x86-entry-64-compat-clear-registers-for-compat-syscalls.patch
