@@ -1,3 +1,14 @@
+linux (4.4.121-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * debian/patches/features/x86/x86-make-x32-syscall-support-conditional.patch,
+    debian/patches/bugfix/x86/x86-entry-64-clear-extra-registers-beyond-syscall-arguments.patch:
+    Refresh
+  * debian/patches/bugfix/x86/bpf-x86-implement-retpoline-for-tail-call.patch:
+    Drop: merged upstream
+
+ -- John-Mark Bell <jmb@pexip.com>  Sun, 11 Mar 2018 22:40:17 +0000
+
 linux (4.4.118-0pexip1) pexip; urgency=medium
 
   * New upstream release

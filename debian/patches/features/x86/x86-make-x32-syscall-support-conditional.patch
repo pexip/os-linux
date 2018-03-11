@@ -84,34 +84,34 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +++ b/arch/x86/entry/entry_64.S
 @@ -178,8 +178,12 @@ entry_SYSCALL_64_fastpath:
  #if __SYSCALL_MASK == ~0
- 	cmpq	$__NR_syscall_max, %rax
+ 	cmpq	$NR_syscalls, %rax
  #else
 -	andl	$__SYSCALL_MASK, %eax
--	cmpl	$__NR_syscall_max, %eax
+-	cmpl	$NR_syscalls, %eax
 +.global system_call_fast_compare
 +.global system_call_fast_compare_end
 +system_call_fast_compare:
-+	cmpq	$511, %rax			/* x32 syscalls start at 512 */
++	cmpq	$512, %rax			/* x32 syscalls start at 512 */
 +	.byte	P6_NOP4
 +system_call_fast_compare_end:
  #endif
- 	ja	1f				/* return -ENOSYS (already in pt_regs->ax) */
- 	movq	%r10, %rcx
+ 	jae	1f				/* return -ENOSYS (already in pt_regs->ax) */
+ 	sbb	%rcx, %rcx			/* array_index_mask_nospec() */
 @@ -257,8 +261,12 @@ tracesys_phase2:
  #if __SYSCALL_MASK == ~0
- 	cmpq	$__NR_syscall_max, %rax
+ 	cmpq	$NR_syscalls, %rax
  #else
 -	andl	$__SYSCALL_MASK, %eax
--	cmpl	$__NR_syscall_max, %eax
+-	cmpl	$NR_syscalls, %eax
 +.global system_call_trace_compare
 +.global system_call_trace_compare_end
 +system_call_trace_compare:
-+	cmpq	$511, %rax			/* x32 syscalls start at 512 */
++	cmpq	$512, %rax			/* x32 syscalls start at 512 */
 +	.byte	P6_NOP4
 +system_call_trace_compare_end:
  #endif
- 	ja	1f				/* return -ENOSYS (already in pt_regs->ax) */
- 	movq	%r10, %rcx			/* fixup for C */
+ 	jae	1f				/* return -ENOSYS (already in pt_regs->ax) */
+ 	sbb	%rcx, %rcx			/* array_index_mask_nospec() */
 @@ -410,6 +418,16 @@ opportunistic_sysret_failed:
  END(entry_SYSCALL_64)
  
@@ -122,7 +122,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +.global system_call_mask_compare_end
 +system_call_mask_compare:
 +	andl	$__SYSCALL_MASK, %eax
-+	cmpl	$__NR_syscall_max, %eax
++	cmpl	$NR_syscalls, %eax
 +system_call_mask_compare_end:
 +#endif
 +
