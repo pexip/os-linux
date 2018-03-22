@@ -1,6 +1,16 @@
 linux (4.4.123-0pexip1) pexip; urgency=medium
 
   * New upstream release
+  * debian/patches/bugfix/all/CVE-2017-18232.patch:
+    Backport fix for CVE-2017-18232
+  * debian/patches/bugfix/all/CVE-2018-7757.patch:
+    Backport fix for CVE-2018-7757
+  * debian/patches/bugfix/all/CVE-2018-8043.patch:
+    Backport fix for CVE-2018-8043
+  * debian/config/config:
+    Disable cifs, f2fs, ncpfs, ocfs2, xfs
+    Disable usbtv driver
+    Disable broadcom bnx2x, bnxt, and tigon3 ethernet drivers
 
  -- John-Mark Bell <jmb@pexip.com>  Thu, 22 Mar 2018 12:01:28 +0000
 
