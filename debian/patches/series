@@ -156,3 +156,4 @@ bugfix/x86/x86-speculation-fix-up-array_index_nospec_mask-asm-constraint.patch
 bugfix/all/CVE-2017-18232.patch
 bugfix/all/CVE-2018-7757.patch
 bugfix/all/CVE-2018-8043.patch
+bugfix/all/netvsc-get-rid-of-completion-timeouts.patch

@@ -11,6 +11,8 @@ linux (4.4.123-0pexip1) pexip; urgency=medium
     Disable cifs, f2fs, ncpfs, ocfs2, xfs
     Disable usbtv driver
     Disable broadcom bnx2x, bnxt, and tigon3 ethernet drivers
+  * debian/patches/bugfix/all/netvsc-get-rid-of-completion-timeouts.patch:
+    Backport patch to remove timeouts from HyperV NIC driver
 
  -- John-Mark Bell <jmb@pexip.com>  Thu, 22 Mar 2018 12:01:28 +0000
 
