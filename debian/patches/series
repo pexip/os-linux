@@ -113,11 +113,11 @@ features/all/grsecurity/grkernsec_perf_harden.patch
 
 # Security fixes
 bugfix/x86/x86-mm-page-align-the-_end-symbol-to-avoid-pfn-conve.patch
-bugfix/x86/x86-mm-pat-ensure-cpa-pfn-only-contains-page-frame-n.patch
-bugfix/x86/x86-efi-map-ram-into-the-identity-page-table-for-mix.patch
-bugfix/x86/x86-efi-hoist-page-table-switching-code-into-efi_cal.patch
-bugfix/x86/x86-efi-build-our-own-page-table-structures.patch
-bugfix/x86/x86-efi-setup-separate-efi-page-tables-in-kexec-path.patch
+#bugfix/x86/x86-mm-pat-ensure-cpa-pfn-only-contains-page-frame-n.patch
+#bugfix/x86/x86-efi-map-ram-into-the-identity-page-table-for-mix.patch
+#bugfix/x86/x86-efi-hoist-page-table-switching-code-into-efi_cal.patch
+#bugfix/x86/x86-efi-build-our-own-page-table-structures.patch
+#bugfix/x86/x86-efi-setup-separate-efi-page-tables-in-kexec-path.patch
 debian/i386-686-pae-pci-set-pci-nobios-by-default.patch
 bugfix/arm/net-mv643xx_eth-fix-packet-corruption-with-tso-and-t.patch
 debian/revert-cgroup-make-sure-a-parent-css-isn-t-offlined.patch
@@ -151,9 +151,6 @@ bugfix/x86/x86-uaccess-use-__uaccess_begin_nospec-and-uaccess_try_nospec.patch
 bugfix/x86/x86-entry-64-push-extra-regs-right-away.patch
 bugfix/x86/x86-entry-64-clear-extra-registers-beyond-syscall-arguments.patch
 bugfix/x86/x86-entry-64-clear-registers-for-exceptions-interrupts.patch
-bugfix/x86/x86-entry-64-compat-clear-registers-for-compat-syscalls.patch
-bugfix/x86/x86-speculation-fix-up-array_index_nospec_mask-asm-constraint.patch
 bugfix/all/CVE-2017-18232.patch
-bugfix/all/CVE-2018-7757.patch
 bugfix/all/CVE-2018-8043.patch
 bugfix/all/netvsc-get-rid-of-completion-timeouts.patch

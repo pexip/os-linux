@@ -1,3 +1,15 @@
+linux (4.4.153-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * debian/patches/bugfix/x86/x86-mm-pat-fix-boot-crash-when-1gb-pages-are-not-supported.patch:
+    Refresh
+  * debian/patches/bugfix/all/CVE-2018-7757.patch,
+    debian/patches/bugfix/x86/x86-entry-64-compat-clear-registers-for-compat-syscalls.patch,
+    debian/patches/bugfix/x86/x86-speculation-fix-up-array_index_nospec_mask-asm-constraint.patch:
+    Drop: merged upstream
+
+ -- Vincent Sanders <vince@pexip.com>  Tue, 28 Aug 2018 12:53:31 +0000
+
 linux (4.4.123-0pexip1) pexip; urgency=medium
 
   * New upstream release
