@@ -82,7 +82,7 @@ static int coh901331_read_time(struct device *dev, struct rtc_time *tm)
 	if (readl(rtap->virtbase + COH901331_VALID)) {
 		rtc_time_to_tm(readl(rtap->virtbase + COH901331_CUR_TIME), tm);
 		clk_disable(rtap->clk);
-		return rtc_valid_tm(tm);
+		return 0;
 	}
 	clk_disable(rtap->clk);
 	return -EINVAL;
@@ -140,7 +140,7 @@ static int coh901331_alarm_irq_enable(struct device *dev, unsigned int enabled)
 	return 0;
 }
 
-static struct rtc_class_ops coh901331_ops = {
+static const struct rtc_class_ops coh901331_ops = {
 	.read_time = coh901331_read_time,
 	.set_mmss = coh901331_set_mmss,
 	.read_alarm = coh901331_read_alarm,

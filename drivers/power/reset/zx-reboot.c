@@ -58,9 +58,12 @@ static int zx_reboot_probe(struct platform_device *pdev)
 	}
 
 	err = register_restart_handler(&zx_restart_nb);
-	if (err)
+	if (err) {
+		iounmap(base);
+		iounmap(pcu_base);
 		dev_err(&pdev->dev, "Register restart handler failed(err=%d)\n",
 			err);
+	}
 
 	return err;
 }
@@ -69,6 +72,7 @@ static const struct of_device_id zx_reboot_of_match[] = {
 	{ .compatible = "zte,sysctrl" },
 	{}
 };
+MODULE_DEVICE_TABLE(of, zx_reboot_of_match);
 
 static struct platform_driver zx_reboot_driver = {
 	.probe = zx_reboot_probe,
@@ -78,3 +82,7 @@ static struct platform_driver zx_reboot_driver = {
 	},
 };
 module_platform_driver(zx_reboot_driver);
+
+MODULE_DESCRIPTION("ZTE SoCs reset driver");
+MODULE_AUTHOR("Jun Nie <jun.nie@linaro.org>");
+MODULE_LICENSE("GPL v2");

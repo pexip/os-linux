@@ -2,6 +2,7 @@
 kernel-arch: arm64
 featuresets:
  none
+ rt
 
 [build]
 debug-info: true
@@ -10,6 +11,7 @@ vdso: true
 
 [image]
 install-stem: vmlinuz
+breaks: libmozjs185-1.0, libmozjs-24-0 (<< 24.2.0-5.1~)
 
 [arm64_description]
 hardware: 64-bit ARMv8 machines

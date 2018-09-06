@@ -303,11 +303,10 @@ static int show_journal(struct seq_file *m, void *unused)
 	struct reiserfs_sb_info *r = REISERFS_SB(sb);
 	struct reiserfs_super_block *rs = r->s_rs;
 	struct journal_params *jp = &rs->s_v1.s_journal;
-	char b[BDEVNAME_SIZE];
 
 	seq_printf(m,		/* on-disk fields */
 		   "jp_journal_1st_block: \t%i\n"
-		   "jp_journal_dev: \t%s[%x]\n"
+		   "jp_journal_dev: \t%pg[%x]\n"
 		   "jp_journal_size: \t%i\n"
 		   "jp_journal_trans_max: \t%i\n"
 		   "jp_journal_magic: \t%i\n"
@@ -348,7 +347,7 @@ static int show_journal(struct seq_file *m, void *unused)
 		   "prepare: \t%12lu\n"
 		   "prepare_retry: \t%12lu\n",
 		   DJP(jp_journal_1st_block),
-		   bdevname(SB_JOURNAL(sb)->j_dev_bd, b),
+		   SB_JOURNAL(sb)->j_dev_bd,
 		   DJP(jp_journal_dev),
 		   DJP(jp_journal_size),
 		   DJP(jp_journal_trans_max),
@@ -390,27 +389,13 @@ static int show_journal(struct seq_file *m, void *unused)
 	return 0;
 }
 
-static int r_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, PDE_DATA(inode), 
-				proc_get_parent_data(inode));
-}
-
-static const struct file_operations r_file_operations = {
-	.open = r_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = single_release,
-};
-
 static struct proc_dir_entry *proc_info_root = NULL;
 static const char proc_info_root_name[] = "fs/reiserfs";
 
 static void add_file(struct super_block *sb, char *name,
 		     int (*func) (struct seq_file *, void *))
 {
-	proc_create_data(name, 0, REISERFS_SB(sb)->procdir,
-			 &r_file_operations, func);
+	proc_create_single_data(name, 0, REISERFS_SB(sb)->procdir, func, sb);
 }
 
 int reiserfs_proc_info_init(struct super_block *sb)

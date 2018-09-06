@@ -46,26 +46,36 @@ struct msm_kms_funcs {
 	/* functions to wait for atomic commit completed on each CRTC */
 	void (*wait_for_crtc_commit_done)(struct msm_kms *kms,
 					struct drm_crtc *crtc);
+	/* get msm_format w/ optional format modifiers from drm_mode_fb_cmd2 */
+	const struct msm_format *(*get_format)(struct msm_kms *kms,
+					const uint32_t format,
+					const uint64_t modifiers);
 	/* misc: */
-	const struct msm_format *(*get_format)(struct msm_kms *kms, uint32_t format);
 	long (*round_pixclk)(struct msm_kms *kms, unsigned long rate,
 			struct drm_encoder *encoder);
 	int (*set_split_display)(struct msm_kms *kms,
 			struct drm_encoder *encoder,
 			struct drm_encoder *slave_encoder,
 			bool is_cmd_mode);
+	void (*set_encoder_mode)(struct msm_kms *kms,
+				 struct drm_encoder *encoder,
+				 bool cmd_mode);
 	/* cleanup: */
-	void (*preclose)(struct msm_kms *kms, struct drm_file *file);
 	void (*destroy)(struct msm_kms *kms);
+#ifdef CONFIG_DEBUG_FS
+	/* debugfs: */
+	int (*debugfs_init)(struct msm_kms *kms, struct drm_minor *minor);
+#endif
 };
 
 struct msm_kms {
 	const struct msm_kms_funcs *funcs;
 
-	/* irq handling: */
-	bool in_irq;
-	struct list_head irq_list;    /* list of mdp4_irq */
-	uint32_t vblank_mask;         /* irq bits set for userspace vblank */
+	/* irq number to be passed on to drm_irq_install */
+	int irq;
+
+	/* mapper-id used to request GEM buffer mapped for scanout: */
+	struct msm_gem_address_space *aspace;
 };
 
 static inline void msm_kms_init(struct msm_kms *kms,
@@ -76,5 +86,9 @@ static inline void msm_kms_init(struct msm_kms *kms,
 
 struct msm_kms *mdp4_kms_init(struct drm_device *dev);
 struct msm_kms *mdp5_kms_init(struct drm_device *dev);
+int msm_mdss_init(struct drm_device *dev);
+void msm_mdss_destroy(struct drm_device *dev);
+int msm_mdss_enable(struct msm_mdss *mdss);
+int msm_mdss_disable(struct msm_mdss *mdss);
 
 #endif /* __MSM_KMS_H__ */

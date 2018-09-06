@@ -427,7 +427,7 @@ static int da9063_ldo_set_suspend_mode(struct regulator_dev *rdev, unsigned mode
 	return regmap_field_write(regl->suspend_sleep, val);
 }
 
-static struct regulator_ops da9063_buck_ops = {
+static const struct regulator_ops da9063_buck_ops = {
 	.enable			= regulator_enable_regmap,
 	.disable		= regulator_disable_regmap,
 	.is_enabled		= regulator_is_enabled_regmap,
@@ -445,7 +445,7 @@ static struct regulator_ops da9063_buck_ops = {
 	.set_suspend_mode	= da9063_buck_set_suspend_mode,
 };
 
-static struct regulator_ops da9063_ldo_ops = {
+static const struct regulator_ops da9063_ldo_ops = {
 	.enable			= regulator_enable_regmap,
 	.disable		= regulator_disable_regmap,
 	.is_enabled		= regulator_is_enabled_regmap,
@@ -681,8 +681,8 @@ static struct da9063_regulators_pdata *da9063_parse_regulators_dt(
 	if (!pdata)
 		return ERR_PTR(-ENOMEM);
 
-	pdata->regulator_data = devm_kzalloc(&pdev->dev,
-					num * sizeof(*pdata->regulator_data),
+	pdata->regulator_data = devm_kcalloc(&pdev->dev,
+					num, sizeof(*pdata->regulator_data),
 					GFP_KERNEL);
 	if (!pdata->regulator_data)
 		return ERR_PTR(-ENOMEM);
@@ -736,7 +736,7 @@ static int da9063_regulator_probe(struct platform_device *pdev)
 	if (IS_ERR(regl_pdata) || regl_pdata->n_regulators == 0) {
 		dev_err(&pdev->dev,
 			"No regulators defined for the platform\n");
-		return PTR_ERR(regl_pdata);
+		return -ENODEV;
 	}
 
 	/* Find regulators set for particular device model */
@@ -900,4 +900,4 @@ module_exit(da9063_regulator_cleanup);
 MODULE_AUTHOR("Krystian Garbaciak <krystian.garbaciak@diasemi.com>");
 MODULE_DESCRIPTION("DA9063 regulators driver");
 MODULE_LICENSE("GPL");
-MODULE_ALIAS("paltform:" DA9063_DRVNAME_REGULATORS);
+MODULE_ALIAS("platform:" DA9063_DRVNAME_REGULATORS);

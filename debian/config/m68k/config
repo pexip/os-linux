@@ -90,6 +90,12 @@ CONFIG_SYSV68_PARTITION=y
 # CONFIG_ACCESSIBILITY is not set
 
 ##
+## file: drivers/ata/Kconfig
+##
+CONFIG_PATA_FALCON=m
+CONFIG_PATA_GAYLE=m
+
+##
 ## file: drivers/bcma/Kconfig
 ##
 # CONFIG_BCMA is not set
@@ -103,7 +109,6 @@ CONFIG_ATARI_FLOPPY=m
 CONFIG_BLK_DEV_SWIM=m
 CONFIG_AMIGA_Z2RAM=y
 CONFIG_CDROM_PKTCDVD=m
-# CONFIG_BLK_DEV_HD is not set
 # CONFIG_BLK_DEV_RBD is not set
 
 ##
@@ -304,8 +309,8 @@ CONFIG_SERIO_LIBPS2=y
 ##
 CONFIG_ADB=y
 CONFIG_ADB_MACII=y
-# CONFIG_ADB_MACIISI is not set
-CONFIG_ADB_IOP=y # switched on for the benefit of IIfx, Q900, Q950
+#. switched on for the benefit of IIfx, Q900, Q950
+CONFIG_ADB_IOP=y
 CONFIG_ADB_PMU68K=y
 CONFIG_ADB_CUDA=y
 CONFIG_INPUT_ADBHID=y
@@ -371,8 +376,9 @@ CONFIG_DEV_APPLETALK=m
 ##
 ## file: drivers/net/ethernet/8390/Kconfig
 ##
+CONFIG_XSURF100=m
 CONFIG_HYDRA=m
-CONFIG_MAC8390=y
+CONFIG_MAC8390=m
 CONFIG_NE2000=m
 CONFIG_APNE=m
 CONFIG_ZORRO8390=m
@@ -451,7 +457,7 @@ CONFIG_PARPORT_ATARI=m
 # CONFIG_PNP is not set
 
 ##
-## file: drivers/power/Kconfig
+## file: drivers/power/supply/Kconfig
 ##
 # CONFIG_POWER_SUPPLY is not set
 
@@ -482,7 +488,7 @@ CONFIG_RTC_DRV_GENERIC=y
 ##
 ## file: drivers/scsi/Kconfig
 ##
-#. for MAC_SCSI and MVME147_SCSI that are not tristate
+#. for MVME147_SCSI that is not tristate
 CONFIG_SCSI=y
 CONFIG_SCSI_SPI_ATTRS=m
 # CONFIG_SCSI_FC_ATTRS is not set
@@ -494,8 +500,9 @@ CONFIG_A2091_SCSI=m
 CONFIG_GVP11_SCSI=m
 CONFIG_SCSI_A4000T=m
 CONFIG_SCSI_ZORRO7XX=m
+CONFIG_SCSI_ZORRO_ESP=m
 CONFIG_ATARI_SCSI=m
-CONFIG_MAC_SCSI=y
+CONFIG_MAC_SCSI=m
 CONFIG_SCSI_MAC_ESP=m
 CONFIG_MVME147_SCSI=y
 CONFIG_MVME16x_SCSI=m
@@ -551,24 +558,13 @@ CONFIG_SERIAL_8250_RUNTIME_UARTS=4
 # CONFIG_USB_SUPPORT is not set
 
 ##
-## file: drivers/vhost/Kconfig
-##
-# CONFIG_VHOST_NET is not set
-
-##
 ## file: drivers/video/backlight/Kconfig
 ##
 # CONFIG_BACKLIGHT_LCD_SUPPORT is not set
 
 ##
-## file: drivers/video/console/Kconfig
-##
-CONFIG_FRAMEBUFFER_CONSOLE=y
-
-##
 ## file: drivers/video/fbdev/Kconfig
 ##
-CONFIG_FB=y
 # CONFIG_FIRMWARE_EDID is not set
 CONFIG_FB_FOREIGN_ENDIAN=y
 ## choice: Choice endianness support
@@ -681,11 +677,6 @@ CONFIG_BINFMT_MISC=m
 # CONFIG_JFS_FS is not set
 
 ##
-## file: fs/logfs/Kconfig
-##
-# CONFIG_LOGFS is not set
-
-##
 ## file: fs/ntfs/Kconfig
 ##
 # CONFIG_NTFS_FS is not set
@@ -723,7 +714,9 @@ CONFIG_USELIB=y
 # CONFIG_IKCONFIG is not set
 CONFIG_LOG_BUF_SHIFT=16
 # CONFIG_SCHED_AUTOGROUP is not set
+## choice: Compiler optimization level
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+## end choice
 CONFIG_SGETMASK_SYSCALL=y
 CONFIG_SYSFS_SYSCALL=y
 CONFIG_COMPAT_BRK=y
@@ -746,7 +739,6 @@ CONFIG_HZ_PERIODIC=y
 # CONFIG_DEBUG_FS is not set
 # CONFIG_FRAME_POINTER is not set
 # CONFIG_SCHED_DEBUG is not set
-# CONFIG_TIMER_STATS is not set
 
 ##
 ## file: mm/Kconfig
@@ -805,16 +797,6 @@ CONFIG_HZ_PERIODIC=y
 ## file: net/ipv6/Kconfig
 ##
 CONFIG_IPV6=m
-
-##
-## file: net/ipx/Kconfig
-##
-CONFIG_IPX=m
-
-##
-## file: net/irda/Kconfig
-##
-# CONFIG_IRDA is not set
 
 ##
 ## file: net/lapb/Kconfig

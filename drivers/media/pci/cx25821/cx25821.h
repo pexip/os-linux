@@ -15,10 +15,6 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *
  *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #ifndef CX25821_H_
@@ -44,8 +40,6 @@
 
 #include <linux/version.h>
 #include <linux/mutex.h>
-
-#define CX25821_VERSION_CODE KERNEL_VERSION(0, 0, 106)
 
 #define UNSET (-1U)
 #define NO_SYNC_LINE (-1U)
@@ -249,7 +243,6 @@ struct cx25821_dev {
 	int hwrevision;
 	/* used by cx25821-alsa */
 	struct snd_card *card;
-	void *alloc_ctx;
 
 	u32 clk_freq;
 
@@ -294,7 +287,6 @@ struct cx25821_dev {
 	u32 audio_upstream_riscbuf_size;
 	u32 audio_upstream_databuf_size;
 	int _audioframe_index;
-	struct workqueue_struct *_irq_audio_queues;
 	struct work_struct _audio_work_entry;
 	char *input_audiofilename;
 

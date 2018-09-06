@@ -1,7 +1,7 @@
 From: Grygorii Strashko <Grygorii.Strashko@linaro.org>
 Date: Tue, 21 Jul 2015 19:43:56 +0300
-Subject: wait.h: include atomic.h
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+Subject: pid.h: include atomic.h
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
 
 This patch fixes build error:
   CC      kernel/pid_namespace.o
@@ -27,10 +27,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/include/linux/pid.h
 +++ b/include/linux/pid.h
-@@ -2,6 +2,7 @@
+@@ -3,6 +3,7 @@
  #define _LINUX_PID_H
  
- #include <linux/rcupdate.h>
+ #include <linux/rculist.h>
 +#include <linux/atomic.h>
  
  enum pid_type

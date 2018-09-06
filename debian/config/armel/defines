@@ -1,26 +1,22 @@
 [base]
 flavours:
  marvell
- versatile
 kernel-arch: arm
 
 [build]
 image-file: arch/arm/boot/zImage
+# uncompressed-image is just for size checking
+uncompressed-image-file: arch/arm/boot/Image
 
 [image]
-suggests: fdutils
-configs:
- kernelarch-arm/config
- armel/config
 install-stem: vmlinuz
 
 [relations]
-headers%gcc-4.9: linux-compiler-gcc-4.9-arm
+headers%gcc-7: linux-compiler-gcc-7-arm
 
 [marvell_description]
 hardware: Marvell Kirkwood/Orion
-hardware-long: Marvell Kirkwood based systems (SheevaPlug, QNAP TS-119/TS-219, etc)
- and Orion 5181, 5182 and 5281 based systems (QNAP TS-109/TS-209, etc)
+hardware-long: Marvell Kirkwood and Orion based systems (https://wiki.debian.org/ArmEabiPort#Supported_hardware)
 
 [marvell_image]
 recommends: u-boot-tools
@@ -30,10 +26,10 @@ recommends: u-boot-tools
 # D-Link DNS-323: 1572864 - 8 - 64 = 1572792 (too small, no longer supported)
 # HP Media Vault mv2120: 2097152 - 8 - 64 = 2097080
 # QNAP TS-109/TS-209 & TS-409: 2097152 - 8 - 64 = 2097080
+# Buffalo Linkstation LS-WSXL/WXL/WVL (from stock kernel): 2729776 - 64 = 2729712
 check-size: 2097080
 check-size-with-dtb: true
+## Maximum uncompressed kernel size for supported devices
+# Buffalo Linkstation LS-WSXL/WXL/WVL: 7340032
+check-uncompressed-size: 7340032
 breaks: flash-kernel (<< 3.57~)
-
-[versatile_description]
-hardware: Versatile
-hardware-long: Versatile systems (PB, AB, Qemu)

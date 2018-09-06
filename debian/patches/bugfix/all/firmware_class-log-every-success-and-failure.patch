@@ -21,48 +21,46 @@ This does not cover the case where we fall back to a user-mode helper
 NOTE: hw-detect will depend on the "firmware: failed to load %s (%d)\n"
 format to detect missing firmware.
 ---
---- a/drivers/base/firmware_class.c
-+++ b/drivers/base/firmware_class.c
-@@ -340,16 +340,19 @@ static int fw_get_filesystem_firmware(st
- 		rc = fw_read_file_contents(file, buf);
- 		fput(file);
- 		if (rc)
--			dev_warn(device, "firmware, attempted to load %s, but failed with error %d\n",
-+			dev_dbg(device, "firmware, attempted to load %s, but failed with error %d\n",
- 				path, rc);
- 		else
- 			break;
+--- a/drivers/base/firmware_loader/main.c
++++ b/drivers/base/firmware_loader/main.c
+@@ -322,21 +322,22 @@ fw_get_filesystem_firmware(struct device
+ 		rc = kernel_read_file_from_path(path, &fw_priv->data, &size,
+ 						msize, id);
+ 		if (rc) {
+-			if (rc == -ENOENT)
+-				dev_dbg(device, "loading %s failed with error %d\n",
+-					 path, rc);
+-			else
+-				dev_warn(device, "loading %s failed with error %d\n",
+-					 path, rc);
++			dev_dbg(device, "loading %s failed with error %d\n",
++				path, rc);
+ 			continue;
+ 		}
+-		dev_dbg(device, "direct-loading %s\n", fw_priv->fw_name);
++		dev_info(device, "firmware: direct-loading firmware %s\n",
++			 fw_priv->fw_name);
+ 		fw_priv->size = size;
+ 		fw_state_done(fw_priv);
+ 		break;
  	}
  	__putname(path);
  
--	if (!rc) {
--		dev_dbg(device, "firmware: direct-loading firmware %s\n",
--			buf->fw_id);
-+	if (rc) {
++	if (rc)
 +		dev_err(device, "firmware: failed to load %s (%d)\n",
-+			buf->fw_id, rc);
-+	} else {
-+		dev_info(device, "firmware: direct-loading firmware %s\n",
-+			 buf->fw_id);
- 		mutex_lock(&fw_lock);
- 		set_bit(FW_STATUS_DONE, &buf->status);
- 		complete_all(&buf->completion);
-@@ -1026,7 +1029,8 @@ _request_firmware_prepare(struct firmwar
- 	}
++			fw_priv->fw_name, rc);
++
+ 	return rc;
+ }
  
- 	if (fw_get_builtin_firmware(firmware, name)) {
--		dev_dbg(device, "firmware: using built-in firmware %s\n", name);
-+		dev_info(device, "firmware: using built-in firmware %s\n",
-+			 name);
- 		return 0; /* assigned */
- 	}
- 
-@@ -1109,7 +1113,7 @@ _request_firmware(const struct firmware
+--- a/drivers/base/firmware_loader/fallback.c
++++ b/drivers/base/firmware_loader/fallback.c
+@@ -609,7 +609,7 @@ static int fw_load_from_user_helper(stru
  	if (opt_flags & FW_OPT_NOWAIT) {
  		timeout = usermodehelper_read_lock_wait(timeout);
  		if (!timeout) {
 -			dev_dbg(device, "firmware: %s loading timed out\n",
 +			dev_err(device, "firmware: %s loading timed out\n",
  				name);
- 			ret = -EBUSY;
- 			goto out;
+ 			return -EBUSY;
+ 		}

@@ -174,8 +174,12 @@ static void cs_automute(struct hda_codec *codec)
 	snd_hda_gen_update_outputs(codec);
 
 	if (spec->gpio_eapd_hp || spec->gpio_eapd_speaker) {
-		spec->gpio_data = spec->gen.hp_jack_present ?
-			spec->gpio_eapd_hp : spec->gpio_eapd_speaker;
+		if (spec->gen.automute_speaker)
+			spec->gpio_data = spec->gen.hp_jack_present ?
+				spec->gpio_eapd_hp : spec->gpio_eapd_speaker;
+		else
+			spec->gpio_data =
+				spec->gpio_eapd_hp | spec->gpio_eapd_speaker;
 		snd_hda_codec_write(codec, 0x01, 0,
 				    AC_VERB_SET_GPIO_DATA, spec->gpio_data);
 	}
@@ -357,6 +361,7 @@ static int cs_parse_auto_config(struct hda_codec *codec)
 {
 	struct cs_spec *spec = codec->spec;
 	int err;
+	int i;
 
 	err = snd_hda_parse_pin_defcfg(codec, &spec->gen.autocfg, NULL, 0);
 	if (err < 0)
@@ -365,6 +370,19 @@ static int cs_parse_auto_config(struct hda_codec *codec)
 	err = snd_hda_gen_parse_auto_config(codec, &spec->gen.autocfg);
 	if (err < 0)
 		return err;
+
+	/* keep the ADCs powered up when it's dynamically switchable */
+	if (spec->gen.dyn_adc_switch) {
+		unsigned int done = 0;
+		for (i = 0; i < spec->gen.input_mux.num_items; i++) {
+			int idx = spec->gen.dyn_adc_idx[i];
+			if (done & (1 << idx))
+				continue;
+			snd_hda_gen_fix_pin_power(codec,
+						  spec->gen.adc_nids[idx]);
+			done |= 1 << idx;
+		}
+	}
 
 	return 0;
 }
@@ -390,6 +408,7 @@ static const struct snd_pci_quirk cs420x_fixup_tbl[] = {
 	/*SND_PCI_QUIRK(0x8086, 0x7270, "IMac 27 Inch", CS420X_IMAC27),*/
 
 	/* codec SSID */
+	SND_PCI_QUIRK(0x106b, 0x0600, "iMac 14,1", CS420X_IMAC27_122),
 	SND_PCI_QUIRK(0x106b, 0x1c00, "MacBookPro 8,1", CS420X_MBP81),
 	SND_PCI_QUIRK(0x106b, 0x2000, "iMac 12,2", CS420X_IMAC27_122),
 	SND_PCI_QUIRK(0x106b, 0x2800, "MacBookPro 10,1", CS420X_MBP101),

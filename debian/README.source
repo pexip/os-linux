@@ -1,8 +1,8 @@
 Updating the upstream source
 ============================
 
-In addition to the build-dependencies, you will need the rsync and
-unifdef packages installed.
+In addition to the build-dependencies, you will need the rsync package
+installed.
 
 1) It is recommended to fetch the release tag from the relevant upstream git
    repository, one of:
@@ -43,9 +43,8 @@ unifdef packages installed.
    This will produce ../orig/linux_<version>.orig.tar.xz
    (e.g. linux_3.5~rc1.orig.tar.xz).
 
-   It involves applying several patches and file deletions for DFSG
-   compliance, as listed in debian/patches/series-orig.  Occasionally
-   you will need to refresh these.
+   It involves deleting files for DFSG compliance, as listed in the
+   Files-Excluded field in debian/copyright.
 
 3) Run: make -f debian/rules orig
 
@@ -68,20 +67,16 @@ Aside from those general rules:
 * For an upstream release candidate, don't attempt to list the changes
 
 * For a stable release by Linus, refer to the summary at
-  kernelnewbies.org, e.g. http://kernelnewbies.org/Linux_4.5
+  kernelnewbies.org, e.g. https://kernelnewbies.org/Linux_4.5
 
 * For a stable update, refer to the changelog on kernel.org, e.g.
   https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.5.1, and
   list all changes that are relevant to our package and that fix bugs
   that we would consider 'important' or higher severity
 
-  - The script debian/bin/stable-update.sh updates the changelog
-    version and inserts the list of changes (but it doesn't always
-    put it in the right place!).  It doesn't attempt to filter out
-    irrelevant or unimportant changes.
-
-  - The script debian/bin/ckt-stable-update.sh does the same for
-    stable updates by the Canonical Kernel Team.
+  - The script debian/bin/stable-update updates the changelog
+    version and inserts the list of changes.  It doesn't attempt to
+    filter out irrelevant or unimportant changes.
 
   - If you have time, please delete irrelevant changes such as:
     + Fixes for architectures not supported by the package
@@ -132,8 +127,38 @@ architectures amd64, i386 and x32.
 
 Kernel config files
 ===================
-Configuration files are constructed dynamically from a number of config
-files, as listed in debian/config/<arch>/defines.
+
+Each kernel configuration file is constructed dynamically from a
+number of files under debian/config.  They are read in the following
+order, such that files later on the list can override settings from
+earlier files.  Most of the files are optional and the filenames can
+generally be overridden by explicit lists (possibly empty) specified
+in the 'defines' files.
+
+1. Common:
+   - Default filename: config
+   - Filename list: [image]configs in defines
+2. Per kernel architecture:
+   - Filename: kernelarch-<karch>/config (optional)
+3. Per architecture:
+   - Default filename: <arch>/config
+   - Filename list: [image]configs in <arch>/defines
+4. Per architecture and flavour:
+   - Default filename: <arch>/config.<flavour> (optional)
+   - Filename list: [<flavour>_image]configs in <arch>/defines
+5. Per featureset:
+   - Default filename: featureset-<fset>/config (optional)
+   - Filename list: [image]configs in featureset-<fset>/defines
+6. Per architecture and featureset:
+   - Default filename: <arch>/<fset>/config (optional)
+   - Filename list: [image]configs in <arch>/<fset>/defines
+7. Per architecture, featureset, and flavour:
+   - Default filename: <arch>/<fset>/config.<flavour> (optional)
+   - Filename list: [<flavour>_image]configs in <arch>/<fset>/defines
+
+You can check the final list of configuration files by reading
+debian/rules.gen.  Each binary-arch_<arch>_<fset>_<flavour>_real
+rule passes the list to debian/rules.real as the KCONFIG variable.
 
 Control file
 ============
@@ -192,3 +217,19 @@ Example invocation:
         ../linux_4.2~rc6-1~exp2.dsc \
 	--timeout-test=1200 \
         --- adt-virt-qemu /var/cache/autopkgtest/adt-sid.img -o /var/tmp -c 2
+
+Build profiles
+==============
+
+Several build profiles are understood and supported:
+
+- stage1: Needed when bootstrapping an architecture.  A stage1 build
+  produces only the linux-libc-dev package and has no host
+  build-dependencies.
+- nodoc: Exclude most documentation
+- pkg.linux.notools: Exclude userland tool packages (linux-kbuild-<version>,
+  linux-perf-<version>, etc.)
+- cross: Needed when cross-building.  Currently this must be used together
+  with nopython as the build-dependencies will be unsatisfiable otherwise.
+- nopython: Disable Python bindings.  This currently disables building the
+  linux-perf-<version> package, as the perf program embeds Python.

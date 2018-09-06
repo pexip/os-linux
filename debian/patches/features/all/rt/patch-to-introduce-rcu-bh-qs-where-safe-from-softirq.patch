@@ -1,7 +1,7 @@
 Subject: rcu: Make ksoftirqd do RCU quiescent states
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Wed, 5 Oct 2011 11:45:18 -0700
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
 
 Implementing RCU-bh in terms of RCU-preempt makes the system vulnerable
 to network-based denial-of-service attacks.  This patch therefore
@@ -24,29 +24,14 @@ Link: http://lkml.kernel.org/r/20111005184518.GA21601@linux.vnet.ibm.com
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 ---
- include/linux/rcupdate.h |    4 ----
- kernel/rcu/tree.c        |    9 ++++++++-
+ kernel/rcu/tree.c        |   14 +++++++++++++-
  kernel/rcu/tree_plugin.h |    8 +++++++-
- 3 files changed, 15 insertions(+), 6 deletions(-)
+ 2 files changed, 20 insertions(+), 2 deletions(-)
 
---- a/include/linux/rcupdate.h
-+++ b/include/linux/rcupdate.h
-@@ -334,11 +334,7 @@ static inline int rcu_preempt_depth(void
- void rcu_init(void);
- void rcu_end_inkernel_boot(void);
- void rcu_sched_qs(void);
--#ifdef CONFIG_PREEMPT_RT_FULL
--static inline void rcu_bh_qs(void) { }
--#else
- void rcu_bh_qs(void);
--#endif
- void rcu_check_callbacks(int user);
- struct notifier_block;
- int rcu_cpu_notify(struct notifier_block *self,
 --- a/kernel/rcu/tree.c
 +++ b/kernel/rcu/tree.c
-@@ -266,7 +266,14 @@ void rcu_sched_qs(void)
- 	}
+@@ -243,7 +243,19 @@ void rcu_sched_qs(void)
+ 			   this_cpu_ptr(&rcu_sched_data), true);
  }
  
 -#ifndef CONFIG_PREEMPT_RT_FULL
@@ -55,23 +40,28 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +
 +void rcu_bh_qs(void)
 +{
++	unsigned long flags;
++
++	/* Callers to this function, rcu_preempt_qs(), must disable irqs. */
++	local_irq_save(flags);
 +	rcu_preempt_qs();
++	local_irq_restore(flags);
 +}
 +#else
  void rcu_bh_qs(void)
  {
- 	if (__this_cpu_read(rcu_bh_data.cpu_no_qs.s)) {
+ 	RCU_LOCKDEP_WARN(preemptible(), "rcu_bh_qs() invoked with preemption enabled!!!");
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
-@@ -28,6 +28,7 @@
- #include <linux/gfp.h>
+@@ -29,6 +29,7 @@
  #include <linux/oom.h>
+ #include <linux/sched/debug.h>
  #include <linux/smpboot.h>
 +#include <linux/jiffies.h>
+ #include <linux/sched/isolation.h>
+ #include <uapi/linux/sched/types.h>
  #include "../time/tick-internal.h"
- 
- #ifdef CONFIG_RCU_BOOST
-@@ -1346,7 +1347,7 @@ static void rcu_prepare_kthreads(int cpu
+@@ -1336,7 +1337,7 @@ static void rcu_prepare_kthreads(int cpu
  
  #endif /* #else #ifdef CONFIG_RCU_BOOST */
  
@@ -80,9 +70,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  /*
   * Check to see if any future RCU-related work will need to be done
-@@ -1363,7 +1364,9 @@ int rcu_needs_cpu(u64 basemono, u64 *nex
- 	return IS_ENABLED(CONFIG_RCU_NOCB_CPU_ALL)
- 	       ? 0 : rcu_cpu_has_callbacks(NULL);
+@@ -1352,7 +1353,9 @@ int rcu_needs_cpu(u64 basemono, u64 *nex
+ 	*nextevt = KTIME_MAX;
+ 	return rcu_cpu_has_callbacks(NULL);
  }
 +#endif /* !defined(CONFIG_RCU_FAST_NO_HZ) || defined(CONFIG_PREEMPT_RT_FULL) */
  
@@ -90,7 +80,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
   * Because we do not have RCU_FAST_NO_HZ, don't bother cleaning up
   * after it.
-@@ -1459,6 +1462,8 @@ static bool __maybe_unused rcu_try_advan
+@@ -1448,6 +1451,8 @@ static bool __maybe_unused rcu_try_advan
  	return cbs_ready;
  }
  
@@ -99,7 +89,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
   * Allow the CPU to enter dyntick-idle mode unless it has callbacks ready
   * to invoke.  If the CPU has callbacks, try to advance them.  Tell the
-@@ -1504,6 +1509,7 @@ int rcu_needs_cpu(u64 basemono, u64 *nex
+@@ -1490,6 +1495,7 @@ int rcu_needs_cpu(u64 basemono, u64 *nex
  	*nextevt = basemono + dj * TICK_NSEC;
  	return 0;
  }

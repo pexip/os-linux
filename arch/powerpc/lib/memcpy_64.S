@@ -8,6 +8,7 @@
  */
 #include <asm/processor.h>
 #include <asm/ppc_asm.h>
+#include <asm/export.h>
 
 	.align	7
 _GLOBAL_TOC(memcpy)
@@ -18,8 +19,10 @@ BEGIN_FTR_SECTION
 	std	r3,-STACKFRAMESIZE+STK_REG(R31)(r1)	/* save destination pointer for return value */
 #endif
 FTR_SECTION_ELSE
+#ifdef CONFIG_PPC_BOOK3S_64
 #ifndef SELFTEST
 	b	memcpy_power7
+#endif
 #endif
 ALT_FTR_SECTION_END_IFCLR(CPU_FTR_VMX_COPY)
 #ifdef __LITTLE_ENDIAN__
@@ -219,3 +222,4 @@ END_FTR_SECTION_IFCLR(CPU_FTR_UNALIGNED_LD_STD)
 4:	ld	r3,-STACKFRAMESIZE+STK_REG(R31)(r1)	/* return dest pointer */
 	blr
 #endif
+EXPORT_SYMBOL(memcpy)

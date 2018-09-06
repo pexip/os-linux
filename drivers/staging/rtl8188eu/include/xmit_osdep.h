@@ -11,26 +11,12 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef __XMIT_OSDEP_H_
 #define __XMIT_OSDEP_H_
 
 #include <osdep_service.h>
 #include <drv_types.h>
-
-struct pkt_file {
-	struct sk_buff *pkt;
-	size_t pkt_len;	 /* the remainder length of the open_file */
-	unsigned char *cur_buffer;
-	u8 *buf_start;
-	u8 *cur_addr;
-	size_t buf_len;
-};
 
 #define NR_XMITFRAME	256
 
@@ -46,13 +32,7 @@ void rtw_os_xmit_schedule(struct adapter *padapter);
 
 int rtw_os_xmit_resource_alloc(struct adapter *padapter,
 			       struct xmit_buf *pxmitbuf, u32 alloc_sz);
-void rtw_os_xmit_resource_free(struct adapter *padapter,
-			       struct xmit_buf *pxmitbuf, u32 free_sz);
-
-uint rtw_remainder_len(struct pkt_file *pfile);
-void _rtw_open_pktfile(struct sk_buff *pkt, struct pkt_file *pfile);
-uint _rtw_pktfile_read(struct pkt_file *pfile, u8 *rmem, uint rlen);
-int rtw_endofpktfile(struct pkt_file *pfile);
+void rtw_os_xmit_resource_free(struct xmit_buf *pxmitbuf);
 
 void rtw_os_pkt_complete(struct adapter *padapter, struct sk_buff *pkt);
 void rtw_os_xmit_complete(struct adapter *padapter,

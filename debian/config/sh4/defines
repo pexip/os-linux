@@ -8,7 +8,6 @@ kernel-arch: sh
 image-file: arch/sh/boot/zImage
 
 [image]
-suggests: fdutils
 install-stem: vmlinuz
 
 [sh7751r_description]

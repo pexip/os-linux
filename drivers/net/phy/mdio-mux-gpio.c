@@ -54,8 +54,8 @@ static int mdio_mux_gpio_probe(struct platform_device *pdev)
 	if (IS_ERR(s->gpios))
 		return PTR_ERR(s->gpios);
 
-	r = mdio_mux_init(&pdev->dev,
-			  mdio_mux_gpio_switch_fn, &s->mux_handle, s);
+	r = mdio_mux_init(&pdev->dev, pdev->dev.of_node,
+			  mdio_mux_gpio_switch_fn, &s->mux_handle, s, NULL);
 
 	if (r != 0) {
 		gpiod_put_array(s->gpios);

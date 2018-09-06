@@ -44,6 +44,7 @@
 #include "netlabel_mgmt.h"
 #include "netlabel_unlabeled.h"
 #include "netlabel_cipso_v4.h"
+#include "netlabel_calipso.h"
 #include "netlabel_user.h"
 
 /*
@@ -68,6 +69,10 @@ int __init netlbl_netlink_init(void)
 		return ret_val;
 
 	ret_val = netlbl_cipsov4_genl_init();
+	if (ret_val != 0)
+		return ret_val;
+
+	ret_val = netlbl_calipso_genl_init();
 	if (ret_val != 0)
 		return ret_val;
 
@@ -99,7 +104,7 @@ struct audit_buffer *netlbl_audit_start_common(int type,
 	if (audit_enabled == 0)
 		return NULL;
 
-	audit_buf = audit_log_start(current->audit_context, GFP_ATOMIC, type);
+	audit_buf = audit_log_start(audit_context(), GFP_ATOMIC, type);
 	if (audit_buf == NULL)
 		return NULL;
 

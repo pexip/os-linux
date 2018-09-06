@@ -17,6 +17,7 @@
 #include <linux/slab.h>
 #include <linux/timer.h>
 #include <linux/sched.h>
+#include <linux/sched/loadavg.h>
 #include <linux/leds.h>
 #include <linux/reboot.h>
 #include "../leds.h"
@@ -24,23 +25,30 @@
 static int panic_heartbeats;
 
 struct heartbeat_trig_data {
+	struct led_classdev *led_cdev;
 	unsigned int phase;
 	unsigned int period;
 	struct timer_list timer;
 	unsigned int invert;
 };
 
-static void led_heartbeat_function(unsigned long data)
+static void led_heartbeat_function(struct timer_list *t)
 {
-	struct led_classdev *led_cdev = (struct led_classdev *) data;
-	struct heartbeat_trig_data *heartbeat_data = led_cdev->trigger_data;
+	struct heartbeat_trig_data *heartbeat_data =
+		from_timer(heartbeat_data, t, timer);
+	struct led_classdev *led_cdev;
 	unsigned long brightness = LED_OFF;
 	unsigned long delay = 0;
 
+	led_cdev = heartbeat_data->led_cdev;
+
 	if (unlikely(panic_heartbeats)) {
-		led_set_brightness(led_cdev, LED_OFF);
+		led_set_brightness_nosleep(led_cdev, LED_OFF);
 		return;
 	}
+
+	if (test_and_clear_bit(LED_BLINK_BRIGHTNESS_CHANGE, &led_cdev->work_flags))
+		led_cdev->blink_brightness = led_cdev->new_blink_brightness;
 
 	/* acts like an actual heart beat -- ie thump-thump-pause... */
 	switch (heartbeat_data->phase) {
@@ -58,30 +66,30 @@ static void led_heartbeat_function(unsigned long data)
 		delay = msecs_to_jiffies(70);
 		heartbeat_data->phase++;
 		if (!heartbeat_data->invert)
-			brightness = led_cdev->max_brightness;
+			brightness = led_cdev->blink_brightness;
 		break;
 	case 1:
 		delay = heartbeat_data->period / 4 - msecs_to_jiffies(70);
 		heartbeat_data->phase++;
 		if (heartbeat_data->invert)
-			brightness = led_cdev->max_brightness;
+			brightness = led_cdev->blink_brightness;
 		break;
 	case 2:
 		delay = msecs_to_jiffies(70);
 		heartbeat_data->phase++;
 		if (!heartbeat_data->invert)
-			brightness = led_cdev->max_brightness;
+			brightness = led_cdev->blink_brightness;
 		break;
 	default:
 		delay = heartbeat_data->period - heartbeat_data->period / 4 -
 			msecs_to_jiffies(70);
 		heartbeat_data->phase = 0;
 		if (heartbeat_data->invert)
-			brightness = led_cdev->max_brightness;
+			brightness = led_cdev->blink_brightness;
 		break;
 	}
 
-	led_set_brightness_async(led_cdev, brightness);
+	led_set_brightness_nosleep(led_cdev, brightness);
 	mod_timer(&heartbeat_data->timer, jiffies + delay);
 }
 
@@ -123,16 +131,19 @@ static void heartbeat_trig_activate(struct led_classdev *led_cdev)
 		return;
 
 	led_cdev->trigger_data = heartbeat_data;
+	heartbeat_data->led_cdev = led_cdev;
 	rc = device_create_file(led_cdev->dev, &dev_attr_invert);
 	if (rc) {
 		kfree(led_cdev->trigger_data);
 		return;
 	}
 
-	setup_timer(&heartbeat_data->timer,
-		    led_heartbeat_function, (unsigned long) led_cdev);
+	timer_setup(&heartbeat_data->timer, led_heartbeat_function, 0);
 	heartbeat_data->phase = 0;
-	led_heartbeat_function(heartbeat_data->timer.data);
+	if (!led_cdev->blink_brightness)
+		led_cdev->blink_brightness = led_cdev->max_brightness;
+	led_heartbeat_function(&heartbeat_data->timer);
+	set_bit(LED_BLINK_SW, &led_cdev->work_flags);
 	led_cdev->activated = true;
 }
 
@@ -144,6 +155,7 @@ static void heartbeat_trig_deactivate(struct led_classdev *led_cdev)
 		del_timer_sync(&heartbeat_data->timer);
 		device_remove_file(led_cdev->dev, &dev_attr_invert);
 		kfree(heartbeat_data);
+		clear_bit(LED_BLINK_SW, &led_cdev->work_flags);
 		led_cdev->activated = false;
 	}
 }
