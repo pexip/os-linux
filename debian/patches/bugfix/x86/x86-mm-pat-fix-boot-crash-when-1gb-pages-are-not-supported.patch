@@ -55,6 +55,6 @@ Index: linux/arch/x86/mm/pageattr.c
  	 */
 -	while (end - start >= PUD_SIZE) {
 +	while (cpu_has_gbpages && end - start >= PUD_SIZE) {
- 		set_pud(pud, pud_mkhuge(pfn_pud(cpa->pfn,
+ 		set_pud(pud, pud_mkhuge(pfn_pud(cpa->pfn >> PAGE_SHIFT,
  				   canon_pgprot(pud_pgprot))));
  
