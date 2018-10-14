@@ -10,9 +10,12 @@ PHYs.
 Required properties:
 - compatible        : compatible string, one of:
   - "allwinner,sun4i-a10-ahci"
+  - "brcm,iproc-ahci"
   - "hisilicon,hisi-ahci"
+  - "cavium,octeon-7130-ahci"
   - "ibm,476gtr-ahci"
   - "marvell,armada-380-ahci"
+  - "marvell,armada-3700-ahci"
   - "snps,dwc-ahci"
   - "snps,exynos5440-ahci"
   - "snps,spear-ahci"
@@ -53,7 +56,7 @@ Examples:
 		interrupts = <115>;
         };
 
-	ahci: sata@01c18000 {
+	ahci: sata@1c18000 {
 		compatible = "allwinner,sun4i-a10-ahci";
 		reg = <0x01c18000 0x1000>;
 		interrupts = <56>;

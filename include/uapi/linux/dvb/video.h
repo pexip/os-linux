@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LGPL-2.1+ WITH Linux-syscall-note */
 /*
  * video.h
  *
@@ -26,7 +27,6 @@
 
 #include <linux/types.h>
 #ifndef __KERNEL__
-#include <stdint.h>
 #include <time.h>
 #endif
 
@@ -83,11 +83,11 @@ typedef enum {
 #define VIDEO_CMD_CONTINUE    (3)
 
 /* Flags for VIDEO_CMD_FREEZE */
-#define VIDEO_CMD_FREEZE_TO_BLACK     	(1 << 0)
+#define VIDEO_CMD_FREEZE_TO_BLACK	(1 << 0)
 
 /* Flags for VIDEO_CMD_STOP */
-#define VIDEO_CMD_STOP_TO_BLACK      	(1 << 0)
-#define VIDEO_CMD_STOP_IMMEDIATELY     	(1 << 1)
+#define VIDEO_CMD_STOP_TO_BLACK		(1 << 0)
+#define VIDEO_CMD_STOP_IMMEDIATELY	(1 << 1)
 
 /* Play input formats: */
 /* The decoder has no special format requirements */
@@ -124,8 +124,8 @@ struct video_command {
 /* FIELD_UNKNOWN can be used if the hardware does not know whether
    the Vsync is for an odd, even or progressive (i.e. non-interlaced)
    field. */
-#define VIDEO_VSYNC_FIELD_UNKNOWN  	(0)
-#define VIDEO_VSYNC_FIELD_ODD 		(1)
+#define VIDEO_VSYNC_FIELD_UNKNOWN	(0)
+#define VIDEO_VSYNC_FIELD_ODD		(1)
 #define VIDEO_VSYNC_FIELD_EVEN		(2)
 #define VIDEO_VSYNC_FIELD_PROGRESSIVE	(3)
 
@@ -133,9 +133,10 @@ struct video_event {
 	__s32 type;
 #define VIDEO_EVENT_SIZE_CHANGED	1
 #define VIDEO_EVENT_FRAME_RATE_CHANGED	2
-#define VIDEO_EVENT_DECODER_STOPPED 	3
-#define VIDEO_EVENT_VSYNC 		4
-	__kernel_time_t timestamp;
+#define VIDEO_EVENT_DECODER_STOPPED	3
+#define VIDEO_EVENT_VSYNC		4
+	/* unused, make sure to use atomic time for y2038 if it ever gets used */
+	long timestamp;
 	union {
 		video_size_t size;
 		unsigned int frame_rate;	/* in frames per 1000sec */
@@ -207,7 +208,8 @@ typedef __u16 video_attributes_t;
 /*    6    line 21-2 data present in GOP (1=yes, 0=no) */
 /*    5- 3 source resolution (0=720x480/576, 1=704x480/576, 2=352x480/57 */
 /*    2    source letterboxed (1=yes, 0=no) */
-/*    0    film/camera mode (0=camera, 1=film (625/50 only)) */
+/*    0    film/camera mode (0=
+ *camera, 1=film (625/50 only)) */
 
 
 /* bit definitions for capabilities: */
@@ -266,9 +268,9 @@ typedef __u16 video_attributes_t;
 #define VIDEO_GET_PTS              _IOR('o', 57, __u64)
 
 /* Read the number of displayed frames since the decoder was started */
-#define VIDEO_GET_FRAME_COUNT  	   _IOR('o', 58, __u64)
+#define VIDEO_GET_FRAME_COUNT	   _IOR('o', 58, __u64)
 
-#define VIDEO_COMMAND     	   _IOWR('o', 59, struct video_command)
-#define VIDEO_TRY_COMMAND 	   _IOWR('o', 60, struct video_command)
+#define VIDEO_COMMAND		   _IOWR('o', 59, struct video_command)
+#define VIDEO_TRY_COMMAND	   _IOWR('o', 60, struct video_command)
 
 #endif /* _UAPI_DVBVIDEO_H_ */

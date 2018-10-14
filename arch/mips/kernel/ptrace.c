@@ -19,6 +19,7 @@
 #include <linux/elf.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
+#include <linux/sched/task_stack.h>
 #include <linux/mm.h>
 #include <linux/errno.h>
 #include <linux/ptrace.h>
@@ -41,7 +42,7 @@
 #include <asm/pgtable.h>
 #include <asm/page.h>
 #include <asm/syscall.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/bootinfo.h>
 #include <asm/reg.h>
 
@@ -79,16 +80,15 @@ void ptrace_disable(struct task_struct *child)
 }
 
 /*
- * Poke at FCSR according to its mask.  Don't set the cause bits as
- * this is currently not handled correctly in FP context restoration
- * and will cause an oops if a corresponding enable bit is set.
+ * Poke at FCSR according to its mask.  Set the Cause bits even
+ * if a corresponding Enable bit is set.  This will be noticed at
+ * the time the thread is switched to and SIGFPE thrown accordingly.
  */
 static void ptrace_setfcr31(struct task_struct *child, u32 value)
 {
 	u32 fcr31;
 	u32 mask;
 
-	value &= ~FPU_CSR_ALL_X;
 	fcr31 = child->thread.fpu.fcr31;
 	mask = boot_cpu_data.fpu_msk31;
 	child->thread.fpu.fcr31 = (value & ~mask) | (fcr31 & mask);
@@ -143,6 +143,9 @@ int ptrace_setregs(struct task_struct *child, struct user_pt_regs __user *data)
 	__get_user(regs->cp0_epc, (__s64 __user *)&data->cp0_epc);
 
 	/* badvaddr, status, and cause may not be written.  */
+
+	/* System call number may have been changed */
+	mips_syscall_update_nr(child, regs);
 
 	return 0;
 }
@@ -221,7 +224,8 @@ int ptrace_get_watch_regs(struct task_struct *child,
 	for (i = 0; i < boot_cpu_data.watch_reg_use_cnt; i++) {
 		__put_user(child->thread.watch.mips3264.watchlo[i],
 			   &addr->WATCH_STYLE.watchlo[i]);
-		__put_user(child->thread.watch.mips3264.watchhi[i] & 0xfff,
+		__put_user(child->thread.watch.mips3264.watchhi[i] &
+				(MIPS_WATCHHI_MASK | MIPS_WATCHHI_IRW),
 			   &addr->WATCH_STYLE.watchhi[i]);
 		__put_user(boot_cpu_data.watch_reg_masks[i],
 			   &addr->WATCH_STYLE.watch_masks[i]);
@@ -263,12 +267,12 @@ int ptrace_set_watch_regs(struct task_struct *child,
 		}
 #endif
 		__get_user(ht[i], &addr->WATCH_STYLE.watchhi[i]);
-		if (ht[i] & ~0xff8)
+		if (ht[i] & ~MIPS_WATCHHI_MASK)
 			return -EINVAL;
 	}
 	/* Install them. */
 	for (i = 0; i < boot_cpu_data.watch_reg_use_cnt; i++) {
-		if (lt[i] & 7)
+		if (lt[i] & MIPS_WATCHLO_IRW)
 			watch_active = 1;
 		child->thread.watch.mips3264.watchlo[i] = lt[i];
 		/* Set the G bit. */
@@ -294,23 +298,8 @@ static int gpr32_get(struct task_struct *target,
 {
 	struct pt_regs *regs = task_pt_regs(target);
 	u32 uregs[ELF_NGREG] = {};
-	unsigned i;
 
-	for (i = MIPS32_EF_R1; i <= MIPS32_EF_R31; i++) {
-		/* k0/k1 are copied as zero. */
-		if (i == MIPS32_EF_R26 || i == MIPS32_EF_R27)
-			continue;
-
-		uregs[i] = regs->regs[i - MIPS32_EF_R0];
-	}
-
-	uregs[MIPS32_EF_LO] = regs->lo;
-	uregs[MIPS32_EF_HI] = regs->hi;
-	uregs[MIPS32_EF_CP0_EPC] = regs->cp0_epc;
-	uregs[MIPS32_EF_CP0_BADVADDR] = regs->cp0_badvaddr;
-	uregs[MIPS32_EF_CP0_STATUS] = regs->cp0_status;
-	uregs[MIPS32_EF_CP0_CAUSE] = regs->cp0_cause;
-
+	mips_dump_regs32(uregs, regs);
 	return user_regset_copyout(&pos, &count, &kbuf, &ubuf, uregs, 0,
 				   sizeof(uregs));
 }
@@ -359,6 +348,9 @@ static int gpr32_set(struct task_struct *target,
 		}
 	}
 
+	/* System call number may have been changed */
+	mips_syscall_update_nr(target, regs);
+
 	return 0;
 }
 
@@ -373,23 +365,8 @@ static int gpr64_get(struct task_struct *target,
 {
 	struct pt_regs *regs = task_pt_regs(target);
 	u64 uregs[ELF_NGREG] = {};
-	unsigned i;
 
-	for (i = MIPS64_EF_R1; i <= MIPS64_EF_R31; i++) {
-		/* k0/k1 are copied as zero. */
-		if (i == MIPS64_EF_R26 || i == MIPS64_EF_R27)
-			continue;
-
-		uregs[i] = regs->regs[i - MIPS64_EF_R0];
-	}
-
-	uregs[MIPS64_EF_LO] = regs->lo;
-	uregs[MIPS64_EF_HI] = regs->hi;
-	uregs[MIPS64_EF_CP0_EPC] = regs->cp0_epc;
-	uregs[MIPS64_EF_CP0_BADVADDR] = regs->cp0_badvaddr;
-	uregs[MIPS64_EF_CP0_STATUS] = regs->cp0_status;
-	uregs[MIPS64_EF_CP0_CAUSE] = regs->cp0_cause;
-
+	mips_dump_regs64(uregs, regs);
 	return user_regset_copyout(&pos, &count, &kbuf, &ubuf, uregs, 0,
 				   sizeof(uregs));
 }
@@ -433,6 +410,9 @@ static int gpr64_set(struct task_struct *target,
 			break;
 		}
 	}
+
+	/* System call number may have been changed */
+	mips_syscall_update_nr(target, regs);
 
 	return 0;
 }
@@ -671,9 +651,6 @@ static const struct pt_regs_offset regoffset_table[] = {
 	REG_OFFSET_NAME(c0_badvaddr, cp0_badvaddr),
 	REG_OFFSET_NAME(c0_cause, cp0_cause),
 	REG_OFFSET_NAME(c0_epc, cp0_epc),
-#ifdef CONFIG_MIPS_MT_SMTC
-	REG_OFFSET_NAME(c0_tcstatus, cp0_tcstatus),
-#endif
 #ifdef CONFIG_CPU_CAVIUM_OCTEON
 	REG_OFFSET_NAME(mpl0, mpl[0]),
 	REG_OFFSET_NAME(mpl1, mpl[1]),
@@ -834,7 +811,7 @@ long arch_ptrace(struct task_struct *child, long request,
 				/*
 				 * The odd registers are actually the high
 				 * order bits of the values stored in the even
-				 * registers - unless we're using r2k_switch.S.
+				 * registers.
 				 */
 				tmp = get_fpr32(&fregs[(addr & ~1) - FPR_BASE],
 						addr & 1);
@@ -913,6 +890,12 @@ long arch_ptrace(struct task_struct *child, long request,
 		switch (addr) {
 		case 0 ... 31:
 			regs->regs[addr] = data;
+			/* System call number may have been changed */
+			if (addr == 2)
+				mips_syscall_update_nr(child, regs);
+			else if (addr == 4 &&
+				 mips_syscall_is_indirect(child, regs))
+				mips_syscall_update_nr(child, regs);
 			break;
 		case FPR_BASE ... FPR_BASE + 31: {
 			union fpureg *fregs = get_fpu_regs(child);
@@ -923,7 +906,7 @@ long arch_ptrace(struct task_struct *child, long request,
 				/*
 				 * The odd registers are actually the high
 				 * order bits of the values stored in the even
-				 * registers - unless we're using r2k_switch.S.
+				 * registers.
 				 */
 				set_fpr32(&fregs[(addr & ~1) - FPR_BASE],
 					  addr & 1, data);
@@ -948,6 +931,7 @@ long arch_ptrace(struct task_struct *child, long request,
 			break;
 #endif
 		case FPC_CSR:
+			init_fp_ctx(child);
 			ptrace_setfcr31(child, data);
 			break;
 		case DSP_BASE ... DSP_BASE + 5: {
@@ -1019,23 +1003,48 @@ long arch_ptrace(struct task_struct *child, long request,
  */
 asmlinkage long syscall_trace_enter(struct pt_regs *regs, long syscall)
 {
-	long ret = 0;
 	user_exit();
 
 	current_thread_info()->syscall = syscall;
 
-	if (secure_computing() == -1)
-		return -1;
+	if (test_thread_flag(TIF_SYSCALL_TRACE)) {
+		if (tracehook_report_syscall_entry(regs))
+			return -1;
+		syscall = current_thread_info()->syscall;
+	}
 
-	if (test_thread_flag(TIF_SYSCALL_TRACE) &&
-	    tracehook_report_syscall_entry(regs))
-		ret = -1;
+#ifdef CONFIG_SECCOMP
+	if (unlikely(test_thread_flag(TIF_SECCOMP))) {
+		int ret, i;
+		struct seccomp_data sd;
+		unsigned long args[6];
+
+		sd.nr = syscall;
+		sd.arch = syscall_get_arch();
+		syscall_get_arguments(current, regs, 0, 6, args);
+		for (i = 0; i < 6; i++)
+			sd.args[i] = args[i];
+		sd.instruction_pointer = KSTK_EIP(current);
+
+		ret = __secure_computing(&sd);
+		if (ret == -1)
+			return ret;
+		syscall = current_thread_info()->syscall;
+	}
+#endif
 
 	if (unlikely(test_thread_flag(TIF_SYSCALL_TRACEPOINT)))
 		trace_sys_enter(regs, regs->regs[2]);
 
 	audit_syscall_entry(syscall, regs->regs[4], regs->regs[5],
 			    regs->regs[6], regs->regs[7]);
+
+	/*
+	 * Negative syscall numbers are mistaken for rejected syscalls, but
+	 * won't have had the return value set appropriately, so we do so now.
+	 */
+	if (syscall < 0)
+		syscall_set_return_value(current, regs, -ENOSYS, 0);
 	return syscall;
 }
 

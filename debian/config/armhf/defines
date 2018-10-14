@@ -1,7 +1,7 @@
 [base]
-flavours:
- armmp
- armmp-lpae
+featuresets:
+ none
+ rt
 kernel-arch: arm
 
 [build]
@@ -9,13 +9,10 @@ image-file: arch/arm/boot/zImage
 vdso: true
 
 [image]
-suggests: fdutils
-configs:
- kernelarch-arm/config
 install-stem: vmlinuz
 
 [relations]
-headers%gcc-4.9: linux-compiler-gcc-4.9-arm
+headers%gcc-7: linux-compiler-gcc-7-arm
 
 [armmp_description]
 hardware: ARMv7 multiplatform compatible SoCs
@@ -28,9 +25,3 @@ hardware: ARMv7 multiplatform compatible SoCs supporting LPAE
 hardware-long: ARMv7 multiplatform kernel supporting LPAE. See
   https://wiki.debian.org/DebianKernel/ARMMP for details of supported
   platforms.
-
-[armmp-lpae_image]
-configs:
- armhf/config.armmp
- armhf/config.lpae
-

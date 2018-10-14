@@ -2,10 +2,8 @@
 ## file: arch/Kconfig
 ##
 # CONFIG_KPROBES is not set
-## choice: Stack Protector buffer overflow detection
-CONFIG_CC_STACKPROTECTOR_REGULAR=y
-# CONFIG_CC_STACKPROTECTOR_STRONG is not set
-## end choice
+# CONFIG_STACKPROTECTOR_STRONG is not set
+# CONFIG_STRICT_KERNEL_RWX is not set
 
 ##
 ## file: arch/arm/Kconfig
@@ -63,7 +61,6 @@ CONFIG_MACH_KUROBOX_PRO=y
 CONFIG_MACH_TS209=y
 CONFIG_MACH_TERASTATION_PRO2=y
 CONFIG_MACH_LINKSTATION_PRO=y
-CONFIG_MACH_LINKSTATION_LSCHL=y
 CONFIG_MACH_LINKSTATION_MINI=y
 CONFIG_MACH_LINKSTATION_LS_HGL=y
 CONFIG_MACH_TS409=y
@@ -87,9 +84,15 @@ CONFIG_ARM_THUMB=y
 # CONFIG_CPU_DCACHE_WRITETHROUGH is not set
 
 ##
+## file: block/Kconfig
+##
+# CONFIG_BLK_SED_OPAL is not set
+
+##
 ## file: block/Kconfig.iosched
 ##
 CONFIG_IOSCHED_DEADLINE=m
+CONFIG_MQ_IOSCHED_DEADLINE=m
 
 ##
 ## file: block/partitions/Kconfig
@@ -119,6 +122,9 @@ CONFIG_SUN_PARTITION=y
 ## file: crypto/Kconfig
 ##
 # CONFIG_CRYPTO_FIPS is not set
+#. Saves about 95K
+CONFIG_CRYPTO_MANAGER_DISABLE_TESTS=y
+CONFIG_CRYPTO_SHA256=m
 
 ##
 ## file: drivers/ata/Kconfig
@@ -180,6 +186,11 @@ CONFIG_SATA_MV=m
 # CONFIG_ATA_GENERIC is not set
 
 ##
+## file: drivers/base/firmware_loader/Kconfig
+##
+CONFIG_FW_LOADER=m
+
+##
 ## file: drivers/bluetooth/Kconfig
 ##
 # CONFIG_BT_HCIUART is not set
@@ -187,6 +198,11 @@ CONFIG_BT_HCIBCM203X=m
 CONFIG_BT_HCIBPA10X=m
 CONFIG_BT_HCIBFUSB=m
 CONFIG_BT_HCIVHCI=m
+
+##
+## file: drivers/connector/Kconfig
+##
+CONFIG_CONNECTOR=m
 
 ##
 ## file: drivers/cpuidle/Kconfig
@@ -201,7 +217,6 @@ CONFIG_ARM_KIRKWOOD_CPUIDLE=y
 ##
 ## file: drivers/crypto/Kconfig
 ##
-CONFIG_CRYPTO_DEV_MV_CESA=m
 CONFIG_CRYPTO_DEV_MARVELL_CESA=m
 
 ##
@@ -223,7 +238,9 @@ CONFIG_MV_XOR=y
 ##
 ## file: drivers/hwmon/Kconfig
 ##
+CONFIG_HWMON=m
 CONFIG_SENSORS_G760A=m
+CONFIG_SENSORS_G762=m
 CONFIG_SENSORS_GPIO_FAN=m
 CONFIG_SENSORS_LM75=m
 
@@ -237,6 +254,11 @@ CONFIG_I2C_CHARDEV=y
 ## file: drivers/i2c/busses/Kconfig
 ##
 CONFIG_I2C_MV64XXX=y
+
+##
+## file: drivers/input/Kconfig
+##
+CONFIG_INPUT_MOUSEDEV=m
 
 ##
 ## file: drivers/input/gameport/Kconfig
@@ -306,7 +328,6 @@ CONFIG_ISDN_DIVAS_MAINT=m
 ##
 ## file: drivers/leds/Kconfig
 ##
-CONFIG_LEDS_GPIO=y
 CONFIG_LEDS_NS2=m
 CONFIG_LEDS_NETXBIG=m
 
@@ -317,12 +338,17 @@ CONFIG_LEDS_TRIGGER_TIMER=y
 CONFIG_LEDS_TRIGGER_DEFAULT_ON=y
 
 ##
+## file: drivers/md/Kconfig
+##
+# CONFIG_DM_INTEGRITY is not set
+
+##
 ## file: drivers/mmc/Kconfig
 ##
 CONFIG_MMC=m
 
 ##
-## file: drivers/mmc/card/Kconfig
+## file: drivers/mmc/core/Kconfig
 ##
 CONFIG_MMC_BLOCK=m
 
@@ -334,12 +360,12 @@ CONFIG_MMC_MVSDIO=m
 ##
 ## file: drivers/mtd/Kconfig
 ##
-CONFIG_MTD=y
+CONFIG_MTD=m
 # CONFIG_MTD_REDBOOT_PARTS is not set
-CONFIG_MTD_CMDLINE_PARTS=y
+CONFIG_MTD_CMDLINE_PARTS=m
 # CONFIG_MTD_AFS_PARTS is not set
-CONFIG_MTD_OF_PARTS=y
-CONFIG_MTD_BLOCK=y
+CONFIG_MTD_OF_PARTS=m
+CONFIG_MTD_BLOCK=m
 CONFIG_FTL=m
 CONFIG_NFTL=m
 # CONFIG_NFTL_RW is not set
@@ -351,8 +377,8 @@ CONFIG_NFTL=m
 ##
 ## file: drivers/mtd/chips/Kconfig
 ##
-CONFIG_MTD_CFI=y
-CONFIG_MTD_JEDECPROBE=y
+CONFIG_MTD_CFI=m
+CONFIG_MTD_JEDECPROBE=m
 CONFIG_MTD_CFI_ADV_OPTIONS=y
 ## choice: Flash cmd/query data swapping
 CONFIG_MTD_CFI_NOSWAP=y
@@ -372,8 +398,8 @@ CONFIG_MTD_CFI_I4=y
 # CONFIG_MTD_CFI_I8 is not set
 # CONFIG_MTD_OTP is not set
 #. Needed e.g. on QNAP devices
-CONFIG_MTD_CFI_INTELEXT=y
-#. Needed e.g. on the D-Link DNS-323
+CONFIG_MTD_CFI_INTELEXT=m
+#. Needed e.g. on D-Link DNS-323, Buffalo KuroBox-Pro, Buffalo Linkstation LS-GL / LS-WTGL, etc
 CONFIG_MTD_CFI_AMDSTD=m
 CONFIG_MTD_CFI_STAA=m
 # CONFIG_MTD_RAM is not set
@@ -393,23 +419,23 @@ CONFIG_MTD_CFI_STAA=m
 ## file: drivers/mtd/maps/Kconfig
 ##
 # CONFIG_MTD_COMPLEX_MAPPINGS is not set
-CONFIG_MTD_PHYSMAP_OF=y
+CONFIG_MTD_PHYSMAP_OF=m
 # CONFIG_MTD_IMPA7 is not set
 # CONFIG_MTD_INTEL_VR_NOR is not set
 # CONFIG_MTD_PLATRAM is not set
 
 ##
-## file: drivers/mtd/nand/Kconfig
-##
-CONFIG_MTD_NAND=y
-# CONFIG_MTD_NAND_DISKONCHIP is not set
-# CONFIG_MTD_NAND_CAFE is not set
-CONFIG_MTD_NAND_ORION=y
-
-##
-## file: drivers/mtd/onenand/Kconfig
+## file: drivers/mtd/nand/onenand/Kconfig
 ##
 # CONFIG_MTD_ONENAND is not set
+
+##
+## file: drivers/mtd/nand/raw/Kconfig
+##
+CONFIG_MTD_NAND=m
+# CONFIG_MTD_NAND_DISKONCHIP is not set
+# CONFIG_MTD_NAND_CAFE is not set
+CONFIG_MTD_NAND_ORION=m
 
 ##
 ## file: drivers/mtd/spi-nor/Kconfig
@@ -485,15 +511,23 @@ CONFIG_MVMDIO=m
 # CONFIG_VIA_VELOCITY is not set
 
 ##
-## file: drivers/net/wireless/mwifiex/Kconfig
+## file: drivers/net/wireless/marvell/mwifiex/Kconfig
 ##
 CONFIG_MWIFIEX=m
 CONFIG_MWIFIEX_SDIO=m
 
 ##
-## file: drivers/pci/host/Kconfig
+## file: drivers/pci/controller/Kconfig
 ##
 CONFIG_PCI_MVEBU=y
+
+##
+## file: drivers/pci/pcie/Kconfig
+##
+# CONFIG_PCIEAER is not set
+# CONFIG_PCIEASPM is not set
+# CONFIG_PCIE_DPC is not set
+# CONFIG_PCIE_PTM is not set
 
 ##
 ## file: drivers/pcmcia/Kconfig
@@ -517,12 +551,13 @@ CONFIG_REGULATOR_FIXED_VOLTAGE=y
 ##
 ## file: drivers/rtc/Kconfig
 ##
-CONFIG_RTC_DRV_DS1307=y
-CONFIG_RTC_DRV_RS5C372=y
-CONFIG_RTC_DRV_PCF8563=y
-CONFIG_RTC_DRV_M41T80=y
-CONFIG_RTC_DRV_S35390A=y
-CONFIG_RTC_DRV_MV=y
+# CONFIG_RTC_NVMEM is not set
+CONFIG_RTC_DRV_DS1307=m
+CONFIG_RTC_DRV_RS5C372=m
+CONFIG_RTC_DRV_PCF8563=m
+CONFIG_RTC_DRV_M41T80=m
+CONFIG_RTC_DRV_S35390A=m
+CONFIG_RTC_DRV_MV=m
 
 ##
 ## file: drivers/scsi/Kconfig
@@ -534,7 +569,6 @@ CONFIG_RTC_DRV_MV=y
 # CONFIG_SCSI_ARCMSR is not set
 # CONFIG_SCSI_HPTIOP is not set
 # CONFIG_SCSI_DMX3191D is not set
-# CONFIG_SCSI_FUTURE_DOMAIN is not set
 # CONFIG_SCSI_IPS is not set
 # CONFIG_SCSI_INITIO is not set
 # CONFIG_SCSI_INIA100 is not set
@@ -586,7 +620,7 @@ CONFIG_RTC_DRV_MV=y
 ##
 ## file: drivers/spi/Kconfig
 ##
-CONFIG_SPI_ORION=y
+CONFIG_SPI_ORION=m
 
 ##
 ## file: drivers/ssb/Kconfig
@@ -601,22 +635,26 @@ CONFIG_FB_XGI=m
 ##
 ## file: drivers/thermal/Kconfig
 ##
+CONFIG_THERMAL=m
 CONFIG_KIRKWOOD_THERMAL=m
 
 ##
-## file: drivers/tty/serial/Kconfig
+## file: drivers/tty/Kconfig
 ##
-CONFIG_SERIAL_OF_PLATFORM=y
+# CONFIG_VT is not set
 
 ##
 ## file: drivers/tty/serial/8250/Kconfig
 ##
 CONFIG_SERIAL_8250=y
 CONFIG_SERIAL_8250_CONSOLE=y
+CONFIG_SERIAL_8250_PCI=m
+CONFIG_SERIAL_8250_EXAR=m
 CONFIG_SERIAL_8250_NR_UARTS=4
 CONFIG_SERIAL_8250_RUNTIME_UARTS=2
 # CONFIG_SERIAL_8250_EXTENDED is not set
 # CONFIG_SERIAL_8250_DW is not set
+CONFIG_SERIAL_OF_PLATFORM=y
 
 ##
 ## file: drivers/usb/Kconfig
@@ -641,10 +679,22 @@ CONFIG_USB_UHCI_HCD=m
 CONFIG_USB_SL811_HCD=m
 
 ##
+## file: drivers/usb/misc/Kconfig
+##
+#. Selects BACKLIGHT_CLASS_DEVICE which is always built-in
+# CONFIG_USB_APPLEDISPLAY is not set
+
+##
+## file: drivers/video/backlight/Kconfig
+##
+# CONFIG_BACKLIGHT_CLASS_DEVICE is not set
+
+##
 ## file: drivers/video/console/Kconfig
 ##
 # CONFIG_VGA_CONSOLE is not set
-CONFIG_FRAMEBUFFER_CONSOLE=m
+#. We want to enable this as a module, but that's not currently possible
+# CONFIG_FRAMEBUFFER_CONSOLE is not set
 
 ##
 ## file: drivers/video/fbdev/Kconfig
@@ -668,14 +718,31 @@ CONFIG_ORION_WATCHDOG=m
 # CONFIG_FS_DAX is not set
 
 ##
+## file: fs/nls/Kconfig
+##
+CONFIG_NLS=m
+
+##
+## file: fs/notify/fanotify/Kconfig
+##
+# CONFIG_FANOTIFY_ACCESS_PERMISSIONS is not set
+
+##
 ## file: init/Kconfig
 ##
 #. Saves about 7K
 # CONFIG_MEMCG is not set
 # CONFIG_CFS_BANDWIDTH is not set
-# CONFIG_CHECKPOINT_RESTORE is not set
+# CONFIG_CGROUP_BPF is not set
+## choice: Compiler optimization level
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+## end choice
+# CONFIG_CHECKPOINT_RESTORE is not set
+# CONFIG_USERFAULTFD is not set
+# CONFIG_SLUB_DEBUG is not set
+# CONFIG_SLAB_FREELIST_HARDENED is not set
 # CONFIG_PROFILING is not set
+# CONFIG_MODULE_SIG is not set
 
 ##
 ## file: kernel/power/Kconfig
@@ -690,6 +757,12 @@ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 # CONFIG_FUNCTION_GRAPH_TRACER is not set
 # CONFIG_FTRACE_SYSCALLS is not set
 # CONFIG_STACK_TRACER is not set
+# CONFIG_UPROBE_EVENTS is not set
+
+##
+## file: lib/Kconfig.debug
+##
+# CONFIG_SCHEDSTATS is not set
 
 ##
 ## file: mm/Kconfig
@@ -702,6 +775,13 @@ CONFIG_FLATMEM_MANUAL=y
 #. Saves about 7K
 # CONFIG_COMPACTION is not set
 # CONFIG_KSM is not set
+# CONFIG_ZSWAP is not set
+
+##
+## file: mm/Kconfig.debug
+##
+# CONFIG_PAGE_EXTENSION is not set
+# CONFIG_PAGE_POISONING is not set
 
 ##
 ## file: net/Kconfig
@@ -728,6 +808,8 @@ CONFIG_ROSE=m
 ## file: net/ipv6/Kconfig
 ##
 CONFIG_IPV6=m
+#. Can be modular, but selects LWTUNNEL which cannot
+# CONFIG_IPV6_ILA is not set
 
 ##
 ## file: net/l3mdev/Kconfig
@@ -740,9 +822,14 @@ CONFIG_IPV6=m
 # CONFIG_NET_MPLS_GSO is not set
 
 ##
-## file: net/netlink/Kconfig
+## file: net/packet/Kconfig
 ##
-# CONFIG_NETLINK_MMAP is not set
+CONFIG_PACKET=m
+
+##
+## file: security/integrity/Kconfig
+##
+# CONFIG_INTEGRITY is not set
 
 ##
 ## file: sound/soc/Kconfig
@@ -769,6 +856,8 @@ CONFIG_SND_KIRKWOOD_SOC=m
 ##
 ## file: usr/Kconfig
 ##
+# CONFIG_RD_BZIP2 is not set
+# CONFIG_RD_LZMA is not set
 # CONFIG_RD_LZO is not set
 # CONFIG_RD_LZ4 is not set
 

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Normally compiler builtins are used, but sometimes the compiler calls out
  * of line code. Based on asm-i386/string.h.
@@ -8,6 +9,7 @@
 #include <linux/linkage.h>
 #include <asm/cpufeatures.h>
 #include <asm/alternative-asm.h>
+#include <asm/export.h>
 
 #undef memmove
 
@@ -207,3 +209,5 @@ ENTRY(__memmove)
 	retq
 ENDPROC(__memmove)
 ENDPROC(memmove)
+EXPORT_SYMBOL(__memmove)
+EXPORT_SYMBOL(memmove)

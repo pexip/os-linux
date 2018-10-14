@@ -45,31 +45,6 @@ struct vmw_bo_user_rep {
 	uint64_t map_handle;
 };
 
-struct vmw_stream {
-	struct vmw_resource res;
-	uint32_t stream_id;
-};
-
-struct vmw_user_stream {
-	struct ttm_base_object base;
-	struct vmw_stream stream;
-};
-
-
-static uint64_t vmw_user_stream_size;
-
-static const struct vmw_res_func vmw_stream_func = {
-	.res_type = vmw_res_stream,
-	.needs_backup = false,
-	.may_evict = false,
-	.type_name = "video streams",
-	.backup_placement = NULL,
-	.create = NULL,
-	.destroy = NULL,
-	.bind = NULL,
-	.unbind = NULL
-};
-
 static inline struct vmw_dma_buffer *
 vmw_dma_buffer(struct ttm_buffer_object *bo)
 {
@@ -129,7 +104,7 @@ static void vmw_resource_release(struct kref *kref)
 	if (res->backup) {
 		struct ttm_buffer_object *bo = &res->backup->base;
 
-		ttm_bo_reserve(bo, false, false, false, NULL);
+		ttm_bo_reserve(bo, false, false, NULL);
 		if (!list_empty(&res->mob_head) &&
 		    res->func->unbind != NULL) {
 			struct ttm_validate_buffer val_buf;
@@ -259,24 +234,6 @@ void vmw_resource_activate(struct vmw_resource *res,
 	write_unlock(&dev_priv->resource_lock);
 }
 
-static struct vmw_resource *vmw_resource_lookup(struct vmw_private *dev_priv,
-						struct idr *idr, int id)
-{
-	struct vmw_resource *res;
-
-	read_lock(&dev_priv->resource_lock);
-	res = idr_find(idr, id);
-	if (!res || !res->avail || !kref_get_unless_zero(&res->kref))
-		res = NULL;
-
-	read_unlock(&dev_priv->resource_lock);
-
-	if (unlikely(res == NULL))
-		return NULL;
-
-	return res;
-}
-
 /**
  * vmw_user_resource_lookup_handle - lookup a struct resource from a
  * TTM user-space handle and perform basic type checks
@@ -397,6 +354,7 @@ void vmw_dmabuf_bo_free(struct ttm_buffer_object *bo)
 {
 	struct vmw_dma_buffer *vmw_bo = vmw_dma_buffer(bo);
 
+	vmw_dma_buffer_unmap(vmw_bo);
 	kfree(vmw_bo);
 }
 
@@ -404,6 +362,7 @@ static void vmw_user_dmabuf_destroy(struct ttm_buffer_object *bo)
 {
 	struct vmw_user_dma_buffer *vmw_user_bo = vmw_user_dma_buffer(bo);
 
+	vmw_dma_buffer_unmap(&vmw_user_bo->dma);
 	ttm_prime_object_kfree(vmw_user_bo, prime);
 }
 
@@ -427,8 +386,8 @@ int vmw_dmabuf_init(struct vmw_private *dev_priv,
 
 	ret = ttm_bo_init(bdev, &vmw_bo->base, size,
 			  ttm_bo_type_device, placement,
-			  0, interruptible,
-			  NULL, acc_size, NULL, NULL, bo_free);
+			  0, interruptible, acc_size,
+			  NULL, NULL, bo_free);
 	return ret;
 }
 
@@ -489,7 +448,7 @@ int vmw_user_dmabuf_alloc(struct vmw_private *dev_priv,
 	int ret;
 
 	user_bo = kzalloc(sizeof(*user_bo), GFP_KERNEL);
-	if (unlikely(user_bo == NULL)) {
+	if (unlikely(!user_bo)) {
 		DRM_ERROR("Failed to allocate a buffer.\n");
 		return -ENOMEM;
 	}
@@ -574,10 +533,8 @@ static int vmw_user_dmabuf_synccpu_grab(struct vmw_user_dma_buffer *user_bo,
 		bool nonblock = !!(flags & drm_vmw_synccpu_dontblock);
 		long lret;
 
-		if (nonblock)
-			return reservation_object_test_signaled_rcu(bo->resv, true) ? 0 : -EBUSY;
-
-		lret = reservation_object_wait_timeout_rcu(bo->resv, true, true, MAX_SCHEDULE_TIMEOUT);
+		lret = reservation_object_wait_timeout_rcu(bo->resv, true, true,
+							   nonblock ? 0 : MAX_SCHEDULE_TIMEOUT);
 		if (!lret)
 			return -EBUSY;
 		else if (lret < 0)
@@ -738,14 +695,14 @@ int vmw_user_dmabuf_lookup(struct ttm_object_file *tfile,
 
 	base = ttm_base_object_lookup(tfile, handle);
 	if (unlikely(base == NULL)) {
-		printk(KERN_ERR "Invalid buffer object handle 0x%08lx.\n",
+		pr_err("Invalid buffer object handle 0x%08lx\n",
 		       (unsigned long)handle);
 		return -ESRCH;
 	}
 
 	if (unlikely(ttm_base_object_type(base) != ttm_buffer_type)) {
 		ttm_base_object_unref(&base);
-		printk(KERN_ERR "Invalid buffer object handle 0x%08lx.\n",
+		pr_err("Invalid buffer object handle 0x%08lx\n",
 		       (unsigned long)handle);
 		return -EINVAL;
 	}
@@ -777,217 +734,6 @@ int vmw_user_dmabuf_reference(struct ttm_object_file *tfile,
 	return ttm_ref_object_add(tfile, &user_bo->prime.base,
 				  TTM_REF_USAGE, NULL, false);
 }
-
-/*
- * Stream management
- */
-
-static void vmw_stream_destroy(struct vmw_resource *res)
-{
-	struct vmw_private *dev_priv = res->dev_priv;
-	struct vmw_stream *stream;
-	int ret;
-
-	DRM_INFO("%s: unref\n", __func__);
-	stream = container_of(res, struct vmw_stream, res);
-
-	ret = vmw_overlay_unref(dev_priv, stream->stream_id);
-	WARN_ON(ret != 0);
-}
-
-static int vmw_stream_init(struct vmw_private *dev_priv,
-			   struct vmw_stream *stream,
-			   void (*res_free) (struct vmw_resource *res))
-{
-	struct vmw_resource *res = &stream->res;
-	int ret;
-
-	ret = vmw_resource_init(dev_priv, res, false, res_free,
-				&vmw_stream_func);
-
-	if (unlikely(ret != 0)) {
-		if (res_free == NULL)
-			kfree(stream);
-		else
-			res_free(&stream->res);
-		return ret;
-	}
-
-	ret = vmw_overlay_claim(dev_priv, &stream->stream_id);
-	if (ret) {
-		vmw_resource_unreference(&res);
-		return ret;
-	}
-
-	DRM_INFO("%s: claimed\n", __func__);
-
-	vmw_resource_activate(&stream->res, vmw_stream_destroy);
-	return 0;
-}
-
-static void vmw_user_stream_free(struct vmw_resource *res)
-{
-	struct vmw_user_stream *stream =
-	    container_of(res, struct vmw_user_stream, stream.res);
-	struct vmw_private *dev_priv = res->dev_priv;
-
-	ttm_base_object_kfree(stream, base);
-	ttm_mem_global_free(vmw_mem_glob(dev_priv),
-			    vmw_user_stream_size);
-}
-
-/**
- * This function is called when user space has no more references on the
- * base object. It releases the base-object's reference on the resource object.
- */
-
-static void vmw_user_stream_base_release(struct ttm_base_object **p_base)
-{
-	struct ttm_base_object *base = *p_base;
-	struct vmw_user_stream *stream =
-	    container_of(base, struct vmw_user_stream, base);
-	struct vmw_resource *res = &stream->stream.res;
-
-	*p_base = NULL;
-	vmw_resource_unreference(&res);
-}
-
-int vmw_stream_unref_ioctl(struct drm_device *dev, void *data,
-			   struct drm_file *file_priv)
-{
-	struct vmw_private *dev_priv = vmw_priv(dev);
-	struct vmw_resource *res;
-	struct vmw_user_stream *stream;
-	struct drm_vmw_stream_arg *arg = (struct drm_vmw_stream_arg *)data;
-	struct ttm_object_file *tfile = vmw_fpriv(file_priv)->tfile;
-	struct idr *idr = &dev_priv->res_idr[vmw_res_stream];
-	int ret = 0;
-
-
-	res = vmw_resource_lookup(dev_priv, idr, arg->stream_id);
-	if (unlikely(res == NULL))
-		return -EINVAL;
-
-	if (res->res_free != &vmw_user_stream_free) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	stream = container_of(res, struct vmw_user_stream, stream.res);
-	if (stream->base.tfile != tfile) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	ttm_ref_object_base_unref(tfile, stream->base.hash.key, TTM_REF_USAGE);
-out:
-	vmw_resource_unreference(&res);
-	return ret;
-}
-
-int vmw_stream_claim_ioctl(struct drm_device *dev, void *data,
-			   struct drm_file *file_priv)
-{
-	struct vmw_private *dev_priv = vmw_priv(dev);
-	struct vmw_user_stream *stream;
-	struct vmw_resource *res;
-	struct vmw_resource *tmp;
-	struct drm_vmw_stream_arg *arg = (struct drm_vmw_stream_arg *)data;
-	struct ttm_object_file *tfile = vmw_fpriv(file_priv)->tfile;
-	int ret;
-
-	/*
-	 * Approximate idr memory usage with 128 bytes. It will be limited
-	 * by maximum number_of streams anyway?
-	 */
-
-	if (unlikely(vmw_user_stream_size == 0))
-		vmw_user_stream_size = ttm_round_pot(sizeof(*stream)) + 128;
-
-	ret = ttm_read_lock(&dev_priv->reservation_sem, true);
-	if (unlikely(ret != 0))
-		return ret;
-
-	ret = ttm_mem_global_alloc(vmw_mem_glob(dev_priv),
-				   vmw_user_stream_size,
-				   false, true);
-	ttm_read_unlock(&dev_priv->reservation_sem);
-	if (unlikely(ret != 0)) {
-		if (ret != -ERESTARTSYS)
-			DRM_ERROR("Out of graphics memory for stream"
-				  " creation.\n");
-
-		goto out_ret;
-	}
-
-	stream = kmalloc(sizeof(*stream), GFP_KERNEL);
-	if (unlikely(stream == NULL)) {
-		ttm_mem_global_free(vmw_mem_glob(dev_priv),
-				    vmw_user_stream_size);
-		ret = -ENOMEM;
-		goto out_ret;
-	}
-
-	res = &stream->stream.res;
-	stream->base.shareable = false;
-	stream->base.tfile = NULL;
-
-	/*
-	 * From here on, the destructor takes over resource freeing.
-	 */
-
-	ret = vmw_stream_init(dev_priv, &stream->stream, vmw_user_stream_free);
-	if (unlikely(ret != 0))
-		goto out_ret;
-
-	tmp = vmw_resource_reference(res);
-	ret = ttm_base_object_init(tfile, &stream->base, false, VMW_RES_STREAM,
-				   &vmw_user_stream_base_release, NULL);
-
-	if (unlikely(ret != 0)) {
-		vmw_resource_unreference(&tmp);
-		goto out_err;
-	}
-
-	arg->stream_id = res->id;
-out_err:
-	vmw_resource_unreference(&res);
-out_ret:
-	return ret;
-}
-
-int vmw_user_stream_lookup(struct vmw_private *dev_priv,
-			   struct ttm_object_file *tfile,
-			   uint32_t *inout_id, struct vmw_resource **out)
-{
-	struct vmw_user_stream *stream;
-	struct vmw_resource *res;
-	int ret;
-
-	res = vmw_resource_lookup(dev_priv, &dev_priv->res_idr[vmw_res_stream],
-				  *inout_id);
-	if (unlikely(res == NULL))
-		return -EINVAL;
-
-	if (res->res_free != &vmw_user_stream_free) {
-		ret = -EINVAL;
-		goto err_ref;
-	}
-
-	stream = container_of(res, struct vmw_user_stream, stream.res);
-	if (stream->base.tfile != tfile) {
-		ret = -EPERM;
-		goto err_ref;
-	}
-
-	*inout_id = stream->stream.stream_id;
-	*out = res;
-	return 0;
-err_ref:
-	vmw_resource_unreference(&res);
-	return ret;
-}
-
 
 /**
  * vmw_dumb_create - Create a dumb kms buffer
@@ -1092,7 +838,7 @@ static int vmw_resource_buf_alloc(struct vmw_resource *res,
 	}
 
 	backup = kzalloc(sizeof(*backup), GFP_KERNEL);
-	if (unlikely(backup == NULL))
+	if (unlikely(!backup))
 		return -ENOMEM;
 
 	ret = vmw_dmabuf_init(res->dev_priv, backup, res->backup_size,
@@ -1224,6 +970,7 @@ vmw_resource_check_buffer(struct vmw_resource *res,
 			  bool interruptible,
 			  struct ttm_validate_buffer *val_buf)
 {
+	struct ttm_operation_ctx ctx = { true, false };
 	struct list_head val_list;
 	bool backup_dirty = false;
 	int ret;
@@ -1248,7 +995,7 @@ vmw_resource_check_buffer(struct vmw_resource *res,
 	backup_dirty = res->backup_dirty;
 	ret = ttm_bo_validate(&res->backup->base,
 			      res->func->backup_placement,
-			      true, false);
+			      &ctx);
 
 	if (unlikely(ret != 0))
 		goto out_no_validate;
@@ -1456,7 +1203,7 @@ void vmw_fence_single_bo(struct ttm_buffer_object *bo,
 	if (fence == NULL) {
 		vmw_execbuf_fence_commands(NULL, dev_priv, &fence, NULL);
 		reservation_object_add_excl_fence(bo->resv, &fence->base);
-		fence_put(&fence->base);
+		dma_fence_put(&fence->base);
 	} else
 		reservation_object_add_excl_fence(bo->resv, &fence->base);
 }
@@ -1494,6 +1241,12 @@ void vmw_resource_move_notify(struct ttm_buffer_object *bo,
 
 	dma_buf = container_of(bo, struct vmw_dma_buffer, base);
 
+	/*
+	 * Kill any cached kernel maps before move. An optimization could
+	 * be to do this iff source or destination memory type is VRAM.
+	 */
+	vmw_dma_buffer_unmap(dma_buf);
+
 	if (mem->mem_type != VMW_PL_MOB) {
 		struct vmw_resource *res, *n;
 		struct ttm_validate_buffer val_buf;
@@ -1512,10 +1265,25 @@ void vmw_resource_move_notify(struct ttm_buffer_object *bo,
 			list_del_init(&res->mob_head);
 		}
 
-		(void) ttm_bo_wait(bo, false, false, false);
+		(void) ttm_bo_wait(bo, false, false);
 	}
 }
 
+
+/**
+ * vmw_resource_swap_notify - swapout notify callback.
+ *
+ * @bo: The buffer object to be swapped out.
+ */
+void vmw_resource_swap_notify(struct ttm_buffer_object *bo)
+{
+	if (bo->destroy != vmw_dmabuf_bo_free &&
+	    bo->destroy != vmw_user_dmabuf_destroy)
+		return;
+
+	/* Kill any cached kernel maps before swapout */
+	vmw_dma_buffer_unmap(vmw_dma_buffer(bo));
+}
 
 
 /**
@@ -1605,7 +1373,7 @@ void vmw_query_move_notify(struct ttm_buffer_object *bo,
 		if (fence != NULL)
 			vmw_fence_obj_unreference(&fence);
 
-		(void) ttm_bo_wait(bo, false, false, false);
+		(void) ttm_bo_wait(bo, false, false);
 	} else
 		mutex_unlock(&dev_priv->binding_mutex);
 
@@ -1702,6 +1470,7 @@ void vmw_resource_evict_all(struct vmw_private *dev_priv)
  */
 int vmw_resource_pin(struct vmw_resource *res, bool interruptible)
 {
+	struct ttm_operation_ctx ctx = { interruptible, false };
 	struct vmw_private *dev_priv = res->dev_priv;
 	int ret;
 
@@ -1717,13 +1486,12 @@ int vmw_resource_pin(struct vmw_resource *res, bool interruptible)
 		if (res->backup) {
 			vbo = res->backup;
 
-			ttm_bo_reserve(&vbo->base, interruptible, false, false,
-				       NULL);
+			ttm_bo_reserve(&vbo->base, interruptible, false, NULL);
 			if (!vbo->pin_count) {
 				ret = ttm_bo_validate
 					(&vbo->base,
 					 res->func->backup_placement,
-					 interruptible, false);
+					 &ctx);
 				if (ret) {
 					ttm_bo_unreserve(&vbo->base);
 					goto out_no_validate;
@@ -1763,7 +1531,7 @@ void vmw_resource_unpin(struct vmw_resource *res)
 	struct vmw_private *dev_priv = res->dev_priv;
 	int ret;
 
-	ttm_read_lock(&dev_priv->reservation_sem, false);
+	(void) ttm_read_lock(&dev_priv->reservation_sem, false);
 	mutex_lock(&dev_priv->cmdbuf_mutex);
 
 	ret = vmw_resource_reserve(res, false, true);
@@ -1773,7 +1541,7 @@ void vmw_resource_unpin(struct vmw_resource *res)
 	if (--res->pin_count == 0 && res->backup) {
 		struct vmw_dma_buffer *vbo = res->backup;
 
-		ttm_bo_reserve(&vbo->base, false, false, false, NULL);
+		(void) ttm_bo_reserve(&vbo->base, false, false, NULL);
 		vmw_bo_pin_reserved(vbo, false);
 		ttm_bo_unreserve(&vbo->base);
 	}

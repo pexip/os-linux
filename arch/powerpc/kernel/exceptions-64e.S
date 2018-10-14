@@ -139,7 +139,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_EMB_HV)
 	mfspr	r10,SPRN_ESR
 	SPECIAL_EXC_STORE(r10,ESR)
 
-	lbz	r10,PACASOFTIRQEN(r13)
+	lbz	r10,PACAIRQSOFTMASK(r13)
 	SPECIAL_EXC_STORE(r10,SOFTE)
 	ld	r10,_NIP(r1)
 	SPECIAL_EXC_STORE(r10,CSRR0)
@@ -206,17 +206,17 @@ BEGIN_FTR_SECTION
 	mtspr	SPRN_MAS8,r10
 END_FTR_SECTION_IFSET(CPU_FTR_EMB_HV)
 
-	lbz	r6,PACASOFTIRQEN(r13)
+	lbz	r6,PACAIRQSOFTMASK(r13)
 	ld	r5,SOFTE(r1)
 
 	/* Interrupts had better not already be enabled... */
-	twnei	r6,0
+	tweqi	r6,IRQS_ENABLED
 
-	cmpwi	cr0,r5,0
-	beq	1f
+	andi.	r6,r5,IRQS_DISABLED
+	bne	1f
 
 	TRACE_ENABLE_INTS
-	stb	r5,PACASOFTIRQEN(r13)
+	stb	r5,PACAIRQSOFTMASK(r13)
 1:
 	/*
 	 * Restore PACAIRQHAPPENED rather than setting it based on
@@ -351,9 +351,9 @@ ret_from_mc_except:
 #define PROLOG_ADDITION_NONE_MC(n)
 
 #define PROLOG_ADDITION_MASKABLE_GEN(n)					    \
-	lbz	r10,PACASOFTIRQEN(r13); /* are irqs soft-disabled ? */	    \
-	cmpwi	cr0,r10,0;		/* yes -> go out of line */	    \
-	beq	masked_interrupt_book3e_##n
+	lbz	r10,PACAIRQSOFTMASK(r13);	/* are irqs soft-masked? */ \
+	andi.	r10,r10,IRQS_DISABLED;	/* yes -> go out of line */ \
+	bne	masked_interrupt_book3e_##n
 
 #define PROLOG_ADDITION_2REGS_GEN(n)					    \
 	std	r14,PACA_EXGEN+EX_R14(r13);				    \
@@ -386,7 +386,7 @@ exc_##n##_common:							    \
 	std	r10,_NIP(r1);		/* save SRR0 to stackframe */	    \
 	std	r11,_MSR(r1);		/* save SRR1 to stackframe */	    \
 	beq	2f;			/* if from kernel mode */	    \
-	ACCOUNT_CPU_USER_ENTRY(r10,r11);/* accounting (uses cr0+eq) */	    \
+	ACCOUNT_CPU_USER_ENTRY(r13,r10,r11);/* accounting (uses cr0+eq) */  \
 2:	ld	r3,excf+EX_R10(r13);	/* get back r10 */		    \
 	ld	r4,excf+EX_R11(r13);	/* get back r11 */		    \
 	mfspr	r5,scratch;		/* get back r13 */		    \
@@ -397,7 +397,7 @@ exc_##n##_common:							    \
 	mfspr	r8,SPRN_XER;		/* save XER in stackframe */	    \
 	ld	r9,excf+EX_R1(r13);	/* load orig r1 back from PACA */   \
 	lwz	r10,excf+EX_CR(r13);	/* load orig CR back from PACA	*/  \
-	lbz	r11,PACASOFTIRQEN(r13);	/* get current IRQ softe */	    \
+	lbz	r11,PACAIRQSOFTMASK(r13); /* get current IRQ softe */	    \
 	ld	r12,exception_marker@toc(r2);				    \
 	li	r0,0;							    \
 	std	r3,GPR10(r1);		/* save r10 to stackframe */	    \
@@ -453,7 +453,7 @@ exc_##n##_bad_stack:							    \
 	sth	r1,PACA_TRAP_SAVE(r13);	/* store trap */		    \
 	b	bad_stack_book3e;	/* bad stack error */
 
-/* WARNING: If you change the layout of this stub, make sure you chcek
+/* WARNING: If you change the layout of this stub, make sure you check
 	*   the debug exception handler which handles single stepping
 	*   into exceptions from userspace, and the MM code in
 	*   arch/powerpc/mm/tlb_nohash.c which patches the branch here
@@ -935,14 +935,16 @@ kernel_dbg_exc:
 			        PROLOG_ADDITION_NONE)
 	EXCEPTION_COMMON(0x340)
 	addi	r3,r1,STACK_FRAME_OVERHEAD
-	bl	.save_nvgprs
+	bl	save_nvgprs
 	INTS_RESTORE_HARD
-	bl	.unknown_exception
-	b	.ret_from_except
+	bl	unknown_exception
+	b	ret_from_except
 
 /*
  * An interrupt came in while soft-disabled; We mark paca->irq_happened
  * accordingly and if the interrupt is level sensitive, we hard disable
+ * hard disable (full_mask) corresponds to PACA_IRQ_MUST_HARD_MASK, so
+ * keep these in synch.
  */
 
 .macro masked_interrupt_book3e paca_irq full_mask
@@ -1071,7 +1073,7 @@ fast_exception_return:
 	andi.	r6,r10,MSR_PR
 	REST_2GPRS(6, r1)
 	beq	1f
-	ACCOUNT_CPU_USER_EXIT(r10, r11)
+	ACCOUNT_CPU_USER_EXIT(r13, r10, r11)
 	ld	r0,GPR13(r1)
 
 1:	stdcx.	r0,0,r1		/* to clear the reservation */

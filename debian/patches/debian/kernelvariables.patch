@@ -14,9 +14,9 @@ use of $(ARCH) needs to be moved after this.
 
 --- a/Makefile
 +++ b/Makefile
-@@ -195,42 +195,6 @@ export KBUILD_BUILDHOST := $(SUBARCH)
+@@ -320,31 +320,6 @@ SUBARCH := $(shell uname -m | sed -e s/i
+ # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
  ARCH		?= $(SUBARCH)
- CROSS_COMPILE	?= $(CONFIG_CROSS_COMPILE:"%"=%)
  
 -# Architecture as present in compile.h
 -UTS_MACHINE 	:= $(ARCH)
@@ -43,23 +43,12 @@ use of $(ARCH) needs to be moved after this.
 -       SRCARCH := sh
 -endif
 -
--# Additional ARCH settings for tile
--ifeq ($(ARCH),tilepro)
--       SRCARCH := tile
--endif
--ifeq ($(ARCH),tilegx)
--       SRCARCH := tile
--endif
--
--# Where to locate arch specific headers
--hdr-arch  := $(SRCARCH)
--
  KCONFIG_CONFIG	?= .config
  export KCONFIG_CONFIG
  
-@@ -349,6 +313,44 @@ CFLAGS_KERNEL	=
+@@ -397,6 +372,30 @@ CFLAGS_KERNEL	=
  AFLAGS_KERNEL	=
- CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -fno-tree-loop-im
+ LDFLAGS_vmlinux =
  
 +-include $(obj)/.kernelvariables
 +
@@ -85,20 +74,6 @@ use of $(ARCH) needs to be moved after this.
 +       SRCARCH := sh
 +endif
 +
-+# Additional ARCH settings for tile
-+ifeq ($(ARCH),tilepro)
-+       SRCARCH := tile
-+endif
-+ifeq ($(ARCH),tilegx)
-+       SRCARCH := tile
-+endif
-+
-+# Where to locate arch specific headers
-+hdr-arch  := $(SRCARCH)
-+
-+ifeq ($(ARCH),m68knommu)
-+       hdr-arch  := m68k
-+endif
- 
  # Use USERINCLUDE when you must reference the UAPI directories only.
  USERINCLUDE    := \
+ 		-I$(srctree)/arch/$(SRCARCH)/include/uapi \

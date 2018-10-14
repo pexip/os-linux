@@ -4,6 +4,7 @@
 
 #include <asm/alternative-asm.h>
 #include <asm/asm-offsets.h>
+#include <asm/dwarf.h>
 
 #ifdef __ASSEMBLY__
 
@@ -22,11 +23,11 @@ _LC_BR_R1 = __LC_BR_R1
 	.hidden \name
 	.type \name,@function
 \name:
-	.cfi_startproc
+	CFI_STARTPROC
 	.endm
 
 	.macro __THUNK_EPILOG
-	.cfi_endproc
+	CFI_ENDPROC
 	.popsection
 	.endm
 

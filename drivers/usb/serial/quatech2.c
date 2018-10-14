@@ -1,12 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * usb-serial driver for Quatech USB 2 devices
  *
  * Copyright (C) 2012 Bill Pemberton (wfp5p@virginia.edu)
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
- *
  *
  *  These devices all have only 1 bulk in and 1 bulk out that is shared
  *  for all serial ports.
@@ -246,7 +242,8 @@ static inline int update_mctrl(struct qt2_port_private *port_priv,
 	return status;
 }
 
-static int qt2_calc_num_ports(struct usb_serial *serial)
+static int qt2_calc_num_ports(struct usb_serial *serial,
+					struct usb_serial_endpoints *epds)
 {
 	struct qt2_device_detail d;
 	int i;
@@ -461,14 +458,10 @@ static int get_serial_info(struct usb_serial_port *port,
 {
 	struct serial_struct tmp;
 
-	if (!retinfo)
-		return -EFAULT;
-
 	memset(&tmp, 0, sizeof(tmp));
 	tmp.line		= port->minor;
 	tmp.port		= 0;
 	tmp.irq			= 0;
-	tmp.flags		= ASYNC_SKIP_TEST | ASYNC_AUTO_IRQ;
 	tmp.xmit_fifo_size	= port->bulk_out_size;
 	tmp.baud_base		= 9600;
 	tmp.close_delay		= 5*HZ;
@@ -604,7 +597,6 @@ static void qt2_process_read_urb(struct urb *urb)
 				escapeflag = true;
 				break;
 			case QT2_CONTROL_ESCAPE:
-				tty_buffer_request_room(&port->port, 2);
 				tty_insert_flip_string(&port->port, ch, 2);
 				i += 2;
 				escapeflag = true;
@@ -619,8 +611,7 @@ static void qt2_process_read_urb(struct urb *urb)
 				continue;
 		}
 
-		tty_buffer_request_room(&port->port, 1);
-		tty_insert_flip_string(&port->port, ch, 1);
+		tty_insert_flip_char(&port->port, *ch, TTY_NORMAL);
 	}
 
 	tty_flip_buffer_push(&port->port);
@@ -972,7 +963,7 @@ static int qt2_write(struct tty_struct *tty,
 
 	data = write_urb->transfer_buffer;
 	spin_lock_irqsave(&port_priv->urb_lock, flags);
-	if (port_priv->urb_in_use == true) {
+	if (port_priv->urb_in_use) {
 		dev_err(&port->dev, "qt2_write - urb is in use\n");
 		goto write_out;
 	}
@@ -1032,4 +1023,4 @@ static struct usb_serial_driver *const serial_drivers[] = {
 module_usb_serial_driver(serial_drivers, id_table);
 
 MODULE_DESCRIPTION(DRIVER_DESC);
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL v2");

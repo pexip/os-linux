@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0
 #
 # arch/microblaze/boot/Makefile
 #
@@ -36,4 +37,4 @@ $(obj)/simpleImage.%: vmlinux FORCE
 	$(call if_changed,strip,.strip)
 	@echo 'Kernel: $(UIMAGE_OUT) is ready' ' (#'`cat .version`')'
 
-clean-files += simpleImage.*.unstrip linux.bin.ub dts/*.dtb
+clean-files += simpleImage.*.unstrip linux.bin.ub

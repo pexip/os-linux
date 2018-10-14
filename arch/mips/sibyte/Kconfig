@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0
 config SIBYTE_SB1250
 	bool
 	select CEVT_SB1250
@@ -143,7 +144,8 @@ config SIBYTE_CFE_CONSOLE
 config SIBYTE_BUS_WATCHER
 	bool "Support for Bus Watcher statistics"
 	depends on SIBYTE_SB1xxx_SOC && \
-		(SIBYTE_BCM112X || SIBYTE_SB1250)
+		(SIBYTE_BCM112X || SIBYTE_SB1250 || \
+		 SIBYTE_BCM1x55 || SIBYTE_BCM1x80)
 	help
 	  Handle and keep statistics on the bus error interrupts (COR_ECC,
 	  BAD_ECC, IO_BUS).

@@ -30,7 +30,7 @@ Optional properties:
   - #interrupt-cells: the number of cells to describe an IRQ, this should be 2.
     The first cell is the IRQ number.
     The second cell is the flags, encoded as the trigger masks from
-    Documentation/devicetree/bindings/interrupts.txt
+    Documentation/devicetree/bindings/interrupt-controller/interrupts.txt
 
   - clocks : A list of up to two phandle and clock specifier pairs
   - clock-names : A list of clock names sorted in the same order as clocks.
@@ -59,7 +59,7 @@ Optional properties:
 
 Example:
 
-codec: wm8994@1a {
+wm8994: codec@1a {
 	compatible = "wlf,wm8994";
 	reg = <0x1a>;
 

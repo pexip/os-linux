@@ -20,7 +20,7 @@
 
 #include "tda10071_priv.h"
 
-static struct dvb_frontend_ops tda10071_ops;
+static const struct dvb_frontend_ops tda10071_ops;
 
 /*
  * XXX: regmap_update_bits() does not fit our needs as it does not support
@@ -701,11 +701,11 @@ error:
 	return ret;
 }
 
-static int tda10071_get_frontend(struct dvb_frontend *fe)
+static int tda10071_get_frontend(struct dvb_frontend *fe,
+				 struct dtv_frontend_properties *c)
 {
 	struct tda10071_dev *dev = fe->demodulator_priv;
 	struct i2c_client *client = dev->client;
-	struct dtv_frontend_properties *c = &fe->dtv_property_cache;
 	int ret, i;
 	u8 buf[5], tmp;
 
@@ -852,7 +852,7 @@ static int tda10071_init(struct dvb_frontend *fe)
 		ret = request_firmware(&fw, fw_file, &client->dev);
 		if (ret) {
 			dev_err(&client->dev,
-				"did not find the firmware file. (%s) Please see linux/Documentation/dvb/ for more details on firmware-problems. (%d)\n",
+				"did not find the firmware file '%s' (status %d). You can use <kernel_dir>/scripts/get_dvb_firmware to get the firmware\n",
 				fw_file, ret);
 			goto error;
 		}
@@ -1102,7 +1102,7 @@ static int tda10071_get_tune_settings(struct dvb_frontend *fe,
 	return 0;
 }
 
-static struct dvb_frontend_ops tda10071_ops = {
+static const struct dvb_frontend_ops tda10071_ops = {
 	.delsys = { SYS_DVBS, SYS_DVBS2 },
 	.info = {
 		.name = "NXP TDA10071",

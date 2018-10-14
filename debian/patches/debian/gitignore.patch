@@ -7,8 +7,8 @@ Forwarded: not-needed
 
 --- a/.gitignore
 +++ b/.gitignore
-@@ -50,22 +50,11 @@ Module.symvers
- /Module.markers
+@@ -64,11 +64,6 @@ modules.builtin
+ /*.spec
  
  #
 -# Debian directory (make deb-pkg)
@@ -16,21 +16,25 @@ Forwarded: not-needed
 -/debian/
 -
 -#
- # tar directory (make tar*-pkg)
+ # Snap directory (make snap-pkg)
  #
+ /snap/
+@@ -79,14 +74,6 @@ modules.builtin
  /tar-install/
  
  #
--# git files that we don't want to ignore even it they are dot-files
+-# git files that we don't want to ignore even if they are dot-files
 -#
 -!.gitignore
 -!.mailmap
+-!.cocciconfig
+-!.clang-format
 -
 -#
  # Generated include files
  #
  include/config
-@@ -106,3 +95,10 @@ all.config
+@@ -132,3 +119,10 @@ all.config
  
  # Kdevelop4
  *.kdev4

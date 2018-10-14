@@ -1,12 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
 *  Digi AccelePort USB-4 and USB-2 Serial Converters
 *
 *  Copyright 2000 by Digi International
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
 *
 *  Shamelessly based on Brian Warner's keyspan_pda.c and Greg Kroah-Hartman's
 *  usb-serial driver.
@@ -27,6 +23,7 @@
 #include <linux/uaccess.h>
 #include <linux/usb.h>
 #include <linux/wait.h>
+#include <linux/sched/signal.h>
 #include <linux/usb/serial.h>
 
 /* Defines */
@@ -272,6 +269,8 @@ static struct usb_serial_driver digi_acceleport_2_device = {
 	.description =			"Digi 2 port USB adapter",
 	.id_table =			id_table_2,
 	.num_ports =			3,
+	.num_bulk_in =			4,
+	.num_bulk_out =			4,
 	.open =				digi_open,
 	.close =			digi_close,
 	.dtr_rts =			digi_dtr_rts,
@@ -301,6 +300,8 @@ static struct usb_serial_driver digi_acceleport_4_device = {
 	.description =			"Digi 4 port USB adapter",
 	.id_table =			id_table_4,
 	.num_ports =			4,
+	.num_bulk_in =			5,
+	.num_bulk_out =			5,
 	.open =				digi_open,
 	.close =			digi_close,
 	.write =			digi_write,
@@ -695,12 +696,11 @@ static void digi_set_termios(struct tty_struct *tty,
 		arg = -1;
 
 		/* reassert DTR and (maybe) RTS on transition from B0 */
-		if ((old_cflag&CBAUD) == B0) {
+		if ((old_cflag & CBAUD) == B0) {
 			/* don't set RTS if using hardware flow control */
 			/* and throttling input */
 			modem_signals = TIOCM_DTR;
-			if (!(tty->termios.c_cflag & CRTSCTS) ||
-			    !test_bit(TTY_THROTTLED, &tty->flags))
+			if (!C_CRTSCTS(tty) || !tty_throttled(tty))
 				modem_signals |= TIOCM_RTS;
 			digi_set_modem_signals(port, modem_signals, 1);
 		}
@@ -1251,27 +1251,8 @@ static int digi_port_init(struct usb_serial_port *port, unsigned port_num)
 
 static int digi_startup(struct usb_serial *serial)
 {
-	struct device *dev = &serial->interface->dev;
 	struct digi_serial *serial_priv;
 	int ret;
-	int i;
-
-	/* check whether the device has the expected number of endpoints */
-	if (serial->num_port_pointers < serial->type->num_ports + 1) {
-		dev_err(dev, "OOB endpoints missing\n");
-		return -ENODEV;
-	}
-
-	for (i = 0; i < serial->type->num_ports + 1 ; i++) {
-		if (!serial->port[i]->read_urb) {
-			dev_err(dev, "bulk-in endpoint missing\n");
-			return -ENODEV;
-		}
-		if (!serial->port[i]->write_urb) {
-			dev_err(dev, "bulk-out endpoint missing\n");
-			return -ENODEV;
-		}
-	}
 
 	serial_priv = kzalloc(sizeof(*serial_priv), GFP_KERNEL);
 	if (!serial_priv)
@@ -1522,8 +1503,8 @@ static int digi_read_oob_callback(struct urb *urb)
 
 		rts = 0;
 		if (tty)
-			rts = tty->termios.c_cflag & CRTSCTS;
-		
+			rts = C_CRTSCTS(tty);
+
 		if (tty && opcode == DIGI_CMD_READ_INPUT_SIGNALS) {
 			spin_lock(&priv->dp_port_lock);
 			/* convert from digi flags to termiox flags */

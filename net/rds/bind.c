@@ -40,7 +40,7 @@
 
 static struct rhashtable bind_hash_table;
 
-static struct rhashtable_params ht_parms = {
+static const struct rhashtable_params ht_parms = {
 	.nelem_hint = 768,
 	.key_len = sizeof(u64),
 	.key_offset = offsetof(struct rds_sock, rs_bound_key),
@@ -81,6 +81,8 @@ static int rds_add_bound(struct rds_sock *rs, __be32 addr, __be16 *port)
 
 	if (*port != 0) {
 		rover = be16_to_cpu(*port);
+		if (rover == RDS_FLAG_PROBE_PORT)
+			return -EINVAL;
 		last = rover;
 	} else {
 		rover = max_t(u16, prandom_u32(), 2);
@@ -91,12 +93,16 @@ static int rds_add_bound(struct rds_sock *rs, __be32 addr, __be16 *port)
 		if (rover == 0)
 			rover++;
 
+		if (rover == RDS_FLAG_PROBE_PORT)
+			continue;
 		key = ((u64)addr << 32) | cpu_to_be16(rover);
 		if (rhashtable_lookup_fast(&bind_hash_table, &key, ht_parms))
 			continue;
 
 		rs->rs_bound_key = key;
 		rs->rs_bound_addr = addr;
+		net_get_random_once(&rs->rs_hash_initval,
+				    sizeof(rs->rs_hash_initval));
 		rs->rs_bound_port = cpu_to_be16(rover);
 		rs->rs_bound_node.next = NULL;
 		rds_sock_addref(rs);
@@ -171,8 +177,8 @@ int rds_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	if (!trans) {
 		ret = -EADDRNOTAVAIL;
 		rds_remove_bound(rs);
-		printk_ratelimited(KERN_INFO "RDS: rds_bind() could not find a transport, "
-				"load rds_tcp or rds_rdma?\n");
+		pr_info_ratelimited("RDS: %s could not find a transport for %pI4, load rds_tcp or rds_rdma?\n",
+				    __func__, &sin->sin_addr.s_addr);
 		goto out;
 	}
 

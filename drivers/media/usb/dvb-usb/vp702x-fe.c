@@ -4,7 +4,7 @@
  * Copyright (C) 2005 Ralph Metzler <rjkm@metzlerbros.de>
  *                    Metzler Brothers Systementwicklung GbR
  *
- * Copyright (C) 2005 Patrick Boettcher <patrick.boettcher@desy.de>
+ * Copyright (C) 2005 Patrick Boettcher <patrick.boettcher@posteo.de>
  *
  * Thanks to Twinhan who kindly provided hardware and information.
  *
@@ -15,7 +15,7 @@
  *	under the terms of the GNU General Public License as published by the Free
  *	Software Foundation, version 2.
  *
- * see Documentation/dvb/README.dvb-usb for more information
+ * see Documentation/media/dvb-drivers/dvb-usb.rst for more information
  *
  */
 #include "vp702x.h"
@@ -323,7 +323,7 @@ static void vp702x_fe_release(struct dvb_frontend* fe)
 	kfree(st);
 }
 
-static struct dvb_frontend_ops vp702x_fe_ops;
+static const struct dvb_frontend_ops vp702x_fe_ops;
 
 struct dvb_frontend * vp702x_fe_attach(struct dvb_usb_device *d)
 {
@@ -345,7 +345,7 @@ error:
 }
 
 
-static struct dvb_frontend_ops vp702x_fe_ops = {
+static const struct dvb_frontend_ops vp702x_fe_ops = {
 	.delsys = { SYS_DVBS },
 	.info = {
 		.name           = "Twinhan DST-like frontend (VP7021/VP7020) DVB-S",

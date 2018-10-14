@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Primary bucket allocation code
  *
@@ -64,10 +65,11 @@
 #include "btree.h"
 
 #include <linux/blkdev.h>
-#include <linux/freezer.h>
 #include <linux/kthread.h>
 #include <linux/random.h>
 #include <trace/events/bcache.h>
+
+#define MAX_OPEN_BUCKETS 128
 
 /* Bucket heap / gen */
 
@@ -285,12 +287,12 @@ do {									\
 			break;						\
 									\
 		mutex_unlock(&(ca)->set->bucket_lock);			\
-		if (kthread_should_stop()) {				\
+		if (kthread_should_stop() ||				\
+		    test_bit(CACHE_SET_IO_DISABLE, &ca->set->flags)) {	\
 			set_current_state(TASK_RUNNING);		\
-			return 0;					\
+			goto out;					\
 		}							\
 									\
-		try_to_freeze();					\
 		schedule();						\
 		mutex_lock(&(ca)->set->bucket_lock);			\
 	}								\
@@ -376,6 +378,9 @@ retry_invalidate:
 			bch_prio_write(ca);
 		}
 	}
+out:
+	wait_for_kthread_stop();
+	return 0;
 }
 
 /* Allocation */
@@ -444,6 +449,11 @@ out:
 		b->prio = INITIAL_PRIO;
 	}
 
+	if (ca->set->avail_nbuckets > 0) {
+		ca->set->avail_nbuckets--;
+		bch_update_bucket_in_use(ca->set, &ca->set->gc_stats);
+	}
+
 	return r;
 }
 
@@ -451,6 +461,11 @@ void __bch_bucket_free(struct cache *ca, struct bucket *b)
 {
 	SET_GC_MARK(b, 0);
 	SET_GC_SECTORS_USED(b, 0);
+
+	if (ca->set->avail_nbuckets < ca->set->nbuckets) {
+		ca->set->avail_nbuckets++;
+		bch_update_bucket_in_use(ca->set, &ca->set->gc_stats);
+	}
 }
 
 void bch_bucket_free(struct cache_set *c, struct bkey *k)
@@ -612,7 +627,7 @@ bool bch_alloc_sectors(struct cache_set *c, struct bkey *k, unsigned sectors,
 
 	/*
 	 * If we had to allocate, we might race and not need to allocate the
-	 * second time we call find_data_bucket(). If we allocated a bucket but
+	 * second time we call pick_data_bucket(). If we allocated a bucket but
 	 * didn't use it, drop the refcount bch_bucket_alloc_set() took:
 	 */
 	if (KEY_PTRS(&alloc.key))
@@ -685,7 +700,7 @@ int bch_open_buckets_alloc(struct cache_set *c)
 
 	spin_lock_init(&c->data_bucket_lock);
 
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < MAX_OPEN_BUCKETS; i++) {
 		struct open_bucket *b = kzalloc(sizeof(*b), GFP_KERNEL);
 		if (!b)
 			return -ENOMEM;

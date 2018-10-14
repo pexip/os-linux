@@ -20,7 +20,7 @@
 #include <linux/i2c.h>
 #include <linux/slab.h>
 
-#include "dvb_frontend.h"
+#include <media/dvb_frontend.h>
 #include "mt2266.h"
 
 #define I2C_ADDRESS 0x60
@@ -296,11 +296,10 @@ static int mt2266_sleep(struct dvb_frontend *fe)
 	return 0;
 }
 
-static int mt2266_release(struct dvb_frontend *fe)
+static void mt2266_release(struct dvb_frontend *fe)
 {
 	kfree(fe->tuner_priv);
 	fe->tuner_priv = NULL;
-	return 0;
 }
 
 static const struct dvb_tuner_ops mt2266_tuner_ops = {

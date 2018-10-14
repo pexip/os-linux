@@ -12,11 +12,6 @@ CONFIG_CBE_RAS=y
 CONFIG_CBE_THERM=m
 
 ##
-## file: arch/powerpc/platforms/Kconfig.cputype
-##
-CONFIG_NR_CPUS=32
-
-##
 ## file: arch/powerpc/platforms/maple/Kconfig
 ##
 CONFIG_PPC_MAPLE=y
@@ -41,6 +36,11 @@ CONFIG_PS3_ROM=m
 CONFIG_PS3_FLASH=m
 CONFIG_PS3_VRAM=m
 CONFIG_PS3_LPM=m
+
+##
+## file: arch/powerpc/platforms/pseries/Kconfig
+##
+CONFIG_IBMEBUS=y
 
 ##
 ## file: drivers/char/hw_random/Kconfig
@@ -69,6 +69,11 @@ CONFIG_WINDFARM_RM31=m
 CONFIG_WINDFARM_PM91=m
 CONFIG_WINDFARM_PM112=m
 CONFIG_WINDFARM_PM121=m
+
+##
+## file: drivers/net/ethernet/ibm/Kconfig
+##
+CONFIG_EHEA=m
 
 ##
 ## file: drivers/net/ethernet/pasemi/Kconfig

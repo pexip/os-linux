@@ -1,25 +1,23 @@
 From: Daniel Wagner <daniel.wagner@bmw-carit.de>
 Date: Fri, 11 Jul 2014 15:26:11 +0200
 Subject: work-simple: Simple work queue implemenation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
 
 Provides a framework for enqueuing callbacks from irq context
 PREEMPT_RT_FULL safe. The callbacks are executed in kthread context.
 
 Bases on wait-simple.
 
-Signed-off-by: Daniel Wagner <daniel.wagner@bmw-carit.de>
 Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Daniel Wagner <daniel.wagner@bmw-carit.de>
 ---
- include/linux/work-simple.h |   24 ++++++
- kernel/sched/Makefile       |    2 
- kernel/sched/work-simple.c  |  173 ++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/swork.h |   24 ++++++
+ kernel/sched/Makefile |    2 
+ kernel/sched/swork.c  |  173 ++++++++++++++++++++++++++++++++++++++++++++++++++
  3 files changed, 198 insertions(+), 1 deletion(-)
- create mode 100644 include/linux/work-simple.h
- create mode 100644 kernel/sched/work-simple.c
 
 --- /dev/null
-+++ b/include/linux/work-simple.h
++++ b/include/linux/swork.h
 @@ -0,0 +1,24 @@
 +#ifndef _LINUX_SWORK_H
 +#define _LINUX_SWORK_H
@@ -47,17 +45,17 @@ Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +#endif /* _LINUX_SWORK_H */
 --- a/kernel/sched/Makefile
 +++ b/kernel/sched/Makefile
-@@ -13,7 +13,7 @@ endif
+@@ -18,7 +18,7 @@ endif
  
  obj-y += core.o loadavg.o clock.o cputime.o
- obj-y += idle_task.o fair.o rt.o deadline.o stop_task.o
--obj-y += wait.o wait-simple.o completion.o idle.o
-+obj-y += wait.o wait-simple.o work-simple.o completion.o idle.o
- obj-$(CONFIG_SMP) += cpupri.o cpudeadline.o
- obj-$(CONFIG_SCHED_AUTOGROUP) += auto_group.o
- obj-$(CONFIG_SCHEDSTATS) += stats.o
+ obj-y += idle.o fair.o rt.o deadline.o
+-obj-y += wait.o wait_bit.o swait.o completion.o
++obj-y += wait.o wait_bit.o swait.o swork.o completion.o
+ 
+ obj-$(CONFIG_SMP) += cpupri.o cpudeadline.o topology.o stop_task.o
+ obj-$(CONFIG_SCHED_AUTOGROUP) += autogroup.o
 --- /dev/null
-+++ b/kernel/sched/work-simple.c
++++ b/kernel/sched/swork.c
 @@ -0,0 +1,173 @@
 +/*
 + * Copyright (C) 2014 BMW Car IT GmbH, Daniel Wagner daniel.wagner@bmw-carit.de
@@ -66,8 +64,8 @@ Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 + * PREEMPT_RT_FULL safe. The callbacks are executed in kthread context.
 + */
 +
-+#include <linux/wait-simple.h>
-+#include <linux/work-simple.h>
++#include <linux/swait.h>
++#include <linux/swork.h>
 +#include <linux/kthread.h>
 +#include <linux/slab.h>
 +#include <linux/spinlock.h>
@@ -80,7 +78,7 @@ Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +
 +struct sworker {
 +	struct list_head events;
-+	struct swait_head wq;
++	struct swait_queue_head wq;
 +
 +	raw_spinlock_t lock;
 +
@@ -141,7 +139,7 @@ Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +
 +	INIT_LIST_HEAD(&worker->events);
 +	raw_spin_lock_init(&worker->lock);
-+	init_swait_head(&worker->wq);
++	init_swait_queue_head(&worker->wq);
 +
 +	worker->task = kthread_run(swork_kthread, worker, "kswork");
 +	if (IS_ERR(worker->task)) {
@@ -178,7 +176,7 @@ Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	list_add_tail(&sev->item, &glob_worker->events);
 +	raw_spin_unlock_irqrestore(&glob_worker->lock, flags);
 +
-+	swait_wake(&glob_worker->wq);
++	swake_up(&glob_worker->wq);
 +	return true;
 +}
 +EXPORT_SYMBOL_GPL(swork_queue);

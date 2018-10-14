@@ -13,7 +13,6 @@
 
 #include <linux/module.h>
 #include <linux/slab.h>
-#include <linux/i2c.h>
 #include <linux/err.h>
 #include <linux/delay.h>
 #include <linux/sysfs.h>
@@ -41,23 +40,25 @@ int inv_reset_fifo(struct iio_dev *indio_dev)
 	struct inv_mpu6050_state  *st = iio_priv(indio_dev);
 
 	/* disable interrupt */
-	result = inv_mpu6050_write_reg(st, st->reg->int_enable, 0);
+	result = regmap_write(st->map, st->reg->int_enable, 0);
 	if (result) {
-		dev_err(&st->client->dev, "int_enable failed %d\n", result);
+		dev_err(regmap_get_device(st->map), "int_enable failed %d\n",
+			result);
 		return result;
 	}
 	/* disable the sensor output to FIFO */
-	result = inv_mpu6050_write_reg(st, st->reg->fifo_en, 0);
+	result = regmap_write(st->map, st->reg->fifo_en, 0);
 	if (result)
 		goto reset_fifo_fail;
 	/* disable fifo reading */
-	result = inv_mpu6050_write_reg(st, st->reg->user_ctrl, 0);
+	result = regmap_write(st->map, st->reg->user_ctrl,
+			      st->chip_config.user_ctrl);
 	if (result)
 		goto reset_fifo_fail;
 
 	/* reset FIFO*/
-	result = inv_mpu6050_write_reg(st, st->reg->user_ctrl,
-					INV_MPU6050_BIT_FIFO_RST);
+	d = st->chip_config.user_ctrl | INV_MPU6050_BIT_FIFO_RST;
+	result = regmap_write(st->map, st->reg->user_ctrl, d);
 	if (result)
 		goto reset_fifo_fail;
 
@@ -67,14 +68,14 @@ int inv_reset_fifo(struct iio_dev *indio_dev)
 	/* enable interrupt */
 	if (st->chip_config.accl_fifo_enable ||
 	    st->chip_config.gyro_fifo_enable) {
-		result = inv_mpu6050_write_reg(st, st->reg->int_enable,
-					INV_MPU6050_BIT_DATA_RDY_EN);
+		result = regmap_write(st->map, st->reg->int_enable,
+				      INV_MPU6050_BIT_DATA_RDY_EN);
 		if (result)
 			return result;
 	}
-	/* enable FIFO reading and I2C master interface*/
-	result = inv_mpu6050_write_reg(st, st->reg->user_ctrl,
-					INV_MPU6050_BIT_FIFO_EN);
+	/* enable FIFO reading */
+	d = st->chip_config.user_ctrl | INV_MPU6050_BIT_FIFO_EN;
+	result = regmap_write(st->map, st->reg->user_ctrl, d);
 	if (result)
 		goto reset_fifo_fail;
 	/* enable sensor output to FIFO */
@@ -83,16 +84,16 @@ int inv_reset_fifo(struct iio_dev *indio_dev)
 		d |= INV_MPU6050_BITS_GYRO_OUT;
 	if (st->chip_config.accl_fifo_enable)
 		d |= INV_MPU6050_BIT_ACCEL_OUT;
-	result = inv_mpu6050_write_reg(st, st->reg->fifo_en, d);
+	result = regmap_write(st->map, st->reg->fifo_en, d);
 	if (result)
 		goto reset_fifo_fail;
 
 	return 0;
 
 reset_fifo_fail:
-	dev_err(&st->client->dev, "reset fifo failed %d\n", result);
-	result = inv_mpu6050_write_reg(st, st->reg->int_enable,
-					INV_MPU6050_BIT_DATA_RDY_EN);
+	dev_err(regmap_get_device(st->map), "reset fifo failed %d\n", result);
+	result = regmap_write(st->map, st->reg->int_enable,
+			      INV_MPU6050_BIT_DATA_RDY_EN);
 
 	return result;
 }
@@ -107,9 +108,9 @@ irqreturn_t inv_mpu6050_irq_handler(int irq, void *p)
 	struct inv_mpu6050_state *st = iio_priv(indio_dev);
 	s64 timestamp;
 
-	timestamp = iio_get_time_ns();
+	timestamp = iio_get_time_ns(indio_dev);
 	kfifo_in_spinlocked(&st->timestamps, &timestamp, 1,
-				&st->time_stamp_lock);
+			    &st->time_stamp_lock);
 
 	return IRQ_WAKE_THREAD;
 }
@@ -127,8 +128,23 @@ irqreturn_t inv_mpu6050_read_fifo(int irq, void *p)
 	u8 data[INV_MPU6050_OUTPUT_DATA_SIZE];
 	u16 fifo_count;
 	s64 timestamp;
+	int int_status;
 
-	mutex_lock(&indio_dev->mlock);
+	mutex_lock(&st->lock);
+
+	/* ack interrupt and check status */
+	result = regmap_read(st->map, st->reg->int_status, &int_status);
+	if (result) {
+		dev_err(regmap_get_device(st->map),
+			"failed to ack interrupt\n");
+		goto flush_fifo;
+	}
+	if (!(int_status & INV_MPU6050_BIT_RAW_DATA_RDY_INT)) {
+		dev_warn(regmap_get_device(st->map),
+			"spurious interrupt with status 0x%x\n", int_status);
+		goto end_session;
+	}
+
 	if (!(st->chip_config.accl_fifo_enable |
 		st->chip_config.gyro_fifo_enable))
 		goto end_session;
@@ -140,47 +156,48 @@ irqreturn_t inv_mpu6050_read_fifo(int irq, void *p)
 		bytes_per_datum += INV_MPU6050_BYTES_PER_3AXIS_SENSOR;
 
 	/*
-	 * read fifo_count register to know how many bytes inside FIFO
+	 * read fifo_count register to know how many bytes are inside the FIFO
 	 * right now
 	 */
-	result = i2c_smbus_read_i2c_block_data(st->client,
-				       st->reg->fifo_count_h,
-				       INV_MPU6050_FIFO_COUNT_BYTE, data);
-	if (result != INV_MPU6050_FIFO_COUNT_BYTE)
+	result = regmap_bulk_read(st->map, st->reg->fifo_count_h, data,
+				  INV_MPU6050_FIFO_COUNT_BYTE);
+	if (result)
 		goto end_session;
 	fifo_count = be16_to_cpup((__be16 *)(&data[0]));
 	if (fifo_count < bytes_per_datum)
 		goto end_session;
-	/* fifo count can't be odd number, if it is odd, reset fifo*/
+	/* fifo count can't be an odd number. If it is odd, reset the FIFO. */
 	if (fifo_count & 1)
 		goto flush_fifo;
 	if (fifo_count >  INV_MPU6050_FIFO_THRESHOLD)
 		goto flush_fifo;
 	/* Timestamp mismatch. */
 	if (kfifo_len(&st->timestamps) >
-		fifo_count / bytes_per_datum + INV_MPU6050_TIME_STAMP_TOR)
-			goto flush_fifo;
-	while (fifo_count >= bytes_per_datum) {
-		result = i2c_smbus_read_i2c_block_data(st->client,
-						       st->reg->fifo_r_w,
-						       bytes_per_datum, data);
-		if (result != bytes_per_datum)
+	    fifo_count / bytes_per_datum + INV_MPU6050_TIME_STAMP_TOR)
+		goto flush_fifo;
+	do {
+		result = regmap_bulk_read(st->map, st->reg->fifo_r_w,
+					  data, bytes_per_datum);
+		if (result)
 			goto flush_fifo;
 
 		result = kfifo_out(&st->timestamps, &timestamp, 1);
 		/* when there is no timestamp, put timestamp as 0 */
-		if (0 == result)
+		if (result == 0)
 			timestamp = 0;
 
-		result = iio_push_to_buffers_with_timestamp(indio_dev, data,
-			timestamp);
-		if (result)
-			goto flush_fifo;
+		/* skip first samples if needed */
+		if (st->skip_samples)
+			st->skip_samples--;
+		else
+			iio_push_to_buffers_with_timestamp(indio_dev, data,
+							   timestamp);
+
 		fifo_count -= bytes_per_datum;
-	}
+	} while (fifo_count >= bytes_per_datum);
 
 end_session:
-	mutex_unlock(&indio_dev->mlock);
+	mutex_unlock(&st->lock);
 	iio_trigger_notify_done(indio_dev->trig);
 
 	return IRQ_HANDLED;
@@ -188,7 +205,7 @@ end_session:
 flush_fifo:
 	/* Flush HW and SW FIFOs. */
 	inv_reset_fifo(indio_dev);
-	mutex_unlock(&indio_dev->mlock);
+	mutex_unlock(&st->lock);
 	iio_trigger_notify_done(indio_dev->trig);
 
 	return IRQ_HANDLED;

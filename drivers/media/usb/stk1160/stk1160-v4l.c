@@ -33,7 +33,7 @@
 #include <media/v4l2-event.h>
 #include <media/videobuf2-vmalloc.h>
 
-#include <media/saa7115.h>
+#include <media/i2c/saa7115.h>
 
 #include "stk1160.h"
 #include "stk1160-reg.h"
@@ -326,7 +326,7 @@ static int stk1160_stop_streaming(struct stk1160 *dev)
 	return 0;
 }
 
-static struct v4l2_file_operations stk1160_fops = {
+static const struct v4l2_file_operations stk1160_fops = {
 	.owner = THIS_MODULE,
 	.open = v4l2_fh_open,
 	.release = vb2_fop_release,
@@ -664,9 +664,9 @@ static const struct v4l2_ioctl_ops stk1160_ioctl_ops = {
 /*
  * Videobuf2 operations
  */
-static int queue_setup(struct vb2_queue *vq, const void *parg,
+static int queue_setup(struct vb2_queue *vq,
 				unsigned int *nbuffers, unsigned int *nplanes,
-				unsigned int sizes[], void *alloc_ctxs[])
+				unsigned int sizes[], struct device *alloc_devs[])
 {
 	struct stk1160 *dev = vb2_get_drv_priv(vq);
 	unsigned long size;
@@ -679,6 +679,9 @@ static int queue_setup(struct vb2_queue *vq, const void *parg,
 	 */
 	*nbuffers = clamp_t(unsigned int, *nbuffers,
 			STK1160_MIN_VIDEO_BUFFERS, STK1160_MAX_VIDEO_BUFFERS);
+
+	if (*nplanes)
+		return sizes[0] < size ? -EINVAL : 0;
 
 	/* This means a packed colorformat */
 	*nplanes = 1;
@@ -739,7 +742,7 @@ static void stop_streaming(struct vb2_queue *vq)
 	stk1160_stop_streaming(dev);
 }
 
-static struct vb2_ops stk1160_video_qops = {
+static const struct vb2_ops stk1160_video_qops = {
 	.queue_setup		= queue_setup,
 	.buf_queue		= buffer_queue,
 	.start_streaming	= start_streaming,
@@ -748,7 +751,7 @@ static struct vb2_ops stk1160_video_qops = {
 	.wait_finish		= vb2_ops_wait_finish,
 };
 
-static struct video_device v4l_template = {
+static const struct video_device v4l_template = {
 	.name = "stk1160",
 	.tvnorms = V4L2_STD_525_60 | V4L2_STD_625_50,
 	.fops = &stk1160_fops,

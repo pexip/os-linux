@@ -121,9 +121,6 @@ CONFIG_ATM_HE_USE_SUNI=y
 ## file: drivers/block/Kconfig
 ##
 CONFIG_BLK_DEV_FD=m
-CONFIG_BLK_CPQ_DA=m
-CONFIG_BLK_CPQ_CISS_DA=m
-CONFIG_CISS_SCSI_TAPE=y
 CONFIG_BLK_DEV_DAC960=m
 CONFIG_BLK_DEV_UMEM=m
 CONFIG_BLK_DEV_SX8=m
@@ -152,8 +149,6 @@ CONFIG_PRINTER=m
 # CONFIG_LP_CONSOLE is not set
 CONFIG_PPDEV=m
 CONFIG_RTC=m
-CONFIG_GEN_RTC=m
-CONFIG_GEN_RTC_X=y
 CONFIG_DTLK=m
 CONFIG_APPLICOM=m
 CONFIG_RAW_DRIVER=m
@@ -188,9 +183,9 @@ CONFIG_EISA_NAMES=y
 ## file: drivers/gpu/drm/Kconfig
 ##
 CONFIG_DRM=m
+CONFIG_DRM_RADEON=m
 CONFIG_DRM_TDFX=m
 CONFIG_DRM_R128=m
-CONFIG_DRM_RADEON=m
 CONFIG_DRM_MGA=m
 CONFIG_DRM_SIS=m
 
@@ -395,12 +390,16 @@ CONFIG_RADIO_ZOLTRIX=m
 ## file: drivers/mmc/Kconfig
 ##
 CONFIG_MMC=m
-# CONFIG_MMC_DEBUG is not set
 
 ##
-## file: drivers/mmc/card/Kconfig
+## file: drivers/mmc/core/Kconfig
 ##
 CONFIG_MMC_BLOCK=m
+
+##
+## file: drivers/mmc/host/Kconfig
+##
+# CONFIG_MMC_DEBUG is not set
 
 ##
 ## file: drivers/mtd/Kconfig
@@ -444,7 +443,6 @@ CONFIG_MTD_CFI_STAA=m
 CONFIG_MTD_RAM=m
 CONFIG_MTD_ROM=m
 CONFIG_MTD_ABSENT=m
-CONFIG_MTD_XIP=y
 
 ##
 ## file: drivers/mtd/devices/Kconfig
@@ -470,7 +468,7 @@ CONFIG_MTD_PHYSMAP_BANKWIDTH=2
 CONFIG_MTD_PCI=m
 
 ##
-## file: drivers/mtd/nand/Kconfig
+## file: drivers/mtd/nand/raw/Kconfig
 ##
 CONFIG_MTD_NAND=m
 # CONFIG_MTD_NAND_DISKONCHIP is not set
@@ -595,10 +593,6 @@ CONFIG_FORCEDETH=m
 ##
 CONFIG_8139CP=m
 CONFIG_8139TOO=m
-# CONFIG_8139TOO_PIO is not set
-CONFIG_8139TOO_TUNE_TWISTER=y
-CONFIG_8139TOO_8129=y
-# CONFIG_8139_OLD_RX_RESET is not set
 
 ##
 ## file: drivers/net/ethernet/sis/Kconfig
@@ -651,19 +645,6 @@ CONFIG_ROADRUNNER=m
 # CONFIG_ROADRUNNER_LARGE_RINGS is not set
 
 ##
-## file: drivers/net/irda/Kconfig
-##
-CONFIG_IRTTY_SIR=m
-CONFIG_USB_IRDA=m
-CONFIG_SIGMATEL_FIR=m
-CONFIG_NSC_FIR=m
-CONFIG_WINBOND_FIR=m
-CONFIG_SMC_IRCC_FIR=m
-CONFIG_ALI_FIR=m
-CONFIG_VLSI_FIR=m
-CONFIG_VIA_FIR=m
-
-##
 ## file: drivers/net/plip/Kconfig
 ##
 CONFIG_PLIP=m
@@ -692,32 +673,44 @@ CONFIG_SDLA=m
 ## file: drivers/net/wireless/Kconfig
 ##
 CONFIG_PCMCIA_RAYCS=m
+CONFIG_PCMCIA_WL3501=m
+
+##
+## file: drivers/net/wireless/atmel/Kconfig
+##
 CONFIG_ATMEL=m
 CONFIG_PCI_ATMEL=m
 CONFIG_PCMCIA_ATMEL=m
-CONFIG_AIRO_CS=m
-CONFIG_PCMCIA_WL3501=m
-CONFIG_USB_ZD1201=m
 
 ##
-## file: drivers/net/wireless/ipw2x00/Kconfig
+## file: drivers/net/wireless/cisco/Kconfig
+##
+CONFIG_AIRO_CS=m
+
+##
+## file: drivers/net/wireless/intel/ipw2x00/Kconfig
 ##
 # CONFIG_IPW2100 is not set
 
 ##
-## file: drivers/net/wireless/mwifiex/Kconfig
-##
-CONFIG_MWIFIEX=m
-CONFIG_MWIFIEX_SDIO=m
-
-##
-## file: drivers/net/wireless/orinoco/Kconfig
+## file: drivers/net/wireless/intersil/orinoco/Kconfig
 ##
 CONFIG_HERMES=m
 CONFIG_PLX_HERMES=m
 CONFIG_TMD_HERMES=m
 CONFIG_PCI_HERMES=m
 CONFIG_PCMCIA_HERMES=m
+
+##
+## file: drivers/net/wireless/marvell/mwifiex/Kconfig
+##
+CONFIG_MWIFIEX=m
+CONFIG_MWIFIEX_SDIO=m
+
+##
+## file: drivers/net/wireless/zydas/Kconfig
+##
+CONFIG_USB_ZD1201=m
 
 ##
 ## file: drivers/pcmcia/Kconfig
@@ -743,47 +736,35 @@ CONFIG_PNP=y
 CONFIG_ISAPNP=y
 
 ##
+## file: drivers/rtc/Kconfig
+##
+CONFIG_RTC_CLASS=y
+CONFIG_RTC_DRV_ALPHA=y
+
+##
 ## file: drivers/scsi/Kconfig
 ##
-CONFIG_SCSI_IN2000=m
 CONFIG_SCSI_ARCMSR=m
 CONFIG_SCSI_BUSLOGIC=m
 CONFIG_SCSI_DMX3191D=m
-CONFIG_SCSI_DTC3280=m
-CONFIG_SCSI_EATA=m
-CONFIG_SCSI_EATA_TAGGED_QUEUE=y
-CONFIG_SCSI_EATA_LINKED_COMMANDS=y
-CONFIG_SCSI_EATA_MAX_TAGS=16
-CONFIG_SCSI_FUTURE_DOMAIN=m
 CONFIG_SCSI_GDTH=m
 CONFIG_SCSI_GENERIC_NCR5380=m
-CONFIG_SCSI_GENERIC_NCR5380_MMIO=m
-CONFIG_SCSI_GENERIC_NCR53C400=y
 CONFIG_SCSI_IPS=m
 CONFIG_SCSI_INITIO=m
 CONFIG_SCSI_INIA100=m
 CONFIG_SCSI_IZIP_EPP16=y
 CONFIG_SCSI_IZIP_SLOW_CTR=y
-CONFIG_SCSI_NCR53C406A=m
-CONFIG_SCSI_SYM53C8XX_2=m
 CONFIG_SCSI_SYM53C8XX_DMA_ADDRESSING_MODE=1
 CONFIG_SCSI_SYM53C8XX_DEFAULT_TAGS=16
 CONFIG_SCSI_SYM53C8XX_MAX_TAGS=64
 CONFIG_SCSI_IPR=m
 CONFIG_SCSI_IPR_TRACE=y
 CONFIG_SCSI_IPR_DUMP=y
-CONFIG_SCSI_PAS16=m
 CONFIG_SCSI_QLOGIC_FAS=m
 CONFIG_SCSI_QLOGIC_1280=m
 CONFIG_SCSI_SIM710=m
-CONFIG_SCSI_SYM53C416=m
 CONFIG_SCSI_DC395x=m
 CONFIG_SCSI_AM53C974=m
-CONFIG_SCSI_T128=m
-CONFIG_SCSI_U14_34F=m
-CONFIG_SCSI_U14_34F_TAGGED_QUEUE=y
-CONFIG_SCSI_U14_34F_LINKED_COMMANDS=y
-CONFIG_SCSI_U14_34F_MAX_TAGS=8
 CONFIG_SCSI_DEBUG=m
 
 ##
@@ -802,7 +783,6 @@ CONFIG_MEGARAID_LEGACY=m
 ##
 ## file: drivers/scsi/pcmcia/Kconfig
 ##
-CONFIG_PCMCIA_FDOMAIN=m
 CONFIG_PCMCIA_QLOGIC=m
 CONFIG_PCMCIA_SYM53C500=m
 
@@ -871,12 +851,10 @@ CONFIG_LCD_CLASS_DEVICE=m
 ##
 CONFIG_VGA_CONSOLE=y
 CONFIG_MDA_CONSOLE=m
-CONFIG_FRAMEBUFFER_CONSOLE=m
 
 ##
 ## file: drivers/video/fbdev/Kconfig
 ##
-CONFIG_FB=y
 CONFIG_FB_MODE_HELPERS=y
 CONFIG_FB_TILEBLITTING=y
 CONFIG_FB_CIRRUS=m
@@ -928,7 +906,7 @@ CONFIG_USBPCWATCHDOG=m
 ##
 CONFIG_BINFMT_AOUT=m
 CONFIG_OSF4_COMPAT=y
-CONFIG_BINFMT_EM86=m
+# CONFIG_BINFMT_EM86 is not set
 
 ##
 ## file: init/Kconfig
@@ -958,36 +936,6 @@ CONFIG_ROSE=m
 ##
 CONFIG_DECNET=m
 # CONFIG_DECNET_ROUTER is not set
-
-##
-## file: net/ipx/Kconfig
-##
-CONFIG_IPX=m
-# CONFIG_IPX_INTERN is not set
-
-##
-## file: net/irda/Kconfig
-##
-CONFIG_IRDA=m
-CONFIG_IRDA_ULTRA=y
-CONFIG_IRDA_CACHE_LAST_LSAP=y
-CONFIG_IRDA_FAST_RR=y
-# CONFIG_IRDA_DEBUG is not set
-
-##
-## file: net/irda/ircomm/Kconfig
-##
-CONFIG_IRCOMM=m
-
-##
-## file: net/irda/irlan/Kconfig
-##
-CONFIG_IRLAN=m
-
-##
-## file: net/irda/irnet/Kconfig
-##
-CONFIG_IRNET=m
 
 ##
 ## file: net/lapb/Kconfig

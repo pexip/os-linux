@@ -4,7 +4,7 @@
 /*
  * Kernel Tracepoint API.
  *
- * See Documentation/trace/tracepoints.txt.
+ * See Documentation/trace/tracepoints.rst.
  *
  * Copyright (C) 2008-2014 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -19,30 +19,16 @@
 #include <linux/types.h>
 #include <linux/cpumask.h>
 #include <linux/rcupdate.h>
-#include <linux/static_key.h>
+#include <linux/tracepoint-defs.h>
 
 struct module;
 struct tracepoint;
 struct notifier_block;
 
-struct tracepoint_func {
-	void *func;
-	void *data;
-	int prio;
-};
-
-struct tracepoint {
-	const char *name;		/* Tracepoint name */
-	struct static_key key;
-	void (*regfunc)(void);
-	void (*unregfunc)(void);
-	struct tracepoint_func __rcu *funcs;
-};
-
-struct trace_enum_map {
+struct trace_eval_map {
 	const char		*system;
-	const char		*enum_string;
-	unsigned long		enum_value;
+	const char		*eval_string;
+	unsigned long		eval_value;
 };
 
 #define TRACEPOINT_DEFAULT_PRIO	10
@@ -95,13 +81,14 @@ static inline void tracepoint_synchronize_unregister(void)
 }
 
 #ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
-extern void syscall_regfunc(void);
+extern int syscall_regfunc(void);
 extern void syscall_unregfunc(void);
 #endif /* CONFIG_HAVE_SYSCALL_TRACEPOINTS */
 
 #define PARAMS(args...) args
 
 #define TRACE_DEFINE_ENUM(x)
+#define TRACE_DEFINE_SIZEOF(x)
 
 #endif /* _LINUX_TRACEPOINT_H */
 
@@ -142,7 +129,7 @@ extern void syscall_unregfunc(void);
  * as "(void *, void)". The DECLARE_TRACE_NOARGS() will pass in just
  * "void *data", where as the DECLARE_TRACE() will pass in "void *data, proto".
  */
-#define __DO_TRACE(tp, proto, args, cond, prercu, postrcu)		\
+#define __DO_TRACE(tp, proto, args, cond, rcucheck)			\
 	do {								\
 		struct tracepoint_func *it_func_ptr;			\
 		void *it_func;						\
@@ -150,7 +137,8 @@ extern void syscall_unregfunc(void);
 									\
 		if (!(cond))						\
 			return;						\
-		prercu;							\
+		if (rcucheck)						\
+			rcu_irq_enter_irqson();				\
 		rcu_read_lock_sched_notrace();				\
 		it_func_ptr = rcu_dereference_sched((tp)->funcs);	\
 		if (it_func_ptr) {					\
@@ -161,20 +149,19 @@ extern void syscall_unregfunc(void);
 			} while ((++it_func_ptr)->func);		\
 		}							\
 		rcu_read_unlock_sched_notrace();			\
-		postrcu;						\
+		if (rcucheck)						\
+			rcu_irq_exit_irqson();				\
 	} while (0)
 
 #ifndef MODULE
-#define __DECLARE_TRACE_RCU(name, proto, args, cond, data_proto, data_args)	\
+#define __DECLARE_TRACE_RCU(name, proto, args, cond, data_proto, data_args) \
 	static inline void trace_##name##_rcuidle(proto)		\
 	{								\
 		if (static_key_false(&__tracepoint_##name.key))		\
 			__DO_TRACE(&__tracepoint_##name,		\
 				TP_PROTO(data_proto),			\
 				TP_ARGS(data_args),			\
-				TP_CONDITION(cond),			\
-				rcu_irq_enter(),			\
-				rcu_irq_exit());			\
+				TP_CONDITION(cond), 1);			\
 	}
 #else
 #define __DECLARE_TRACE_RCU(name, proto, args, cond, data_proto, data_args)
@@ -200,7 +187,7 @@ extern void syscall_unregfunc(void);
 			__DO_TRACE(&__tracepoint_##name,		\
 				TP_PROTO(data_proto),			\
 				TP_ARGS(data_args),			\
-				TP_CONDITION(cond),,);			\
+				TP_CONDITION(cond), 0);			\
 		if (IS_ENABLED(CONFIG_LOCKDEP) && (cond)) {		\
 			rcu_read_lock_sched_notrace();			\
 			rcu_dereference_sched(__tracepoint_##name.funcs);\
@@ -499,6 +486,10 @@ extern void syscall_unregfunc(void);
 #define TRACE_EVENT_FN(name, proto, args, struct,		\
 		assign, print, reg, unreg)			\
 	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+#define TRACE_EVENT_FN_COND(name, proto, args, cond, struct,		\
+		assign, print, reg, unreg)			\
+	DECLARE_TRACE_CONDITION(name, PARAMS(proto),	\
+			PARAMS(args), PARAMS(cond))
 #define TRACE_EVENT_CONDITION(name, proto, args, cond,		\
 			      struct, assign, print)		\
 	DECLARE_TRACE_CONDITION(name, PARAMS(proto),		\

@@ -23,7 +23,8 @@
  * @channels:		filled with array of channels from iio
  * @num_channels:	number of channels in channels (saves counting twice)
  * @hwmon_dev:		associated hwmon device
- * @attr_group:	the group of attributes
+ * @attr_group:		the group of attributes
+ * @groups:		null terminated array of attribute groups
  * @attrs:		null terminated array of attribute pointers.
  */
 struct iio_hwmon_state {
@@ -67,13 +68,17 @@ static int iio_hwmon_probe(struct platform_device *pdev)
 	enum iio_chan_type type;
 	struct iio_channel *channels;
 	const char *name = "iio_hwmon";
+	char *sname;
 
 	if (dev->of_node && dev->of_node->name)
 		name = dev->of_node->name;
 
 	channels = iio_channel_get_all(dev);
-	if (IS_ERR(channels))
+	if (IS_ERR(channels)) {
+		if (PTR_ERR(channels) == -ENODEV)
+			return -EPROBE_DEFER;
 		return PTR_ERR(channels);
+	}
 
 	st = devm_kzalloc(dev, sizeof(*st), GFP_KERNEL);
 	if (st == NULL) {
@@ -87,8 +92,8 @@ static int iio_hwmon_probe(struct platform_device *pdev)
 	while (st->channels[st->num_channels].indio_dev)
 		st->num_channels++;
 
-	st->attrs = devm_kzalloc(dev,
-				 sizeof(*st->attrs) * (st->num_channels + 1),
+	st->attrs = devm_kcalloc(dev,
+				 st->num_channels + 1, sizeof(*st->attrs),
 				 GFP_KERNEL);
 	if (st->attrs == NULL) {
 		ret = -ENOMEM;
@@ -144,7 +149,15 @@ static int iio_hwmon_probe(struct platform_device *pdev)
 
 	st->attr_group.attrs = st->attrs;
 	st->groups[0] = &st->attr_group;
-	st->hwmon_dev = hwmon_device_register_with_groups(dev, name, st,
+
+	sname = devm_kstrdup(dev, name, GFP_KERNEL);
+	if (!sname) {
+		ret = -ENOMEM;
+		goto error_release_channels;
+	}
+
+	strreplace(sname, '-', '_');
+	st->hwmon_dev = hwmon_device_register_with_groups(dev, sname, st,
 							  st->groups);
 	if (IS_ERR(st->hwmon_dev)) {
 		ret = PTR_ERR(st->hwmon_dev);

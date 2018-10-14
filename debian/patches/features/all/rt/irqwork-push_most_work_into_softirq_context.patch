@@ -1,7 +1,7 @@
 Subject: irqwork: push most work into softirq context
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.4/patches-4.4.3-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.
@@ -18,25 +18,40 @@ This patch incorporates tglx orignal work which revoked a little bringing back
 the arch_irq_work_raise() if possible and a few fixes from Steven Rostedt and
 Mike Galbraith,
 
+[bigeasy: melt tglx's irq_work_tick_soft() which splits irq_work_tick() into a
+          hard and soft variant]
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/irq_work.h |    1 +
- kernel/irq_work.c        |   47 ++++++++++++++++++++++++++++++++++-------------
- kernel/sched/rt.c        |    1 +
- kernel/time/tick-sched.c |    6 ++++++
- kernel/time/timer.c      |    6 +++++-
- 5 files changed, 47 insertions(+), 14 deletions(-)
+ include/linux/irq_work.h |    8 ++++++
+ kernel/irq_work.c        |   60 ++++++++++++++++++++++++++++++++++++-----------
+ kernel/rcu/tree.c        |    1 
+ kernel/sched/topology.c  |    1 
+ kernel/time/tick-sched.c |    1 
+ kernel/time/timer.c      |    1 
+ 6 files changed, 59 insertions(+), 13 deletions(-)
 
 --- a/include/linux/irq_work.h
 +++ b/include/linux/irq_work.h
-@@ -16,6 +16,7 @@
- #define IRQ_WORK_BUSY		2UL
- #define IRQ_WORK_FLAGS		3UL
- #define IRQ_WORK_LAZY		4UL /* Doesn't want IPI, wait for tick */
-+#define IRQ_WORK_HARD_IRQ	8UL /* Run hard IRQ context, even on RT */
+@@ -18,6 +18,8 @@
  
- struct irq_work {
- 	unsigned long flags;
+ /* Doesn't want IPI, wait for tick: */
+ #define IRQ_WORK_LAZY		BIT(2)
++/* Run hard IRQ context, even on RT */
++#define IRQ_WORK_HARD_IRQ	BIT(3)
+ 
+ #define IRQ_WORK_CLAIMED	(IRQ_WORK_PENDING | IRQ_WORK_BUSY)
+ 
+@@ -52,4 +54,10 @@ static inline bool irq_work_needs_cpu(vo
+ static inline void irq_work_run(void) { }
+ #endif
+ 
++#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_PREEMPT_RT_FULL)
++void irq_work_tick_soft(void);
++#else
++static inline void irq_work_tick_soft(void) { }
++#endif
++
+ #endif /* _LINUX_IRQ_WORK_H */
 --- a/kernel/irq_work.c
 +++ b/kernel/irq_work.c
 @@ -17,6 +17,7 @@
@@ -47,7 +62,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <asm/processor.h>
  
  
-@@ -65,6 +66,8 @@ void __weak arch_irq_work_raise(void)
+@@ -64,6 +65,8 @@ void __weak arch_irq_work_raise(void)
   */
  bool irq_work_queue_on(struct irq_work *work, int cpu)
  {
@@ -56,7 +71,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* All work should have been flushed before going offline */
  	WARN_ON_ONCE(cpu_is_offline(cpu));
  
-@@ -75,7 +78,12 @@ bool irq_work_queue_on(struct irq_work *
+@@ -76,7 +79,12 @@ bool irq_work_queue_on(struct irq_work *
  	if (!irq_work_claim(work))
  		return false;
  
@@ -69,8 +84,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	if (llist_add(&work->llnode, list))
  		arch_send_call_function_single_ipi(cpu);
  
- 	return true;
-@@ -86,6 +94,9 @@ EXPORT_SYMBOL_GPL(irq_work_queue_on);
+ #else /* #ifdef CONFIG_SMP */
+@@ -89,6 +97,9 @@ bool irq_work_queue_on(struct irq_work *
  /* Enqueue the irq work @work on the current CPU */
  bool irq_work_queue(struct irq_work *work)
  {
@@ -80,7 +95,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* Only queue if not already pending */
  	if (!irq_work_claim(work))
  		return false;
-@@ -93,13 +104,15 @@ bool irq_work_queue(struct irq_work *wor
+@@ -96,13 +107,15 @@ bool irq_work_queue(struct irq_work *wor
  	/* Queue the entry and raise the IPI if needed. */
  	preempt_disable();
  
@@ -103,7 +118,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			arch_irq_work_raise();
  	}
  
-@@ -116,9 +129,8 @@ bool irq_work_needs_cpu(void)
+@@ -119,9 +132,8 @@ bool irq_work_needs_cpu(void)
  	raised = this_cpu_ptr(&raised_list);
  	lazy = this_cpu_ptr(&lazy_list);
  
@@ -115,16 +130,21 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* All work should have been flushed before going offline */
  	WARN_ON_ONCE(cpu_is_offline(smp_processor_id()));
-@@ -132,7 +144,7 @@ static void irq_work_run_list(struct lli
- 	struct irq_work *work;
+@@ -135,8 +147,12 @@ static void irq_work_run_list(struct lli
  	struct llist_node *llnode;
+ 	unsigned long flags;
  
--	BUG_ON(!irqs_disabled());
-+	BUG_ON_NONRT(!irqs_disabled());
- 
++#ifndef CONFIG_PREEMPT_RT_FULL
++	/*
++	 * nort: On RT IRQ-work may run in SOFTIRQ context.
++	 */
+ 	BUG_ON(!irqs_disabled());
+-
++#endif
  	if (llist_empty(list))
  		return;
-@@ -169,7 +181,16 @@ static void irq_work_run_list(struct lli
+ 
+@@ -168,7 +184,16 @@ static void irq_work_run_list(struct lli
  void irq_work_run(void)
  {
  	irq_work_run_list(this_cpu_ptr(&raised_list));
@@ -142,57 +162,61 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  EXPORT_SYMBOL_GPL(irq_work_run);
  
---- a/kernel/sched/rt.c
-+++ b/kernel/sched/rt.c
-@@ -94,6 +94,7 @@ void init_rt_rq(struct rt_rq *rt_rq)
- 	rt_rq->push_cpu = nr_cpu_ids;
- 	raw_spin_lock_init(&rt_rq->push_lock);
- 	init_irq_work(&rt_rq->push_work, push_irq_work_func);
-+	rt_rq->push_work.flags |= IRQ_WORK_HARD_IRQ;
+@@ -178,8 +203,17 @@ void irq_work_tick(void)
+ 
+ 	if (!llist_empty(raised) && !arch_irq_work_has_interrupt())
+ 		irq_work_run_list(raised);
++
++	if (!IS_ENABLED(CONFIG_PREEMPT_RT_FULL))
++		irq_work_run_list(this_cpu_ptr(&lazy_list));
++}
++
++#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_PREEMPT_RT_FULL)
++void irq_work_tick_soft(void)
++{
+ 	irq_work_run_list(this_cpu_ptr(&lazy_list));
+ }
++#endif
+ 
+ /*
+  * Synchronize against the irq_work @entry, ensures the entry is not
+--- a/kernel/rcu/tree.c
++++ b/kernel/rcu/tree.c
+@@ -1294,6 +1294,7 @@ static int rcu_implicit_dynticks_qs(stru
+ 		    !rdp->rcu_iw_pending && rdp->rcu_iw_gpnum != rnp->gpnum &&
+ 		    (rnp->ffmask & rdp->grpmask)) {
+ 			init_irq_work(&rdp->rcu_iw, rcu_iw_handler);
++			rdp->rcu_iw.flags = IRQ_WORK_HARD_IRQ;
+ 			rdp->rcu_iw_pending = true;
+ 			rdp->rcu_iw_gpnum = rnp->gpnum;
+ 			irq_work_queue_on(&rdp->rcu_iw, rdp->cpu);
+--- a/kernel/sched/topology.c
++++ b/kernel/sched/topology.c
+@@ -279,6 +279,7 @@ static int init_rootdomain(struct root_d
+ 	rd->rto_cpu = -1;
+ 	raw_spin_lock_init(&rd->rto_lock);
+ 	init_irq_work(&rd->rto_push_work, rto_push_irq_work_func);
++	rd->rto_push_work.flags |= IRQ_WORK_HARD_IRQ;
  #endif
- #endif /* CONFIG_SMP */
- 	/* We start is dequeued state, because no RT tasks are queued */
+ 
+ 	init_dl_bw(&rd->dl_bw);
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -181,6 +181,11 @@ static bool can_stop_full_tick(void)
- 		return false;
- 	}
- 
-+	if (!arch_irq_work_has_interrupt()) {
-+		trace_tick_stop(0, "missing irq work interrupt\n");
-+		return false;
-+	}
-+
- 	/* sched_clock_tick() needs us? */
- #ifdef CONFIG_HAVE_UNSTABLE_SCHED_CLOCK
- 	/*
-@@ -209,6 +214,7 @@ static void nohz_full_kick_work_func(str
+@@ -232,6 +232,7 @@ static void nohz_full_kick_func(struct i
  
  static DEFINE_PER_CPU(struct irq_work, nohz_full_kick_work) = {
- 	.func = nohz_full_kick_work_func,
+ 	.func = nohz_full_kick_func,
 +	.flags = IRQ_WORK_HARD_IRQ,
  };
  
  /*
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
-@@ -1484,7 +1484,7 @@ void update_process_times(int user_tick)
- 	scheduler_tick();
- 	run_local_timers();
- 	rcu_check_callbacks(user_tick);
--#ifdef CONFIG_IRQ_WORK
-+#if defined(CONFIG_IRQ_WORK) && !defined(CONFIG_PREEMPT_RT_FULL)
- 	if (in_irq())
- 		irq_work_tick();
- #endif
-@@ -1498,6 +1498,10 @@ static void run_timer_softirq(struct sof
+@@ -1717,6 +1717,7 @@ static __latent_entropy void run_timer_s
  {
- 	struct tvec_base *base = this_cpu_ptr(&tvec_bases);
+ 	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
  
-+#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_PREEMPT_RT_FULL)
-+	irq_work_tick();
-+#endif
-+
- 	if (time_after_eq(jiffies, base->timer_jiffies))
- 		__run_timers(base);
- }
++	irq_work_tick_soft();
+ 	/*
+ 	 * must_forward_clk must be cleared before running timers so that any
+ 	 * timer functions that call mod_timer will not try to forward the

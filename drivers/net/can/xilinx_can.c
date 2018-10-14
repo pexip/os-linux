@@ -35,6 +35,7 @@
 #include <linux/can/dev.h>
 #include <linux/can/error.h>
 #include <linux/can/led.h>
+#include <linux/pm_runtime.h>
 
 #define DRIVER_NAME	"xilinx_can"
 
@@ -143,7 +144,7 @@ struct xcan_priv {
 	u32 (*read_reg)(const struct xcan_priv *priv, enum xcan_reg reg);
 	void (*write_reg)(const struct xcan_priv *priv, enum xcan_reg reg,
 			u32 val);
-	struct net_device *dev;
+	struct device *dev;
 	void __iomem *reg_base;
 	unsigned long irq_flags;
 	struct clk *bus_clk;
@@ -837,7 +838,7 @@ static int xcan_rx_poll(struct napi_struct *napi, int quota)
 	}
 
 	if (work_done < quota) {
-		napi_complete(napi);
+		napi_complete_done(napi, work_done);
 		ier = priv->read_reg(priv, XCAN_IER_OFFSET);
 		ier |= XCAN_IXR_RXNEMP_MASK;
 		priv->write_reg(priv, XCAN_IER_OFFSET, ier);
@@ -983,13 +984,9 @@ static irqreturn_t xcan_interrupt(int irq, void *dev_id)
 static void xcan_chip_stop(struct net_device *ndev)
 {
 	struct xcan_priv *priv = netdev_priv(ndev);
-	u32 ier;
 
 	/* Disable interrupts and leave the can in configuration mode */
-	ier = priv->read_reg(priv, XCAN_IER_OFFSET);
-	ier &= ~XCAN_INTR_ALL;
-	priv->write_reg(priv, XCAN_IER_OFFSET, ier);
-	priv->write_reg(priv, XCAN_SRR_OFFSET, XCAN_SRR_RESET_MASK);
+	set_reset_mode(ndev);
 	priv->can.state = CAN_STATE_STOPPED;
 }
 
@@ -1005,6 +1002,13 @@ static int xcan_open(struct net_device *ndev)
 	struct xcan_priv *priv = netdev_priv(ndev);
 	int ret;
 
+	ret = pm_runtime_get_sync(priv->dev);
+	if (ret < 0) {
+		netdev_err(ndev, "%s: pm_runtime_get failed(%d)\n",
+				__func__, ret);
+		return ret;
+	}
+
 	ret = request_irq(ndev->irq, xcan_interrupt, priv->irq_flags,
 			ndev->name, ndev);
 	if (ret < 0) {
@@ -1012,29 +1016,17 @@ static int xcan_open(struct net_device *ndev)
 		goto err;
 	}
 
-	ret = clk_prepare_enable(priv->can_clk);
-	if (ret) {
-		netdev_err(ndev, "unable to enable device clock\n");
-		goto err_irq;
-	}
-
-	ret = clk_prepare_enable(priv->bus_clk);
-	if (ret) {
-		netdev_err(ndev, "unable to enable bus clock\n");
-		goto err_can_clk;
-	}
-
 	/* Set chip into reset mode */
 	ret = set_reset_mode(ndev);
 	if (ret < 0) {
 		netdev_err(ndev, "mode resetting failed!\n");
-		goto err_bus_clk;
+		goto err_irq;
 	}
 
 	/* Common open */
 	ret = open_candev(ndev);
 	if (ret)
-		goto err_bus_clk;
+		goto err_irq;
 
 	ret = xcan_chip_start(ndev);
 	if (ret < 0) {
@@ -1050,13 +1042,11 @@ static int xcan_open(struct net_device *ndev)
 
 err_candev:
 	close_candev(ndev);
-err_bus_clk:
-	clk_disable_unprepare(priv->bus_clk);
-err_can_clk:
-	clk_disable_unprepare(priv->can_clk);
 err_irq:
 	free_irq(ndev->irq, ndev);
 err:
+	pm_runtime_put(priv->dev);
+
 	return ret;
 }
 
@@ -1073,12 +1063,11 @@ static int xcan_close(struct net_device *ndev)
 	netif_stop_queue(ndev);
 	napi_disable(&priv->napi);
 	xcan_chip_stop(ndev);
-	clk_disable_unprepare(priv->bus_clk);
-	clk_disable_unprepare(priv->can_clk);
 	free_irq(ndev->irq, ndev);
 	close_candev(ndev);
 
 	can_led_event(ndev, CAN_LED_EVENT_STOP);
+	pm_runtime_put(priv->dev);
 
 	return 0;
 }
@@ -1097,27 +1086,20 @@ static int xcan_get_berr_counter(const struct net_device *ndev,
 	struct xcan_priv *priv = netdev_priv(ndev);
 	int ret;
 
-	ret = clk_prepare_enable(priv->can_clk);
-	if (ret)
-		goto err;
-
-	ret = clk_prepare_enable(priv->bus_clk);
-	if (ret)
-		goto err_clk;
+	ret = pm_runtime_get_sync(priv->dev);
+	if (ret < 0) {
+		netdev_err(ndev, "%s: pm_runtime_get failed(%d)\n",
+				__func__, ret);
+		return ret;
+	}
 
 	bec->txerr = priv->read_reg(priv, XCAN_ECR_OFFSET) & XCAN_ECR_TEC_MASK;
 	bec->rxerr = ((priv->read_reg(priv, XCAN_ECR_OFFSET) &
 			XCAN_ECR_REC_MASK) >> XCAN_ESR_REC_SHIFT);
 
-	clk_disable_unprepare(priv->bus_clk);
-	clk_disable_unprepare(priv->can_clk);
+	pm_runtime_put(priv->dev);
 
 	return 0;
-
-err_clk:
-	clk_disable_unprepare(priv->can_clk);
-err:
-	return ret;
 }
 
 
@@ -1130,62 +1112,49 @@ static const struct net_device_ops xcan_netdev_ops = {
 
 /**
  * xcan_suspend - Suspend method for the driver
- * @dev:	Address of the platform_device structure
+ * @dev:	Address of the device structure
  *
  * Put the driver into low power mode.
- * Return: 0 always
+ * Return: 0 on success and failure value on error
  */
 static int __maybe_unused xcan_suspend(struct device *dev)
 {
-	struct platform_device *pdev = dev_get_drvdata(dev);
-	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct xcan_priv *priv = netdev_priv(ndev);
+	struct net_device *ndev = dev_get_drvdata(dev);
 
 	if (netif_running(ndev)) {
 		netif_stop_queue(ndev);
 		netif_device_detach(ndev);
+		xcan_chip_stop(ndev);
 	}
 
-	priv->write_reg(priv, XCAN_MSR_OFFSET, XCAN_MSR_SLEEP_MASK);
-	priv->can.state = CAN_STATE_SLEEPING;
-
-	clk_disable(priv->bus_clk);
-	clk_disable(priv->can_clk);
-
-	return 0;
+	return pm_runtime_force_suspend(dev);
 }
 
 /**
  * xcan_resume - Resume from suspend
- * @dev:	Address of the platformdevice structure
+ * @dev:	Address of the device structure
  *
  * Resume operation after suspend.
  * Return: 0 on success and failure value on error
  */
 static int __maybe_unused xcan_resume(struct device *dev)
 {
-	struct platform_device *pdev = dev_get_drvdata(dev);
-	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct xcan_priv *priv = netdev_priv(ndev);
+	struct net_device *ndev = dev_get_drvdata(dev);
 	int ret;
 
-	ret = clk_enable(priv->bus_clk);
+	ret = pm_runtime_force_resume(dev);
 	if (ret) {
-		dev_err(dev, "Cannot enable clock.\n");
+		dev_err(dev, "pm_runtime_force_resume failed on resume\n");
 		return ret;
 	}
-	ret = clk_enable(priv->can_clk);
-	if (ret) {
-		dev_err(dev, "Cannot enable clock.\n");
-		clk_disable_unprepare(priv->bus_clk);
-		return ret;
-	}
-
-	priv->write_reg(priv, XCAN_MSR_OFFSET, 0);
-	priv->write_reg(priv, XCAN_SRR_OFFSET, XCAN_SRR_CEN_MASK);
-	priv->can.state = CAN_STATE_ERROR_ACTIVE;
 
 	if (netif_running(ndev)) {
+		ret = xcan_chip_start(ndev);
+		if (ret) {
+			dev_err(dev, "xcan_chip_start failed on resume\n");
+			return ret;
+		}
+
 		netif_device_attach(ndev);
 		netif_start_queue(ndev);
 	}
@@ -1193,7 +1162,56 @@ static int __maybe_unused xcan_resume(struct device *dev)
 	return 0;
 }
 
-static SIMPLE_DEV_PM_OPS(xcan_dev_pm_ops, xcan_suspend, xcan_resume);
+/**
+ * xcan_runtime_suspend - Runtime suspend method for the driver
+ * @dev:	Address of the device structure
+ *
+ * Put the driver into low power mode.
+ * Return: 0 always
+ */
+static int __maybe_unused xcan_runtime_suspend(struct device *dev)
+{
+	struct net_device *ndev = dev_get_drvdata(dev);
+	struct xcan_priv *priv = netdev_priv(ndev);
+
+	clk_disable_unprepare(priv->bus_clk);
+	clk_disable_unprepare(priv->can_clk);
+
+	return 0;
+}
+
+/**
+ * xcan_runtime_resume - Runtime resume from suspend
+ * @dev:	Address of the device structure
+ *
+ * Resume operation after suspend.
+ * Return: 0 on success and failure value on error
+ */
+static int __maybe_unused xcan_runtime_resume(struct device *dev)
+{
+	struct net_device *ndev = dev_get_drvdata(dev);
+	struct xcan_priv *priv = netdev_priv(ndev);
+	int ret;
+
+	ret = clk_prepare_enable(priv->bus_clk);
+	if (ret) {
+		dev_err(dev, "Cannot enable clock.\n");
+		return ret;
+	}
+	ret = clk_prepare_enable(priv->can_clk);
+	if (ret) {
+		dev_err(dev, "Cannot enable clock.\n");
+		clk_disable_unprepare(priv->bus_clk);
+		return ret;
+	}
+
+	return 0;
+}
+
+static const struct dev_pm_ops xcan_dev_pm_ops = {
+	SET_SYSTEM_SLEEP_PM_OPS(xcan_suspend, xcan_resume)
+	SET_RUNTIME_PM_OPS(xcan_runtime_suspend, xcan_runtime_resume, NULL)
+};
 
 static const struct xcan_devtype_data xcan_zynq_data = {
 	.caps = XCAN_CAP_WATERMARK,
@@ -1273,7 +1291,7 @@ static int xcan_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	priv = netdev_priv(ndev);
-	priv->dev = ndev;
+	priv->dev = &pdev->dev;
 	priv->can.bittiming_const = &xcan_bittiming_const;
 	priv->can.do_set_mode = xcan_do_set_mode;
 	priv->can.do_get_berr_counter = xcan_get_berr_counter;
@@ -1316,20 +1334,16 @@ static int xcan_probe(struct platform_device *pdev)
 		}
 	}
 
-	ret = clk_prepare_enable(priv->can_clk);
-	if (ret) {
-		dev_err(&pdev->dev, "unable to enable device clock\n");
-		goto err_free;
-	}
-
-	ret = clk_prepare_enable(priv->bus_clk);
-	if (ret) {
-		dev_err(&pdev->dev, "unable to enable bus clock\n");
-		goto err_unprepare_disable_dev;
-	}
-
 	priv->write_reg = xcan_write_reg_le;
 	priv->read_reg = xcan_read_reg_le;
+
+	pm_runtime_enable(&pdev->dev);
+	ret = pm_runtime_get_sync(&pdev->dev);
+	if (ret < 0) {
+		netdev_err(ndev, "%s: pm_runtime_get failed(%d)\n",
+			__func__, ret);
+		goto err_pmdisable;
+	}
 
 	if (priv->read_reg(priv, XCAN_SR_OFFSET) != XCAN_SR_CONFIG_MASK) {
 		priv->write_reg = xcan_write_reg_be;
@@ -1343,22 +1357,23 @@ static int xcan_probe(struct platform_device *pdev)
 	ret = register_candev(ndev);
 	if (ret) {
 		dev_err(&pdev->dev, "fail to register failed (err=%d)\n", ret);
-		goto err_unprepare_disable_busclk;
+		goto err_disableclks;
 	}
 
 	devm_can_led_init(ndev);
-	clk_disable_unprepare(priv->bus_clk);
-	clk_disable_unprepare(priv->can_clk);
+
+	pm_runtime_put(&pdev->dev);
+
 	netdev_dbg(ndev, "reg_base=0x%p irq=%d clock=%d, tx fifo depth: actual %d, using %d\n",
 			priv->reg_base, ndev->irq, priv->can.clock.freq,
 			tx_fifo_depth, priv->tx_max);
 
 	return 0;
 
-err_unprepare_disable_busclk:
-	clk_disable_unprepare(priv->bus_clk);
-err_unprepare_disable_dev:
-	clk_disable_unprepare(priv->can_clk);
+err_disableclks:
+	pm_runtime_put(priv->dev);
+err_pmdisable:
+	pm_runtime_disable(&pdev->dev);
 err_free:
 	free_candev(ndev);
 err:
@@ -1377,10 +1392,8 @@ static int xcan_remove(struct platform_device *pdev)
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct xcan_priv *priv = netdev_priv(ndev);
 
-	if (set_reset_mode(ndev) < 0)
-		netdev_err(ndev, "mode resetting failed!\n");
-
 	unregister_candev(ndev);
+	pm_runtime_disable(&pdev->dev);
 	netif_napi_del(&priv->napi);
 	free_candev(ndev);
 

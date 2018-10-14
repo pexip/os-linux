@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef _BLK_CGROUP_H
 #define _BLK_CGROUP_H
 /*
@@ -19,6 +20,7 @@
 #include <linux/radix-tree.h>
 #include <linux/blkdev.h>
 #include <linux/atomic.h>
+#include <linux/kthread.h>
 
 /* percpu_counter batch for blkg_[rw]stats, per-cpu drift doesn't matter */
 #define BLKG_STAT_CPU_BATCH	(INT_MAX / 2)
@@ -45,7 +47,7 @@ struct blkcg {
 	spinlock_t			lock;
 
 	struct radix_tree_root		blkg_tree;
-	struct blkcg_gq			*blkg_hint;
+	struct blkcg_gq	__rcu		*blkg_hint;
 	struct hlist_head		blkg_list;
 
 	struct blkcg_policy_data	*cpd[BLKCG_MAX_POLS];
@@ -86,6 +88,7 @@ struct blkg_policy_data {
 	/* the blkg and policy id this per-policy data belongs to */
 	struct blkcg_gq			*blkg;
 	int				plid;
+	bool				offline;
 };
 
 /*
@@ -223,22 +226,16 @@ static inline struct blkcg *css_to_blkcg(struct cgroup_subsys_state *css)
 	return css ? container_of(css, struct blkcg, css) : NULL;
 }
 
-static inline struct blkcg *task_blkcg(struct task_struct *tsk)
-{
-	return css_to_blkcg(task_css(tsk, io_cgrp_id));
-}
-
 static inline struct blkcg *bio_blkcg(struct bio *bio)
 {
+	struct cgroup_subsys_state *css;
+
 	if (bio && bio->bi_css)
 		return css_to_blkcg(bio->bi_css);
-	return task_blkcg(current);
-}
-
-static inline struct cgroup_subsys_state *
-task_get_blkcg_css(struct task_struct *task)
-{
-	return task_get_css(task, io_cgrp_id);
+	css = kthread_blkcg();
+	if (css)
+		return css_to_blkcg(css);
+	return css_to_blkcg(task_css(current, io_cgrp_id));
 }
 
 /**
@@ -343,16 +340,7 @@ static inline struct blkcg *cpd_to_blkcg(struct blkcg_policy_data *cpd)
  */
 static inline int blkg_path(struct blkcg_gq *blkg, char *buf, int buflen)
 {
-	char *p;
-
-	p = cgroup_path(blkg->blkcg->css.cgroup, buf, buflen);
-	if (!p) {
-		strncpy(buf, "<unavailable>", buflen);
-		return -ENAMETOOLONG;
-	}
-
-	memmove(buf, p, buf + buflen - p);
-	return 0;
+	return cgroup_path(blkg->blkcg->css.cgroup, buf, buflen);
 }
 
 /**
@@ -527,7 +515,7 @@ static inline void blkg_stat_exit(struct blkg_stat *stat)
  */
 static inline void blkg_stat_add(struct blkg_stat *stat, uint64_t val)
 {
-	__percpu_counter_add(&stat->cpu_cnt, val, BLKG_STAT_CPU_BATCH);
+	percpu_counter_add_batch(&stat->cpu_cnt, val, BLKG_STAT_CPU_BATCH);
 }
 
 /**
@@ -590,30 +578,30 @@ static inline void blkg_rwstat_exit(struct blkg_rwstat *rwstat)
 /**
  * blkg_rwstat_add - add a value to a blkg_rwstat
  * @rwstat: target blkg_rwstat
- * @rw: mask of REQ_{WRITE|SYNC}
+ * @op: REQ_OP and flags
  * @val: value to add
  *
  * Add @val to @rwstat.  The counters are chosen according to @rw.  The
  * caller is responsible for synchronizing calls to this function.
  */
 static inline void blkg_rwstat_add(struct blkg_rwstat *rwstat,
-				   int rw, uint64_t val)
+				   unsigned int op, uint64_t val)
 {
 	struct percpu_counter *cnt;
 
-	if (rw & REQ_WRITE)
+	if (op_is_write(op))
 		cnt = &rwstat->cpu_cnt[BLKG_RWSTAT_WRITE];
 	else
 		cnt = &rwstat->cpu_cnt[BLKG_RWSTAT_READ];
 
-	__percpu_counter_add(cnt, val, BLKG_STAT_CPU_BATCH);
+	percpu_counter_add_batch(cnt, val, BLKG_STAT_CPU_BATCH);
 
-	if (rw & REQ_SYNC)
+	if (op_is_sync(op))
 		cnt = &rwstat->cpu_cnt[BLKG_RWSTAT_SYNC];
 	else
 		cnt = &rwstat->cpu_cnt[BLKG_RWSTAT_ASYNC];
 
-	__percpu_counter_add(cnt, val, BLKG_STAT_CPU_BATCH);
+	percpu_counter_add_batch(cnt, val, BLKG_STAT_CPU_BATCH);
 }
 
 /**
@@ -673,12 +661,14 @@ static inline void blkg_rwstat_reset(struct blkg_rwstat *rwstat)
 static inline void blkg_rwstat_add_aux(struct blkg_rwstat *to,
 				       struct blkg_rwstat *from)
 {
-	struct blkg_rwstat v = blkg_rwstat_read(from);
+	u64 sum[BLKG_RWSTAT_NR];
 	int i;
 
 	for (i = 0; i < BLKG_RWSTAT_NR; i++)
-		atomic64_add(atomic64_read(&v.aux_cnt[i]) +
-			     atomic64_read(&from->aux_cnt[i]),
+		sum[i] = percpu_counter_sum_positive(&from->cpu_cnt[i]);
+
+	for (i = 0; i < BLKG_RWSTAT_NR; i++)
+		atomic64_add(sum[i] + atomic64_read(&from->aux_cnt[i]),
 			     &to->aux_cnt[i]);
 }
 
@@ -700,6 +690,9 @@ static inline bool blkcg_bio_issue_check(struct request_queue *q,
 	rcu_read_lock();
 	blkcg = bio_blkcg(bio);
 
+	/* associate blkcg if bio hasn't attached one */
+	bio_associate_blkcg(bio, &blkcg->css);
+
 	blkg = blkg_lookup(blkcg, q);
 	if (unlikely(!blkg)) {
 		spin_lock_irq(q->queue_lock);
@@ -713,9 +706,9 @@ static inline bool blkcg_bio_issue_check(struct request_queue *q,
 
 	if (!throtl) {
 		blkg = blkg ?: q->root_blkg;
-		blkg_rwstat_add(&blkg->stat_bytes, bio->bi_rw,
+		blkg_rwstat_add(&blkg->stat_bytes, bio->bi_opf,
 				bio->bi_iter.bi_size);
-		blkg_rwstat_add(&blkg->stat_ios, bio->bi_rw, 1);
+		blkg_rwstat_add(&blkg->stat_ios, bio->bi_opf, 1);
 	}
 
 	rcu_read_unlock();
@@ -740,12 +733,6 @@ struct blkcg_policy {
 };
 
 #define blkcg_root_css	((struct cgroup_subsys_state *)ERR_PTR(-EINVAL))
-
-static inline struct cgroup_subsys_state *
-task_get_blkcg_css(struct task_struct *task)
-{
-	return NULL;
-}
 
 #ifdef CONFIG_BLOCK
 

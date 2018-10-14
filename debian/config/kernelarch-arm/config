@@ -5,6 +5,7 @@ CONFIG_MMU=y
 CONFIG_AEABI=y
 # CONFIG_OABI_COMPAT is not set
 CONFIG_CPU_SW_DOMAIN_PAN=y
+CONFIG_SECCOMP=y
 CONFIG_KEXEC=y
 
 ##
@@ -24,6 +25,11 @@ CONFIG_EARLY_PRINTK=y
 ##
 #. Support Thumb user binaries
 CONFIG_ARM_THUMB=y
+
+##
+## file: drivers/iio/humidity/Kconfig
+##
+CONFIG_DHT11=m
 
 ##
 ## file: drivers/input/misc/Kconfig
@@ -49,7 +55,7 @@ CONFIG_MOUSE_APPLETOUCH=m
 CONFIG_MTD_PHYSMAP=y
 
 ##
-## file: drivers/net/wireless/ipw2x00/Kconfig
+## file: drivers/net/wireless/intel/ipw2x00/Kconfig
 ##
 # CONFIG_IPW2100 is not set
 

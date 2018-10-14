@@ -21,8 +21,8 @@
    */
 /*
  * This driver needs external firmware. Please use the commands
- * "<kerneldir>/Documentation/dvb/get_dvb_firmware tda10045",
- * "<kerneldir>/Documentation/dvb/get_dvb_firmware tda10046" to
+ * "<kerneldir>/scripts/get_dvb_firmware tda10045",
+ * "<kerneldir>/scripts/get_dvb_firmware tda10046" to
  * download/extract them, and then copy them to /usr/lib/hotplug/firmware
  * or /lib/firmware (depending on configuration of firmware hotplug).
  */
@@ -36,7 +36,7 @@
 #include <linux/string.h>
 #include <linux/slab.h>
 
-#include "dvb_frontend.h"
+#include <media/dvb_frontend.h>
 #include "tda1004x.h"
 
 static int debug;
@@ -899,9 +899,9 @@ static int tda1004x_set_fe(struct dvb_frontend *fe)
 	return 0;
 }
 
-static int tda1004x_get_fe(struct dvb_frontend *fe)
+static int tda1004x_get_fe(struct dvb_frontend *fe,
+			   struct dtv_frontend_properties *fe_params)
 {
-	struct dtv_frontend_properties *fe_params = &fe->dtv_property_cache;
 	struct tda1004x_state* state = fe->demodulator_priv;
 	int status;
 
@@ -1245,7 +1245,7 @@ static void tda1004x_release(struct dvb_frontend* fe)
 	kfree(state);
 }
 
-static struct dvb_frontend_ops tda10045_ops = {
+static const struct dvb_frontend_ops tda10045_ops = {
 	.delsys = { SYS_DVBT },
 	.info = {
 		.name = "Philips TDA10045H DVB-T",
@@ -1315,7 +1315,7 @@ struct dvb_frontend* tda10045_attach(const struct tda1004x_config* config,
 	return &state->frontend;
 }
 
-static struct dvb_frontend_ops tda10046_ops = {
+static const struct dvb_frontend_ops tda10046_ops = {
 	.delsys = { SYS_DVBT },
 	.info = {
 		.name = "Philips TDA10046H DVB-T",

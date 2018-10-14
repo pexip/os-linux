@@ -11,6 +11,9 @@
  */
 #include <linux/errno.h>
 #include <linux/sched.h>
+#include <linux/sched/debug.h>
+#include <linux/sched/task.h>
+#include <linux/sched/task_stack.h>
 #include <linux/tick.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
@@ -26,10 +29,12 @@
 #include <linux/kallsyms.h>
 #include <linux/random.h>
 #include <linux/prctl.h>
+#include <linux/nmi.h>
 
 #include <asm/asm.h>
 #include <asm/bootinfo.h>
 #include <asm/cpu.h>
+#include <asm/dsemul.h>
 #include <asm/dsp.h>
 #include <asm/fpu.h>
 #include <asm/irq.h>
@@ -38,7 +43,7 @@
 #include <asm/mipsregs.h>
 #include <asm/processor.h>
 #include <asm/reg.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <asm/io.h>
 #include <asm/elf.h>
 #include <asm/isadep.h>
@@ -64,22 +69,23 @@ void start_thread(struct pt_regs * regs, unsigned long pc, unsigned long sp)
 	status = regs->cp0_status & ~(ST0_CU0|ST0_CU1|ST0_FR|KU_MASK);
 	status |= KU_USER;
 	regs->cp0_status = status;
-	clear_used_math();
-	clear_fpu_owner();
-	init_dsp();
-	clear_thread_flag(TIF_USEDMSA);
+	lose_fpu(0);
 	clear_thread_flag(TIF_MSA_CTX_LIVE);
-	disable_msa();
+	clear_used_math();
+	atomic_set(&current->thread.bd_emu_frame, BD_EMUFRAME_NONE);
+	init_dsp();
 	regs->cp0_epc = pc;
 	regs->regs[29] = sp;
 }
 
-void exit_thread(void)
+void exit_thread(struct task_struct *tsk)
 {
-}
-
-void flush_thread(void)
-{
+	/*
+	 * User threads may have allocated a delay slot emulation frame.
+	 * If so, clean up that allocation.
+	 */
+	if (!(current->flags & PF_KTHREAD))
+		dsemul_thread_cleanup(tsk);
 }
 
 int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
@@ -109,8 +115,8 @@ int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
 /*
  * Copy architecture-specific thread state
  */
-int copy_thread(unsigned long clone_flags, unsigned long usp,
-	unsigned long kthread_arg, struct task_struct *p)
+int copy_thread_tls(unsigned long clone_flags, unsigned long usp,
+	unsigned long kthread_arg, struct task_struct *p, unsigned long tls)
 {
 	struct thread_info *ti = task_thread_info(p);
 	struct pt_regs *childregs, *regs = current_pt_regs();
@@ -167,13 +173,15 @@ int copy_thread(unsigned long clone_flags, unsigned long usp,
 	clear_tsk_thread_flag(p, TIF_FPUBOUND);
 #endif /* CONFIG_MIPS_MT_FPAFF */
 
+	atomic_set(&p->thread.bd_emu_frame, BD_EMUFRAME_NONE);
+
 	if (clone_flags & CLONE_SETTLS)
-		ti->tp_value = regs->regs[7];
+		ti->tp_value = tls;
 
 	return 0;
 }
 
-#ifdef CONFIG_CC_STACKPROTECTOR
+#ifdef CONFIG_STACKPROTECTOR
 #include <linux/stackprotector.h>
 unsigned long __stack_chk_guard __read_mostly;
 EXPORT_SYMBOL(__stack_chk_guard);
@@ -201,13 +209,13 @@ static inline int is_ra_save_ins(union mips_instruction *ip, int *poff)
 	 *
 	 * microMIPS is way more fun...
 	 */
-	if (mm_insn_16bit(ip->halfword[1])) {
+	if (mm_insn_16bit(ip->word >> 16)) {
 		switch (ip->mm16_r5_format.opcode) {
 		case mm_swsp16_op:
 			if (ip->mm16_r5_format.rt != 31)
 				return 0;
 
-			*poff = ip->mm16_r5_format.simmediate;
+			*poff = ip->mm16_r5_format.imm;
 			*poff = (*poff << 2) / sizeof(ulong);
 			return 1;
 
@@ -280,7 +288,7 @@ static inline int is_jump_ins(union mips_instruction *ip)
 	 *
 	 * microMIPS is kind of more fun...
 	 */
-	if (mm_insn_16bit(ip->halfword[1])) {
+	if (mm_insn_16bit(ip->word >> 16)) {
 		if ((ip->mm16_r5_format.opcode == mm_pool16c_op &&
 		    (ip->mm16_r5_format.rt & mm_jr16_op) == mm_jr16_op))
 			return 1;
@@ -306,9 +314,11 @@ static inline int is_jump_ins(union mips_instruction *ip)
 #endif
 }
 
-static inline int is_sp_move_ins(union mips_instruction *ip)
+static inline int is_sp_move_ins(union mips_instruction *ip, int *frame_size)
 {
 #ifdef CONFIG_CPU_MICROMIPS
+	unsigned short tmp;
+
 	/*
 	 * addiusp -imm
 	 * addius5 sp,-imm
@@ -317,21 +327,40 @@ static inline int is_sp_move_ins(union mips_instruction *ip)
 	 *
 	 * microMIPS is not more fun...
 	 */
-	if (mm_insn_16bit(ip->halfword[1])) {
-		return (ip->mm16_r3_format.opcode == mm_pool16d_op &&
-			ip->mm16_r3_format.simmediate && mm_addiusp_func) ||
-		       (ip->mm16_r5_format.opcode == mm_pool16d_op &&
-			ip->mm16_r5_format.rt == 29);
+	if (mm_insn_16bit(ip->word >> 16)) {
+		if (ip->mm16_r3_format.opcode == mm_pool16d_op &&
+		    ip->mm16_r3_format.simmediate & mm_addiusp_func) {
+			tmp = ip->mm_b0_format.simmediate >> 1;
+			tmp = ((tmp & 0x1ff) ^ 0x100) - 0x100;
+			if ((tmp + 2) < 4) /* 0x0,0x1,0x1fe,0x1ff are special */
+				tmp ^= 0x100;
+			*frame_size = -(signed short)(tmp << 2);
+			return 1;
+		}
+		if (ip->mm16_r5_format.opcode == mm_pool16d_op &&
+		    ip->mm16_r5_format.rt == 29) {
+			tmp = ip->mm16_r5_format.imm >> 1;
+			*frame_size = -(signed short)(tmp & 0xf);
+			return 1;
+		}
+		return 0;
 	}
 
-	return ip->mm_i_format.opcode == mm_addiu32_op &&
-	       ip->mm_i_format.rt == 29 && ip->mm_i_format.rs == 29;
+	if (ip->mm_i_format.opcode == mm_addiu32_op &&
+	    ip->mm_i_format.rt == 29 && ip->mm_i_format.rs == 29) {
+		*frame_size = -ip->i_format.simmediate;
+		return 1;
+	}
 #else
 	/* addiu/daddiu sp,sp,-imm */
 	if (ip->i_format.rs != 29 || ip->i_format.rt != 29)
 		return 0;
-	if (ip->i_format.opcode == addiu_op || ip->i_format.opcode == daddiu_op)
+
+	if (ip->i_format.opcode == addiu_op ||
+	    ip->i_format.opcode == daddiu_op) {
+		*frame_size = -ip->i_format.simmediate;
 		return 1;
+	}
 #endif
 	return 0;
 }
@@ -341,7 +370,9 @@ static int get_frame_info(struct mips_frame_info *info)
 	bool is_mmips = IS_ENABLED(CONFIG_CPU_MICROMIPS);
 	union mips_instruction insn, *ip, *ip_end;
 	const unsigned int max_insns = 128;
+	unsigned int last_insn_size = 0;
 	unsigned int i;
+	bool saw_jump = false;
 
 	info->pc_offset = -1;
 	info->frame_size = 0;
@@ -352,53 +383,50 @@ static int get_frame_info(struct mips_frame_info *info)
 
 	ip_end = (void *)ip + info->func_size;
 
-	for (i = 0; i < max_insns && ip < ip_end; i++, ip++) {
+	for (i = 0; i < max_insns && ip < ip_end; i++) {
+		ip = (void *)ip + last_insn_size;
 		if (is_mmips && mm_insn_16bit(ip->halfword[0])) {
-			insn.halfword[0] = 0;
-			insn.halfword[1] = ip->halfword[0];
+			insn.word = ip->halfword[0] << 16;
+			last_insn_size = 2;
 		} else if (is_mmips) {
-			insn.halfword[0] = ip->halfword[1];
-			insn.halfword[1] = ip->halfword[0];
+			insn.word = ip->halfword[0] << 16 | ip->halfword[1];
+			last_insn_size = 4;
 		} else {
 			insn.word = ip->word;
+			last_insn_size = 4;
 		}
 
-		if (is_jump_ins(&insn))
-			break;
-
 		if (!info->frame_size) {
-			if (is_sp_move_ins(&insn))
-			{
-#ifdef CONFIG_CPU_MICROMIPS
-				if (mm_insn_16bit(ip->halfword[0]))
-				{
-					unsigned short tmp;
-
-					if (ip->halfword[0] & mm_addiusp_func)
-					{
-						tmp = (((ip->halfword[0] >> 1) & 0x1ff) << 2);
-						info->frame_size = -(signed short)(tmp | ((tmp & 0x100) ? 0xfe00 : 0));
-					} else {
-						tmp = (ip->halfword[0] >> 1);
-						info->frame_size = -(signed short)(tmp & 0xf);
-					}
-					ip = (void *) &ip->halfword[1];
-					ip--;
-				} else
-#endif
-				info->frame_size = - ip->i_format.simmediate;
-			}
+			is_sp_move_ins(&insn, &info->frame_size);
+			continue;
+		} else if (!saw_jump && is_jump_ins(ip)) {
+			/*
+			 * If we see a jump instruction, we are finished
+			 * with the frame save.
+			 *
+			 * Some functions can have a shortcut return at
+			 * the beginning of the function, so don't start
+			 * looking for jump instruction until we see the
+			 * frame setup.
+			 *
+			 * The RA save instruction can get put into the
+			 * delay slot of the jump instruction, so look
+			 * at the next instruction, too.
+			 */
+			saw_jump = true;
 			continue;
 		}
 		if (info->pc_offset == -1 &&
 		    is_ra_save_ins(&insn, &info->pc_offset))
+			break;
+		if (saw_jump)
 			break;
 	}
 	if (info->frame_size && info->pc_offset >= 0) /* nested */
 		return 0;
 	if (info->pc_offset < 0) /* leaf */
 		return 1;
-	/* prologue seems boggus... */
+	/* prologue seems bogus... */
 err:
 	return -1;
 }
@@ -460,7 +488,7 @@ arch_initcall(frame_info_init);
 /*
  * Return saved PC of a blocked thread.
  */
-unsigned long thread_saved_pc(struct task_struct *tsk)
+static unsigned long thread_saved_pc(struct task_struct *tsk)
 {
 	struct thread_struct *t = &tsk->thread;
 
@@ -628,32 +656,21 @@ unsigned long arch_align_stack(unsigned long sp)
 	return sp & ALMASK;
 }
 
-static DEFINE_PER_CPU(struct call_single_data, backtrace_csd);
+static DEFINE_PER_CPU(call_single_data_t, backtrace_csd);
 static struct cpumask backtrace_csd_busy;
 
-static void arch_dump_stack(void *info)
+static void handle_backtrace(void *info)
 {
-	struct pt_regs *regs;
-	static arch_spinlock_t lock = __ARCH_SPIN_LOCK_UNLOCKED;
-
-	arch_spin_lock(&lock);
-	regs = get_irq_regs();
-
-	if (regs)
-		show_regs(regs);
-	else
-		dump_stack();
-	arch_spin_unlock(&lock);
-
+	nmi_cpu_backtrace(get_irq_regs());
 	cpumask_clear_cpu(smp_processor_id(), &backtrace_csd_busy);
 }
 
-void arch_trigger_all_cpu_backtrace(bool include_self)
+static void raise_backtrace(cpumask_t *mask)
 {
-	struct call_single_data *csd;
+	call_single_data_t *csd;
 	int cpu;
 
-	for_each_cpu(cpu, cpu_online_mask) {
+	for_each_cpu(cpu, mask) {
 		/*
 		 * If we previously sent an IPI to the target CPU & it hasn't
 		 * cleared its bit in the busy cpumask then it didn't handle
@@ -667,9 +684,14 @@ void arch_trigger_all_cpu_backtrace(bool include_self)
 		}
 
 		csd = &per_cpu(backtrace_csd, cpu);
-		csd->func = arch_dump_stack;
+		csd->func = handle_backtrace;
 		smp_call_function_single_async(cpu, csd);
 	}
+}
+
+void arch_trigger_cpumask_backtrace(const cpumask_t *mask, bool exclude_self)
+{
+	nmi_trigger_cpumask_backtrace(mask, exclude_self, raise_backtrace);
 }
 
 int mips_get_process_fp_mode(struct task_struct *task)
@@ -684,11 +706,19 @@ int mips_get_process_fp_mode(struct task_struct *task)
 	return value;
 }
 
+static void prepare_for_fp_mode_switch(void *info)
+{
+	struct mm_struct *mm = info;
+
+	if (current->mm == mm)
+		lose_fpu(1);
+}
+
 int mips_set_process_fp_mode(struct task_struct *task, unsigned int value)
 {
 	const unsigned int known_bits = PR_FP_MODE_FR | PR_FP_MODE_FRE;
-	unsigned long switch_count;
 	struct task_struct *t;
+	int max_users;
 
 	/* If nothing to change, return right away, successfully.  */
 	if (value == mips_get_process_fp_mode(task))
@@ -733,31 +763,17 @@ int mips_set_process_fp_mode(struct task_struct *task, unsigned int value)
 	smp_mb__after_atomic();
 
 	/*
-	 * If there are multiple online CPUs then wait until all threads whose
-	 * FP mode is about to change have been context switched. This approach
-	 * allows us to only worry about whether an FP mode switch is in
-	 * progress when FP is first used in a tasks time slice. Pretty much all
-	 * of the mode switch overhead can thus be confined to cases where mode
-	 * switches are actually occuring. That is, to here. However for the
-	 * thread performing the mode switch it may take a while...
+	 * If there are multiple online CPUs then force any which are running
+	 * threads in this process to lose their FPU context, which they can't
+	 * regain until fp_mode_switching is cleared later.
 	 */
 	if (num_online_cpus() > 1) {
-		spin_lock_irq(&task->sighand->siglock);
+		/* No need to send an IPI for the local CPU */
+		max_users = (task->mm == current->mm) ? 1 : 0;
 
-		for_each_thread(task, t) {
-			if (t == current)
-				continue;
-
-			switch_count = t->nvcsw + t->nivcsw;
-
-			do {
-				spin_unlock_irq(&task->sighand->siglock);
-				cond_resched();
-				spin_lock_irq(&task->sighand->siglock);
-			} while ((t->nvcsw + t->nivcsw) == switch_count);
-		}
-
-		spin_unlock_irq(&task->sighand->siglock);
+		if (atomic_read(&current->mm->mm_users) > max_users)
+			smp_call_function(prepare_for_fp_mode_switch,
+					  (void *)current->mm, 1);
 	}
 
 	/*
@@ -784,5 +800,51 @@ int mips_set_process_fp_mode(struct task_struct *task, unsigned int value)
 	atomic_set(&task->mm->context.fp_mode_switching, 0);
 	preempt_enable();
 
+	wake_up_var(&task->mm->context.fp_mode_switching);
+
 	return 0;
 }
+
+#if defined(CONFIG_32BIT) || defined(CONFIG_MIPS32_O32)
+void mips_dump_regs32(u32 *uregs, const struct pt_regs *regs)
+{
+	unsigned int i;
+
+	for (i = MIPS32_EF_R1; i <= MIPS32_EF_R31; i++) {
+		/* k0/k1 are copied as zero. */
+		if (i == MIPS32_EF_R26 || i == MIPS32_EF_R27)
+			uregs[i] = 0;
+		else
+			uregs[i] = regs->regs[i - MIPS32_EF_R0];
+	}
+
+	uregs[MIPS32_EF_LO] = regs->lo;
+	uregs[MIPS32_EF_HI] = regs->hi;
+	uregs[MIPS32_EF_CP0_EPC] = regs->cp0_epc;
+	uregs[MIPS32_EF_CP0_BADVADDR] = regs->cp0_badvaddr;
+	uregs[MIPS32_EF_CP0_STATUS] = regs->cp0_status;
+	uregs[MIPS32_EF_CP0_CAUSE] = regs->cp0_cause;
+}
+#endif /* CONFIG_32BIT || CONFIG_MIPS32_O32 */
+
+#ifdef CONFIG_64BIT
+void mips_dump_regs64(u64 *uregs, const struct pt_regs *regs)
+{
+	unsigned int i;
+
+	for (i = MIPS64_EF_R1; i <= MIPS64_EF_R31; i++) {
+		/* k0/k1 are copied as zero. */
+		if (i == MIPS64_EF_R26 || i == MIPS64_EF_R27)
+			uregs[i] = 0;
+		else
+			uregs[i] = regs->regs[i - MIPS64_EF_R0];
+	}
+
+	uregs[MIPS64_EF_LO] = regs->lo;
+	uregs[MIPS64_EF_HI] = regs->hi;
+	uregs[MIPS64_EF_CP0_EPC] = regs->cp0_epc;
+	uregs[MIPS64_EF_CP0_BADVADDR] = regs->cp0_badvaddr;
+	uregs[MIPS64_EF_CP0_STATUS] = regs->cp0_status;
+	uregs[MIPS64_EF_CP0_CAUSE] = regs->cp0_cause;
+}
+#endif /* CONFIG_64BIT */

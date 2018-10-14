@@ -1,17 +1,19 @@
-/*
- * Copyright 2012 Denis 'GNUtoo' Carikli <GNUtoo@no-log.org>
- *
- * The code contained herein is licensed under the GNU General Public
- * License. You may obtain a copy of the GNU General Public License
- * Version 2 or later at the following locations:
- *
- * http://www.opensource.org/licenses/gpl-license.html
- * http://www.gnu.org/copyleft/gpl.html
- */
-
-#include "skeleton.dtsi"
+// SPDX-License-Identifier: GPL-2.0+
+//
+// Copyright 2012 Denis 'GNUtoo' Carikli <GNUtoo@no-log.org>
 
 / {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	/*
+	 * The decompressor and also some bootloaders rely on a
+	 * pre-existing /chosen node to be available to insert the
+	 * command line and merge other ATAGS info.
+	 * Also for U-Boot there must be a pre-existing /memory node.
+	 */
+	chosen {};
+	memory { device_type = "memory"; };
+
 	aliases {
 		serial0 = &uart1;
 		serial1 = &uart2;
@@ -21,12 +23,13 @@
 	};
 
 	cpus {
-		#address-cells = <0>;
+		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu {
+		cpu@0 {
 			compatible = "arm,arm1136jf-s";
 			device_type = "cpu";
+			reg = <0>;
 		};
 	};
 
@@ -66,6 +69,14 @@
 				interrupts = <32>;
 				clocks = <&clks 10>, <&clks 31>;
 				clock-names = "ipg", "per";
+				status = "disabled";
+			};
+
+			kpp: kpp@43fa8000 {
+				compatible = "fsl,imx31-kpp", "fsl,imx21-kpp";
+				reg = <0x43fa8000 0x4000>;
+				interrupts = <24>;
+				clocks = <&clks 46>;
 				status = "disabled";
 			};
 

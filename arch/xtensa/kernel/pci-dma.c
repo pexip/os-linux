@@ -15,6 +15,8 @@
  * Joe Taylor <joe@tensilica.com, joetylr@yahoo.com>
  */
 
+#include <linux/dma-contiguous.h>
+#include <linux/dma-direct.h>
 #include <linux/gfp.h>
 #include <linux/highmem.h>
 #include <linux/mm.h>
@@ -24,29 +26,6 @@
 #include <linux/types.h>
 #include <asm/cacheflush.h>
 #include <asm/io.h>
-
-void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
-		    enum dma_data_direction dir)
-{
-	switch (dir) {
-	case DMA_BIDIRECTIONAL:
-		__flush_invalidate_dcache_range((unsigned long)vaddr, size);
-		break;
-
-	case DMA_FROM_DEVICE:
-		__invalidate_dcache_range((unsigned long)vaddr, size);
-		break;
-
-	case DMA_TO_DEVICE:
-		__flush_dcache_range((unsigned long)vaddr, size);
-		break;
-
-	case DMA_NONE:
-		BUG();
-		break;
-	}
-}
-EXPORT_SYMBOL(dma_cache_sync);
 
 static void do_cache_op(dma_addr_t dma_handle, size_t size,
 			void (*fn)(unsigned long, unsigned long))
@@ -142,10 +121,12 @@ static void xtensa_sync_sg_for_device(struct device *dev,
 
 static void *xtensa_dma_alloc(struct device *dev, size_t size,
 			      dma_addr_t *handle, gfp_t flag,
-			      struct dma_attrs *attrs)
+			      unsigned long attrs)
 {
 	unsigned long ret;
-	unsigned long uncached = 0;
+	unsigned long uncached;
+	unsigned long count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+	struct page *page = NULL;
 
 	/* ignore region speicifiers */
 
@@ -153,56 +134,89 @@ static void *xtensa_dma_alloc(struct device *dev, size_t size,
 
 	if (dev == NULL || (dev->coherent_dma_mask < 0xffffffff))
 		flag |= GFP_DMA;
-	ret = (unsigned long)__get_free_pages(flag, get_order(size));
 
-	if (ret == 0)
+	if (gfpflags_allow_blocking(flag))
+		page = dma_alloc_from_contiguous(dev, count, get_order(size),
+						 flag);
+
+	if (!page)
+		page = alloc_pages(flag, get_order(size));
+
+	if (!page)
 		return NULL;
 
-	/* We currently don't support coherent memory outside KSEG */
+	*handle = phys_to_dma(dev, page_to_phys(page));
 
+#ifdef CONFIG_MMU
+	if (PageHighMem(page)) {
+		void *p;
+
+		p = dma_common_contiguous_remap(page, size, VM_MAP,
+						pgprot_noncached(PAGE_KERNEL),
+						__builtin_return_address(0));
+		if (!p) {
+			if (!dma_release_from_contiguous(dev, page, count))
+				__free_pages(page, get_order(size));
+		}
+		return p;
+	}
+#endif
+	ret = (unsigned long)page_address(page);
 	BUG_ON(ret < XCHAL_KSEG_CACHED_VADDR ||
 	       ret > XCHAL_KSEG_CACHED_VADDR + XCHAL_KSEG_SIZE - 1);
 
 	uncached = ret + XCHAL_KSEG_BYPASS_VADDR - XCHAL_KSEG_CACHED_VADDR;
-	*handle = virt_to_bus((void *)ret);
 	__invalidate_dcache_range(ret, size);
 
 	return (void *)uncached;
 }
 
-static void xtensa_dma_free(struct device *hwdev, size_t size, void *vaddr,
-			    dma_addr_t dma_handle, struct dma_attrs *attrs)
+static void xtensa_dma_free(struct device *dev, size_t size, void *vaddr,
+			    dma_addr_t dma_handle, unsigned long attrs)
 {
-	unsigned long addr = (unsigned long)vaddr +
-		XCHAL_KSEG_CACHED_VADDR - XCHAL_KSEG_BYPASS_VADDR;
+	unsigned long count = PAGE_ALIGN(size) >> PAGE_SHIFT;
+	unsigned long addr = (unsigned long)vaddr;
+	struct page *page;
 
-	BUG_ON(addr < XCHAL_KSEG_CACHED_VADDR ||
-	       addr > XCHAL_KSEG_CACHED_VADDR + XCHAL_KSEG_SIZE - 1);
+	if (addr >= XCHAL_KSEG_BYPASS_VADDR &&
+	    addr - XCHAL_KSEG_BYPASS_VADDR < XCHAL_KSEG_SIZE) {
+		addr += XCHAL_KSEG_CACHED_VADDR - XCHAL_KSEG_BYPASS_VADDR;
+		page = virt_to_page(addr);
+	} else {
+#ifdef CONFIG_MMU
+		dma_common_free_remap(vaddr, size, VM_MAP);
+#endif
+		page = pfn_to_page(PHYS_PFN(dma_to_phys(dev, dma_handle)));
+	}
 
-	free_pages(addr, get_order(size));
+	if (!dma_release_from_contiguous(dev, page, count))
+		__free_pages(page, get_order(size));
 }
 
 static dma_addr_t xtensa_map_page(struct device *dev, struct page *page,
 				  unsigned long offset, size_t size,
 				  enum dma_data_direction dir,
-				  struct dma_attrs *attrs)
+				  unsigned long attrs)
 {
 	dma_addr_t dma_handle = page_to_phys(page) + offset;
 
-	xtensa_sync_single_for_device(dev, dma_handle, size, dir);
+	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+		xtensa_sync_single_for_device(dev, dma_handle, size, dir);
+
 	return dma_handle;
 }
 
 static void xtensa_unmap_page(struct device *dev, dma_addr_t dma_handle,
 			      size_t size, enum dma_data_direction dir,
-			      struct dma_attrs *attrs)
+			      unsigned long attrs)
 {
-	xtensa_sync_single_for_cpu(dev, dma_handle, size, dir);
+	if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
+		xtensa_sync_single_for_cpu(dev, dma_handle, size, dir);
 }
 
 static int xtensa_map_sg(struct device *dev, struct scatterlist *sg,
 			 int nents, enum dma_data_direction dir,
-			 struct dma_attrs *attrs)
+			 unsigned long attrs)
 {
 	struct scatterlist *s;
 	int i;
@@ -217,7 +231,7 @@ static int xtensa_map_sg(struct device *dev, struct scatterlist *sg,
 static void xtensa_unmap_sg(struct device *dev,
 			    struct scatterlist *sg, int nents,
 			    enum dma_data_direction dir,
-			    struct dma_attrs *attrs)
+			    unsigned long attrs)
 {
 	struct scatterlist *s;
 	int i;
@@ -233,7 +247,7 @@ int xtensa_dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
 	return 0;
 }
 
-struct dma_map_ops xtensa_dma_map_ops = {
+const struct dma_map_ops xtensa_dma_map_ops = {
 	.alloc = xtensa_dma_alloc,
 	.free = xtensa_dma_free,
 	.map_page = xtensa_map_page,
@@ -247,12 +261,3 @@ struct dma_map_ops xtensa_dma_map_ops = {
 	.mapping_error = xtensa_dma_mapping_error,
 };
 EXPORT_SYMBOL(xtensa_dma_map_ops);
-
-#define PREALLOC_DMA_DEBUG_ENTRIES (1 << 16)
-
-static int __init xtensa_dma_init(void)
-{
-	dma_debug_init(PREALLOC_DMA_DEBUG_ENTRIES);
-	return 0;
-}
-fs_initcall(xtensa_dma_init);

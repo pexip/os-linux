@@ -9,6 +9,7 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/sched.h>
+#include <linux/sched/task.h>
 #include <linux/export.h>
 #include <linux/percpu.h>
 #include <linux/kthread.h>
@@ -186,6 +187,11 @@ __smpboot_create_thread(struct smp_hotplug_thread *ht, unsigned int cpu)
 		kfree(td);
 		return PTR_ERR(tsk);
 	}
+	/*
+	 * Park the thread so that it could start right on the CPU
+	 * when it is available.
+	 */
+	kthread_park(tsk);
 	get_task_struct(tsk);
 	*per_cpu_ptr(ht->store, cpu) = tsk;
 	if (ht->create) {
@@ -226,7 +232,7 @@ static void smpboot_unpark_thread(struct smp_hotplug_thread *ht, unsigned int cp
 		kthread_unpark(tsk);
 }
 
-void smpboot_unpark_threads(unsigned int cpu)
+int smpboot_unpark_threads(unsigned int cpu)
 {
 	struct smp_hotplug_thread *cur;
 
@@ -235,6 +241,7 @@ void smpboot_unpark_threads(unsigned int cpu)
 		if (cpumask_test_cpu(cpu, cur->cpumask))
 			smpboot_unpark_thread(cur, cpu);
 	mutex_unlock(&smpboot_threads_lock);
+	return 0;
 }
 
 static void smpboot_park_thread(struct smp_hotplug_thread *ht, unsigned int cpu)
@@ -245,7 +252,7 @@ static void smpboot_park_thread(struct smp_hotplug_thread *ht, unsigned int cpu)
 		kthread_park(tsk);
 }
 
-void smpboot_park_threads(unsigned int cpu)
+int smpboot_park_threads(unsigned int cpu)
 {
 	struct smp_hotplug_thread *cur;
 
@@ -253,6 +260,7 @@ void smpboot_park_threads(unsigned int cpu)
 	list_for_each_entry_reverse(cur, &hotplug_threads, list)
 		smpboot_park_thread(cur, cpu);
 	mutex_unlock(&smpboot_threads_lock);
+	return 0;
 }
 
 static void smpboot_destroy_threads(struct smp_hotplug_thread *ht)
@@ -336,39 +344,30 @@ EXPORT_SYMBOL_GPL(smpboot_unregister_percpu_thread);
  * by the client, but only by calling this function.
  * This function can only be called on a registered smp_hotplug_thread.
  */
-int smpboot_update_cpumask_percpu_thread(struct smp_hotplug_thread *plug_thread,
-					 const struct cpumask *new)
+void smpboot_update_cpumask_percpu_thread(struct smp_hotplug_thread *plug_thread,
+					  const struct cpumask *new)
 {
 	struct cpumask *old = plug_thread->cpumask;
-	cpumask_var_t tmp;
+	static struct cpumask tmp;
 	unsigned int cpu;
 
-	if (!alloc_cpumask_var(&tmp, GFP_KERNEL))
-		return -ENOMEM;
-
-	get_online_cpus();
+	lockdep_assert_cpus_held();
 	mutex_lock(&smpboot_threads_lock);
 
 	/* Park threads that were exclusively enabled on the old mask. */
-	cpumask_andnot(tmp, old, new);
-	for_each_cpu_and(cpu, tmp, cpu_online_mask)
+	cpumask_andnot(&tmp, old, new);
+	for_each_cpu_and(cpu, &tmp, cpu_online_mask)
 		smpboot_park_thread(plug_thread, cpu);
 
 	/* Unpark threads that are exclusively enabled on the new mask. */
-	cpumask_andnot(tmp, new, old);
-	for_each_cpu_and(cpu, tmp, cpu_online_mask)
+	cpumask_andnot(&tmp, new, old);
+	for_each_cpu_and(cpu, &tmp, cpu_online_mask)
 		smpboot_unpark_thread(plug_thread, cpu);
 
 	cpumask_copy(old, new);
 
 	mutex_unlock(&smpboot_threads_lock);
-	put_online_cpus();
-
-	free_cpumask_var(tmp);
-
-	return 0;
 }
-EXPORT_SYMBOL_GPL(smpboot_update_cpumask_percpu_thread);
 
 static DEFINE_PER_CPU(atomic_t, cpu_hotplug_state) = ATOMIC_INIT(CPU_POST_DEAD);
 

@@ -11,11 +11,6 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef __STA_INFO_H_
 #define __STA_INFO_H_
@@ -131,7 +126,8 @@ struct sta_info {
 	/* Notes: */
 	/* STA_Mode: */
 	/* curr_network(mlme_priv/security_priv/qos/ht) +
-	 * sta_info: (STA & AP) CAP/INFO */
+	 * sta_info: (STA & AP) CAP/INFO
+	 */
 	/* scan_q: AP CAP/INFO */
 
 	/* AP_Mode: */
@@ -189,7 +185,8 @@ struct sta_info {
 
 	/*  ================ODM Relative Info======================= */
 	/*  Please be careful, don't declare too much structure here.
-	 *  It will cost memory * STA support num. */
+	 *  It will cost memory * STA support num.
+	 */
 	/*  2011/10/20 MH Add for ODM STA info. */
 	/*  Driver Write */
 	u8	bValid;		/*  record the sta status link or not? */
@@ -323,9 +320,11 @@ struct	sta_priv {
 	struct sta_info *sta_aid[NUM_STA];
 
 	u16 sta_dz_bitmap;/* only support 15 stations, station aid bitmap
-			   * for sleeping sta. */
+			   * for sleeping sta.
+			   */
 	u16 tim_bitmap;	/* only support 15 stations, aid=0~15 mapping
-			 * bit0~bit15 */
+			 * bit0~bit15
+			 */
 
 	u16 max_num_sta;
 

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef USB_F_MASS_STORAGE_H
 #define USB_F_MASS_STORAGE_H
 
@@ -89,6 +90,7 @@ struct fsg_lun_config {
 	char removable;
 	char cdrom;
 	char nofua;
+	char inquiry_string[INQUIRY_STRING_LEN];
 };
 
 struct fsg_config {

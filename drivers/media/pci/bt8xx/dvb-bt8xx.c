@@ -13,13 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
  */
 
-#define pr_fmt(fmt) "dvb_bt8xx: " fmt
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/bitops.h>
 #include <linux/module.h>
@@ -30,10 +26,10 @@
 #include <linux/slab.h>
 #include <linux/i2c.h>
 
-#include "dmxdev.h"
-#include "dvbdev.h"
-#include "dvb_demux.h"
-#include "dvb_frontend.h"
+#include <media/dmxdev.h>
+#include <media/dvbdev.h>
+#include <media/dvb_demux.h>
+#include <media/dvb_frontend.h>
 #include "dvb-bt8xx.h"
 #include "bt878.h"
 
@@ -44,10 +40,12 @@ MODULE_PARM_DESC(debug, "Turn on/off debugging (default:off).");
 
 DVB_DEFINE_MOD_OPT_ADAPTER_NR(adapter_nr);
 
-#define dprintk( args... ) \
-	do { \
-		if (debug) printk(KERN_DEBUG args); \
-	} while (0)
+#define dprintk(fmt, arg...) do {				\
+	if (debug)						\
+		printk(KERN_DEBUG pr_fmt("%s: " fmt),		\
+		       __func__, ##arg);			\
+} while (0)
+
 
 #define IF_FREQUENCYx6 217    /* 6 * 36.16666666667MHz */
 
@@ -55,7 +53,7 @@ static void dvb_bt8xx_task(unsigned long data)
 {
 	struct dvb_bt8xx_card *card = (struct dvb_bt8xx_card *)data;
 
-	//printk("%d ", card->bt->finished_block);
+	dprintk("%d\n", card->bt->finished_block);
 
 	while (card->bt->last_block != card->bt->finished_block) {
 		(card->bt->TS_Size ? dvb_dmx_swfilter_204 : dvb_dmx_swfilter)
@@ -318,7 +316,7 @@ static int microtune_mt7202dtf_request_firmware(struct dvb_frontend* fe, const s
 	return request_firmware(fw, name, &bt->bt->dev->dev);
 }
 
-static struct sp887x_config microtune_mt7202dtf_config = {
+static const struct sp887x_config microtune_mt7202dtf_config = {
 	.demod_address = 0x70,
 	.request_firmware = microtune_mt7202dtf_request_firmware,
 };
@@ -443,7 +441,7 @@ static void or51211_reset(struct dvb_frontend * fe)
 	/* reset & PRM1,2&4 are outputs */
 	int ret = bttv_gpio_enable(bt->bttv_nr, 0x001F, 0x001F);
 	if (ret != 0)
-		printk(KERN_WARNING "or51211: Init Error - Can't Reset DVR (%i)\n", ret);
+		pr_warn("or51211: Init Error - Can't Reset DVR (%i)\n", ret);
 	bttv_write_gpio(bt->bttv_nr, 0x001F, 0x0000);   /* Reset */
 	msleep(20);
 	/* Now set for normal operation */
@@ -458,7 +456,7 @@ static void or51211_sleep(struct dvb_frontend * fe)
 	bttv_write_gpio(bt->bttv_nr, 0x0001, 0x0000);
 }
 
-static struct or51211_config or51211_config = {
+static const struct or51211_config or51211_config = {
 	.demod_address = 0x15,
 	.request_firmware = or51211_request_firmware,
 	.setmode = or51211_setmode,
@@ -560,7 +558,8 @@ static void digitv_alps_tded4_reset(struct dvb_bt8xx_card *bt)
 
 	int ret = bttv_gpio_enable(bt->bttv_nr, 0x08, 0x08);
 	if (ret != 0)
-		printk(KERN_WARNING "digitv_alps_tded4: Init Error - Can't Reset DVR (%i)\n", ret);
+		pr_warn("digitv_alps_tded4: Init Error - Can't Reset DVR (%i)\n",
+			ret);
 
 	/* Pulse the reset line */
 	bttv_write_gpio(bt->bttv_nr, 0x08, 0x08); /* High */
@@ -576,7 +575,6 @@ static struct mt352_config digitv_alps_tded4_config = {
 };
 
 static struct lgdt330x_config tdvs_tua6034_config = {
-	.demod_address    = 0x0e,
 	.demod_chip       = LGDT3303,
 	.serial_mpeg      = 0x40, /* TPSERIAL for 3303 in TOP_CONTROL */
 };
@@ -615,12 +613,13 @@ static void frontend_init(struct dvb_bt8xx_card *card, u32 type)
 
 	case BTTV_BOARD_DVICO_FUSIONHDTV_5_LITE:
 		lgdt330x_reset(card);
-		card->fe = dvb_attach(lgdt330x_attach, &tdvs_tua6034_config, card->i2c_adapter);
+		card->fe = dvb_attach(lgdt330x_attach, &tdvs_tua6034_config,
+				      0x0e, card->i2c_adapter);
 		if (card->fe != NULL) {
 			dvb_attach(simple_tuner_attach, card->fe,
 				   card->i2c_adapter, 0x61,
 				   TUNER_LG_TDVS_H06XF);
-			dprintk ("dvb_bt8xx: lgdt330x detected\n");
+			dprintk("dvb_bt8xx: lgdt330x detected\n");
 		}
 		break;
 
@@ -635,7 +634,7 @@ static void frontend_init(struct dvb_bt8xx_card *card, u32 type)
 		card->fe = dvb_attach(nxt6000_attach, &vp3021_alps_tded4_config, card->i2c_adapter);
 		if (card->fe != NULL) {
 			card->fe->ops.tuner_ops.set_params = vp3021_alps_tded4_tuner_set_params;
-			dprintk ("dvb_bt8xx: an nxt6000 was detected on your digitv card\n");
+			dprintk("dvb_bt8xx: an nxt6000 was detected on your digitv card\n");
 			break;
 		}
 
@@ -645,7 +644,7 @@ static void frontend_init(struct dvb_bt8xx_card *card, u32 type)
 
 		if (card->fe != NULL) {
 			card->fe->ops.tuner_ops.calc_regs = digitv_alps_tded4_tuner_calc_regs;
-			dprintk ("dvb_bt8xx: an mt352 was detected on your digitv card\n");
+			dprintk("dvb_bt8xx: an mt352 was detected on your digitv card\n");
 		}
 		break;
 

@@ -1,7 +1,3 @@
-[abi]
-ignore-changes:
- module:arch/s390/kvm/kvm
-
 [base]
 flavours:
  s390x
@@ -13,18 +9,13 @@ vdso: true
 
 [image]
 bootloaders: s390-tools
-configs:
 install-stem: vmlinuz
 
 [relations]
-headers%gcc-4.9: linux-compiler-gcc-4.9-s390
+headers%gcc-7: linux-compiler-gcc-7-s390
 
 [s390x_build]
 debug-info: true
 
 [s390x_description]
 hardware: IBM zSeries
-
-[s390x_image]
-configs: kernelarch-s390/config-arch-64
-

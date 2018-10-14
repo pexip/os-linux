@@ -118,11 +118,14 @@ PROPERTIES
       Definition: A list of clock name strings in the same order as the
           clocks property.
 
-   Note: All other standard properties (see the ePAPR) are allowed
-   but are optional.
+   Note: All other standard properties (see the Devicetree Specification)
+   are allowed but are optional.
 
 
 EXAMPLE
+
+iMX6QDL/SX requires four clocks
+
 	crypto@300000 {
 		compatible = "fsl,sec-v4.0";
 		fsl,sec-era = <2>;
@@ -137,6 +140,23 @@ EXAMPLE
 			 <&clks IMX6QDL_CLK_CAAM_IPG>,
 			 <&clks IMX6QDL_CLK_EIM_SLOW>;
 		clock-names = "mem", "aclk", "ipg", "emi_slow";
+	};
+
+
+iMX6UL does only require three clocks
+
+	crypto: caam@2140000 {
+		compatible = "fsl,sec-v4.0";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x2140000 0x3c000>;
+		ranges = <0 0x2140000 0x3c000>;
+		interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+
+		clocks = <&clks IMX6UL_CLK_CAAM_MEM>,
+			 <&clks IMX6UL_CLK_CAAM_ACLK>,
+			 <&clks IMX6UL_CLK_CAAM_IPG>;
+		clock-names = "mem", "aclk", "ipg";
 	};
 
 =====================================================================
@@ -395,12 +415,27 @@ Secure Non-Volatile Storage (SNVS) Low Power (LP) RTC Node
 	value type: <u32>
 	Definition: LP register offset. default it is 0x34.
 
+   - clocks
+      Usage: optional, required if SNVS LP RTC requires explicit
+          enablement of clocks
+      Value type: <prop_encoded-array>
+      Definition:  a clock specifier describing the clock required for
+          enabling and disabling SNVS LP RTC.
+
+   - clock-names
+      Usage: optional, required if SNVS LP RTC requires explicit
+          enablement of clocks
+      Value type: <string>
+      Definition: clock name string should be "snvs-rtc".
+
 EXAMPLE
 	sec_mon_rtc_lp@1 {
 		compatible = "fsl,sec-v4.0-mon-rtc-lp";
 		interrupts = <93 2>;
 		regmap = <&snvs>;
 		offset = <0x34>;
+		clocks = <&clks IMX7D_SNVS_CLK>;
+		clock-names = "snvs-rtc";
 	};
 
 =====================================================================
@@ -436,7 +471,7 @@ System ON/OFF key driver
       Definition: this is phandle to the register map node.
 
 EXAMPLE:
-	snvs-pwrkey@0x020cc000 {
+	snvs-pwrkey@020cc000 {
 		compatible = "fsl,sec-v4.0-pwrkey";
 		regmap = <&snvs>;
 		interrupts = <0 4 0x4>
@@ -523,9 +558,11 @@ FULL EXAMPLE
 			regmap = <&sec_mon>;
 			offset = <0x34>;
 			interrupts = <93 2>;
+			clocks = <&clks IMX7D_SNVS_CLK>;
+			clock-names = "snvs-rtc";
 		};
 
-		snvs-pwrkey@0x020cc000 {
+		snvs-pwrkey@020cc000 {
 			compatible = "fsl,sec-v4.0-pwrkey";
 			regmap = <&sec_mon>;
 			interrupts = <0 4 0x4>;

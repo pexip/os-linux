@@ -1,11 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
   USB Driver for GSM modems
 
   Copyright (C) 2005  Matthias Urlichs <smurf@smurf.noris.de>
-
-  This driver is free software; you can redistribute it and/or modify
-  it under the terms of Version 2 of the GNU General Public License as
-  published by the Free Software Foundation.
 
   Portions copied from the Keyspan driver by Hugh Blemings <hugh@blemings.org>
 
@@ -1920,13 +1917,11 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE(TPLINK_VENDOR_ID, 0x9000),					/* TP-Link MA260 */
 	  .driver_info = RSVD(4) },
 	{ USB_DEVICE(CHANGHONG_VENDOR_ID, CHANGHONG_PRODUCT_CH690) },
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d01, 0xff, 0x02, 0x01) },	/* D-Link DWM-156 (variant) */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d01, 0xff, 0x00, 0x00) },	/* D-Link DWM-156 (variant) */
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d02, 0xff, 0x02, 0x01) },
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d02, 0xff, 0x00, 0x00) },
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d03, 0xff, 0x02, 0x01) },
-	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d03, 0xff, 0x00, 0x00) },
-	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d04, 0xff) },			/* D-Link DWM-158 */
+	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d01, 0xff) },			/* D-Link DWM-156 (variant) */
+	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d02, 0xff) },
+	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d03, 0xff) },
+	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d04, 0xff),			/* D-Link DWM-158 */
+	 .driver_info = RSVD(4) | RSVD(5) },
 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7d0e, 0xff) },			/* D-Link DWM-157 C1 */
 	{ USB_DEVICE_INTERFACE_CLASS(0x2001, 0x7e19, 0xff),			/* D-Link DWM-221 B1 */
 	  .driver_info = RSVD(4) },
@@ -1990,11 +1985,10 @@ static int option_probe(struct usb_serial *serial,
 {
 	struct usb_interface_descriptor *iface_desc =
 				&serial->interface->cur_altsetting->desc;
-	struct usb_device_descriptor *dev_desc = &serial->dev->descriptor;
 	unsigned long device_flags = id->driver_info;
 
 	/* Never bind to the CD-Rom emulation interface	*/
-	if (iface_desc->bInterfaceClass == 0x08)
+	if (iface_desc->bInterfaceClass == USB_CLASS_MASS_STORAGE)
 		return -ENODEV;
 
 	/*
@@ -2003,14 +1997,6 @@ static int option_probe(struct usb_serial *serial,
 	 * the Windows driver .INF files for reserved interface numbers.
 	 */
 	if (device_flags & RSVD(iface_desc->bInterfaceNumber))
-		return -ENODEV;
-	/*
-	 * Don't bind network interface on Samsung GT-B3730, it is handled by
-	 * a separate module.
-	 */
-	if (dev_desc->idVendor == cpu_to_le16(SAMSUNG_VENDOR_ID) &&
-	    dev_desc->idProduct == cpu_to_le16(SAMSUNG_PRODUCT_GT_B3730) &&
-	    iface_desc->bInterfaceClass != USB_CLASS_CDC_DATA)
 		return -ENODEV;
 
 	/* Store the device flags so we can use them during attach. */
@@ -2108,4 +2094,4 @@ static void option_instat_callback(struct urb *urb)
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL v2");
