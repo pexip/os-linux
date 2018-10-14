@@ -264,7 +264,10 @@ i) Constructor
 			   data device, but just remove the mapping.
 
       read_only: Don't allow any changes to be made to the pool
-		 metadata.
+		 metadata.  This mode is only available after the
+		 thin-pool has been created and first used in full
+		 read/write mode.  It cannot be specified on initial
+		 thin-pool creation.
 
       error_if_no_space: Error IOs, instead of queueing, if no space.
 
@@ -276,7 +279,8 @@ ii) Status
 
     <transaction id> <used metadata blocks>/<total metadata blocks>
     <used data blocks>/<total data blocks> <held metadata root>
-    [no_]discard_passdown ro|rw
+    ro|rw|out_of_data_space [no_]discard_passdown [error|queue]_if_no_space
+    needs_check|-
 
     transaction id:
 	A 64-bit number used by userspace to help synchronise with metadata
@@ -396,3 +400,6 @@ ii) Status
 	If the pool has encountered device errors and failed, the status
 	will just contain the string 'Fail'.  The userspace recovery
 	tools should then be used.
+
+    In the case where <nr mapped sectors> is 0, there is no highest
+    mapped sector and the value of <highest mapped sector> is unspecified.

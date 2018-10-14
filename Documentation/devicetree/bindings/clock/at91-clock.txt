@@ -6,7 +6,8 @@ This binding uses the common clock binding[1].
 
 Required properties:
 - compatible : shall be one of the following:
-	"atmel,at91sam9x5-sckc":
+	"atmel,at91sam9x5-sckc" or
+	"atmel,sama5d4-sckc":
 		at91 SCKC (Slow Clock Controller)
 		This node contains the slow clock definitions.
 
@@ -79,6 +80,16 @@ Required properties:
 
 	"atmel,sama5d2-clk-generated":
 		at91 generated clock
+
+	"atmel,sama5d2-clk-audio-pll-frac":
+		at91 audio fractional pll
+
+	"atmel,sama5d2-clk-audio-pll-pad":
+		at91 audio pll CLK_AUDIO output pin
+
+	"atmel,sama5d2-clk-audio-pll-pmc"
+		at91 audio pll output on AUDIOPLLCLK that feeds the PMC
+		and can be used by peripheral clock or generic clock
 
 Required properties for SCKC node:
 - reg : defines the IO memory reserved for the SCKC.

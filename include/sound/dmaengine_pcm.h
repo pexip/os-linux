@@ -51,6 +51,16 @@ struct dma_chan *snd_dmaengine_pcm_request_channel(dma_filter_fn filter_fn,
 	void *filter_data);
 struct dma_chan *snd_dmaengine_pcm_get_chan(struct snd_pcm_substream *substream);
 
+/*
+ * The DAI supports packed transfers, eg 2 16-bit samples in a 32-bit word.
+ * If this flag is set the dmaengine driver won't put any restriction on
+ * the supported sample formats and set the DMA transfer size to undefined.
+ * The DAI driver is responsible to disable any unsupported formats in it's
+ * configuration and catch corner cases that are not already handled in
+ * the ALSA core.
+ */
+#define SND_DMAENGINE_PCM_DAI_FLAG_PACK BIT(0)
+
 /**
  * struct snd_dmaengine_dai_dma_data - DAI DMA configuration data
  * @addr: Address of the DAI data source or destination register.
@@ -63,6 +73,7 @@ struct dma_chan *snd_dmaengine_pcm_get_chan(struct snd_pcm_substream *substream)
  * requesting the DMA channel.
  * @chan_name: Custom channel name to use when requesting DMA channel.
  * @fifo_size: FIFO size of the DAI controller in bytes
+ * @flags: PCM_DAI flags, only SND_DMAENGINE_PCM_DAI_FLAG_PACK for now
  */
 struct snd_dmaengine_dai_dma_data {
 	dma_addr_t addr;
@@ -72,6 +83,7 @@ struct snd_dmaengine_dai_dma_data {
 	void *filter_data;
 	const char *chan_name;
 	unsigned int fifo_size;
+	unsigned int flags;
 };
 
 void snd_dmaengine_pcm_set_config_from_dai_data(
@@ -106,6 +118,8 @@ void snd_dmaengine_pcm_set_config_from_dai_data(
  *   PCM substream. Will be called from the PCM drivers hwparams callback.
  * @compat_request_channel: Callback to request a DMA channel for platforms
  *   which do not use devicetree.
+ * @process: Callback used to apply processing on samples transferred from/to
+ *   user space.
  * @compat_filter_fn: Will be used as the filter function when requesting a
  *  channel for platforms which do not use devicetree. The filter parameter
  *  will be the DAI's DMA data.
@@ -128,6 +142,9 @@ struct snd_dmaengine_pcm_config {
 	struct dma_chan *(*compat_request_channel)(
 			struct snd_soc_pcm_runtime *rtd,
 			struct snd_pcm_substream *substream);
+	int (*process)(struct snd_pcm_substream *substream,
+		       int channel, unsigned long hwoff,
+		       void *buf, unsigned long bytes);
 	dma_filter_fn compat_filter_fn;
 	struct device *dma_dev;
 	const char *chan_names[SNDRV_PCM_STREAM_LAST + 1];
@@ -148,5 +165,7 @@ int devm_snd_dmaengine_pcm_register(struct device *dev,
 int snd_dmaengine_pcm_prepare_slave_config(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params,
 	struct dma_slave_config *slave_config);
+
+#define SND_DMAENGINE_PCM_DRV_NAME "snd_dmaengine_pcm"
 
 #endif

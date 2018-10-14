@@ -17,15 +17,16 @@
 #include <linux/device.h>
 #include <linux/err.h>
 #include <linux/errno.h>
-#include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/io.h>
+#include <linux/kernel.h>
 #include <linux/list.h>
 #include <linux/memblock.h>
+#include <linux/pstore_ram.h>
 #include <linux/rslib.h>
 #include <linux/slab.h>
+#include <linux/uaccess.h>
 #include <linux/vmalloc.h>
-#include <linux/pstore_ram.h>
 #include <asm/page.h>
 
 struct persistent_ram_buffer {
@@ -97,24 +98,23 @@ static void notrace persistent_ram_encode_rs8(struct persistent_ram_zone *prz,
 	uint8_t *data, size_t len, uint8_t *ecc)
 {
 	int i;
-	uint16_t par[prz->ecc_info.ecc_size];
 
 	/* Initialize the parity buffer */
-	memset(par, 0, sizeof(par));
-	encode_rs8(prz->rs_decoder, data, len, par, 0);
+	memset(prz->ecc_info.par, 0,
+	       prz->ecc_info.ecc_size * sizeof(prz->ecc_info.par[0]));
+	encode_rs8(prz->rs_decoder, data, len, prz->ecc_info.par, 0);
 	for (i = 0; i < prz->ecc_info.ecc_size; i++)
-		ecc[i] = par[i];
+		ecc[i] = prz->ecc_info.par[i];
 }
 
 static int persistent_ram_decode_rs8(struct persistent_ram_zone *prz,
 	void *data, size_t len, uint8_t *ecc)
 {
 	int i;
-	uint16_t par[prz->ecc_info.ecc_size];
 
 	for (i = 0; i < prz->ecc_info.ecc_size; i++)
-		par[i] = ecc[i];
-	return decode_rs8(prz->rs_decoder, data, par, len,
+		prz->ecc_info.par[i] = ecc[i];
+	return decode_rs8(prz->rs_decoder, data, prz->ecc_info.par, len,
 				NULL, 0, NULL, 0, NULL);
 }
 
@@ -227,6 +227,15 @@ static int persistent_ram_init_ecc(struct persistent_ram_zone *prz,
 		return -EINVAL;
 	}
 
+	/* allocate workspace instead of using stack VLA */
+	prz->ecc_info.par = kmalloc_array(prz->ecc_info.ecc_size,
+					  sizeof(*prz->ecc_info.par),
+					  GFP_KERNEL);
+	if (!prz->ecc_info.par) {
+		pr_err("cannot allocate ECC parity workspace\n");
+		return -ENOMEM;
+	}
+
 	prz->corrected_bytes = 0;
 	prz->bad_blocks = 0;
 
@@ -267,6 +276,16 @@ static void notrace persistent_ram_update(struct persistent_ram_zone *prz,
 	struct persistent_ram_buffer *buffer = prz->buffer;
 	memcpy_toio(buffer->data + start, s, count);
 	persistent_ram_update_ecc(prz, start, count);
+}
+
+static int notrace persistent_ram_update_user(struct persistent_ram_zone *prz,
+	const void __user *s, unsigned int start, unsigned int count)
+{
+	struct persistent_ram_buffer *buffer = prz->buffer;
+	int ret = unlikely(__copy_from_user(buffer->data + start, s, count)) ?
+		-EFAULT : 0;
+	persistent_ram_update_ecc(prz, start, count);
+	return ret;
 }
 
 void persistent_ram_save_old(struct persistent_ram_zone *prz)
@@ -320,6 +339,38 @@ int notrace persistent_ram_write(struct persistent_ram_zone *prz,
 	persistent_ram_update_header_ecc(prz);
 
 	return count;
+}
+
+int notrace persistent_ram_write_user(struct persistent_ram_zone *prz,
+	const void __user *s, unsigned int count)
+{
+	int rem, ret = 0, c = count;
+	size_t start;
+
+	if (unlikely(!access_ok(VERIFY_READ, s, count)))
+		return -EFAULT;
+	if (unlikely(c > prz->buffer_size)) {
+		s += c - prz->buffer_size;
+		c = prz->buffer_size;
+	}
+
+	buffer_size_add(prz, c);
+
+	start = buffer_start_add(prz, c);
+
+	rem = prz->buffer_size - start;
+	if (unlikely(rem < c)) {
+		ret = persistent_ram_update_user(prz, s, start, rem);
+		s += rem;
+		c -= rem;
+		start = 0;
+	}
+	if (likely(!ret))
+		ret = persistent_ram_update_user(prz, s, start, c);
+
+	persistent_ram_update_header_ecc(prz);
+
+	return unlikely(ret) ? ret : count;
 }
 
 size_t persistent_ram_old_size(struct persistent_ram_zone *prz)
@@ -378,12 +429,7 @@ static void *persistent_ram_vmap(phys_addr_t start, size_t size,
 	vaddr = vmap(pages, page_count, VM_MAP, prot);
 	kfree(pages);
 
-	/*
-	 * Since vmap() uses page granularity, we must add the offset
-	 * into the page here, to get the byte granularity address
-	 * into the mapping to represent the actual "start" location.
-	 */
-	return vaddr + offset_in_page(start);
+	return vaddr;
 }
 
 static void *persistent_ram_iomap(phys_addr_t start, size_t size,
@@ -402,11 +448,6 @@ static void *persistent_ram_iomap(phys_addr_t start, size_t size,
 	else
 		va = ioremap_wc(start, size);
 
-	/*
-	 * Since request_mem_region() and ioremap() are byte-granularity
-	 * there is no need handle anything special like we do when the
-	 * vmap() case in persistent_ram_vmap() above.
-	 */
 	return va;
 }
 
@@ -427,7 +468,7 @@ static int persistent_ram_buffer_map(phys_addr_t start, phys_addr_t size,
 		return -ENOMEM;
 	}
 
-	prz->buffer = prz->vaddr;
+	prz->buffer = prz->vaddr + offset_in_page(start);
 	prz->buffer_size = size - sizeof(struct persistent_ram_buffer);
 
 	return 0;
@@ -474,14 +515,20 @@ void persistent_ram_free(struct persistent_ram_zone *prz)
 
 	if (prz->vaddr) {
 		if (pfn_valid(prz->paddr >> PAGE_SHIFT)) {
-			/* We must vunmap() at page-granularity. */
-			vunmap(prz->vaddr - offset_in_page(prz->paddr));
+			vunmap(prz->vaddr);
 		} else {
 			iounmap(prz->vaddr);
 			release_mem_region(prz->paddr, prz->size);
 		}
 		prz->vaddr = NULL;
 	}
+	if (prz->rs_decoder) {
+		free_rs(prz->rs_decoder);
+		prz->rs_decoder = NULL;
+	}
+	kfree(prz->ecc_info.par);
+	prz->ecc_info.par = NULL;
+
 	persistent_ram_free_old(prz);
 	kfree(prz);
 }

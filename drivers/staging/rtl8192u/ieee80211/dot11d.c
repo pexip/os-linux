@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /* Implement 802.11d. */
 
 #include "dot11d.h"
@@ -10,7 +11,7 @@ void Dot11d_Init(struct ieee80211_device *ieee)
 
 	pDot11dInfo->State = DOT11D_STATE_NONE;
 	pDot11dInfo->CountryIeLen = 0;
-	memset(pDot11dInfo->channel_map, 0, MAX_CHANNEL_NUMBER+1);
+	memset(pDot11dInfo->channel_map, 0, MAX_CHANNEL_NUMBER + 1);
 	memset(pDot11dInfo->MaxTxPwrDbmList, 0xFF, MAX_CHANNEL_NUMBER+1);
 	RESET_CIE_WATCHDOG(ieee);
 
@@ -103,7 +104,7 @@ u8 DOT11D_GetMaxTxPwrInDbm(struct ieee80211_device *dev, u8 Channel)
 	PRT_DOT11D_INFO pDot11dInfo = GET_DOT11D_INFO(dev);
 	u8 MaxTxPwrInDbm = 255;
 
-	if (MAX_CHANNEL_NUMBER < Channel) {
+	if (Channel > MAX_CHANNEL_NUMBER) {
 		netdev_err(dev->dev, "DOT11D_GetMaxTxPwrInDbm(): Invalid Channel\n");
 		return MaxTxPwrInDbm;
 	}
@@ -139,7 +140,7 @@ int IsLegalChannel(struct ieee80211_device *dev, u8 channel)
 {
 	PRT_DOT11D_INFO pDot11dInfo = GET_DOT11D_INFO(dev);
 
-	if (MAX_CHANNEL_NUMBER < channel) {
+	if (channel > MAX_CHANNEL_NUMBER) {
 		netdev_err(dev->dev, "IsLegalChannel(): Invalid Channel\n");
 		return 0;
 	}
@@ -162,7 +163,7 @@ int ToLegalChannel(struct ieee80211_device *dev, u8 channel)
 		}
 	}
 
-	if (MAX_CHANNEL_NUMBER < channel) {
+	if (channel > MAX_CHANNEL_NUMBER) {
 		netdev_err(dev->dev, "IsLegalChannel(): Invalid Channel\n");
 		return default_chn;
 	}

@@ -1,9 +1,20 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /* ld script to make s390 Linux kernel
  * Written by Martin Schwidefsky (schwidefsky@de.ibm.com)
  */
 
 #include <asm/thread_info.h>
 #include <asm/page.h>
+
+/*
+ * Put .bss..swapper_pg_dir as the first thing in .bss. This will
+ * make sure it has 16k alignment.
+ */
+#define BSS_FIRST_SECTIONS *(.bss..swapper_pg_dir)
+
+/* Handle ro_after_init data on our own. */
+#define RO_AFTER_INIT_DATA
+
 #include <asm-generic/vmlinux.lds.h>
 
 OUTPUT_FORMAT("elf64-s390", "elf64-s390", "elf64-s390")
@@ -31,13 +42,16 @@ SECTIONS
 	_text = 0x200;
 		TEXT_TEXT
 		SCHED_TEXT
+		CPUIDLE_TEXT
 		LOCK_TEXT
 		KPROBES_TEXT
 		IRQENTRY_TEXT
+		SOFTIRQENTRY_TEXT
 		*(.fixup)
 		*(.gnu.warning)
 	} :text = 0x0700
 
+	. = ALIGN(PAGE_SIZE);
 	_etext = .;		/* End of text section */
 
 	NOTES :text :note
@@ -46,15 +60,17 @@ SECTIONS
 
 	RO_DATA_SECTION(PAGE_SIZE)
 
-#ifdef CONFIG_SHARED_KERNEL
-	. = ALIGN(0x100000);	/* VM shared segments are 1MB aligned */
-#endif
-
 	. = ALIGN(PAGE_SIZE);
-	_eshared = .;		/* End of shareable data */
 	_sdata = .;		/* Start of data section */
 
-	EXCEPTION_TABLE(16) :data
+	. = ALIGN(PAGE_SIZE);
+	__start_ro_after_init = .;
+	.data..ro_after_init : {
+		 *(.data..ro_after_init)
+	}
+	EXCEPTION_TABLE(16)
+	. = ALIGN(PAGE_SIZE);
+	__end_ro_after_init = .;
 
 	RW_DATA_SECTION(0x100, PAGE_SIZE, THREAD_SIZE)
 
@@ -64,7 +80,13 @@ SECTIONS
 	. = ALIGN(PAGE_SIZE);	/* Init code and data */
 	__init_begin = .;
 
-	INIT_TEXT_SECTION(PAGE_SIZE)
+	. = ALIGN(PAGE_SIZE);
+	.init.text : AT(ADDR(.init.text) - LOAD_OFFSET) {
+		_sinittext = .;
+		INIT_TEXT
+		. = ALIGN(PAGE_SIZE);
+		_einittext = .;
+	}
 
 	/*
 	 * .exit.text is discarded at runtime, not link time,
@@ -123,7 +145,7 @@ SECTIONS
 	. = ALIGN(PAGE_SIZE);
 	__init_end = .;		/* freed after init ends here */
 
-	BSS_SECTION(0, 2, 0)
+	BSS_SECTION(PAGE_SIZE, 4 * PAGE_SIZE, PAGE_SIZE)
 
 	_end = . ;
 
@@ -133,4 +155,7 @@ SECTIONS
 
 	/* Sections to be discarded */
 	DISCARDS
+	/DISCARD/ : {
+		*(.eh_frame)
+	}
 }

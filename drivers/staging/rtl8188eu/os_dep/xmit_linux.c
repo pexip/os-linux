@@ -11,11 +11,6 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #define _XMIT_OSDEP_C_
 
@@ -27,48 +22,6 @@
 #include <xmit_osdep.h>
 #include <osdep_intf.h>
 
-uint rtw_remainder_len(struct pkt_file *pfile)
-{
-	return pfile->buf_len - ((size_t)(pfile->cur_addr) -
-	       (size_t)(pfile->buf_start));
-}
-
-void _rtw_open_pktfile(struct sk_buff *pktptr, struct pkt_file *pfile)
-{
-
-	pfile->pkt = pktptr;
-	pfile->cur_addr = pktptr->data;
-	pfile->buf_start = pktptr->data;
-	pfile->pkt_len = pktptr->len;
-	pfile->buf_len = pktptr->len;
-
-	pfile->cur_buffer = pfile->buf_start;
-
-}
-
-uint _rtw_pktfile_read(struct pkt_file *pfile, u8 *rmem, uint rlen)
-{
-	uint	len = 0;
-
-
-	len =  rtw_remainder_len(pfile);
-	len = min(rlen, len);
-
-	if (rmem)
-		skb_copy_bits(pfile->pkt, pfile->buf_len-pfile->pkt_len, rmem, len);
-
-	pfile->cur_addr += len;
-	pfile->pkt_len -= len;
-
-
-	return len;
-}
-
-int rtw_endofpktfile(struct pkt_file *pfile)
-{
-	return pfile->pkt_len == 0;
-}
-
 int rtw_os_xmit_resource_alloc(struct adapter *padapter, struct xmit_buf *pxmitbuf, u32 alloc_sz)
 {
 	int i;
@@ -77,12 +30,12 @@ int rtw_os_xmit_resource_alloc(struct adapter *padapter, struct xmit_buf *pxmitb
 	if (pxmitbuf->pallocated_buf == NULL)
 		return _FAIL;
 
-	pxmitbuf->pbuf = (u8 *)N_BYTE_ALIGMENT((size_t)(pxmitbuf->pallocated_buf), XMITBUF_ALIGN_SZ);
+	pxmitbuf->pbuf = PTR_ALIGN(pxmitbuf->pallocated_buf, XMITBUF_ALIGN_SZ);
 	pxmitbuf->dma_transfer_addr = 0;
 
 	for (i = 0; i < 8; i++) {
 		pxmitbuf->pxmit_urb[i] = usb_alloc_urb(0, GFP_KERNEL);
-		if (pxmitbuf->pxmit_urb[i] == NULL) {
+		if (!pxmitbuf->pxmit_urb[i]) {
 			DBG_88E("pxmitbuf->pxmit_urb[i]==NULL");
 			return _FAIL;
 		}
@@ -90,8 +43,7 @@ int rtw_os_xmit_resource_alloc(struct adapter *padapter, struct xmit_buf *pxmitb
 	return _SUCCESS;
 }
 
-void rtw_os_xmit_resource_free(struct adapter *padapter,
-			       struct xmit_buf *pxmitbuf, u32 free_sz)
+void rtw_os_xmit_resource_free(struct xmit_buf *pxmitbuf)
 {
 	int i;
 

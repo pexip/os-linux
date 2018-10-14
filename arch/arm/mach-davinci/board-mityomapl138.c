@@ -26,7 +26,7 @@
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <mach/common.h>
-#include <mach/cp_intc.h>
+#include "cp_intc.h"
 #include <mach/da8xx.h>
 #include <linux/platform_data/mtd-davinci.h>
 #include <linux/platform_data/mtd-davinci-aemif.h>
@@ -51,6 +51,7 @@ struct factory_config {
 
 static struct factory_config factory_config;
 
+#ifdef CONFIG_CPU_FREQ
 struct part_no_info {
 	const char	*part_no;	/* part number string of interest */
 	int		max_freq;	/* khz */
@@ -87,7 +88,6 @@ static struct part_no_info mityomapl138_pn_info[] = {
 	},
 };
 
-#ifdef CONFIG_CPU_FREQ
 static void mityomapl138_cpufreq_init(const char *partnum)
 {
 	int i, ret;
@@ -115,13 +115,19 @@ static void mityomapl138_cpufreq_init(const char *partnum)
 static void mityomapl138_cpufreq_init(const char *partnum) { }
 #endif
 
-static void read_factory_config(struct memory_accessor *a, void *context)
+static void read_factory_config(struct nvmem_device *nvmem, void *context)
 {
 	int ret;
 	const char *partnum = NULL;
 	struct davinci_soc_info *soc_info = &davinci_soc_info;
 
-	ret = a->read(a, (char *)&factory_config, 0, sizeof(factory_config));
+	if (!IS_BUILTIN(CONFIG_NVMEM)) {
+		pr_warn("Factory Config not available without CONFIG_NVMEM\n");
+		goto bad_config;
+	}
+
+	ret = nvmem_device_read(nvmem, 0, sizeof(factory_config),
+				&factory_config);
 	if (ret != sizeof(struct factory_config)) {
 		pr_warn("Read Factory Config Failed: %d\n", ret);
 		goto bad_config;
@@ -394,6 +400,7 @@ static struct mtd_partition mityomapl138_nandflash_partition[] = {
 };
 
 static struct davinci_nand_pdata mityomapl138_nandflash_data = {
+	.core_chipsel	= 1,
 	.parts		= mityomapl138_nandflash_partition,
 	.nr_parts	= ARRAY_SIZE(mityomapl138_nandflash_partition),
 	.ecc_mode	= NAND_ECC_HW,
@@ -492,18 +499,6 @@ static void __init mityomapl138_config_emac(void)
 		pr_warn("emac registration failed: %d\n", ret);
 }
 
-static struct davinci_pm_config da850_pm_pdata = {
-	.sleepcount = 128,
-};
-
-static struct platform_device da850_pm_device = {
-	.name	= "pm-davinci",
-	.dev = {
-		.platform_data  = &da850_pm_pdata,
-	},
-	.id	= -1,
-};
-
 static void __init mityomapl138_init(void)
 {
 	int ret;
@@ -549,9 +544,7 @@ static void __init mityomapl138_init(void)
 	if (ret)
 		pr_warn("cpuidle registration failed: %d\n", ret);
 
-	ret = da850_register_pm(&da850_pm_device);
-	if (ret)
-		pr_warn("suspend registration failed: %d\n", ret);
+	davinci_pm_init();
 }
 
 #ifdef CONFIG_SERIAL_8250_CONSOLE
@@ -574,9 +567,8 @@ MACHINE_START(MITYOMAPL138, "MityDSP-L138/MityARM-1808")
 	.atag_offset	= 0x100,
 	.map_io		= mityomapl138_map_io,
 	.init_irq	= cp_intc_init,
-	.init_time	= davinci_timer_init,
+	.init_time	= da850_init_time,
 	.init_machine	= mityomapl138_init,
 	.init_late	= davinci_init_late,
 	.dma_zone_size	= SZ_128M,
-	.restart	= da8xx_restart,
 MACHINE_END

@@ -58,13 +58,9 @@ static int check_return_reg(int ra_regno, Dwarf_Frame *frame)
 	}
 
 	/*
-	 * Check if return address is on the stack. If return address
-	 * is in a register (typically R0), it is yet to be saved on
-	 * the stack.
+	 * Check if return address is on the stack.
 	 */
-	if ((nops != 0 || ops != NULL) &&
-		!(nops == 1 && ops[0].atom == DW_OP_regx &&
-			ops[0].number2 == 0 && ops[0].offset == 0))
+	if (nops != 0 || ops != NULL)
 		return 0;
 
 	/*
@@ -250,10 +246,9 @@ int arch_skip_callchain_idx(struct thread *thread, struct ip_callchain *chain)
 	if (!chain || chain->nr < 3)
 		return skip_slot;
 
-	ip = chain->ips[1];
+	ip = chain->ips[2];
 
-	thread__find_addr_location(thread, PERF_RECORD_MISC_USER,
-			MAP__FUNCTION, ip, &al);
+	thread__find_symbol(thread, PERF_RECORD_MISC_USER, ip, &al);
 
 	if (al.map)
 		dso = al.map->dso;

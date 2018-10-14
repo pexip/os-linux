@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 #ifndef __ARCH_H8300_ATOMIC__
 #define __ARCH_H8300_ATOMIC__
 
@@ -28,6 +29,19 @@ static inline int atomic_##op##_return(int i, atomic_t *v)	\
 	return ret;						\
 }
 
+#define ATOMIC_FETCH_OP(op, c_op)				\
+static inline int atomic_fetch_##op(int i, atomic_t *v)		\
+{								\
+	h8300flags flags;					\
+	int ret;						\
+								\
+	flags = arch_local_irq_save();				\
+	ret = v->counter;					\
+	v->counter c_op i;					\
+	arch_local_irq_restore(flags);				\
+	return ret;						\
+}
+
 #define ATOMIC_OP(op, c_op)					\
 static inline void atomic_##op(int i, atomic_t *v)		\
 {								\
@@ -41,17 +55,21 @@ static inline void atomic_##op(int i, atomic_t *v)		\
 ATOMIC_OP_RETURN(add, +=)
 ATOMIC_OP_RETURN(sub, -=)
 
-ATOMIC_OP(and, &=)
-ATOMIC_OP(or,  |=)
-ATOMIC_OP(xor, ^=)
+#define ATOMIC_OPS(op, c_op)					\
+	ATOMIC_OP(op, c_op)					\
+	ATOMIC_FETCH_OP(op, c_op)
 
+ATOMIC_OPS(and, &=)
+ATOMIC_OPS(or,  |=)
+ATOMIC_OPS(xor, ^=)
+ATOMIC_OPS(add, +=)
+ATOMIC_OPS(sub, -=)
+
+#undef ATOMIC_OPS
 #undef ATOMIC_OP_RETURN
 #undef ATOMIC_OP
 
-#define atomic_add(i, v)		(void)atomic_add_return(i, v)
 #define atomic_add_negative(a, v)	(atomic_add_return((a), (v)) < 0)
-
-#define atomic_sub(i, v)		(void)atomic_sub_return(i, v)
 #define atomic_sub_and_test(i, v)	(atomic_sub_return(i, v) == 0)
 
 #define atomic_inc_return(v)		atomic_add_return(1, v)

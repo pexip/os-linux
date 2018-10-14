@@ -52,6 +52,8 @@
 #include <xen/interface/platform.h>
 #include <xen/interface/xen-mca.h>
 
+struct xen_dm_op_buf;
+
 /*
  * The hypercall asms have to meet several constraints:
  * - Work on 32- and 64-bit.
@@ -114,7 +116,7 @@ extern struct { char _entry[32]; } hypercall_page[];
 	register unsigned long __arg4 asm(__HYPERCALL_ARG4REG) = __arg4; \
 	register unsigned long __arg5 asm(__HYPERCALL_ARG5REG) = __arg5;
 
-#define __HYPERCALL_0PARAM	"=r" (__res)
+#define __HYPERCALL_0PARAM	"=r" (__res), ASM_CALL_CONSTRAINT
 #define __HYPERCALL_1PARAM	__HYPERCALL_0PARAM, "+r" (__arg1)
 #define __HYPERCALL_2PARAM	__HYPERCALL_1PARAM, "+r" (__arg2)
 #define __HYPERCALL_3PARAM	__HYPERCALL_2PARAM, "+r" (__arg3)
@@ -314,10 +316,10 @@ HYPERVISOR_mca(struct xen_mc *mc_op)
 }
 
 static inline int
-HYPERVISOR_dom0_op(struct xen_platform_op *platform_op)
+HYPERVISOR_platform_op(struct xen_platform_op *op)
 {
-	platform_op->interface_version = XENPF_INTERFACE_VERSION;
-	return _hypercall1(int, dom0_op, platform_op);
+	op->interface_version = XENPF_INTERFACE_VERSION;
+	return _hypercall1(int, platform_op, op);
 }
 
 static inline int
@@ -475,6 +477,17 @@ HYPERVISOR_xenpmu_op(unsigned int op, void *arg)
 	return _hypercall2(int, xenpmu_op, op, arg);
 }
 
+static inline int
+HYPERVISOR_dm_op(
+	domid_t dom, unsigned int nr_bufs, struct xen_dm_op_buf *bufs)
+{
+	int ret;
+	stac();
+	ret = _hypercall3(int, dm_op, dom, nr_bufs, bufs);
+	clac();
+	return ret;
+}
+
 static inline void
 MULTI_fpu_taskswitch(struct multicall_entry *mcl, int set)
 {
@@ -544,10 +557,12 @@ MULTI_update_descriptor(struct multicall_entry *mcl, u64 maddr,
 		mcl->args[0] = maddr;
 		mcl->args[1] = *(unsigned long *)&desc;
 	} else {
+		u32 *p = (u32 *)&desc;
+
 		mcl->args[0] = maddr;
 		mcl->args[1] = maddr >> 32;
-		mcl->args[2] = desc.a;
-		mcl->args[3] = desc.b;
+		mcl->args[2] = *p++;
+		mcl->args[3] = *p;
 	}
 
 	trace_xen_mc_entry(mcl, sizeof(maddr) == sizeof(long) ? 2 : 4);

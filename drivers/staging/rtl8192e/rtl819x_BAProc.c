@@ -11,7 +11,7 @@
  *
  * Contact Information:
  * wlanfae <wlanfae@realtek.com>
-******************************************************************************/
+ ******************************************************************************/
 #include <asm/byteorder.h>
 #include <asm/unaligned.h>
 #include <linux/etherdevice.h>
@@ -76,7 +76,7 @@ static struct sk_buff *rtllib_ADDBA(struct rtllib_device *ieee, u8 *Dst,
 				    u16 StatusCode, u8 type)
 {
 	struct sk_buff *skb = NULL;
-	 struct rtllib_hdr_3addr *BAReq = NULL;
+	struct rtllib_hdr_3addr *BAReq = NULL;
 	u8 *tag = NULL;
 	u16 len = ieee->tx_headroom + 9;
 
@@ -88,15 +88,14 @@ static struct sk_buff *rtllib_ADDBA(struct rtllib_device *ieee, u8 *Dst,
 		return NULL;
 	}
 	skb = dev_alloc_skb(len + sizeof(struct rtllib_hdr_3addr));
-	if (skb == NULL)
+	if (!skb)
 		return NULL;
 
 	memset(skb->data, 0, sizeof(struct rtllib_hdr_3addr));
 
 	skb_reserve(skb, ieee->tx_headroom);
 
-	BAReq = (struct rtllib_hdr_3addr *)skb_put(skb,
-		 sizeof(struct rtllib_hdr_3addr));
+	BAReq = skb_put(skb, sizeof(struct rtllib_hdr_3addr));
 
 	ether_addr_copy(BAReq->addr1, Dst);
 	ether_addr_copy(BAReq->addr2, ieee->dev->dev_addr);
@@ -104,7 +103,7 @@ static struct sk_buff *rtllib_ADDBA(struct rtllib_device *ieee, u8 *Dst,
 	ether_addr_copy(BAReq->addr3, ieee->current_network.bssid);
 	BAReq->frame_ctl = cpu_to_le16(RTLLIB_STYPE_MANAGE_ACT);
 
-	tag = (u8 *)skb_put(skb, 9);
+	tag = skb_put(skb, 9);
 	*tag++ = ACT_CAT_BA;
 	*tag++ = type;
 	*tag++ = pBA->DialogToken;
@@ -154,20 +153,19 @@ static struct sk_buff *rtllib_DELBA(struct rtllib_device *ieee, u8 *dst,
 	DelbaParamSet.field.TID	= pBA->BaParamSet.field.TID;
 
 	skb = dev_alloc_skb(len + sizeof(struct rtllib_hdr_3addr));
-	if (skb == NULL)
+	if (!skb)
 		return NULL;
 
 	skb_reserve(skb, ieee->tx_headroom);
 
-	Delba = (struct rtllib_hdr_3addr *) skb_put(skb,
-		 sizeof(struct rtllib_hdr_3addr));
+	Delba = skb_put(skb, sizeof(struct rtllib_hdr_3addr));
 
 	ether_addr_copy(Delba->addr1, dst);
 	ether_addr_copy(Delba->addr2, ieee->dev->dev_addr);
 	ether_addr_copy(Delba->addr3, ieee->current_network.bssid);
 	Delba->frame_ctl = cpu_to_le16(RTLLIB_STYPE_MANAGE_ACT);
 
-	tag = (u8 *)skb_put(skb, 6);
+	tag = skb_put(skb, 6);
 
 	*tag++ = ACT_CAT_BA;
 	*tag++ = ACT_DELBA;
@@ -189,7 +187,7 @@ static struct sk_buff *rtllib_DELBA(struct rtllib_device *ieee, u8 *dst,
 static void rtllib_send_ADDBAReq(struct rtllib_device *ieee, u8 *dst,
 				 struct ba_record *pBA)
 {
-	struct sk_buff *skb = NULL;
+	struct sk_buff *skb;
 
 	skb = rtllib_ADDBA(ieee, dst, pBA, 0, ACT_ADDBAREQ);
 
@@ -204,7 +202,7 @@ static void rtllib_send_ADDBAReq(struct rtllib_device *ieee, u8 *dst,
 static void rtllib_send_ADDBARsp(struct rtllib_device *ieee, u8 *dst,
 				 struct ba_record *pBA, u16 StatusCode)
 {
-	struct sk_buff *skb = NULL;
+	struct sk_buff *skb;
 
 	skb = rtllib_ADDBA(ieee, dst, pBA, StatusCode, ACT_ADDBARSP);
 	if (skb)
@@ -217,7 +215,7 @@ static void rtllib_send_DELBA(struct rtllib_device *ieee, u8 *dst,
 			      struct ba_record *pBA, enum tr_select TxRxSelect,
 			      u16 ReasonCode)
 {
-	struct sk_buff *skb = NULL;
+	struct sk_buff *skb;
 
 	skb = rtllib_DELBA(ieee, dst, pBA, TxRxSelect, ReasonCode);
 	if (skb)
@@ -530,18 +528,20 @@ void TsInitDelBA(struct rtllib_device *ieee,
 	}
 }
 
-void BaSetupTimeOut(unsigned long data)
+void BaSetupTimeOut(struct timer_list *t)
 {
-	struct tx_ts_record *pTxTs = (struct tx_ts_record *)data;
+	struct tx_ts_record *pTxTs = from_timer(pTxTs, t,
+					      TxPendingBARecord.Timer);
 
 	pTxTs->bAddBaReqInProgress = false;
 	pTxTs->bAddBaReqDelayed = true;
 	pTxTs->TxPendingBARecord.bValid = false;
 }
 
-void TxBaInactTimeout(unsigned long data)
+void TxBaInactTimeout(struct timer_list *t)
 {
-	struct tx_ts_record *pTxTs = (struct tx_ts_record *)data;
+	struct tx_ts_record *pTxTs = from_timer(pTxTs, t,
+					      TxAdmittedBARecord.Timer);
 	struct rtllib_device *ieee = container_of(pTxTs, struct rtllib_device,
 				     TxTsRecord[pTxTs->num]);
 	TxTsDeleteBA(ieee, pTxTs);
@@ -550,9 +550,10 @@ void TxBaInactTimeout(unsigned long data)
 			  DELBA_REASON_TIMEOUT);
 }
 
-void RxBaInactTimeout(unsigned long data)
+void RxBaInactTimeout(struct timer_list *t)
 {
-	struct rx_ts_record *pRxTs = (struct rx_ts_record *)data;
+	struct rx_ts_record *pRxTs = from_timer(pRxTs, t,
+					      RxAdmittedBARecord.Timer);
 	struct rtllib_device *ieee = container_of(pRxTs, struct rtllib_device,
 				     RxTsRecord[pRxTs->num]);
 

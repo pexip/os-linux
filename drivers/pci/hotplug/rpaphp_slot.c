@@ -1,23 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * RPA Virtual I/O device functions
  * Copyright (C) 2004 Linda Xie <lxie@us.ibm.com>
  *
  * All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
- * your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, GOOD TITLE or
- * NON INFRINGEMENT.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * Send feedback to <lxie@us.ibm.com>
  *
@@ -48,7 +34,7 @@ void dealloc_slot_struct(struct slot *slot)
 }
 
 struct slot *alloc_slot_struct(struct device_node *dn,
-                       int drc_index, char *drc_name, int power_domain)
+		int drc_index, char *drc_name, int power_domain)
 {
 	struct slot *slot;
 
@@ -117,11 +103,13 @@ EXPORT_SYMBOL_GPL(rpaphp_deregister_slot);
 int rpaphp_register_slot(struct slot *slot)
 {
 	struct hotplug_slot *php_slot = slot->hotplug_slot;
+	struct device_node *child;
+	u32 my_index;
 	int retval;
-	int slotno;
+	int slotno = -1;
 
-	dbg("%s registering slot:path[%s] index[%x], name[%s] pdomain[%x] type[%d]\n",
-		__func__, slot->dn->full_name, slot->index, slot->name,
+	dbg("%s registering slot:path[%pOF] index[%x], name[%s] pdomain[%x] type[%d]\n",
+		__func__, slot->dn, slot->index, slot->name,
 		slot->power_domain, slot->type);
 
 	/* should not try to register the same slot twice */
@@ -130,10 +118,15 @@ int rpaphp_register_slot(struct slot *slot)
 		return -EAGAIN;
 	}
 
-	if (slot->dn->child)
-		slotno = PCI_SLOT(PCI_DN(slot->dn->child)->devfn);
-	else
-		slotno = -1;
+	for_each_child_of_node(slot->dn, child) {
+		retval = of_property_read_u32(child, "ibm,my-drc-index", &my_index);
+		if (my_index == slot->index) {
+			slotno = PCI_SLOT(PCI_DN(child)->devfn);
+			of_node_put(child);
+			break;
+		}
+	}
+
 	retval = pci_hp_register(php_slot, slot->bus, slotno, slot->name);
 	if (retval) {
 		err("pci_hp_register failed with error %d\n", retval);
