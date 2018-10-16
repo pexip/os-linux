@@ -1,3 +1,13 @@
+linux (4.18.14-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * bugfix/all/block-really-disable-runtime-pm-for-blk-mq.patch:
+    Drop: merged upstream
+  * bugfix/all/block-really-disable-runtime-pm-for-blk-mq.patch:
+    Refresh
+
+ -- Vincent Sanders <vince@pexip.com>  Tue, 02 Oct 2018 16:26:05 +0000
+
 linux (4.18.6-1pexip1) pexip; urgency=medium
 
   * New upstream release
