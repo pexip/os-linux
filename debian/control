@@ -290,7 +290,7 @@ Architecture: alpha
 Section: debian-installer
 Priority: standard
 Provides: nic-wireless-modules
-Depends: kernel-image-4.18.0-1-alpha-generic-di, nic-shared-modules-4.18.0-1-alpha-generic-di, usb-modules-4.18.0-1-alpha-generic-di, pcmcia-modules-4.18.0-1-alpha-generic-di, crc-modules-4.18.0-1-alpha-generic-di
+Depends: kernel-image-4.18.0-1-alpha-generic-di, nic-shared-modules-4.18.0-1-alpha-generic-di, usb-modules-4.18.0-1-alpha-generic-di, crc-modules-4.18.0-1-alpha-generic-di
 Description: Wireless NIC drivers
  This package contains wireless NIC drivers for the kernel.  Includes
  crypto modules only needed for wireless (WEP, WPA).
@@ -306,7 +306,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-alpha-generic-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-alpha-generic
 Package-Type: udeb
@@ -316,7 +316,7 @@ Architecture: alpha
 Section: debian-installer
 Priority: optional
 Provides: serial-modules
-Depends: kernel-image-4.18.0-1-alpha-generic-di, pcmcia-modules-4.18.0-1-alpha-generic-di
+Depends: kernel-image-4.18.0-1-alpha-generic-di
 Description: Serial drivers
  This package contains serial drivers for the kernel.
 Build-Profiles: <!stage1>
@@ -444,18 +444,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-alpha-generic
 Package-Type: udeb
 
-Package: jfs-modules-4.18.0-1-alpha-generic-di
-Architecture: alpha
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-alpha-generic-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-alpha-generic
-Package-Type: udeb
-
 Package: xfs-modules-4.18.0-1-alpha-generic-di
 Architecture: alpha
 Section: debian-installer
@@ -560,30 +548,6 @@ Provides: mouse-modules
 Depends: kernel-image-4.18.0-1-alpha-generic-di, event-modules-4.18.0-1-alpha-generic-di, input-modules-4.18.0-1-alpha-generic-di, usb-modules-4.18.0-1-alpha-generic-di
 Description: Mouse support
  This package contains mouse drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-alpha-generic
-Package-Type: udeb
-
-Package: nic-pcmcia-modules-4.18.0-1-alpha-generic-di
-Architecture: alpha
-Section: debian-installer
-Priority: standard
-Provides: nic-pcmcia-modules
-Depends: kernel-image-4.18.0-1-alpha-generic-di, nic-shared-modules-4.18.0-1-alpha-generic-di, nic-wireless-modules-4.18.0-1-alpha-generic-di, pcmcia-modules-4.18.0-1-alpha-generic-di
-Description: Common PCMCIA NIC drivers
- This package contains common PCMCIA NIC drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-alpha-generic
-Package-Type: udeb
-
-Package: pcmcia-modules-4.18.0-1-alpha-generic-di
-Architecture: alpha
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-modules
-Depends: kernel-image-4.18.0-1-alpha-generic-di
-Description: Common PCMCIA drivers
- This package contains common PCMCIA drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-alpha-generic
 Package-Type: udeb
@@ -865,7 +829,7 @@ Architecture: amd64
 Section: debian-installer
 Priority: standard
 Provides: nic-wireless-modules
-Depends: kernel-image-4.18.0-1-amd64-di, nic-shared-modules-4.18.0-1-amd64-di, usb-modules-4.18.0-1-amd64-di, mmc-modules-4.18.0-1-amd64-di, pcmcia-modules-4.18.0-1-amd64-di, crc-modules-4.18.0-1-amd64-di
+Depends: kernel-image-4.18.0-1-amd64-di, nic-shared-modules-4.18.0-1-amd64-di, usb-modules-4.18.0-1-amd64-di, mmc-modules-4.18.0-1-amd64-di, crc-modules-4.18.0-1-amd64-di
 Description: Wireless NIC drivers
  This package contains wireless NIC drivers for the kernel.  Includes
  crypto modules only needed for wireless (WEP, WPA).
@@ -881,7 +845,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-amd64-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-amd64
 Package-Type: udeb
@@ -891,7 +855,7 @@ Architecture: amd64
 Section: debian-installer
 Priority: optional
 Provides: serial-modules
-Depends: kernel-image-4.18.0-1-amd64-di, pcmcia-modules-4.18.0-1-amd64-di
+Depends: kernel-image-4.18.0-1-amd64-di
 Description: Serial drivers
  This package contains serial drivers for the kernel.
 Build-Profiles: <!stage1>
@@ -942,18 +906,6 @@ Provides: cdrom-core-modules
 Depends: kernel-image-4.18.0-1-amd64-di, scsi-core-modules-4.18.0-1-amd64-di, isofs-modules-4.18.0-1-amd64-di
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-amd64
-Package-Type: udeb
-
-Package: firewire-core-modules-4.18.0-1-amd64-di
-Architecture: amd64
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-amd64-di, scsi-core-modules-4.18.0-1-amd64-di, crc-modules-4.18.0-1-amd64-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-amd64
 Package-Type: udeb
@@ -1027,18 +979,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-amd64-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-amd64
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-amd64-di
-Architecture: amd64
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-amd64-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-amd64
 Package-Type: udeb
@@ -1127,18 +1067,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-amd64
 Package-Type: udeb
 
-Package: pcmcia-storage-modules-4.18.0-1-amd64-di
-Architecture: amd64
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-storage-modules
-Depends: kernel-image-4.18.0-1-amd64-di, cdrom-core-modules-4.18.0-1-amd64-di, pcmcia-modules-4.18.0-1-amd64-di, ata-modules-4.18.0-1-amd64-di
-Description: PCMCIA storage drivers
- This package contains PCMCIA storage drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-amd64
-Package-Type: udeb
-
 Package: fb-modules-4.18.0-1-amd64-di
 Architecture: amd64
 Section: debian-installer
@@ -1183,30 +1111,6 @@ Provides: mouse-modules
 Depends: kernel-image-4.18.0-1-amd64-di, event-modules-4.18.0-1-amd64-di, input-modules-4.18.0-1-amd64-di, usb-modules-4.18.0-1-amd64-di
 Description: Mouse support
  This package contains mouse drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-amd64
-Package-Type: udeb
-
-Package: nic-pcmcia-modules-4.18.0-1-amd64-di
-Architecture: amd64
-Section: debian-installer
-Priority: standard
-Provides: nic-pcmcia-modules
-Depends: kernel-image-4.18.0-1-amd64-di, nic-shared-modules-4.18.0-1-amd64-di, nic-wireless-modules-4.18.0-1-amd64-di, pcmcia-modules-4.18.0-1-amd64-di, mmc-core-modules-4.18.0-1-amd64-di
-Description: Common PCMCIA NIC drivers
- This package contains common PCMCIA NIC drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-amd64
-Package-Type: udeb
-
-Package: pcmcia-modules-4.18.0-1-amd64-di
-Architecture: amd64
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-modules
-Depends: kernel-image-4.18.0-1-amd64-di
-Description: Common PCMCIA drivers
- This package contains common PCMCIA drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-amd64
 Package-Type: udeb
@@ -1370,18 +1274,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-amd64
 Package-Type: udeb
 
-Package: speakup-modules-4.18.0-1-amd64-di
-Architecture: amd64
-Section: debian-installer
-Priority: optional
-Provides: speakup-modules
-Depends: kernel-image-4.18.0-1-amd64-di
-Description: speakup modules
- This package contains speakup modules.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-amd64
-Package-Type: udeb
-
 Package: virtio-modules-4.18.0-1-amd64-di
 Architecture: amd64
 Section: debian-installer
@@ -1411,7 +1303,7 @@ Architecture: amd64
 Section: debian-installer
 Priority: optional
 Provides: sound-modules
-Depends: kernel-image-4.18.0-1-amd64-di, i2c-modules-4.18.0-1-amd64-di, usb-modules-4.18.0-1-amd64-di, pcmcia-modules-4.18.0-1-amd64-di, firewire-core-modules-4.18.0-1-amd64-di, crc-modules-4.18.0-1-amd64-di
+Depends: kernel-image-4.18.0-1-amd64-di, i2c-modules-4.18.0-1-amd64-di, usb-modules-4.18.0-1-amd64-di, crc-modules-4.18.0-1-amd64-di
 Description: sound support
  This package contains sound modules.
 Build-Profiles: <!stage1>
@@ -1623,7 +1515,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-arm64-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-arm64
 Package-Type: udeb
@@ -1721,18 +1613,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-arm64-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-arm64
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-arm64-di
-Architecture: arm64
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-arm64-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-arm64
 Package-Type: udeb
@@ -2161,7 +2041,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-marvell-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-marvell
 Package-Type: udeb
@@ -2271,30 +2151,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-marvell-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-marvell
-Package-Type: udeb
-
-Package: jffs2-modules-4.18.0-1-marvell-di
-Architecture: armel
-Section: debian-installer
-Priority: optional
-Provides: jffs2-modules
-Depends: kernel-image-4.18.0-1-marvell-di, zlib-modules-4.18.0-1-marvell-di, compress-modules-4.18.0-1-marvell-di, mtd-modules-4.18.0-1-marvell-di
-Description: JFFS2 filesystem support
- This package contains the JFFS2 filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-marvell
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-marvell-di
-Architecture: armel
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-marvell-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-marvell
 Package-Type: udeb
@@ -2690,7 +2546,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-armmp-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-armmp
 Package-Type: udeb
@@ -2788,18 +2644,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-armmp-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-armmp
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-armmp-di
-Architecture: armhf
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-armmp-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-armmp
 Package-Type: udeb
@@ -3278,7 +3122,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-parisc-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-parisc
 Package-Type: udeb
@@ -3412,18 +3256,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-parisc-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-parisc
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-parisc-di
-Architecture: hppa
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-parisc-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-parisc
 Package-Type: udeb
@@ -3716,7 +3548,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-parisc64-smp-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-parisc64-smp
 Package-Type: udeb
@@ -3850,18 +3682,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-parisc64-smp-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-parisc64-smp
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-parisc64-smp-di
-Architecture: hppa
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-parisc64-smp-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-parisc64-smp
 Package-Type: udeb
@@ -4241,7 +4061,7 @@ Architecture: i386
 Section: debian-installer
 Priority: standard
 Provides: nic-wireless-modules
-Depends: kernel-image-4.18.0-1-686-di, nic-shared-modules-4.18.0-1-686-di, usb-modules-4.18.0-1-686-di, mmc-modules-4.18.0-1-686-di, pcmcia-modules-4.18.0-1-686-di, crc-modules-4.18.0-1-686-di
+Depends: kernel-image-4.18.0-1-686-di, nic-shared-modules-4.18.0-1-686-di, usb-modules-4.18.0-1-686-di, mmc-modules-4.18.0-1-686-di, crc-modules-4.18.0-1-686-di
 Description: Wireless NIC drivers
  This package contains wireless NIC drivers for the kernel.  Includes
  crypto modules only needed for wireless (WEP, WPA).
@@ -4257,7 +4077,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-686-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686
 Package-Type: udeb
@@ -4267,7 +4087,7 @@ Architecture: i386
 Section: debian-installer
 Priority: optional
 Provides: serial-modules
-Depends: kernel-image-4.18.0-1-686-di, pcmcia-modules-4.18.0-1-686-di
+Depends: kernel-image-4.18.0-1-686-di
 Description: Serial drivers
  This package contains serial drivers for the kernel.
 Build-Profiles: <!stage1>
@@ -4318,18 +4138,6 @@ Provides: cdrom-core-modules
 Depends: kernel-image-4.18.0-1-686-di, scsi-core-modules-4.18.0-1-686-di, isofs-modules-4.18.0-1-686-di
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686
-Package-Type: udeb
-
-Package: firewire-core-modules-4.18.0-1-686-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-686-di, scsi-core-modules-4.18.0-1-686-di, crc-modules-4.18.0-1-686-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686
 Package-Type: udeb
@@ -4403,18 +4211,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-686-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-686-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-686-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686
 Package-Type: udeb
@@ -4503,18 +4299,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686
 Package-Type: udeb
 
-Package: pcmcia-storage-modules-4.18.0-1-686-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-storage-modules
-Depends: kernel-image-4.18.0-1-686-di, cdrom-core-modules-4.18.0-1-686-di, pcmcia-modules-4.18.0-1-686-di, ata-modules-4.18.0-1-686-di
-Description: PCMCIA storage drivers
- This package contains PCMCIA storage drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686
-Package-Type: udeb
-
 Package: fb-modules-4.18.0-1-686-di
 Architecture: i386
 Section: debian-installer
@@ -4559,30 +4343,6 @@ Provides: mouse-modules
 Depends: kernel-image-4.18.0-1-686-di, event-modules-4.18.0-1-686-di, input-modules-4.18.0-1-686-di, usb-modules-4.18.0-1-686-di
 Description: Mouse support
  This package contains mouse drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686
-Package-Type: udeb
-
-Package: nic-pcmcia-modules-4.18.0-1-686-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: nic-pcmcia-modules
-Depends: kernel-image-4.18.0-1-686-di, nic-shared-modules-4.18.0-1-686-di, nic-wireless-modules-4.18.0-1-686-di, pcmcia-modules-4.18.0-1-686-di, mmc-core-modules-4.18.0-1-686-di
-Description: Common PCMCIA NIC drivers
- This package contains common PCMCIA NIC drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686
-Package-Type: udeb
-
-Package: pcmcia-modules-4.18.0-1-686-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-modules
-Depends: kernel-image-4.18.0-1-686-di
-Description: Common PCMCIA drivers
- This package contains common PCMCIA drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686
 Package-Type: udeb
@@ -4746,18 +4506,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686
 Package-Type: udeb
 
-Package: speakup-modules-4.18.0-1-686-di
-Architecture: i386
-Section: debian-installer
-Priority: optional
-Provides: speakup-modules
-Depends: kernel-image-4.18.0-1-686-di
-Description: speakup modules
- This package contains speakup modules.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686
-Package-Type: udeb
-
 Package: virtio-modules-4.18.0-1-686-di
 Architecture: i386
 Section: debian-installer
@@ -4787,7 +4535,7 @@ Architecture: i386
 Section: debian-installer
 Priority: optional
 Provides: sound-modules
-Depends: kernel-image-4.18.0-1-686-di, i2c-modules-4.18.0-1-686-di, usb-modules-4.18.0-1-686-di, pcmcia-modules-4.18.0-1-686-di, firewire-core-modules-4.18.0-1-686-di, crc-modules-4.18.0-1-686-di
+Depends: kernel-image-4.18.0-1-686-di, i2c-modules-4.18.0-1-686-di, usb-modules-4.18.0-1-686-di, crc-modules-4.18.0-1-686-di
 Description: sound support
  This package contains sound modules.
 Build-Profiles: <!stage1>
@@ -4873,7 +4621,7 @@ Architecture: i386
 Section: debian-installer
 Priority: standard
 Provides: nic-wireless-modules
-Depends: kernel-image-4.18.0-1-686-pae-di, nic-shared-modules-4.18.0-1-686-pae-di, usb-modules-4.18.0-1-686-pae-di, mmc-modules-4.18.0-1-686-pae-di, pcmcia-modules-4.18.0-1-686-pae-di, crc-modules-4.18.0-1-686-pae-di
+Depends: kernel-image-4.18.0-1-686-pae-di, nic-shared-modules-4.18.0-1-686-pae-di, usb-modules-4.18.0-1-686-pae-di, mmc-modules-4.18.0-1-686-pae-di, crc-modules-4.18.0-1-686-pae-di
 Description: Wireless NIC drivers
  This package contains wireless NIC drivers for the kernel.  Includes
  crypto modules only needed for wireless (WEP, WPA).
@@ -4889,7 +4637,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-686-pae-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686-pae
 Package-Type: udeb
@@ -4899,7 +4647,7 @@ Architecture: i386
 Section: debian-installer
 Priority: optional
 Provides: serial-modules
-Depends: kernel-image-4.18.0-1-686-pae-di, pcmcia-modules-4.18.0-1-686-pae-di
+Depends: kernel-image-4.18.0-1-686-pae-di
 Description: Serial drivers
  This package contains serial drivers for the kernel.
 Build-Profiles: <!stage1>
@@ -4950,18 +4698,6 @@ Provides: cdrom-core-modules
 Depends: kernel-image-4.18.0-1-686-pae-di, scsi-core-modules-4.18.0-1-686-pae-di, isofs-modules-4.18.0-1-686-pae-di
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686-pae
-Package-Type: udeb
-
-Package: firewire-core-modules-4.18.0-1-686-pae-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-686-pae-di, scsi-core-modules-4.18.0-1-686-pae-di, crc-modules-4.18.0-1-686-pae-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686-pae
 Package-Type: udeb
@@ -5035,18 +4771,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-686-pae-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686-pae
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-686-pae-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-686-pae-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686-pae
 Package-Type: udeb
@@ -5135,18 +4859,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686-pae
 Package-Type: udeb
 
-Package: pcmcia-storage-modules-4.18.0-1-686-pae-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-storage-modules
-Depends: kernel-image-4.18.0-1-686-pae-di, cdrom-core-modules-4.18.0-1-686-pae-di, pcmcia-modules-4.18.0-1-686-pae-di, ata-modules-4.18.0-1-686-pae-di
-Description: PCMCIA storage drivers
- This package contains PCMCIA storage drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686-pae
-Package-Type: udeb
-
 Package: fb-modules-4.18.0-1-686-pae-di
 Architecture: i386
 Section: debian-installer
@@ -5191,30 +4903,6 @@ Provides: mouse-modules
 Depends: kernel-image-4.18.0-1-686-pae-di, event-modules-4.18.0-1-686-pae-di, input-modules-4.18.0-1-686-pae-di, usb-modules-4.18.0-1-686-pae-di
 Description: Mouse support
  This package contains mouse drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686-pae
-Package-Type: udeb
-
-Package: nic-pcmcia-modules-4.18.0-1-686-pae-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: nic-pcmcia-modules
-Depends: kernel-image-4.18.0-1-686-pae-di, nic-shared-modules-4.18.0-1-686-pae-di, nic-wireless-modules-4.18.0-1-686-pae-di, pcmcia-modules-4.18.0-1-686-pae-di, mmc-core-modules-4.18.0-1-686-pae-di
-Description: Common PCMCIA NIC drivers
- This package contains common PCMCIA NIC drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686-pae
-Package-Type: udeb
-
-Package: pcmcia-modules-4.18.0-1-686-pae-di
-Architecture: i386
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-modules
-Depends: kernel-image-4.18.0-1-686-pae-di
-Description: Common PCMCIA drivers
- This package contains common PCMCIA drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686-pae
 Package-Type: udeb
@@ -5378,18 +5066,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-686-pae
 Package-Type: udeb
 
-Package: speakup-modules-4.18.0-1-686-pae-di
-Architecture: i386
-Section: debian-installer
-Priority: optional
-Provides: speakup-modules
-Depends: kernel-image-4.18.0-1-686-pae-di
-Description: speakup modules
- This package contains speakup modules.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-686-pae
-Package-Type: udeb
-
 Package: virtio-modules-4.18.0-1-686-pae-di
 Architecture: i386
 Section: debian-installer
@@ -5419,7 +5095,7 @@ Architecture: i386
 Section: debian-installer
 Priority: optional
 Provides: sound-modules
-Depends: kernel-image-4.18.0-1-686-pae-di, i2c-modules-4.18.0-1-686-pae-di, usb-modules-4.18.0-1-686-pae-di, pcmcia-modules-4.18.0-1-686-pae-di, firewire-core-modules-4.18.0-1-686-pae-di, crc-modules-4.18.0-1-686-pae-di
+Depends: kernel-image-4.18.0-1-686-pae-di, i2c-modules-4.18.0-1-686-pae-di, usb-modules-4.18.0-1-686-pae-di, crc-modules-4.18.0-1-686-pae-di
 Description: sound support
  This package contains sound modules.
 Build-Profiles: <!stage1>
@@ -5628,7 +5304,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-itanium-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-itanium
 Package-Type: udeb
@@ -5638,7 +5314,7 @@ Architecture: ia64
 Section: debian-installer
 Priority: optional
 Provides: serial-modules
-Depends: kernel-image-4.18.0-1-itanium-di, pcmcia-modules-4.18.0-1-itanium-di, sn-modules-4.18.0-1-itanium-di
+Depends: kernel-image-4.18.0-1-itanium-di, sn-modules-4.18.0-1-itanium-di
 Description: Serial drivers
  This package contains serial drivers for the kernel.
 Build-Profiles: <!stage1>
@@ -5677,18 +5353,6 @@ Provides: cdrom-core-modules
 Depends: kernel-image-4.18.0-1-itanium-di, scsi-core-modules-4.18.0-1-itanium-di, ide-modules-4.18.0-1-itanium-di, isofs-modules-4.18.0-1-itanium-di
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-itanium
-Package-Type: udeb
-
-Package: firewire-core-modules-4.18.0-1-itanium-di
-Architecture: ia64
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-itanium-di, scsi-core-modules-4.18.0-1-itanium-di, crc-modules-4.18.0-1-itanium-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-itanium
 Package-Type: udeb
@@ -5762,18 +5426,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-itanium-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-itanium
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-itanium-di
-Architecture: ia64
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-itanium-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-itanium
 Package-Type: udeb
@@ -5906,18 +5558,6 @@ Provides: mouse-modules
 Depends: kernel-image-4.18.0-1-itanium-di, event-modules-4.18.0-1-itanium-di, input-modules-4.18.0-1-itanium-di, usb-modules-4.18.0-1-itanium-di
 Description: Mouse support
  This package contains mouse drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-itanium
-Package-Type: udeb
-
-Package: pcmcia-modules-4.18.0-1-itanium-di
-Architecture: ia64
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-modules
-Depends: kernel-image-4.18.0-1-itanium-di
-Description: Common PCMCIA drivers
- This package contains common PCMCIA drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-itanium
 Package-Type: udeb
@@ -6225,7 +5865,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-m68k-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-m68k
 Package-Type: udeb
@@ -6609,7 +6249,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-4kc-malta-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-4kc-malta
 Package-Type: udeb
@@ -6731,18 +6371,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-4kc-malta-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-4kc-malta
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-4kc-malta-di
-Architecture: mips mipsel
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-4kc-malta-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-4kc-malta
 Package-Type: udeb
@@ -7157,7 +6785,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-octeon-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-octeon
 Package-Type: udeb
@@ -7279,18 +6907,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-octeon-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-octeon
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-octeon-di
-Architecture: mips mips64 mips64el mipsel
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-octeon-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-octeon
 Package-Type: udeb
@@ -7760,7 +7376,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-5kc-malta-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-5kc-malta
 Package-Type: udeb
@@ -7882,18 +7498,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-5kc-malta-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-5kc-malta
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-5kc-malta-di
-Architecture: mips64 mips64el
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-5kc-malta-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-5kc-malta
 Package-Type: udeb
@@ -8317,7 +7921,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-loongson-3-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-loongson-3
 Package-Type: udeb
@@ -8366,18 +7970,6 @@ Provides: cdrom-core-modules
 Depends: kernel-image-4.18.0-1-loongson-3-di, scsi-core-modules-4.18.0-1-loongson-3-di, isofs-modules-4.18.0-1-loongson-3-di
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-loongson-3
-Package-Type: udeb
-
-Package: firewire-core-modules-4.18.0-1-loongson-3-di
-Architecture: mips64el mipsel
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-loongson-3-di, scsi-core-modules-4.18.0-1-loongson-3-di, crc-modules-4.18.0-1-loongson-3-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-loongson-3
 Package-Type: udeb
@@ -8451,18 +8043,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-loongson-3-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-loongson-3
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-loongson-3-di
-Architecture: mips64el mipsel
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-loongson-3-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-loongson-3
 Package-Type: udeb
@@ -8733,18 +8313,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-loongson-3
 Package-Type: udeb
 
-Package: speakup-modules-4.18.0-1-loongson-3-di
-Architecture: mips64el mipsel
-Section: debian-installer
-Priority: optional
-Provides: speakup-modules
-Depends: kernel-image-4.18.0-1-loongson-3-di
-Description: speakup modules
- This package contains speakup modules.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-loongson-3
-Package-Type: udeb
-
 Package: virtio-modules-4.18.0-1-loongson-3-di
 Architecture: mips64el mipsel
 Section: debian-installer
@@ -8762,7 +8330,7 @@ Architecture: mips64el mipsel
 Section: debian-installer
 Priority: optional
 Provides: sound-modules
-Depends: kernel-image-4.18.0-1-loongson-3-di, usb-modules-4.18.0-1-loongson-3-di, firewire-core-modules-4.18.0-1-loongson-3-di, crc-modules-4.18.0-1-loongson-3-di
+Depends: kernel-image-4.18.0-1-loongson-3-di, usb-modules-4.18.0-1-loongson-3-di, crc-modules-4.18.0-1-loongson-3-di
 Description: sound support
  This package contains sound modules.
 Build-Profiles: <!stage1>
@@ -8880,7 +8448,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-mips64r6-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-mips64r6
 Package-Type: udeb
@@ -8930,18 +8498,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-mips64r6-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-mips64r6
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-mips64r6-di
-Architecture: mips64r6
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-mips64r6-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-mips64r6
 Package-Type: udeb
@@ -9153,7 +8709,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-mips64r6el-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-mips64r6el
 Package-Type: udeb
@@ -9203,18 +8759,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-mips64r6el-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-mips64r6el
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-mips64r6el-di
-Architecture: mips64r6el
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-mips64r6el-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-mips64r6el
 Package-Type: udeb
@@ -9436,7 +8980,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-mips32r6-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-mips32r6
 Package-Type: udeb
@@ -9486,18 +9030,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-mips32r6-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-mips32r6
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-mips32r6-di
-Architecture: mipsr6
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-mips32r6-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-mips32r6
 Package-Type: udeb
@@ -9709,7 +9241,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-mips32r6el-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-mips32r6el
 Package-Type: udeb
@@ -9759,18 +9291,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-mips32r6el-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-mips32r6el
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-mips32r6el-di
-Architecture: mipsr6el
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-mips32r6el-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-mips32r6el
 Package-Type: udeb
@@ -9996,7 +9516,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-powerpc-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc
 Package-Type: udeb
@@ -10006,7 +9526,7 @@ Architecture: powerpc
 Section: debian-installer
 Priority: optional
 Provides: serial-modules
-Depends: kernel-image-4.18.0-1-powerpc-di, pcmcia-modules-4.18.0-1-powerpc-di
+Depends: kernel-image-4.18.0-1-powerpc-di
 Description: Serial drivers
  This package contains serial drivers for the kernel.
 Build-Profiles: <!stage1>
@@ -10057,18 +9577,6 @@ Provides: cdrom-core-modules
 Depends: kernel-image-4.18.0-1-powerpc-di, scsi-core-modules-4.18.0-1-powerpc-di, isofs-modules-4.18.0-1-powerpc-di
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc
-Package-Type: udeb
-
-Package: firewire-core-modules-4.18.0-1-powerpc-di
-Architecture: powerpc
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-powerpc-di, scsi-core-modules-4.18.0-1-powerpc-di, crc-modules-4.18.0-1-powerpc-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc
 Package-Type: udeb
@@ -10142,18 +9650,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-powerpc-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-powerpc-di
-Architecture: powerpc
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-powerpc-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc
 Package-Type: udeb
@@ -10254,18 +9750,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc
 Package-Type: udeb
 
-Package: pcmcia-storage-modules-4.18.0-1-powerpc-di
-Architecture: powerpc
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-storage-modules
-Depends: kernel-image-4.18.0-1-powerpc-di, cdrom-core-modules-4.18.0-1-powerpc-di, pcmcia-modules-4.18.0-1-powerpc-di, ata-modules-4.18.0-1-powerpc-di
-Description: PCMCIA storage drivers
- This package contains PCMCIA storage drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc
-Package-Type: udeb
-
 Package: fb-modules-4.18.0-1-powerpc-di
 Architecture: powerpc
 Section: debian-installer
@@ -10310,30 +9794,6 @@ Provides: mouse-modules
 Depends: kernel-image-4.18.0-1-powerpc-di, event-modules-4.18.0-1-powerpc-di, input-modules-4.18.0-1-powerpc-di, usb-modules-4.18.0-1-powerpc-di
 Description: Mouse support
  This package contains mouse drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc
-Package-Type: udeb
-
-Package: nic-pcmcia-modules-4.18.0-1-powerpc-di
-Architecture: powerpc
-Section: debian-installer
-Priority: standard
-Provides: nic-pcmcia-modules
-Depends: kernel-image-4.18.0-1-powerpc-di, nic-modules-4.18.0-1-powerpc-di, nic-shared-modules-4.18.0-1-powerpc-di, pcmcia-modules-4.18.0-1-powerpc-di
-Description: Common PCMCIA NIC drivers
- This package contains common PCMCIA NIC drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc
-Package-Type: udeb
-
-Package: pcmcia-modules-4.18.0-1-powerpc-di
-Architecture: powerpc
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-modules
-Depends: kernel-image-4.18.0-1-powerpc-di
-Description: Common PCMCIA drivers
- This package contains common PCMCIA drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc
 Package-Type: udeb
@@ -10530,7 +9990,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-powerpc64-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc64
 Package-Type: udeb
@@ -10540,7 +10000,7 @@ Architecture: powerpc ppc64
 Section: debian-installer
 Priority: optional
 Provides: serial-modules
-Depends: kernel-image-4.18.0-1-powerpc64-di, pcmcia-modules-4.18.0-1-powerpc64-di
+Depends: kernel-image-4.18.0-1-powerpc64-di
 Description: Serial drivers
  This package contains serial drivers for the kernel.
 Build-Profiles: <!stage1>
@@ -10591,18 +10051,6 @@ Provides: cdrom-core-modules
 Depends: kernel-image-4.18.0-1-powerpc64-di, scsi-core-modules-4.18.0-1-powerpc64-di, isofs-modules-4.18.0-1-powerpc64-di
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc64
-Package-Type: udeb
-
-Package: firewire-core-modules-4.18.0-1-powerpc64-di
-Architecture: powerpc ppc64
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-powerpc64-di, scsi-core-modules-4.18.0-1-powerpc64-di, crc-modules-4.18.0-1-powerpc64-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc64
 Package-Type: udeb
@@ -10676,18 +10124,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-powerpc64-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc64
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-powerpc64-di
-Architecture: powerpc ppc64
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-powerpc64-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc64
 Package-Type: udeb
@@ -10788,18 +10224,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc64
 Package-Type: udeb
 
-Package: pcmcia-storage-modules-4.18.0-1-powerpc64-di
-Architecture: powerpc ppc64
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-storage-modules
-Depends: kernel-image-4.18.0-1-powerpc64-di, cdrom-core-modules-4.18.0-1-powerpc64-di, pcmcia-modules-4.18.0-1-powerpc64-di, ata-modules-4.18.0-1-powerpc64-di
-Description: PCMCIA storage drivers
- This package contains PCMCIA storage drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc64
-Package-Type: udeb
-
 Package: input-modules-4.18.0-1-powerpc64-di
 Architecture: powerpc ppc64
 Section: debian-installer
@@ -10832,30 +10256,6 @@ Provides: mouse-modules
 Depends: kernel-image-4.18.0-1-powerpc64-di, event-modules-4.18.0-1-powerpc64-di, input-modules-4.18.0-1-powerpc64-di, usb-modules-4.18.0-1-powerpc64-di
 Description: Mouse support
  This package contains mouse drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc64
-Package-Type: udeb
-
-Package: nic-pcmcia-modules-4.18.0-1-powerpc64-di
-Architecture: powerpc ppc64
-Section: debian-installer
-Priority: standard
-Provides: nic-pcmcia-modules
-Depends: kernel-image-4.18.0-1-powerpc64-di, nic-modules-4.18.0-1-powerpc64-di, nic-shared-modules-4.18.0-1-powerpc64-di, pcmcia-modules-4.18.0-1-powerpc64-di
-Description: Common PCMCIA NIC drivers
- This package contains common PCMCIA NIC drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc64
-Package-Type: udeb
-
-Package: pcmcia-modules-4.18.0-1-powerpc64-di
-Architecture: powerpc ppc64
-Section: debian-installer
-Priority: standard
-Provides: pcmcia-modules
-Depends: kernel-image-4.18.0-1-powerpc64-di
-Description: Common PCMCIA drivers
- This package contains common PCMCIA drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc64
 Package-Type: udeb
@@ -11224,7 +10624,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-powerpc64le-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc64le
 Package-Type: udeb
@@ -11273,18 +10673,6 @@ Provides: cdrom-core-modules
 Depends: kernel-image-4.18.0-1-powerpc64le-di, scsi-core-modules-4.18.0-1-powerpc64le-di, isofs-modules-4.18.0-1-powerpc64le-di
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc64le
-Package-Type: udeb
-
-Package: firewire-core-modules-4.18.0-1-powerpc64le-di
-Architecture: ppc64el
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-powerpc64le-di, scsi-core-modules-4.18.0-1-powerpc64le-di, crc-modules-4.18.0-1-powerpc64le-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc64le
 Package-Type: udeb
@@ -11358,18 +10746,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-powerpc64le-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-powerpc64le
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-powerpc64le-di
-Architecture: ppc64el
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-powerpc64le-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-powerpc64le
 Package-Type: udeb
@@ -12053,7 +11429,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-sh7751r-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sh7751r
 Package-Type: udeb
@@ -12106,18 +11482,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sh7751r
 Package-Type: udeb
 
-Package: firewire-core-modules-4.18.0-1-sh7751r-di
-Architecture: sh4
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-sh7751r-di, crc-modules-4.18.0-1-sh7751r-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-sh7751r
-Package-Type: udeb
-
 Package: loop-modules-4.18.0-1-sh7751r-di
 Architecture: sh4
 Section: debian-installer
@@ -12163,18 +11527,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-sh7751r-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-sh7751r
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-sh7751r-di
-Architecture: sh4
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-sh7751r-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sh7751r
 Package-Type: udeb
@@ -12348,18 +11700,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sh7751r
 Package-Type: udeb
 
-Package: speakup-modules-4.18.0-1-sh7751r-di
-Architecture: sh4
-Section: debian-installer
-Priority: optional
-Provides: speakup-modules
-Depends: kernel-image-4.18.0-1-sh7751r-di
-Description: speakup modules
- This package contains speakup modules.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-sh7751r
-Package-Type: udeb
-
 Package: virtio-modules-4.18.0-1-sh7751r-di
 Architecture: sh4
 Section: debian-installer
@@ -12377,7 +11717,7 @@ Architecture: sh4
 Section: debian-installer
 Priority: optional
 Provides: sound-modules
-Depends: kernel-image-4.18.0-1-sh7751r-di, i2c-modules-4.18.0-1-sh7751r-di, firewire-core-modules-4.18.0-1-sh7751r-di, crc-modules-4.18.0-1-sh7751r-di
+Depends: kernel-image-4.18.0-1-sh7751r-di, i2c-modules-4.18.0-1-sh7751r-di, crc-modules-4.18.0-1-sh7751r-di
 Description: sound support
  This package contains sound modules.
 Build-Profiles: <!stage1>
@@ -12466,7 +11806,7 @@ Provides: nic-shared-modules
 Depends: kernel-image-4.18.0-1-sh7785lcr-di
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sh7785lcr
 Package-Type: udeb
@@ -12519,18 +11859,6 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sh7785lcr
 Package-Type: udeb
 
-Package: firewire-core-modules-4.18.0-1-sh7785lcr-di
-Architecture: sh4
-Section: debian-installer
-Priority: standard
-Provides: firewire-core-modules
-Depends: kernel-image-4.18.0-1-sh7785lcr-di, crc-modules-4.18.0-1-sh7785lcr-di
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-sh7785lcr
-Package-Type: udeb
-
 Package: loop-modules-4.18.0-1-sh7785lcr-di
 Architecture: sh4
 Section: debian-installer
@@ -12576,18 +11904,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-sh7785lcr-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-sh7785lcr
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-sh7785lcr-di
-Architecture: sh4
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-sh7785lcr-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sh7785lcr
 Package-Type: udeb
@@ -12737,24 +12053,12 @@ Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sh7785lcr
 Package-Type: udeb
 
-Package: speakup-modules-4.18.0-1-sh7785lcr-di
-Architecture: sh4
-Section: debian-installer
-Priority: optional
-Provides: speakup-modules
-Depends: kernel-image-4.18.0-1-sh7785lcr-di
-Description: speakup modules
- This package contains speakup modules.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-sh7785lcr
-Package-Type: udeb
-
 Package: sound-modules-4.18.0-1-sh7785lcr-di
 Architecture: sh4
 Section: debian-installer
 Priority: optional
 Provides: sound-modules
-Depends: kernel-image-4.18.0-1-sh7785lcr-di, firewire-core-modules-4.18.0-1-sh7785lcr-di, crc-modules-4.18.0-1-sh7785lcr-di
+Depends: kernel-image-4.18.0-1-sh7785lcr-di, crc-modules-4.18.0-1-sh7785lcr-di
 Description: sound support
  This package contains sound modules.
 Build-Profiles: <!stage1>
@@ -13007,18 +12311,6 @@ Provides: isofs-modules
 Depends: kernel-image-4.18.0-1-sparc64-di
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-Build-Profiles: <!stage1>
-Kernel-Version: 4.18.0-1-sparc64
-Package-Type: udeb
-
-Package: jfs-modules-4.18.0-1-sparc64-di
-Architecture: sparc64
-Section: debian-installer
-Priority: standard
-Provides: jfs-modules
-Depends: kernel-image-4.18.0-1-sparc64-di
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 Build-Profiles: <!stage1>
 Kernel-Version: 4.18.0-1-sparc64
 Package-Type: udeb

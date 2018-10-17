@@ -3,10 +3,40 @@ linux (4.18.14-0pexip1) pexip; urgency=medium
   * New upstream release
   * bugfix/all/block-really-disable-runtime-pm-for-blk-mq.patch:
     Drop: merged upstream
-  * bugfix/all/block-really-disable-runtime-pm-for-blk-mq.patch:
+  * debian/wireless-disable-regulatory-db-direct-loading.patch:
     Refresh
   * bugfix/all/e1000-disable-64bit-dma-on-vmware.patch:
     Do not use 64bit DMA on VMware as it can result in NIC stalls.
+  * kernel config disable :
+    drivers/bluetooth
+    drivers/char/pcmcia
+    drivers/firewire
+    drivers/infiniband
+    drivers/input/joystick
+    drivers/media/dvb-frontends
+    drivers/media/usb/dvb-usb
+    drivers/media/usb/dvb-usb-v2
+    drivers/media/usb/em28xx
+    drivers/media/usb/go7007
+    drivers/media/usb/gspca
+    drivers/net/usb
+    drivers/net/can/sja1000
+    drivers/pcmcia
+    drivers/staging/media/zoran
+    drivers/staging/speakup
+    fs/9p
+    fs/adfs
+    fs/hfs
+    fs/hfsplus
+    fs/jffs2
+    fs/jfs
+    fs/qnx4
+    fs/qnx6
+    fs/reiserfs
+    sound/firewire
+    sound/pcmcia
+    sound/usb
+    sound/usb/line6
 
  -- Vincent Sanders <vince@pexip.com>  Tue, 02 Oct 2018 16:26:05 +0000
 

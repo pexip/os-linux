@@ -1320,13 +1320,13 @@ CONFIG_HOTPLUG_PCI_SHPC=y
 ##
 ## file: drivers/pcmcia/Kconfig
 ##
-CONFIG_PCCARD=m
-CONFIG_PCMCIA=m
-CONFIG_CARDBUS=y
-CONFIG_YENTA=m
-CONFIG_PD6729=m
-CONFIG_I82092=m
-CONFIG_TCIC=m
+# CONFIG_PCCARD is not set
+# CONFIG_PCMCIA is not set
+# CONFIG_CARDBUS is not set
+# CONFIG_YENTA is not set
+# CONFIG_PD6729 is not set
+# CONFIG_I82092 is not set
+# CONFIG_TCIC is not set
 # CONFIG_PCMCIA_DEBUG is not set
 
 ##

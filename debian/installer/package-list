@@ -18,7 +18,7 @@ Description: NIC drivers
  for the kernel.
 
 Package: nic-wireless-modules
-Depends: kernel-image, nic-shared-modules, usb-modules, mmc-modules, pcmcia-modules, crc-modules
+Depends: kernel-image, nic-shared-modules, usb-modules, mmc-modules, crc-modules
 Priority: standard
 Description: Wireless NIC drivers
  This package contains wireless NIC drivers for the kernel.
@@ -29,10 +29,10 @@ Depends: kernel-image
 Priority: standard
 Description: Shared NIC drivers
  This package contains NIC drivers needed by combinations of nic-modules,
- nic-pcmcia-modules, nic-usb-modules and nic-wireless-modules.
+ nic-usb-modules and nic-wireless-modules.
 
 Package: serial-modules
-Depends: kernel-image, pcmcia-modules
+Depends: kernel-image
 Priority: optional
 Description: Serial drivers
  This package contains serial drivers for the kernel.
@@ -60,12 +60,6 @@ Depends: kernel-image, scsi-core-modules, isofs-modules
 Priority: standard
 Description: CDROM support
  This package contains core CDROM support for the kernel.
-
-Package: firewire-core-modules
-Depends: kernel-image, scsi-core-modules, crc-modules
-Priority: standard
-Description: Core FireWire drivers
- This package contains core FireWire drivers for the kernel.
 
 Package: scsi-core-modules
 Depends: kernel-image
@@ -110,18 +104,6 @@ Depends: kernel-image
 Priority: standard
 Description: ISOFS filesystem support
  This package contains the ISOFS filesystem module for the kernel.
-
-Package: jffs2-modules
-Depends: kernel-image, zlib-modules, compress-modules
-Priority: optional
-Description: JFFS2 filesystem support
- This package contains the JFFS2 filesystem module for the kernel.
-
-Package: jfs-modules
-Depends: kernel-image
-Priority: standard
-Description: JFS filesystem support
- This package contains the JFS filesystem module for the kernel.
 
 Package: ntfs-modules
 Depends: kernel-image
@@ -195,12 +177,6 @@ Priority: standard
 Description: USB storage support
  This package contains the USB storage driver for the kernel.
 
-Package: pcmcia-storage-modules
-Depends: kernel-image, cdrom-core-modules, pcmcia-modules, ata-modules
-Priority: standard
-Description: PCMCIA storage drivers
- This package contains PCMCIA storage drivers for the kernel.
-
 Package: fb-modules
 Depends: kernel-image, i2c-modules
 Priority: optional
@@ -224,18 +200,6 @@ Depends: kernel-image, event-modules, input-modules, usb-modules
 Priority: optional
 Description: Mouse support
  This package contains mouse drivers for the kernel.
-
-Package: nic-pcmcia-modules
-Depends: kernel-image, nic-shared-modules, nic-wireless-modules, pcmcia-modules, mmc-core-modules
-Priority: standard
-Description: Common PCMCIA NIC drivers
- This package contains common PCMCIA NIC drivers for the kernel.
-
-Package: pcmcia-modules
-Depends: kernel-image
-Priority: standard
-Description: Common PCMCIA drivers
- This package contains common PCMCIA drivers for the kernel.
 
 Package: nic-usb-modules
 Depends: kernel-image, nic-shared-modules, nic-wireless-modules, usb-modules, crc-modules
@@ -318,12 +282,6 @@ Priority: optional
 Description: squashfs modules
  This package contains squashfs modules.
 
-Package: speakup-modules
-Depends: kernel-image
-Priority: optional
-Description: speakup modules
- This package contains speakup modules.
-
 Package: rtc-modules
 Depends: kernel-image
 Priority: optional
@@ -343,7 +301,7 @@ Description: uinput support
  This package contains the uinput module.
 
 Package: sound-modules
-Depends: kernel-image, i2c-modules, usb-modules, pcmcia-modules, firewire-core-modules, crc-modules
+Depends: kernel-image, i2c-modules, usb-modules, crc-modules
 Priority: optional
 Description: sound support
  This package contains sound modules.
