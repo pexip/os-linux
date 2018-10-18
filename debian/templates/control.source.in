@@ -29,7 +29,8 @@ Build-Depends-Arch:
 # used by upstream to build include/generated/timeconst.h
  bc <!stage1>,
 # used by upstream to build signing tools and to process certificates
- libssl-dev:native <!stage1>, libssl-dev <!stage1 !pkg.linux.notools cross>,
+ libssl1.0-dev:native <!stage1> | libssl-dev:native (<< 1.1) <!stage1>,
+ libssl1.0-dev <!stage1 !pkg.linux.notools cross> | libssl-dev <!stage1 !pkg.linux.notools cross>,
  openssl (>= 1.1.0-1~) <!stage1>,
 # used by upstream to build objtool (native for amd64 images; host arch for
 # linux-kbuild) and perf (host arch)
