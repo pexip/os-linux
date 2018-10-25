@@ -170,3 +170,4 @@ debian/wireless-disable-regulatory.db-direct-loading.patch
 # Pexip fixes
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/scsi-sd-contribute-to-randomness.patch
+bugfix/all/random-add-a-config-option-to-trust-the-CPUs-hwrng.patch
