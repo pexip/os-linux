@@ -1,3 +1,14 @@
+linux (4.18.15-0pexip3) pexip; urgency=medium
+
+  * bugfix/all/random-add-a-config-option-to-trust-the-CPUs-hwrng.patch,
+    bugfix/all/random-make-CPU-trust-a-boot-parameter.patch:
+    Add patches to use CPU RNG as an entropy source
+  * bugfix/all/scsi-sd-contribute-to-randomness.patch:
+    Allow SCSI devices to contribute to kernel randomness
+  * config: trust CPU RNG by default
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 26 Oct 2018 16:12:48 +0100
+
 linux (4.18.15-0pexip2) pexip; urgency=medium
 
   * Build-Depend on libssl 1.0.x
