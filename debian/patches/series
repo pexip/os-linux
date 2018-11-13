@@ -172,3 +172,4 @@ bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 bugfix/all/scsi-sd-contribute-to-randomness.patch
 bugfix/all/random-add-a-config-option-to-trust-the-CPUs-hwrng.patch
 bugfix/all/random-make-CPU-trust-a-boot-parameter.patch
+bugfix/all/userns-also-map-extents-in-the-reverse-map.patch

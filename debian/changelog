@@ -1,6 +1,8 @@
 linux (4.18.18-0pexip1) pexip; urgency=medium
 
   * New upstream release
+  * bugfix/all/userns-also-map-extents-in-the-reverse-map.patch:
+    Backport fix for CVE-2018-18955
 
  -- John-Mark Bell <jmb@pexip.com>  Tue, 13 Nov 2018 15:44:37 +0000
 
