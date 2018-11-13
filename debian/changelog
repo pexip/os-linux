@@ -1,3 +1,9 @@
+linux (4.18.18-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 13 Nov 2018 15:44:37 +0000
+
 linux (4.18.15-0pexip3) pexip; urgency=medium
 
   * bugfix/all/random-add-a-config-option-to-trust-the-CPUs-hwrng.patch,
