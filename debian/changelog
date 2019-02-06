@@ -1,3 +1,16 @@
+linux (4.19.20-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * bugfix/x86/x86-mm-Fix-guard-hole-handling.patch
+    bugfix/arm/gpio-mvebu-only-fail-on-missing-clk-if-pwm-is-actual.patch
+    debian/patches/bugfix/all/iomap-Revert-fs-iomap.c-get-put-the-page-in-iomap_pa.patch:
+    Drop: merged upstream
+  * debian/patches/bugfix/all/disable-some-marvell-phys.patch
+    debian/patches/debian/revert-objtool-fix-config_stack_validation-y-warning.patch:
+    Refresh: remove fuzz
+
+ -- Vincent Sanders <vince@pexip.com>  Wed, 06 Feb 2019 09:21:10 +0000
+
 linux (4.19.12-1pexip1) pexip; urgency=medium
 
   * New upstream release
