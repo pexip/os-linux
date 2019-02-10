@@ -1,3 +1,9 @@
+linux (4.19.20-0pexip2) pexip; urgency=medium
+
+  * Bump version for overrides section change.
+
+ -- Vincent Sanders <vince@pexip.com>  Sun, 10 Feb 2019 14:46:40 +0000
+
 linux (4.19.20-0pexip1) pexip; urgency=medium
 
   * New upstream release
