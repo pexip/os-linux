@@ -1,3 +1,11 @@
+linux (4.19.59-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * bugfix/all/firmware-remove-redundant-log-messages-from-drivers.patch:
+    Refresh: remove fuzz
+
+ -- Vincent Sanders <vince@pexip.com>  Wed, 15 May 2019 14:28:39 +0100
+
 linux (4.19.55-0pexip1) pexip; urgency=medium
 
   * New upstream release
