@@ -1,3 +1,14 @@
+linux (4.19.51-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * debian/revert-objtool-fix-config_stack_validation-y-warning.patch
+    features/all/ena/0003-net-ena-complete-host-info-to-match-latest-ENA-spec.patch
+    features/all/lockdown/0028-efi-Add-an-EFI_SECURE_BOOT-flag-to-indicate-secure-b.patch:
+    Refresh: remove fuzz
+  * fix debian tools Makefile rules to allow inclusion of linux/bits.h
+
+ -- Vincent Sanders <vince@pexip.com>  Mon, 17 Jun 2019 10:13:06 +0100
+
 linux (4.19.31-0pexip1) pexip; urgency=medium
 
   * New upstream release
@@ -9,7 +20,7 @@ linux (4.19.26-0pexip1) pexip; urgency=medium
   * New upstream release
   * debian/patches/features/all/ena/0006-net-ena-add-functions-for-handling-Low-Latency-Queue.patch:
     Refresh: remove fuzz
-	
+
  -- Vincent Sanders <vince@pexip.com>  Mon, 04 Mar 2019 14:18:15 +0000
 
 linux (4.19.20-0pexip2) pexip; urgency=medium
