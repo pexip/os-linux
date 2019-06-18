@@ -1,3 +1,9 @@
+linux (4.19.52-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+
+ -- Vincent Sanders <vince@pexip.com>  Tue, 18 Jun 2019 10:28:13 +0100
+
 linux (4.19.51-0pexip1) pexip; urgency=medium
 
   * New upstream release
