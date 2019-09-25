@@ -1,3 +1,14 @@
+linux (4.19.75-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * features/all/aufs4/aufs4-mmap.patch:
+    Refresh: remove fuzz
+  * features/x86/x86-boot-Clear-RSDP-address-in-boot_params-for-broke.patch
+    bugfix/x86/tools-x86_energy_perf_policy-fix-uninitialized-varia.patch:
+    Dropped: superceeded upstream
+
+ -- Vincent Sanders <vince@pexip.com>  Wed, 25 Sep 2019 11:04:01 +0100
+
 linux (4.19.62-0pexip1) pexip; urgency=medium
 
   * New upstream release
