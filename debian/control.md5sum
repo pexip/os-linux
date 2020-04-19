@@ -1,5 +1,5 @@
 8342d14e494da88d7ad3157d8c29fdae  debian/bin/gencontrol.py
-616aa15bb9279d9a732e31f345f679b4  debian/build/version-info
+f7bad2c62dd3d6b210cda363dbb8364a  debian/build/version-info
 2e5bb43f2fceef492df4dc5ce5d3dddc  debian/templates/control.image-dbg.in
 f44752be9e36c27fe90963bd3051d33b  debian/templates/control.main.in
 38004750aa03cea41d5d3aeafff16fcc  debian/templates/image.preinst.in
@@ -20,17 +20,17 @@ acc5715576e56d8a0f7505a16c7725bb  debian/templates/control.source.in
 befa899554918fd2a5264e5dca3c4eef  debian/templates/tests-control.main.in
 0327750d6696dee915a532aec73a0fd6  debian/templates/image.postinst.in
 f3ba1f4d688199d6be80a1987e85ad4a  debian/templates/control.headers.in
-f6f82fa1ae95f75e5f370515c3d19141  debian/templates/control.extra.in
+0c86e2579f89e94a6cd144eb98593a5b  debian/templates/control.extra.in
 5e995fa47b41043d98d897c8dfa66fb1  debian/templates/control.tools-versioned.in
 fe4456d48e3218fb8980c8577d03a7ae  debian/templates/control.config.in
 5f1df5cd150d7663b81f5c54a604a766  debian/templates/control.headers.arch.in
-c4deebb68b760f851531cb091856c763  debian/config/defines
+24385c2f28c3e93bd4009f595205baa4  debian/config/defines
 5a0fdca4ef9c48a281110cf529f5ad53  debian/config/i386/defines
 4987bf8df1bf042f19fdec4da87aa1d4  debian/config/ppc64el/defines
 32e264f468daa991fa1bafce9e1eee3c  debian/config/mips64el/defines
 8f2e4969633ff660d026f2b7e02e6336  debian/config/sh3/defines
 3a8d9bb342084862815b0d7d7df2eee4  debian/config/armhf/defines
-47e5bd8192258878c9da960a19ca70e2  debian/config/amd64/defines
+d3c6d0e2d8508ad1f0ff1e7ced43b174  debian/config/amd64/defines
 1f1ed4a31b20a1ab483dd1357b30ed76  debian/config/mipsr6el/defines
 b1750f23dea19ed03c8382341c924b53  debian/config/mips/defines
 e0810ddd6e4add2a26c5668773b69d25  debian/config/sh4/defines

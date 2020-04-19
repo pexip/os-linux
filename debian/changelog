@@ -1,3 +1,9 @@
+linux (4.19.121-0pexip2) pexip; urgency=medium
+
+  * Buster update to change compiler dependancy to gcc 8
+
+ -- Vincent Sanders <vince@pexip.com>  Mon, 1 Jun 2020 11:50:11 +0000
+
 linux (4.19.121-0pexip1) pexip; urgency=medium
 
   * New upstream release

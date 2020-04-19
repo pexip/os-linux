@@ -86,7 +86,7 @@ aVrt
 p44
 asVcompiler
 p45
-Vgcc-6
+Vgcc-8
 p46
 ss(Vbuild
 p47
@@ -123,9 +123,9 @@ Vinitramfs-tools
 p65
 Vinitramfs-tools (>= 0.120+deb8u2)
 p66
-sVgcc-6
+sVgcc-8
 p67
-Vgcc-6 <!stage1 !cross>, gcc-6-@gnu-type-package@ <!stage1 cross>
+Vgcc-8 <!stage1 !cross>, gcc-8-@gnu-type-package@ <!stage1 cross>
 p68
 sVinitramfs-fallback
 p69
@@ -400,7 +400,7 @@ tp211
 (dp212
 Vsigned-code
 p213
-I01
+I00
 sVimage-file
 p214
 Varch/x86/boot/bzImage
@@ -431,13 +431,13 @@ p226
 g201
 tp227
 (dp228
-Vheaders%gcc-6
+Vgcc-8
 p229
-Vlinux-compiler-gcc-6-x86 (>= 4.14.17-1~)
+Vgcc-8 (>= 8-20180123-1~) <!stage1 !cross>, gcc-8-x86-64-linux-gnu (>= 8-20180123-1~) <!stage1 cross>
 p230
-sVgcc-6
+sVheaders%gcc-8
 p231
-Vgcc-6 (>= 6.3.0-18) <!stage1 !cross>, gcc-6-x86-64-linux-gnu (>= 6.3.0-18) <!stage1 cross>
+Vlinux-compiler-gcc-8-x86
 p232
 ss(Vdescription
 p233
@@ -2872,7 +2872,7 @@ V4.19
 p1531
 sVsource
 p1532
-V4.19.12-1pexip1
+V4.19.95-0pexip2
 p1533
 sVabiname
 p1534

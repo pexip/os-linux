@@ -117,7 +117,7 @@ arches:
  sparc
  sparc64
  x32
-compiler: gcc-6
+compiler: gcc-8
 featuresets:
  none
  rt
@@ -140,7 +140,7 @@ recommends: apparmor
 
 [relations]
 # compilers
-gcc-6: gcc-6 <!stage1 !cross>, gcc-6-@gnu-type-package@ <!stage1 cross>
+gcc-8: gcc-8 <!stage1 !cross>, gcc-8-@gnu-type-package@ <!stage1 cross>
 
 # initramfs-generators
 initramfs-fallback: linux-initramfs-tool
