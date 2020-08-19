@@ -1,3 +1,11 @@
+linux (4.19.140-0pexip1) pexip; urgency=medium
+
+  * New upstream release
+  * bugfix/all/kbuild-use-nostdinc-in-compile-tests.patch:
+    Refresh: remove fuzz
+
+ -- Vincent Sanders <vince@pexip.com>  Wed, 19 Aug 2020 15:58:18 +0100
+
 linux (4.19.121-0pexip3) pexip; urgency=medium
 
   * Rebuild in buster environment

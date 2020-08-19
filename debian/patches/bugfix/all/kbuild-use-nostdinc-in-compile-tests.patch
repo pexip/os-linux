@@ -22,7 +22,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
 --- a/scripts/Kbuild.include
 +++ b/scripts/Kbuild.include
-@@ -121,7 +121,7 @@ CC_OPTION_CFLAGS = $(filter-out $(GCC_PL
+@@ -122,7 +122,7 @@
  # Usage: cflags-y += $(call cc-option,-march=winchip-c6,-march=i586)
  
  cc-option = $(call __cc-option, $(CC),\
@@ -31,7 +31,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  # hostcc-option
  # Usage: cflags-y += $(call hostcc-option,-march=winchip-c6,-march=i586)
-@@ -131,23 +131,24 @@ hostcc-option = $(call __cc-option, $(HO
+@@ -132,23 +132,24 @@
  # cc-option-yn
  # Usage: flag := $(call cc-option-yn,-march=winchip-c6)
  cc-option-yn = $(call try-run,\
@@ -60,7 +60,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  # cc-ifversion
  # Usage:  EXTRA_CFLAGS += $(call cc-ifversion, -lt, 0402, -O1)
-@@ -160,7 +161,7 @@ cc-if-fullversion = $(shell [ $(cc-fullv
+@@ -157,7 +158,7 @@
  # cc-ldoption
  # Usage: ldflags += $(call cc-ldoption, -Wl$(comma)--hash-style=both)
  cc-ldoption = $(call try-run,\
@@ -71,16 +71,16 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  # Usage: KBUILD_LDFLAGS += $(call ld-option, -X, -Y)
 --- a/Makefile
 +++ b/Makefile
-@@ -675,6 +675,8 @@ endif
- KBUILD_CFLAGS += $(call cc-ifversion, -lt, 0409, \
- 			$(call cc-disable-warning,maybe-uninitialized,))
+@@ -657,6 +657,8 @@
+ KBUILD_CFLAGS   += -O2
+ endif
  
 +NOSTDINC_FLAGS += -nostdinc
 +
  # Tell gcc to never replace conditional load with a non-conditional one
  KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
- 
-@@ -798,7 +800,7 @@ LDFLAGS_vmlinux += --gc-sections
+ KBUILD_CFLAGS	+= $(call cc-option,-fno-allow-store-data-races)
+@@ -777,7 +779,7 @@
  endif
  
  # arch Makefile may override CC so keep this after arch Makefile is included
