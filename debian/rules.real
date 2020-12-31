@@ -16,8 +16,6 @@ ifeq ($(DISTRIBUTOR),)
 DISTRIBUTOR := Debian
 endif
 
-include /usr/share/dpkg/architecture.mk
-
 include debian/rules.defs
 
 ifdef ARCH
@@ -40,6 +38,7 @@ export DEB_HOST_ARCH DEB_HOST_GNU_TYPE DEB_BUILD_ARCH
 export DEB_BUILD_PATH = $(CURDIR)  # for dpkg-buildflags
 export LC_ALL = C.UTF-8
 undefine LANGUAGE
+export LINK_DOC_PACKAGE
 
 stamp = [ -d $(dir $@) ] || mkdir $(dir $@); touch $@
 
@@ -47,7 +46,7 @@ setup_env := env -u ABINAME -u ARCH -u FEATURESET -u FLAVOUR -u VERSION -u LOCAL
 setup_env += DISTRIBUTION_OFFICIAL_BUILD=1 DISTRIBUTOR="$(DISTRIBUTOR)" DISTRIBUTION_VERSION="$(SOURCEVERSION)" KBUILD_BUILD_TIMESTAMP="$(SOURCE_DATE)" KBUILD_BUILD_VERSION_TIMESTAMP="$(DISTRIBUTOR) $(SOURCEVERSION) ($(SOURCE_DATE_UTC_ISO))" KBUILD_BUILD_USER="$(word 1,$(subst @, ,$(MAINTAINER)))" KBUILD_BUILD_HOST="$(word 2,$(subst @, ,$(MAINTAINER)))"
 setup_env += KBUILD_VERBOSE=$(if $(filter terse,$(DEB_BUILD_OPTIONS)),0,1)
 
-MAKE_CLEAN = $(setup_env) $(MAKE) CFLAGS_KERNEL=-fdebug-prefix-map=$(CURDIR)=. CFLAGS_MODULE=-fdebug-prefix-map=$(CURDIR)=.
+MAKE_CLEAN = $(setup_env) $(MAKE) KCFLAGS=-fdebug-prefix-map=$(CURDIR)/=
 MAKE_SELF := $(MAKE) -f debian/rules.real $(MAKEOVERRIDES)
 MAKEOVERRIDES =
 
@@ -55,70 +54,61 @@ MAKEOVERRIDES =
 # Targets
 #
 
-build-arch-arch:
-build-indep:
-binary-arch-arch:
-binary-indep:
+packages_enabled := $(shell dh_listpackages)
+define if_package
+$(if $(filter $(1),$(packages_enabled)),$(2))
+endef
 
-ifeq (,$(filter pkg.linux.nosource,$(DEB_BUILD_PROFILES)))
-  ifneq ($(DO_CONFIG),False)
-    binary-arch-arch: install-config_$(ARCH)
-  endif
-endif
-ifneq ($(DO_HEADERS_ALL),False)
-  binary-arch-arch: install-headers_$(ARCH)
-endif
-ifneq ($(DO_LIBC),False)
-  binary-arch-arch: install-libc-dev_$(ARCH)
-endif
-binary-arch-flavour: install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)
-ifeq ($(DEBUG),True)
-  binary-arch-flavour: install-image-dbg_$(ARCH)_$(FEATURESET)_$(FLAVOUR)
-endif
-binary-arch-flavour: install-headers_$(ARCH)_$(FEATURESET)_$(FLAVOUR)
+build-arch-arch: \
+	$(call if_package, linux-kbuild-$(VERSION),      build-kbuild) \
+	$(call if_package, linux-perf-$(VERSION),        build-perf) \
+	$(call if_package, linux-bootwrapper-$(ABINAME), build-bootwrapper) \
+	$(call if_package, bpftool,                      build-bpftool) \
+	$(call if_package, usbip,                        build-usbip) \
+	$(call if_package, linux-cpupower,               build-cpupower) \
+	$(call if_package, liblockdep-dev,               build-liblockdep) \
+	$(call if_package, hyperv-daemons,               build-hyperv-daemons)
+binary-arch-arch: \
+	$(call if_package, $(SOURCE_BASENAME)-config-$(VERSION), install-config_$(ARCH)) \
+	$(call if_package, linux-libc-dev,               install-libc-dev_$(ARCH)) \
+	$(call if_package, linux-kbuild-$(VERSION),      install-kbuild) \
+	$(call if_package, linux-perf-$(VERSION),        install-perf) \
+	$(if $(filter-out x-$(VERSION),x$(SOURCE_SUFFIX)), \
+	  $(call if_package, linux-perf$(SOURCE_SUFFIX), install-perf-meta)) \
+	$(call if_package, linux-bootwrapper-$(ABINAME), install-bootwrapper) \
+	$(call if_package, bpftool,                      install-bpftool) \
+	$(call if_package, usbip,                        install-usbip) \
+	$(call if_package, linux-cpupower,               install-cpupower) \
+	$(call if_package, liblockdep-dev,               install-liblockdep) \
+	$(call if_package, hyperv-daemons,               install-hyperv-daemons)
 
-ifneq ($(DO_DOCS),False)
-  binary-indep: install-doc
-  ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
-    build-indep: $(STAMPS_DIR)/build-doc
-  endif
-endif
-ifeq (,$(filter pkg.linux.nosource,$(DEB_BUILD_PROFILES)))
-  ifneq ($(DO_SOURCE),False)
-    binary-indep: install-source
-  endif
-endif
-binary-indep: install-support
+build-indep: \
+	$(call if_package, $(SOURCE_BASENAME)-doc-$(VERSION), $(STAMPS_DIR)/build-doc)
+binary-indep: \
+	$(call if_package, $(SOURCE_BASENAME)-doc-$(VERSION), install-doc) \
+	$(call if_package, $(SOURCE_BASENAME)-source-$(VERSION), install-source) \
+	$(if $(filter-out x-$(VERSION),x$(SOURCE_SUFFIX)), \
+	  $(call if_package, $(SOURCE_BASENAME)-doc$(SOURCE_SUFFIX), install-doc-meta) \
+	  $(call if_package, $(SOURCE_BASENAME)-source$(SOURCE_SUFFIX), install-source-meta)) \
+	$(call if_package, $(SOURCE_BASENAME)-support-$(ABINAME), install-support) \
+	$(call if_package, lockdep,                      install-lockdep)
 
-ifneq ($(DO_TOOLS_VERSIONED),False)
-  build-arch-arch: build-kbuild
-  binary-arch-arch: install-kbuild
-  ifneq ($(filter alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mipsel mipsr6 mipsr6el mips64r6 mips64r6el mipsn32 mipsn32el mipsn32r6 mipsn32r6el powerpc ppc64 ppc64el s390 s390x sh4 sparc sparc64,$(DEB_HOST_ARCH)),)
-    ifeq ($(filter nopython,$(DEB_BUILD_PROFILES)),)
-      build-arch-arch: build-perf
-      binary-arch-arch: install-perf
-    endif
-  endif
-  ifneq ($(filter powerpc powerpcspe ppc64,$(DEB_HOST_ARCH)),)
-    build-arch-arch: build-bootwrapper
-    binary-arch-arch: install-bootwrapper
-  endif
-endif
-ifneq ($(DO_TOOLS_UNVERSIONED),False)
-  build-arch-arch:build-usbip build-cpupower build-liblockdep build-libbpf
-  binary-arch-arch: install-usbip install-cpupower install-liblockdep install-libbpf
-  ifneq ($(filter i386 amd64 x32,$(DEB_HOST_ARCH)),)
-    build-arch-arch: build-hyperv-daemons
-    binary-arch-arch: install-hyperv-daemons
-  endif
-  binary-indep: install-lockdep
-endif
+binary-arch-flavour: \
+	$(call if_package, $(IMAGE_PACKAGE_NAME),        install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
+	$(call if_package, linux-image$(SOURCE_SUFFIX)$(LOCALVERSION), install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
+	$(call if_package, linux-image-$(ABINAME)$(LOCALVERSION)-dbg, install-image-dbg_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
+	$(call if_package, linux-image$(SOURCE_SUFFIX)$(LOCALVERSION)-dbg, install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
+	$(call if_package, linux-headers-$(ABINAME)$(LOCALVERSION), install-headers_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
+	$(call if_package, linux-headers$(SOURCE_SUFFIX)$(LOCALVERSION), install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR))
 
-binary-indep-featureset: install-common-headers_$(FEATURESET)
+binary-indep-featureset: \
+	$(call if_package, linux-headers-$(ABINAME)-common$(LOCALVERSION), install-common-headers_$(FEATURESET))
 
-build-arch-flavour: $(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR)
+build-arch-flavour: \
+	$(call if_package, $(IMAGE_PACKAGE_NAME),        $(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR))
 
-setup-arch-flavour: $(STAMPS_DIR)/setup_$(ARCH)_$(FEATURESET)_$(FLAVOUR)
+setup-arch-flavour: \
+	$(call if_package, $(IMAGE_PACKAGE_NAME),        $(STAMPS_DIR)/setup_$(ARCH)_$(FEATURESET)_$(FLAVOUR))
 
 source-featureset: $(STAMPS_DIR)/source_$(FEATURESET)
 
@@ -209,9 +199,8 @@ else
 	echo 'override CROSS_COMPILE = $$(DEB_HOST_GNU_TYPE)-' >> '$(DIR)/.kernelvariables'
 	echo 'endif' >> '$(DIR)/.kernelvariables'
 endif
-ifdef CFLAGS_KERNEL
-	echo 'CFLAGS_KERNEL += $(CFLAGS_KERNEL)' >> '$(DIR)/.kernelvariables'
-	echo 'CFLAGS_MODULE += $(CFLAGS_KERNEL)' >> '$(DIR)/.kernelvariables'
+ifdef KCFLAGS
+	echo 'KCFLAGS += $(KCFLAGS)' >> '$(DIR)/.kernelvariables'
 endif
 	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)' O='$(CURDIR)/$(DIR)' listnewconfig
 	+yes "" | $(MAKE_CLEAN) -C '$(SOURCE_DIR)' O='$(CURDIR)/$(DIR)' oldconfig >/dev/null
@@ -234,14 +223,14 @@ ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 	mkdir -p '$(BUILD_DIR)'
 	rm -rf '$(DIR)'
 	$(call copy_source,$(DIR))
-	+$(MAKE_CLEAN) -C '$(DIR)' xmldocs
-	+$(MAKE_CLEAN) -C '$(DIR)' htmldocs
+	+$(MAKE_CLEAN) -C '$(DIR)' PYTHON=python3 xmldocs
+	+$(MAKE_CLEAN) -C '$(DIR)' PYTHON=python3 htmldocs
 endif
 	@$(stamp)
 
 install-base:
 ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
-	dh_installdocs
+	dh_installdocs $(if $(LINK_DOC_PACKAGE),--link-doc=$(LINK_DOC_PACKAGE))
 endif
 	dh_installchangelogs
 	dh_compress
@@ -292,12 +281,14 @@ ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 endif
 	+$(MAKE_SELF) install-base
 
-install-headers_$(ARCH): PACKAGE_NAMES = linux-headers-$(ABINAME)-all linux-headers-$(ABINAME)-all-$(ARCH)
-install-headers_$(ARCH): DH_OPTIONS = $(foreach p, $(PACKAGE_NAMES), -p$(p))
-install-headers_$(ARCH):
+install-doc-meta: PACKAGE_NAME = $(SOURCE_BASENAME)-doc$(SOURCE_SUFFIX)
+install-doc-meta: PACKAGE_DIR = debian/$(PACKAGE_NAME)
+install-doc-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-doc-meta: LINK_DOC_PACKAGE = $(SOURCE_BASENAME)-doc-$(VERSION)
+install-doc-meta:
 	dh_testdir
-	dh_testroot
-	+$(MAKE_SELF) install-base GENCONTROL_ARGS='-Vkernel:Arch=$(ARCH)'
+	dh_prep
+	+$(MAKE_SELF) install-base
 
 install-common-headers_$(FEATURESET): PACKAGE_NAME = linux-headers-$(ABINAME)-common$(LOCALVERSION)
 install-common-headers_$(FEATURESET): PACKAGE_NAME_KBUILD = linux-kbuild-$(VERSION)
@@ -316,7 +307,7 @@ install-common-headers_$(FEATURESET): $(STAMPS_DIR)/source_$(FEATURESET)
 		echo Makefile; \
 		for arch in $(ALL_KERNEL_ARCHES); do \
 			find arch/$$arch -maxdepth 1 -name 'Makefile*' -print; \
-			find arch/$$arch \( -name 'module.lds' -o -name 'Kbuild.platforms' -o -name 'Platform' \) -print; \
+			find arch/$$arch \( -name 'Kbuild.platforms' -o -name 'Platform' \) -print; \
 			find $$(find arch/$$arch \( -name include -o -name scripts \) -type d -print) -print; \
 		done; \
 		find include -print; \
@@ -355,21 +346,9 @@ install-headers_$(ARCH)_$(FEATURESET)_$(FLAVOUR): $(STAMPS_DIR)/build_$(ARCH)_$(
 		cp -a $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/lib/crtsavres.o $(DIR)/arch/$(KERNEL_ARCH)/lib; \
 	fi
 
-	@echo 'VERSION = 2' > $(DIR)/Makefile
-	@echo 'PATCHLEVEL = 6' >> $(DIR)/Makefile
+	cp -a $(SOURCE_DIR)/scripts/module.lds $(DIR)/arch/$(KERNEL_ARCH)
 
-	@echo 'MAKEARGS := -C $(BASE_DIR_COMMON) O=$(BASE_DIR)' >> $(DIR)/Makefile
-	@echo 'MAKEFLAGS += --no-print-directory' >> $(DIR)/Makefile
-
-	@echo '.PHONY: all $$(MAKECMDGOALS)' >> $(DIR)/Makefile
-	@echo 'cmd := $$(filter-out all Makefile,$$(MAKECMDGOALS))' >> $(DIR)/Makefile
-	@echo 'all:' >> $(DIR)/Makefile
-	@echo '	@$$(MAKE) $$(MAKEARGS) $$(cmd)' >> $(DIR)/Makefile
-	@echo 'Makefile:;' >> $(DIR)/Makefile
-	@echo '$$(cmd): all' >> $(DIR)/Makefile
-	@echo '	@:' >> $(DIR)/Makefile
-	@echo '%/: all' >> $(DIR)/Makefile
-	@echo '	@:' >> $(DIR)/Makefile
+	@echo 'include $(BASE_DIR_COMMON)/Makefile' >> $(DIR)/Makefile
 
 	dh_link /usr/lib/$(PACKAGE_NAME_KBUILD)/scripts $(BASE_DIR)/scripts
 	dh_link /usr/lib/$(PACKAGE_NAME_KBUILD)/tools $(BASE_DIR)/tools
@@ -378,6 +357,14 @@ install-headers_$(ARCH)_$(FEATURESET)_$(FLAVOUR): $(STAMPS_DIR)/build_$(ARCH)_$(
 	ln -s /usr/src/$(PACKAGE_NAME) $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/build
 	ln -s /usr/src/$(PACKAGE_NAME_COMMON) $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/source
 
+	+$(MAKE_SELF) install-base
+
+install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): PACKAGE_NAME = linux-headers$(SOURCE_SUFFIX)$(LOCALVERSION)
+install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): DH_OPTIONS = -p$(PACKAGE_NAME)
+install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): LINK_DOC_PACKAGE = linux-headers-$(ABINAME)$(LOCALVERSION)
+install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR):
+	dh_testdir
+	dh_prep
 	+$(MAKE_SELF) install-base
 
 install-libc-dev_$(ARCH): PACKAGE_NAME = linux-libc-dev
@@ -455,36 +442,35 @@ ifeq ($(DEBUG),True)
 	fi
 endif
 	cp $(DIR)/.config $(PACKAGE_DIR)/boot/config-$(REAL_VERSION)
-	cp $(DIR)/System.map $(PACKAGE_DIR)/boot/System.map-$(REAL_VERSION)
+	echo "ffffffffffffffff B The real System.map is in the linux-image-<version>-dbg package" \
+		> $(PACKAGE_DIR)/boot/System.map-$(REAL_VERSION)
 	rm -f $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/build
 	rm -f $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/source
 	rm $(PACKAGE_DIR)/lib/firmware -rf
 	+$(MAKE_SELF) \
 	  install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)_bug \
 	  PACKAGE_DIR='$(PACKAGE_DIR)' PACKAGE_NAME='$(PACKAGE_NAME)' REAL_VERSION='$(REAL_VERSION)'
-	dh_strip --no-automatic-dbgsym -Xvmlinux
-	+$(MAKE_SELF) install-base GENCONTROL_ARGS='-Vkernel:Recommends='"$$( \
-		if grep -q '^CONFIG_SMP=y' $(DIR)/.config; then \
-			printf irqbalance,; \
-		fi)"
+	dh_strip --no-automatic-dbgsym -Xvmlinux -Xvmlinuz
+	ln -sf linux-image.NEWS debian/$(PACKAGE_NAME).NEWS
+	+$(MAKE_SELF) install-base
 
 install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)_dt: DT_INSTALL_DIR = $(PACKAGE_DIR)/usr/lib/linux-image-$(REAL_VERSION)
 install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)_dt:
-ifneq ($(filter arm64 armel armhf mipsr6 mipsr6el mips64r6 mips64r6el,$(ARCH)),)
+ifneq ($(filter arm64 armel armhf mipsr6 mipsr6el mips64r6 mips64r6el riscv64,$(ARCH)),)
 	+$(MAKE_CLEAN) -C $(DIR) dtbs
 	+$(MAKE_CLEAN) -C $(DIR) dtbs_install INSTALL_DTBS_PATH=$(CURDIR)/$(DT_INSTALL_DIR)
 endif
-ifneq ($(filter powerpc powerpcspe ppc64,$(ARCH)),)
+ifneq ($(filter powerpc ppc64,$(ARCH)),)
 # Install wrapper code and DT source, but not the wrapper script or
 # the executables it calls.  Kbuild will always build these executable
 # as native code, which is wrong for a cross-built package.  Install
 # symlinks to the versions in the linux-bootwrapper package instead.
-	rm -rf '$(DIR)_bootwrapper'
+	rm -rf '$(BUILD_DIR)/bootwrapper_$(ARCH)_$(FEATURESET)_$(FLAVOUR)'
 	+$(MAKE_CLEAN) -C '$(DIR)' bootwrapper_install \
 		WRAPPER_OBJDIR='$(CURDIR)/$(DT_INSTALL_DIR)' \
 		WRAPPER_DTSDIR='$(CURDIR)/$(DT_INSTALL_DIR)/dts' \
-		WRAPPER_BINDIR='$(CURDIR)/$(DIR)_bootwrapper'
-	for prog in '$(DIR)_bootwrapper'/*; do \
+		WRAPPER_BINDIR='$(CURDIR)/$(BUILD_DIR)/bootwrapper_$(ARCH)_$(FEATURESET)_$(FLAVOUR)'
+	for prog in '$(BUILD_DIR)/bootwrapper_$(ARCH)_$(FEATURESET)_$(FLAVOUR)'/*; do \
 		prog="$$(basename $$prog)"; \
 		ln -s ../linux-bootwrapper-$(ABINAME)/$$prog \
 			'$(DT_INSTALL_DIR)'/$$prog; \
@@ -496,6 +482,15 @@ install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)_bug:
 	dh_install debian/templates/image.bug/* usr/share/bug/$(PACKAGE_NAME)
 	chmod 755 $(PACKAGE_DIR)/usr/share/bug/$(PACKAGE_NAME)/script
 	printf "RELEASE='$(REAL_VERSION)'\nDISTRIBUTOR='$(DISTRIBUTOR)'\nSOURCEVERSION='$(SOURCEVERSION)'\nPACKAGE_NAME='$(PACKAGE_NAME)'\nPACKAGE_VERSION='$(SOURCEVERSION)'" > $(PACKAGE_DIR)/usr/share/bug/$(PACKAGE_NAME)/info
+
+install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): PACKAGE_NAME = linux-image$(SOURCE_SUFFIX)$(LOCALVERSION)
+install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): DH_OPTIONS = -p$(PACKAGE_NAME)
+install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): LINK_DOC_PACKAGE = linux-image-$(ABINAME)$(LOCALVERSION)
+install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR):
+	dh_testdir
+	dh_prep
+	dh_bugfiles
+	+$(MAKE_SELF) install-base
 
 install-image-dbg_$(ARCH)_$(FEATURESET)_$(FLAVOUR): REAL_VERSION = $(ABINAME)$(LOCALVERSION)
 install-image-dbg_$(ARCH)_$(FEATURESET)_$(FLAVOUR): PACKAGE_NAME = linux-image-$(REAL_VERSION)-dbg
@@ -510,6 +505,7 @@ install-image-dbg_$(ARCH)_$(FEATURESET)_$(FLAVOUR): $(STAMPS_DIR)/build_$(ARCH)_
 	dh_installdirs usr/lib/debug usr/lib/debug/boot usr/share/lintian/overrides/
 	dh_lintian
 	install -m644 $(DIR)/vmlinux $(DEBUG_DIR)/boot/vmlinux-$(REAL_VERSION)
+	install -m644 $(DIR)/System.map $(DEBUG_DIR)/boot/System.map-$(REAL_VERSION)
 	+$(MAKE_CLEAN) -C $(DIR) modules_install DEPMOD='$(CURDIR)/debian/bin/no-depmod' INSTALL_MOD_PATH='$(CURDIR)'/$(DEBUG_DIR)
 	find $(DEBUG_DIR)/lib/modules/$(REAL_VERSION)/ -mindepth 1 -maxdepth 1 \! -name kernel -exec rm {} \+
 	rm $(DEBUG_DIR)/lib/firmware -rf
@@ -532,25 +528,36 @@ endif
 	ln -s ../../../boot/vmlinux-$(REAL_VERSION) $(DEBUG_DIR)/lib/modules/$(REAL_VERSION)/vmlinux
 	+$(MAKE_SELF) install-base
 
+install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): PACKAGE_NAME = linux-image$(SOURCE_SUFFIX)$(LOCALVERSION)-dbg
+install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): DH_OPTIONS = -p$(PACKAGE_NAME)
+install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): LINK_DOC_PACKAGE = linux-image-$(ABINAME)$(LOCALVERSION)-dbg
+install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR):
+	dh_testdir
+	dh_prep
+	dh_lintian
+	+$(MAKE_SELF) install-base
+
 install-signed-template_$(ARCH): PACKAGE_NAME = linux-image-$(ARCH)-signed-template
 install-signed-template_$(ARCH): DH_OPTIONS = -p$(PACKAGE_NAME)
 install-signed-template_$(ARCH): PACKAGE_DIR = debian/$(PACKAGE_NAME)
 install-signed-template_$(ARCH): CODE_SIGNING_DIR = $(PACKAGE_DIR)/usr/share/code-signing/$(PACKAGE_NAME)
 install-signed-template_$(ARCH):
+ifneq (,$(filter linux-image-$(ARCH)-signed-template,$(packages_enabled)))
 	dh_testdir
 	dh_testroot
 	dh_prep
 	rm -rf $(CODE_SIGNING_DIR)
 	mkdir -p $(CODE_SIGNING_DIR)
 	PYTHONHASHSEED=0 debian/bin/gencontrol_signed.py $(ARCH)
-	cp -R	debian/compat \
-		debian/copyright \
+	cp -R	debian/copyright \
+		debian/linux-image.NEWS \
 		debian/signing_templates/README.source \
 		debian/signing_templates/rules \
 		debian/signing_templates/rules.real \
 		debian/signing_templates/source \
 		$(CODE_SIGNING_DIR)/source-template/debian/
 	+$(MAKE_SELF) install-base
+endif  # enabled
 
 install-udeb_$(ARCH): export KW_DEFCONFIG_DIR=debian/installer
 install-udeb_$(ARCH): export KW_CONFIG_DIR=debian/installer
@@ -559,16 +566,10 @@ ifeq ($(UDEB_UNSIGNED_TEST_BUILD),True)
 install-udeb_$(ARCH): export DEB_BUILD_PROFILES=pkg.linux.udeb-unsigned-test-build
 endif
 install-udeb_$(ARCH):
+# Logically we should check for %-di here, but that would break test builds
+ifneq (,$(filter linux-image-%,$(packages_enabled)))
 	dh_testdir
 	dh_prep
-ifeq ($(UDEB_UNSIGNED_TEST_BUILD),True)
-# kernel-wedge doesn't expect a -unsigned suffix; work around that for now
-	while read flavour; do \
-		rm -f debian/linux-image-$(ABINAME)-$$flavour; \
-		ln -s linux-image-$(ABINAME)-$$flavour-unsigned \
-			debian/linux-image-$(ABINAME)-$$flavour; \
-	done < <(awk '!/^#/ { print $$3 }' $(KW_CONFIG_DIR)/kernel-versions)
-endif
 	kernel-wedge install-files $(ABINAME)
 	kernel-wedge check $(PACKAGE_NAMES)
 	dh_fixperms
@@ -576,6 +577,7 @@ ifeq ($(UDEB_UNSIGNED_TEST_BUILD),False)
 	dh_gencontrol
 	dh_builddeb
 endif
+endif  # enabled
 
 install-source: PACKAGE_NAME = $(SOURCE_BASENAME)-source-$(VERSION)
 install-source: DH_OPTIONS = -p$(PACKAGE_NAME)
@@ -588,6 +590,14 @@ install-source: $(BUILD_DIR)/$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz
 # data.tar.gz!) makes dpkg and dak happy, but is incomaptible with
 # other things (#725492).  So use the fastest real gzip mode.
 	+$(MAKE_SELF) install-base BUILDDEB_ARGS='-Zgzip -z1'
+
+install-source-meta: PACKAGE_NAME = $(SOURCE_BASENAME)-source$(SOURCE_SUFFIX)
+install-source-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-source-meta: LINK_DOC_PACKAGE = $(SOURCE_BASENAME)-source-$(VERSION)
+install-source-meta:
+	dh_testdir
+	dh_prep
+	+$(MAKE_SELF) install-base
 
 install-config_$(ARCH): PACKAGE_NAME = $(SOURCE_BASENAME)-config-$(VERSION)
 install-config_$(ARCH): DH_OPTIONS = -p$(PACKAGE_NAME)
@@ -607,7 +617,39 @@ define make-tools
 +mkdir -p $(BUILD_DIR)/build-tools/$(1) && $(MAKE_CLEAN) -C $(BUILD_DIR)/build-tools/$(1) -f $(CURDIR)/debian/rules.d/$(1)/Makefile top_srcdir=$(CURDIR) top_rulesdir=$(CURDIR)/debian/rules.d OUTDIR=$(1) VERSION=$(VERSION) KERNEL_ARCH=$(KERNEL_ARCH)
 endef
 
-build-kbuild:
+$(STAMPS_DIR)/build-tools-headers:
+	mkdir -p $(BUILD_DIR)/build-tools/headers-tools
+	$(MAKE) ARCH=$(KERNEL_ARCH) O=$(BUILD_DIR)/build-tools/headers-tools \
+		INSTALL_HDR_PATH=$(CURDIR)/$(BUILD_DIR)/build-tools \
+		headers_install
+	@$(stamp)
+
+build-bpftool: $(STAMPS_DIR)/build-tools-headers
+	$(call make-tools,tools/bpf/bpftool)
+
+install-bpftool: PACKAGE_NAME = bpftool
+install-bpftool: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-bpftool: DIR = $(CURDIR)/debian/$(PACKAGE_NAME)
+install-bpftool: build-bpftool
+	dh_testdir
+	dh_testroot
+	dh_prep
+	$(call make-tools,tools/bpf/bpftool) install DESTDIR=$(DIR)
+	dh_installchangelogs
+ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
+	dh_installdocs
+endif
+	dh_lintian
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+build-kbuild: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,scripts)
 	$(call make-tools,tools/objtool)
 
@@ -635,13 +677,13 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-cpupower:
+build-cpupower: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/power/cpupower)
 ifneq ($(filter i386 amd64 x32,$(DEB_HOST_ARCH)),)
 	$(call make-tools,tools/power/x86)
 endif
 
-install-cpupower: DH_OPTIONS = -plinux-cpupower -plibcpupower1 -plibcpupower-dev
+install-cpupower: DH_OPTIONS = -plinux-cpupower $(addprefix -p,$(filter libcpupower%,$(packages_enabled)))
 install-cpupower: DIR = $(CURDIR)/debian/cpupower-tmp
 install-cpupower: build-cpupower
 	dh_testdir
@@ -675,7 +717,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-perf:
+build-perf: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/perf)
 
 install-perf: PACKAGE_NAME = linux-perf-$(VERSION)
@@ -704,7 +746,15 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-usbip:
+install-perf-meta: PACKAGE_NAME = linux-perf$(SOURCE_SUFFIX)
+install-perf-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-perf-meta: LINK_DOC_PACKAGE = linux-perf-$(VERSION)
+install-perf-meta:
+	dh_testdir
+	dh_prep
+	+$(MAKE_SELF) install-base
+
+build-usbip: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/usb/usbip)
 
 install-usbip: DH_OPTIONS = -pusbip
@@ -732,7 +782,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-hyperv-daemons:
+build-hyperv-daemons: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/hv)
 
 install-hyperv-daemons: PACKAGE_NAME = hyperv-daemons
@@ -744,22 +794,17 @@ install-hyperv-daemons: build-hyperv-daemons
 	dh_prep
 	$(call make-tools,tools/hv) install DESTDIR=$(DIR)
 	dh_install
-	for service in fcopy kvp vss; do \
-		install -D -m755 debian/hyperv-daemons.hv-$$service-daemon.init \
-			$(DIR)/etc/init.d/hyperv-daemons.hv-$$service-daemon \
-			|| break; \
-	done
 	dh_installchangelogs
 ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 	dh_installdocs
 endif
-	dh_systemd_enable
 	for service in fcopy kvp vss; do \
-		dh_installinit --name hyperv-daemons.hv-$$service-daemon \
-			--onlyscripts \
+		dh_installsystemd --name hv-$$service-daemon --no-enable --no-start \
+			|| break; \
+		dh_installinit --name hv-$$service-daemon \
 			|| break; \
 	done
-	dh_systemd_start
+	dh_installudev
 	dh_lintian
 	dh_strip
 	dh_compress
@@ -770,35 +815,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-libbpf:
-	$(call make-tools,tools/lib/bpf)
-
-install-libbpf: DH_OPTIONS = -plibbpf$(VERSION) -plibbpf-dev
-install-libbpf: DIR = $(CURDIR)/debian/libbpf-tmp
-install-libbpf: build-libbpf
-	dh_testdir
-	dh_testroot
-	dh_prep
-	$(call make-tools,tools/lib/bpf) install DESTDIR=$(DIR)
-	env -u DH_OPTIONS dh_install -plibbpf$(VERSION) --sourcedir=$(DIR) \
-		'usr/lib/*/libbpf.so.*'
-	dh_install --sourcedir=$(DIR)
-	dh_installchangelogs
-ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
-	dh_installdocs
-endif
-	dh_strip
-	dh_compress
-	dh_fixperms
-	env -u DH_OPTIONS dh_makeshlibs -plibbpf$(VERSION) \
-		libbpf$(VERSION)
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
-
-build-liblockdep:
+build-liblockdep: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/lib/lockdep)
 
 install-liblockdep: DH_OPTIONS = -pliblockdep$(VERSION) -pliblockdep-dev
@@ -849,7 +866,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-bootwrapper:
+build-bootwrapper: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,arch/powerpc/boot)
 
 install-bootwrapper: PACKAGE_NAME = linux-bootwrapper-$(ABINAME)

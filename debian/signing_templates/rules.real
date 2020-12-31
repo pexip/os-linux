@@ -21,7 +21,7 @@ install-signed:
 		echo >> debian/$(PACKAGE_NAME).substvars 'signed:Description=The modules are signed.'; \
 	fi
 	mkdir -p $(PACKAGE_DIR)/lib/modules/$(KERNEL_VERSION)
-	rsync -a $(addprefix /lib/modules/$(KERNEL_VERSION)/,kernel modules.builtin modules.order) \
+	rsync -a $(addprefix /lib/modules/$(KERNEL_VERSION)/,kernel modules.builtin modules.builtin.modinfo modules.order) \
 		$(PACKAGE_DIR)/lib/modules/$(KERNEL_VERSION)/
 	while read path; do \
 		/usr/lib/linux-kbuild-$(VERSION)/scripts/sign-file -s \
@@ -44,6 +44,7 @@ install-signed:
 		$(PACKAGE_DIR)/usr/share/bug/$(PACKAGE_NAME)/info
 	dh_install
 	dh_installchangelogs
+	ln -sf linux-image.NEWS debian/$(PACKAGE_NAME).NEWS
 	dh_installdocs
 	dh_compress
 	dh_fixperms
@@ -54,6 +55,19 @@ install-signed:
 	done
 	echo >> debian/$(PACKAGE_NAME).substvars "unsigned:DescriptionShort=$$(dpkg-query -f '$${Description}' -W $(IMAGE_PACKAGE_NAME) | head -n 1)"
 	echo >> debian/$(PACKAGE_NAME).substvars "unsigned:DescriptionLong=$$(dpkg-query -f '$${Description}' -W $(IMAGE_PACKAGE_NAME) | tail -n +2 | sed -rz 's/\$$/$${}/g; s/^ //; s/\n \.?/$${Newline}/g')"
+	dh_gencontrol -- $(GENCONTROL_ARGS)
+	dh_md5sums
+	dh_builddeb
+
+install-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-meta:
+	dh_testdir
+	dh_prep
+	dh_bugfiles
+	dh_installdocs --link-doc=$(LINK_DOC_PACKAGE_NAME)
+	dh_compress
+	dh_fixperms
+	dh_installdeb
 	dh_gencontrol -- $(GENCONTROL_ARGS)
 	dh_md5sums
 	dh_builddeb

@@ -1,12 +1,27 @@
+Package: bpftool
+Build-Profiles: <!stage1 !pkg.linux.notools>
+Section: devel
+Architecture: linux-any
+Build-Depends:
+  python3-docutils <!stage1 !nodoc !pkg.linux.notools>,
+  libelf-dev,
+  zlib1g-dev,
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Inspection and simple manipulation of BPF programs and maps
+ The bpftool command allows for inspection and simple modification of
+ Berkeley Packet Filter (BPF) objects on the system.
+
 Package: linux-cpupower
 Build-Profiles: <!stage1 !pkg.linux.notools>
 Section: admin
 Architecture: linux-any
-Build-Depends: libpci-dev
+Build-Depends:
+  libcap-dev,
+  libpci-dev,
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: CPU power management tools for Linux
  The cpupower command allows inspection and control of cpufreq and
- cpuidle tunables for hardware that support these features.  It
+ cpuidle tunables for hardware that supports these features.  It
  replaces "cpufreq-info" and "cpufreq-set" in cpufrequtils.
  .
  ${cpupower:Arch-Description}
@@ -17,6 +32,9 @@ Section: libs
 Architecture: linux-any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: CPU frequency and voltage scaling tools for Linux (libraries)
+ libcpupower is a library for inspecting and controlling cpufreq and
+ cpuidle tunables.
+ .
  This package contains the shared library.
 
 Package: libcpupower-dev
@@ -28,7 +46,10 @@ Provides: libcpufreq-dev
 Conflicts: libcpufreq-dev
 Replaces: libcpufreq-dev
 Description: CPU frequency and voltage scaling tools for Linux (development files)
- This package contains the 'power/cpupower' headers and library shared objects.
+ libcpupower is a library for inspecting and controlling cpufreq and
+ cpuidle tunables.
+ .
+ This package is needed to compile programs against libcpupower.
 
 Package: usbip
 Build-Profiles: <!stage1 !pkg.linux.notools>
@@ -40,8 +61,6 @@ Build-Depends:
  libglib2.0-dev,
  libudev-dev,
  libwrap0-dev,
-# used by debian/rules.d/tools/usb/usbip
- rsync,
 Depends: usbutils, ${shlibs:Depends}, ${misc:Depends}
 Section: admin
 Description: USB device sharing system over IP network
@@ -65,6 +84,7 @@ Description: USB device sharing system over IP network
 Package: hyperv-daemons
 Build-Profiles: <!stage1 !pkg.linux.notools>
 Architecture: i386 amd64 x32
+Pre-Depends: ${misc:Pre-Depends}
 Depends: lsb-base, ${shlibs:Depends}, ${misc:Depends}
 Section: admin
 Description: Support daemons for Linux running on Hyper-V
@@ -81,53 +101,37 @@ Description: Support daemons for Linux running on Hyper-V
  hv_vss_daemon provides the volume shadow copy service (VSS), allowing
  the host to freeze the guest filesystems while taking a snapshot.
 
-Package: lockdep
-Build-Profiles: <!stage1 !pkg.linux.notools>
-Architecture: all
-Depends: ${misc:Depends}, liblockdep@version@
-Recommends: liblockdep-dev
-Section: devel
-Multi-Arch: allowed
-Description: Runtime locking correctness validator
- lockdep is a wrapper for programs that use the pthreads API, which detects
- actual and potential deadlocks and other locking bugs.
-
-Package: liblockdep@version@
-Build-Profiles: <!stage1 !pkg.linux.notools>
-Architecture: linux-any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Section: libs
-Multi-Arch: same
-Description: Runtime locking correctness validator (shared library)
- liblockdep is a library for programs that use the pthreads API, which can
- be used to detect actual and potential deadlocks and other locking bugs.
-
-Package: liblockdep-dev
-Build-Profiles: <!stage1 !pkg.linux.notools>
-Architecture: linux-any
-Depends: ${misc:Depends}, liblockdep@version@ (= ${binary:Version})
-Section: libdevel
-Multi-Arch: same
-Description: Runtime locking correctness validator (development files)
- liblockdep is a library for programs that use the pthreads API, which can
- be used to detect actual and potential deadlocks and other locking bugs.
-
-Package: libbpf@version@
-Build-Profiles: <!stage1 !pkg.linux.notools>
-Architecture: linux-any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Section: libs
-Multi-Arch: same
-Description: eBPF helper library (shared library)
- libbpf is a library for loading eBPF programs and reading and
- manipulating eBPF objects from user-space.
-
-Package: libbpf-dev
-Build-Profiles: <!stage1 !pkg.linux.notools>
-Architecture: linux-any
-Depends: ${misc:Depends}, libbpf@version@ (= ${binary:Version})
-Section: libdevel
-Multi-Arch: same
-Description: eBPF helper library (development files)
- libbpf is a library for loading eBPF programs and reading and
- manipulating eBPF objects from user-space.
+#Package: lockdep
+#Build-Profiles: <!stage1 !pkg.linux.notools>
+#Architecture: all
+#Depends: ${misc:Depends}, liblockdep@version@
+#Recommends: liblockdep-dev
+#Section: devel
+#Multi-Arch: allowed
+#Description: Runtime locking correctness validator
+# lockdep is a wrapper for programs that use the pthreads API, which detects
+# actual and potential deadlocks and other locking bugs.
+#
+#Package: liblockdep@version@
+#Build-Profiles: <!stage1 !pkg.linux.notools>
+#Architecture: linux-any
+#Depends: ${shlibs:Depends}, ${misc:Depends}
+#Section: libs
+#Multi-Arch: same
+#Description: Runtime locking correctness validator (shared library)
+# liblockdep is a library for programs that use the pthreads API, which can
+# be used to detect actual and potential deadlocks and other locking bugs.
+# .
+# This package contains the shared library.
+#
+#Package: liblockdep-dev
+#Build-Profiles: <!stage1 !pkg.linux.notools>
+#Architecture: linux-any
+#Depends: ${misc:Depends}, liblockdep@version@ (= ${binary:Version})
+#Section: libdevel
+#Multi-Arch: same
+#Description: Runtime locking correctness validator (development files)
+# liblockdep is a library for programs that use the pthreads API, which can
+# be used to detect actual and potential deadlocks and other locking bugs.
+# .
+# This package is needed to compile programs against liblockdep.

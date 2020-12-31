@@ -62,11 +62,6 @@ CONFIG_Q40=y
 # CONFIG_BLK_DEV_INTEGRITY is not set
 
 ##
-## file: block/Kconfig.iosched
-##
-CONFIG_IOSCHED_DEADLINE=m
-
-##
 ## file: block/partitions/Kconfig
 ##
 CONFIG_PARTITION_ADVANCED=y
@@ -85,6 +80,16 @@ CONFIG_SUN_PARTITION=y
 CONFIG_SYSV68_PARTITION=y
 
 ##
+## file: crypto/Kconfig
+##
+CONFIG_CRYPTO_MANAGER_DISABLE_TESTS=y
+
+##
+## file: crypto/asymmetric_keys/Kconfig
+##
+# CONFIG_ASYMMETRIC_KEY_TYPE is not set
+
+##
 ## file: drivers/accessibility/Kconfig
 ##
 # CONFIG_ACCESSIBILITY is not set
@@ -94,6 +99,7 @@ CONFIG_SYSV68_PARTITION=y
 ##
 CONFIG_PATA_FALCON=m
 CONFIG_PATA_GAYLE=m
+CONFIG_PATA_BUDDHA=m
 
 ##
 ## file: drivers/bcma/Kconfig
@@ -560,7 +566,8 @@ CONFIG_SERIAL_8250_RUNTIME_UARTS=4
 ##
 ## file: drivers/video/backlight/Kconfig
 ##
-# CONFIG_BACKLIGHT_LCD_SUPPORT is not set
+# CONFIG_LCD_CLASS_DEVICE is not set
+# CONFIG_BACKLIGHT_CLASS_DEVICE is not set
 
 ##
 ## file: drivers/video/fbdev/Kconfig
@@ -633,7 +640,6 @@ CONFIG_ZORRO_NAMES=y
 ## file: fs/Kconfig.binfmt
 ##
 CONFIG_BINFMT_ELF=y
-CONFIG_BINFMT_AOUT=m
 CONFIG_BINFMT_MISC=m
 
 ##
@@ -650,11 +656,6 @@ CONFIG_BINFMT_MISC=m
 ## file: fs/efs/Kconfig
 ##
 # CONFIG_EFS_FS is not set
-
-##
-## file: fs/exofs/Kconfig
-##
-# CONFIG_EXOFS_FS is not set
 
 ##
 ## file: fs/f2fs/Kconfig
@@ -675,11 +676,6 @@ CONFIG_BINFMT_MISC=m
 ## file: fs/jfs/Kconfig
 ##
 # CONFIG_JFS_FS is not set
-
-##
-## file: fs/ntfs/Kconfig
-##
-# CONFIG_NTFS_FS is not set
 
 ##
 ## file: fs/ocfs2/Kconfig
@@ -736,9 +732,16 @@ CONFIG_HZ_PERIODIC=y
 ##
 ## file: lib/Kconfig.debug
 ##
-# CONFIG_DEBUG_FS is not set
 # CONFIG_FRAME_POINTER is not set
+# CONFIG_DEBUG_FS is not set
 # CONFIG_SCHED_DEBUG is not set
+
+##
+## file: lib/fonts/Kconfig
+##
+CONFIG_FONT_6x11=y
+CONFIG_FONT_PEARL_8x8=y
+# CONFIG_FONT_TER16x32 is not set
 
 ##
 ## file: mm/Kconfig

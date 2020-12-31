@@ -5,7 +5,7 @@ arm64      -       arm64         -             -      -
 armel      -       marvell       -             y      -
 armhf      -       armmp         -             -      -
 hppa       -       parisc        -             y      -
-hppa       -       parisc64-smp  -             y      -
+hppa       -       parisc64      -             y      -
 i386       -       686           -             -      -
 i386       -       686-pae       -             -      -
 ia64       -       itanium       -             -      -
@@ -32,4 +32,4 @@ riscv64    -       riscv64       -             -      -
 s390x      -       s390x         -             -      -
 sh4        -       sh7751r       -             y      -
 sh4        -       sh7785lcr     -             y      -
-sparc64    -       sparc64       -             y      -
+sparc64    -       sparc64       -             -      -

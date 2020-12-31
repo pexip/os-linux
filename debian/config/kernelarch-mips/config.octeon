@@ -8,6 +8,7 @@ CONFIG_CAVIUM_OCTEON_SOC=y
 # CONFIG_32BIT is not set
 CONFIG_64BIT=y
 ## end choice
+# CONFIG_CPU_HAS_MSA is not set
 CONFIG_SMP=y
 # CONFIG_HOTPLUG_CPU is not set
 CONFIG_NR_CPUS=64
@@ -126,7 +127,7 @@ CONFIG_MTD_PHYSMAP=y
 CONFIG_OCTEON_MGMT_ETHERNET=y
 
 ##
-## file: drivers/net/phy/Kconfig
+## file: drivers/net/mdio/Kconfig
 ##
 CONFIG_MDIO_OCTEON=y
 
