@@ -2,15 +2,17 @@
 flavours:
  sparc64
  sparc64-smp
+default-flavour: sparc64-smp
 kernel-arch: sparc
 
 [build]
-image-file: arch/sparc/boot/zImage
+image-file: vmlinux
 
 [image]
 configs:
-suggests: silo, fdutils
-install-stem: vmlinuz
+bootloaders: grub-ieee1275
+suggests: fdutils
+install-stem: vmlinux
 
 [sparc64_description]
 hardware: uniprocessor 64-bit UltraSPARC

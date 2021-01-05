@@ -2,12 +2,10 @@ Section: kernel
 Priority: optional
 Maintainer: Pexip AS <packaging@pexip.com>
 XSBC-Pexip-Original-Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
-XSBC-Pexip-Original-Uploaders: Bastian Blank <waldi@debian.org>, maximilian attems <maks@debian.org>, Ben Hutchings <ben@decadent.org.uk>, Salvatore Bonaccorso <carnil@debian.org>
+XSBC-Pexip-Original-Uploaders: Bastian Blank <waldi@debian.org>, maximilian attems <maks@debian.org>, Ben Hutchings <benh@debian.org>, Salvatore Bonaccorso <carnil@debian.org>
 Standards-Version: 4.2.0
 Build-Depends:
- debhelper (>= 10.1~), dh-exec,
-# used for python2
- python-all (>=2.7),
+ debhelper-compat (= 12), dh-exec,
 # used to run debian/bin/*.py
  python3:any,
 # used by debian/rules.real to prepare the source
@@ -22,17 +20,22 @@ Build-Depends:
  bison <!stage1>, flex (>= 2.6.1-1.1~) <!stage1>,
 Build-Depends-Arch:
 # used by debian/rules.real to build udebs
- kernel-wedge (>= 2.93~) <!stage1>,
+ kernel-wedge (>= 2.102~) <!stage1 !pkg.linux.nokernel>,
 # used by kernel-wedge (only on Linux, thus not declared as a dependency)
- kmod <!stage1>,
+ kmod <!stage1 !pkg.linux.nokernel>,
 # used by upstream to build include/generated/timeconst.h
- bc <!stage1>,
+ bc <!stage1 !pkg.linux.nokernel>,
 # used by upstream to build signing tools and to process certificates
- libssl1.0-dev:native <!stage1>, libssl1.0-dev <!stage1 !pkg.linux.notools>,
- openssl (>= 1.1.0-1~) <!stage1>,
+ libssl1.0-dev:native <!stage1 !pkg.linux.nokernel>,
+ libssl1.0-dev <!stage1 !pkg.linux.notools>,
+ openssl (>= 1.1.0-1~) <!stage1 !pkg.linux.nokernel>,
 # used by upstream to build objtool (native for amd64 images; host arch for
-# linux-kbuild), perf (host arch), libbpf (host arch)
- libelf-dev:native [amd64] <!stage1>, libelf-dev <!stage1 !pkg.linux.notools>,
+# linux-kbuild), perf (host arch)
+ libelf-dev:native [amd64] <!stage1 !pkg.linux.nokernel>,
+ libelf-dev <!stage1 !pkg.linux.notools>,
+# used by upstream headers_install target and by debian/rules.d/tools/usb/usbip
+ rsync,
+ lz4 [amd64 arm64] <!stage1 !pkg.linux.nokernel>
 Rules-Requires-Root: no
 Vcs-Git: https://salsa.debian.org/kernel-team/linux.git
 Vcs-Browser: https://salsa.debian.org/kernel-team/linux

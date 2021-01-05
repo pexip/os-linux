@@ -1,13 +1,14 @@
 ##
+## file: arch/Kconfig
+##
+CONFIG_SECCOMP=y
+
+##
 ## file: arch/powerpc/Kconfig
 ##
 # CONFIG_HOTPLUG_CPU is not set
 CONFIG_KEXEC=y
-CONFIG_CMDLINE_BOOL=y
 CONFIG_CMDLINE="console=ttyS0,9600 console=tty0"
-CONFIG_SECCOMP=y
-CONFIG_PCI=y
-# CONFIG_RAPIDIO is not set
 # CONFIG_ADVANCED_OPTIONS is not set
 
 ##
@@ -33,7 +34,6 @@ CONFIG_VIRTUALIZATION=y
 ##
 CONFIG_KVM_GUEST=y
 CONFIG_RTAS_PROC=y
-CONFIG_PPC601_SYNC_FIX=y
 CONFIG_TAU=y
 # CONFIG_TAU_INT is not set
 # CONFIG_TAU_AVERAGE is not set
@@ -57,6 +57,12 @@ CONFIG_TAU=y
 ## file: arch/powerpc/platforms/86xx/Kconfig
 ##
 # CONFIG_PPC_86xx is not set
+
+##
+## file: arch/powerpc/platforms/Kconfig.cputype
+##
+CONFIG_PPC_KUEP=y
+CONFIG_PPC_KUAP=y
 
 ##
 ## file: arch/powerpc/platforms/powermac/Kconfig
@@ -126,7 +132,6 @@ CONFIG_ATM_HE=m
 ## file: drivers/block/Kconfig
 ##
 CONFIG_BLK_DEV_FD=m
-CONFIG_BLK_DEV_DAC960=m
 CONFIG_BLK_DEV_UMEM=m
 CONFIG_BLK_DEV_SX8=m
 CONFIG_CDROM_PKTCDVD=m
@@ -151,9 +156,9 @@ CONFIG_BT_HCIVHCI=m
 ## file: drivers/char/Kconfig
 ##
 CONFIG_PRINTER=m
-CONFIG_NVRAM=y
 CONFIG_DTLK=m
 CONFIG_APPLICOM=m
+CONFIG_NVRAM=y
 
 ##
 ## file: drivers/char/agp/Kconfig
@@ -184,10 +189,6 @@ CONFIG_CPU_FREQ_PMAC=y
 ##
 CONFIG_DRM=m
 CONFIG_DRM_RADEON=m
-CONFIG_DRM_TDFX=m
-CONFIG_DRM_R128=m
-CONFIG_DRM_MGA=m
-# CONFIG_DRM_SIS is not set
 
 ##
 ## file: drivers/gpu/drm/i2c/Kconfig
@@ -274,7 +275,7 @@ CONFIG_I2C_HYDRA=m
 #. This isn't auto-loaded (#713943)
 CONFIG_I2C_POWERMAC=y
 CONFIG_I2C_MPC=m
-CONFIG_I2C_PARPORT_LIGHT=m
+CONFIG_I2C_PARPORT=m
 CONFIG_I2C_PCA_ISA=m
 CONFIG_SCx200_ACB=m
 
@@ -338,35 +339,6 @@ CONFIG_INPUT_TOUCHSCREEN=y
 ## file: drivers/isdn/Kconfig
 ##
 CONFIG_ISDN=y
-CONFIG_ISDN_CAPI=m
-
-##
-## file: drivers/isdn/capi/Kconfig
-##
-CONFIG_ISDN_CAPI_CAPI20=m
-CONFIG_ISDN_CAPI_MIDDLEWARE=y
-
-##
-## file: drivers/isdn/hardware/avm/Kconfig
-##
-CONFIG_CAPI_AVM=y
-CONFIG_ISDN_DRV_AVMB1_B1PCI=m
-CONFIG_ISDN_DRV_AVMB1_B1PCIV4=y
-CONFIG_ISDN_DRV_AVMB1_B1PCMCIA=m
-CONFIG_ISDN_DRV_AVMB1_AVM_CS=m
-CONFIG_ISDN_DRV_AVMB1_T1PCI=m
-CONFIG_ISDN_DRV_AVMB1_C4=m
-
-##
-## file: drivers/isdn/hardware/eicon/Kconfig
-##
-CONFIG_CAPI_EICON=y
-CONFIG_ISDN_DIVAS=m
-CONFIG_ISDN_DIVAS_BRIPCI=y
-CONFIG_ISDN_DIVAS_PRIPCI=y
-CONFIG_ISDN_DIVAS_DIVACAPI=m
-CONFIG_ISDN_DIVAS_USERIDI=m
-CONFIG_ISDN_DIVAS_MAINT=m
 
 ##
 ## file: drivers/macintosh/Kconfig
@@ -510,11 +482,6 @@ CONFIG_SUNDANCE_MMIO=y
 CONFIG_PCMCIA_FMVJ18X=m
 
 ##
-## file: drivers/net/ethernet/hp/Kconfig
-##
-# CONFIG_HP100 is not set
-
-##
 ## file: drivers/net/ethernet/intel/Kconfig
 ##
 CONFIG_E100=m
@@ -593,9 +560,6 @@ CONFIG_LANMEDIA=m
 CONFIG_PCI200SYN=m
 CONFIG_WANXL=m
 CONFIG_FARSYNC=m
-CONFIG_DSCC4=m
-# CONFIG_DSCC4_PCISYNC is not set
-# CONFIG_DSCC4_PCI_RST is not set
 CONFIG_DLCI=m
 CONFIG_DLCI_MAX=8
 
@@ -645,6 +609,11 @@ CONFIG_MWIFIEX_PCIE=m
 CONFIG_USB_ZD1201=m
 
 ##
+## file: drivers/pci/Kconfig
+##
+CONFIG_PCI=y
+
+##
 ## file: drivers/pci/hotplug/Kconfig
 ##
 # CONFIG_HOTPLUG_PCI is not set
@@ -667,6 +636,11 @@ CONFIG_TCIC=m
 CONFIG_BATTERY_PMU=m
 
 ##
+## file: drivers/rapidio/Kconfig
+##
+# CONFIG_RAPIDIO is not set
+
+##
 ## file: drivers/rtc/Kconfig
 ##
 CONFIG_RTC_DRV_GENERIC=y
@@ -677,6 +651,8 @@ CONFIG_RTC_DRV_GENERIC=y
 CONFIG_SCSI_DPT_I2O=m
 CONFIG_SCSI_ARCMSR=m
 CONFIG_SCSI_BUSLOGIC=m
+CONFIG_SCSI_MYRB=m
+CONFIG_SCSI_MYRS=m
 CONFIG_SCSI_DMX3191D=m
 # CONFIG_SCSI_GDTH is not set
 CONFIG_SCSI_IPS=m
@@ -831,15 +807,6 @@ CONFIG_SGETMASK_SYSCALL=y
 ## file: lib/xz/Kconfig
 ##
 CONFIG_XZ_DEC_POWERPC=y
-
-##
-## file: net/ax25/Kconfig
-##
-CONFIG_HAMRADIO=y
-CONFIG_AX25=m
-CONFIG_AX25_DAMA_SLAVE=y
-CONFIG_NETROM=m
-CONFIG_ROSE=m
 
 ##
 ## file: net/decnet/Kconfig

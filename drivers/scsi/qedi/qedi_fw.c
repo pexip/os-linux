@@ -1,10 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * QLogic iSCSI Offload Driver
  * Copyright (c) 2016 Cavium Inc.
- *
- * This software is available under the terms of the GNU General Public License
- * (GPL) Version 2, available from the file COPYING in the main directory of
- * this source tree.
  */
 
 #include <linux/blkdev.h>
@@ -159,12 +156,10 @@ static void qedi_tmf_resp_work(struct work_struct *work)
 	struct iscsi_conn *conn = qedi_conn->cls_conn->dd_data;
 	struct iscsi_session *session = conn->session;
 	struct iscsi_tm_rsp *resp_hdr_ptr;
-	struct iscsi_cls_session *cls_sess;
 	int rval = 0;
 
 	set_bit(QEDI_CONN_FW_CLEANUP, &qedi_conn->flags);
 	resp_hdr_ptr =  (struct iscsi_tm_rsp *)qedi_cmd->tmf_resp_buf;
-	cls_sess = iscsi_conn_to_session(qedi_conn->cls_conn);
 
 	iscsi_block_session(session->cls_session);
 	rval = qedi_cleanup_all_io(qedi, qedi_conn, qedi_cmd->task, true);
@@ -365,7 +360,6 @@ static void qedi_put_rq_bdq_buf(struct qedi_ctx *qedi,
 				struct iscsi_cqe_unsolicited *cqe,
 				int count)
 {
-	u16 tmp;
 	u16 idx = 0;
 	struct scsi_bd *pbl;
 
@@ -394,10 +388,10 @@ static void qedi_put_rq_bdq_buf(struct qedi_ctx *qedi,
 	qedi->bdq_prod_idx += count;
 
 	writew(qedi->bdq_prod_idx, qedi->bdq_primary_prod);
-	tmp = readw(qedi->bdq_primary_prod);
+	readw(qedi->bdq_primary_prod);
 
 	writew(qedi->bdq_prod_idx, qedi->bdq_secondary_prod);
-	tmp = readw(qedi->bdq_secondary_prod);
+	readw(qedi->bdq_secondary_prod);
 }
 
 static void qedi_unsol_pdu_adjust_bdq(struct qedi_ctx *qedi,
@@ -620,13 +614,6 @@ static void qedi_scsi_completion(struct qedi_ctx *qedi,
 	if (!sc_cmd->request) {
 		QEDI_WARN(&qedi->dbg_ctx,
 			  "sc_cmd->request is NULL, sc_cmd=%p.\n",
-			  sc_cmd);
-		goto error;
-	}
-
-	if (!sc_cmd->request->special) {
-		QEDI_WARN(&qedi->dbg_ctx,
-			  "request->special is NULL so request not valid, sc_cmd=%p.\n",
 			  sc_cmd);
 		goto error;
 	}
@@ -1003,7 +990,6 @@ static void qedi_ring_doorbell(struct qedi_conn *qedi_conn)
 	 * others they are two different assembly operations.
 	 */
 	wmb();
-	mmiowb();
 	QEDI_INFO(&qedi_conn->qedi->dbg_ctx, QEDI_LOG_MP_REQ,
 		  "prod_idx=0x%x, fw_prod_idx=0x%x, cid=0x%x\n",
 		  qedi_conn->ep->sq_prod_idx, qedi_conn->ep->fw_sq_prod_idx,
@@ -1281,7 +1267,8 @@ int qedi_cleanup_all_io(struct qedi_ctx *qedi, struct qedi_conn *qedi_conn,
 	rval  = wait_event_interruptible_timeout(qedi_conn->wait_queue,
 						 ((qedi_conn->cmd_cleanup_req ==
 						 qedi_conn->cmd_cleanup_cmpl) ||
-						 qedi_conn->ep),
+						 test_bit(QEDI_IN_RECOVERY,
+							  &qedi->flags)),
 						 5 * HZ);
 	if (rval) {
 		QEDI_INFO(&qedi->dbg_ctx, QEDI_LOG_SCSI_TM,
@@ -1306,7 +1293,9 @@ int qedi_cleanup_all_io(struct qedi_ctx *qedi, struct qedi_conn *qedi_conn,
 	/* Enable IOs for all other sessions except current.*/
 	if (!wait_event_interruptible_timeout(qedi_conn->wait_queue,
 					      (qedi_conn->cmd_cleanup_req ==
-					       qedi_conn->cmd_cleanup_cmpl),
+					       qedi_conn->cmd_cleanup_cmpl) ||
+					       test_bit(QEDI_IN_RECOVERY,
+							&qedi->flags),
 					      5 * HZ)) {
 		iscsi_host_for_each_session(qedi->shost,
 					    qedi_mark_device_available);
@@ -1386,7 +1375,6 @@ static void qedi_tmf_work(struct work_struct *work)
 	struct qedi_conn *qedi_conn = qedi_cmd->conn;
 	struct qedi_ctx *qedi = qedi_conn->qedi;
 	struct iscsi_conn *conn = qedi_conn->cls_conn->dd_data;
-	struct iscsi_cls_session *cls_sess;
 	struct qedi_work_map *list_work = NULL;
 	struct iscsi_task *mtask;
 	struct qedi_cmd *cmd;
@@ -1397,7 +1385,6 @@ static void qedi_tmf_work(struct work_struct *work)
 
 	mtask = qedi_cmd->task;
 	tmf_hdr = (struct iscsi_tm *)mtask->hdr;
-	cls_sess = iscsi_conn_to_session(qedi_conn->cls_conn);
 	set_bit(QEDI_CONN_FW_CLEANUP, &qedi_conn->flags);
 
 	ctask = iscsi_itt_to_task(conn, tmf_hdr->rtt);

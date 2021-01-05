@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * INET		An implementation of the TCP/IP protocol suite for the LINUX
  *		operating system.  INET is implemented using the  BSD Socket
@@ -43,13 +44,6 @@
  *		Chetan Loke	:	Implemented TPACKET_V3 block abstraction
  *					layer.
  *					Copyright (C) 2011, <lokec@ccs.neu.edu>
- *
- *
- *		This program is free software; you can redistribute it and/or
- *		modify it under the terms of the GNU General Public License
- *		as published by the Free Software Foundation; either version
- *		2 of the License, or (at your option) any later version.
- *
  */
 
 #include <linux/types.h>
@@ -99,52 +93,56 @@
 
 /*
    Assumptions:
-   - if device has no dev->hard_header routine, it adds and removes ll header
-     inside itself. In this case ll header is invisible outside of device,
-     but higher levels still should reserve dev->hard_header_len.
-     Some devices are enough clever to reallocate skb, when header
-     will not fit to reserved space (tunnel), another ones are silly
-     (PPP).
+   - If the device has no dev->header_ops->create, there is no LL header
+     visible above the device. In this case, its hard_header_len should be 0.
+     The device may prepend its own header internally. In this case, its
+     needed_headroom should be set to the space needed for it to add its
+     internal header.
+     For example, a WiFi driver pretending to be an Ethernet driver should
+     set its hard_header_len to be the Ethernet header length, and set its
+     needed_headroom to be (the real WiFi header length - the fake Ethernet
+     header length).
    - packet socket receives packets with pulled ll header,
      so that SOCK_RAW should push it back.
 
 On receive:
 -----------
 
-Incoming, dev->hard_header!=NULL
+Incoming, dev_has_header(dev) == true
    mac_header -> ll header
    data       -> data
 
-Outgoing, dev->hard_header!=NULL
+Outgoing, dev_has_header(dev) == true
    mac_header -> ll header
    data       -> ll header
 
-Incoming, dev->hard_header==NULL
-   mac_header -> UNKNOWN position. It is very likely, that it points to ll
-		 header.  PPP makes it, that is wrong, because introduce
-		 assymetry between rx and tx paths.
+Incoming, dev_has_header(dev) == false
+   mac_header -> data
+     However drivers often make it point to the ll header.
+     This is incorrect because the ll header should be invisible to us.
    data       -> data
 
-Outgoing, dev->hard_header==NULL
-   mac_header -> data. ll header is still not built!
+Outgoing, dev_has_header(dev) == false
+   mac_header -> data. ll header is invisible to us.
    data       -> data
 
 Resume
-  If dev->hard_header==NULL we are unlikely to restore sensible ll header.
+  If dev_has_header(dev) == false we are unable to restore the ll header,
+    because it is invisible to us.
 
 
 On transmit:
 ------------
 
-dev->hard_header != NULL
+dev->header_ops != NULL
    mac_header -> ll header
    data       -> ll header
 
-dev->hard_header == NULL (ll header is added by device, we cannot control it)
+dev->header_ops == NULL (ll header is invisible to us)
    mac_header -> data
    data       -> data
 
-   We should set nh.raw on output to correct posistion,
+   We should set network_header on output to the correct position,
    packet classifier depends on it.
  */
 
@@ -183,7 +181,6 @@ static int packet_set_ring(struct sock *sk, union tpacket_req_u *req_u,
 #define BLOCK_LEN(x)		((x)->hdr.bh1.blk_len)
 #define BLOCK_SNUM(x)		((x)->hdr.bh1.seq_num)
 #define BLOCK_O2PRIV(x)	((x)->offset_to_priv)
-#define BLOCK_PRIV(x)		((void *)((char *)(x) + BLOCK_O2PRIV(x)))
 
 struct packet_sock;
 static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
@@ -275,24 +272,22 @@ static bool packet_use_direct_xmit(const struct packet_sock *po)
 	return po->xmit == packet_direct_xmit;
 }
 
-static u16 __packet_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-				  struct net_device *sb_dev)
-{
-	return dev_pick_tx_cpu_id(dev, skb, sb_dev, NULL);
-}
-
 static u16 packet_pick_tx_queue(struct sk_buff *skb)
 {
 	struct net_device *dev = skb->dev;
 	const struct net_device_ops *ops = dev->netdev_ops;
+	int cpu = raw_smp_processor_id();
 	u16 queue_index;
 
+#ifdef CONFIG_XPS
+	skb->sender_cpu = cpu + 1;
+#endif
+	skb_record_rx_queue(skb, cpu % dev->real_num_tx_queues);
 	if (ops->ndo_select_queue) {
-		queue_index = ops->ndo_select_queue(dev, skb, NULL,
-						    __packet_pick_tx_queue);
+		queue_index = ops->ndo_select_queue(dev, skb, NULL);
 		queue_index = netdev_cap_txqueue(dev, queue_index);
 	} else {
-		queue_index = __packet_pick_tx_queue(dev, skb, NULL);
+		queue_index = netdev_pick_tx(dev, skb, NULL);
 	}
 
 	return queue_index;
@@ -392,7 +387,7 @@ static void __packet_set_status(struct packet_sock *po, void *frame, int status)
 	smp_wmb();
 }
 
-static int __packet_get_status(struct packet_sock *po, void *frame)
+static int __packet_get_status(const struct packet_sock *po, void *frame)
 {
 	union tpacket_uhdr h;
 
@@ -416,17 +411,17 @@ static int __packet_get_status(struct packet_sock *po, void *frame)
 	}
 }
 
-static __u32 tpacket_get_timestamp(struct sk_buff *skb, struct timespec *ts,
+static __u32 tpacket_get_timestamp(struct sk_buff *skb, struct timespec64 *ts,
 				   unsigned int flags)
 {
 	struct skb_shared_hwtstamps *shhwtstamps = skb_hwtstamps(skb);
 
 	if (shhwtstamps &&
 	    (flags & SOF_TIMESTAMPING_RAW_HARDWARE) &&
-	    ktime_to_timespec_cond(shhwtstamps->hwtstamp, ts))
+	    ktime_to_timespec64_cond(shhwtstamps->hwtstamp, ts))
 		return TP_STATUS_TS_RAW_HARDWARE;
 
-	if (ktime_to_timespec_cond(skb->tstamp, ts))
+	if (ktime_to_timespec64_cond(skb->tstamp, ts))
 		return TP_STATUS_TS_SOFTWARE;
 
 	return 0;
@@ -436,13 +431,20 @@ static __u32 __packet_set_timestamp(struct packet_sock *po, void *frame,
 				    struct sk_buff *skb)
 {
 	union tpacket_uhdr h;
-	struct timespec ts;
+	struct timespec64 ts;
 	__u32 ts_status;
 
 	if (!(ts_status = tpacket_get_timestamp(skb, &ts, po->tp_tstamp)))
 		return 0;
 
 	h.raw = frame;
+	/*
+	 * versions 1 through 3 overflow the timestamps in y2106, since they
+	 * all store the seconds in a 32-bit unsigned integer.
+	 * If we create a version 4, that should have a 64-bit timestamp,
+	 * either 64-bit seconds + 32-bit nanoseconds, or just 64-bit
+	 * nanoseconds.
+	 */
 	switch (po->tp_version) {
 	case TPACKET_V1:
 		h.h1->tp_sec = ts.tv_sec;
@@ -468,10 +470,10 @@ static __u32 __packet_set_timestamp(struct packet_sock *po, void *frame,
 	return ts_status;
 }
 
-static void *packet_lookup_frame(struct packet_sock *po,
-		struct packet_ring_buffer *rb,
-		unsigned int position,
-		int status)
+static void *packet_lookup_frame(const struct packet_sock *po,
+				 const struct packet_ring_buffer *rb,
+				 unsigned int position,
+				 int status)
 {
 	unsigned int pg_vec_pos, frame_offset;
 	union tpacket_uhdr h;
@@ -528,7 +530,7 @@ static int prb_calc_retire_blk_tmo(struct packet_sock *po,
 				int blk_size_in_bytes)
 {
 	struct net_device *dev;
-	unsigned int mbits = 0, msec = 0, div = 0, tmo = 0;
+	unsigned int mbits, div;
 	struct ethtool_link_ksettings ecmd;
 	int err;
 
@@ -540,31 +542,25 @@ static int prb_calc_retire_blk_tmo(struct packet_sock *po,
 	}
 	err = __ethtool_get_link_ksettings(dev, &ecmd);
 	rtnl_unlock();
-	if (!err) {
-		/*
-		 * If the link speed is so slow you don't really
-		 * need to worry about perf anyways
-		 */
-		if (ecmd.base.speed < SPEED_1000 ||
-		    ecmd.base.speed == SPEED_UNKNOWN) {
-			return DEFAULT_PRB_RETIRE_TOV;
-		} else {
-			msec = 1;
-			div = ecmd.base.speed / 1000;
-		}
-	} else
+	if (err)
 		return DEFAULT_PRB_RETIRE_TOV;
 
+	/* If the link speed is so slow you don't really
+	 * need to worry about perf anyways
+	 */
+	if (ecmd.base.speed < SPEED_1000 ||
+	    ecmd.base.speed == SPEED_UNKNOWN)
+		return DEFAULT_PRB_RETIRE_TOV;
+
+	div = ecmd.base.speed / 1000;
 	mbits = (blk_size_in_bytes * 8) / (1024 * 1024);
 
 	if (div)
 		mbits /= div;
 
-	tmo = mbits * msec;
-
 	if (div)
-		return tmo+1;
-	return tmo;
+		return mbits + 1;
+	return mbits;
 }
 
 static void prb_init_ft_ops(struct tpacket_kbdq_core *p1,
@@ -600,6 +596,7 @@ static void init_prb_bdqc(struct packet_sock *po,
 						req_u->req3.tp_block_size);
 	p1->tov_in_jiffies = msecs_to_jiffies(p1->retire_blk_tov);
 	p1->blk_sizeof_priv = req_u->req3.tp_sizeof_priv;
+	rwlock_init(&p1->blk_fill_in_prog_lock);
 
 	p1->max_frame_len = p1->kblk_size - BLK_PLUS_PRIV(p1->blk_sizeof_priv);
 	prb_init_ft_ops(p1, req_u);
@@ -666,10 +663,9 @@ static void prb_retire_rx_blk_timer_expired(struct timer_list *t)
 	 *
 	 */
 	if (BLOCK_NUM_PKTS(pbd)) {
-		while (atomic_read(&pkc->blk_fill_in_prog)) {
-			/* Waiting for skb_copy_bits to finish... */
-			cpu_relax();
-		}
+		/* Waiting for skb_copy_bits to finish... */
+		write_lock(&pkc->blk_fill_in_prog_lock);
+		write_unlock(&pkc->blk_fill_in_prog_lock);
 	}
 
 	if (pkc->last_kactive_blk_num == pkc->kactive_blk_num) {
@@ -767,7 +763,7 @@ static void prb_close_block(struct tpacket_kbdq_core *pkc1,
 	struct tpacket_hdr_v1 *h1 = &pbd1->hdr.bh1;
 	struct sock *sk = &po->sk;
 
-	if (po->stats.stats3.tp_drops)
+	if (atomic_read(&po->tp_drops))
 		status |= TP_STATUS_LOSING;
 
 	last_pkt = (struct tpacket3_hdr *)pkc1->prev;
@@ -783,8 +779,8 @@ static void prb_close_block(struct tpacket_kbdq_core *pkc1,
 		 * It shouldn't really happen as we don't close empty
 		 * blocks. See prb_retire_rx_blk_timer_expired().
 		 */
-		struct timespec ts;
-		getnstimeofday(&ts);
+		struct timespec64 ts;
+		ktime_get_real_ts64(&ts);
 		h1->ts_last_pkt.ts_sec = ts.tv_sec;
 		h1->ts_last_pkt.ts_nsec	= ts.tv_nsec;
 	}
@@ -814,7 +810,7 @@ static void prb_thaw_queue(struct tpacket_kbdq_core *pkc)
 static void prb_open_block(struct tpacket_kbdq_core *pkc1,
 	struct tpacket_block_desc *pbd1)
 {
-	struct timespec ts;
+	struct timespec64 ts;
 	struct tpacket_hdr_v1 *h1 = &pbd1->hdr.bh1;
 
 	smp_rmb();
@@ -827,7 +823,7 @@ static void prb_open_block(struct tpacket_kbdq_core *pkc1,
 	BLOCK_NUM_PKTS(pbd1) = 0;
 	BLOCK_LEN(pbd1) = BLK_PLUS_PRIV(pkc1->blk_sizeof_priv);
 
-	getnstimeofday(&ts);
+	ktime_get_real_ts64(&ts);
 
 	h1->ts_first_pkt.ts_sec = ts.tv_sec;
 	h1->ts_first_pkt.ts_nsec = ts.tv_nsec;
@@ -928,10 +924,9 @@ static void prb_retire_current_block(struct tpacket_kbdq_core *pkc,
 		 * the timer-handler already handled this case.
 		 */
 		if (!(status & TP_STATUS_BLK_TMO)) {
-			while (atomic_read(&pkc->blk_fill_in_prog)) {
-				/* Waiting for skb_copy_bits to finish... */
-				cpu_relax();
-			}
+			/* Waiting for skb_copy_bits to finish... */
+			write_lock(&pkc->blk_fill_in_prog_lock);
+			write_unlock(&pkc->blk_fill_in_prog_lock);
 		}
 		prb_close_block(pkc, pbd, po, status);
 		return;
@@ -952,7 +947,8 @@ static void prb_clear_blk_fill_status(struct packet_ring_buffer *rb)
 	__releases(&pkc->blk_fill_in_prog_lock)
 {
 	struct tpacket_kbdq_core *pkc  = GET_PBDQC_FROM_RB(rb);
-	atomic_dec(&pkc->blk_fill_in_prog);
+
+	read_unlock(&pkc->blk_fill_in_prog_lock);
 }
 
 static void prb_fill_rxhash(struct tpacket_kbdq_core *pkc,
@@ -1007,14 +1003,13 @@ static void prb_fill_curr_block(char *curr,
 	pkc->nxt_offset += TOTAL_PKT_LEN_INCL_ALIGN(len);
 	BLOCK_LEN(pbd) += TOTAL_PKT_LEN_INCL_ALIGN(len);
 	BLOCK_NUM_PKTS(pbd) += 1;
-	atomic_inc(&pkc->blk_fill_in_prog);
+	read_lock(&pkc->blk_fill_in_prog_lock);
 	prb_run_all_ft_ops(pkc, ppd);
 }
 
 /* Assumes caller has the sk->rx_queue.lock */
 static void *__packet_lookup_frame_in_block(struct packet_sock *po,
 					    struct sk_buff *skb,
-						int status,
 					    unsigned int len
 					    )
 {
@@ -1086,7 +1081,7 @@ static void *packet_current_rx_frame(struct packet_sock *po,
 					po->rx_ring.head, status);
 		return curr;
 	case TPACKET_V3:
-		return __packet_lookup_frame_in_block(po, skb, status, len);
+		return __packet_lookup_frame_in_block(po, skb, len);
 	default:
 		WARN(1, "TPACKET version not supported\n");
 		BUG();
@@ -1094,10 +1089,10 @@ static void *packet_current_rx_frame(struct packet_sock *po,
 	}
 }
 
-static void *prb_lookup_block(struct packet_sock *po,
-				     struct packet_ring_buffer *rb,
-				     unsigned int idx,
-				     int status)
+static void *prb_lookup_block(const struct packet_sock *po,
+			      const struct packet_ring_buffer *rb,
+			      unsigned int idx,
+			      int status)
 {
 	struct tpacket_kbdq_core *pkc  = GET_PBDQC_FROM_RB(rb);
 	struct tpacket_block_desc *pbd = GET_PBLOCK_DESC(pkc, idx);
@@ -1210,12 +1205,12 @@ static void packet_free_pending(struct packet_sock *po)
 #define ROOM_LOW	0x1
 #define ROOM_NORMAL	0x2
 
-static bool __tpacket_has_room(struct packet_sock *po, int pow_off)
+static bool __tpacket_has_room(const struct packet_sock *po, int pow_off)
 {
 	int idx, len;
 
-	len = po->rx_ring.frame_max + 1;
-	idx = po->rx_ring.head;
+	len = READ_ONCE(po->rx_ring.frame_max) + 1;
+	idx = READ_ONCE(po->rx_ring.head);
 	if (pow_off)
 		idx += len >> pow_off;
 	if (idx >= len)
@@ -1223,12 +1218,12 @@ static bool __tpacket_has_room(struct packet_sock *po, int pow_off)
 	return packet_lookup_frame(po, &po->rx_ring, idx, TP_STATUS_KERNEL);
 }
 
-static bool __tpacket_v3_has_room(struct packet_sock *po, int pow_off)
+static bool __tpacket_v3_has_room(const struct packet_sock *po, int pow_off)
 {
 	int idx, len;
 
-	len = po->rx_ring.prb_bdqc.knum_blocks;
-	idx = po->rx_ring.prb_bdqc.kactive_blk_num;
+	len = READ_ONCE(po->rx_ring.prb_bdqc.knum_blocks);
+	idx = READ_ONCE(po->rx_ring.prb_bdqc.kactive_blk_num);
 	if (pow_off)
 		idx += len >> pow_off;
 	if (idx >= len)
@@ -1236,15 +1231,18 @@ static bool __tpacket_v3_has_room(struct packet_sock *po, int pow_off)
 	return prb_lookup_block(po, &po->rx_ring, idx, TP_STATUS_KERNEL);
 }
 
-static int __packet_rcv_has_room(struct packet_sock *po, struct sk_buff *skb)
+static int __packet_rcv_has_room(const struct packet_sock *po,
+				 const struct sk_buff *skb)
 {
-	struct sock *sk = &po->sk;
+	const struct sock *sk = &po->sk;
 	int ret = ROOM_NONE;
 
 	if (po->prot_hook.func != tpacket_rcv) {
-		int avail = sk->sk_rcvbuf - atomic_read(&sk->sk_rmem_alloc)
-					  - (skb ? skb->truesize : 0);
-		if (avail > (sk->sk_rcvbuf >> ROOM_POW_OFF))
+		int rcvbuf = READ_ONCE(sk->sk_rcvbuf);
+		int avail = rcvbuf - atomic_read(&sk->sk_rmem_alloc)
+				   - (skb ? skb->truesize : 0);
+
+		if (avail > (rcvbuf >> ROOM_POW_OFF))
 			return ROOM_NORMAL;
 		else if (avail > 0)
 			return ROOM_LOW;
@@ -1269,17 +1267,22 @@ static int __packet_rcv_has_room(struct packet_sock *po, struct sk_buff *skb)
 
 static int packet_rcv_has_room(struct packet_sock *po, struct sk_buff *skb)
 {
-	int ret;
-	bool has_room;
+	int pressure, ret;
 
-	spin_lock_bh(&po->sk.sk_receive_queue.lock);
 	ret = __packet_rcv_has_room(po, skb);
-	has_room = ret == ROOM_NORMAL;
-	if (po->pressure == has_room)
-		po->pressure = !has_room;
-	spin_unlock_bh(&po->sk.sk_receive_queue.lock);
+	pressure = ret != ROOM_NORMAL;
+
+	if (READ_ONCE(po->pressure) != pressure)
+		WRITE_ONCE(po->pressure, pressure);
 
 	return ret;
+}
+
+static void packet_rcv_try_clear_pressure(struct packet_sock *po)
+{
+	if (READ_ONCE(po->pressure) &&
+	    __packet_rcv_has_room(po, NULL) == ROOM_NORMAL)
+		WRITE_ONCE(po->pressure,  0);
 }
 
 static void packet_sock_destruct(struct sock *sk)
@@ -1368,7 +1371,7 @@ static unsigned int fanout_demux_rollover(struct packet_fanout *f,
 	i = j = min_t(int, po->rollover->sock, num - 1);
 	do {
 		po_next = pkt_sk(f->arr[i]);
-		if (po_next != po_skip && !po_next->pressure &&
+		if (po_next != po_skip && !READ_ONCE(po_next->pressure) &&
 		    packet_rcv_has_room(po_next, skb) == ROOM_NORMAL) {
 			if (i != j)
 				po->rollover->sock = i;
@@ -1538,7 +1541,7 @@ static void __fanout_set_data_bpf(struct packet_fanout *f, struct bpf_prog *new)
 	}
 }
 
-static int fanout_set_data_cbpf(struct packet_sock *po, char __user *data,
+static int fanout_set_data_cbpf(struct packet_sock *po, sockptr_t data,
 				unsigned int len)
 {
 	struct bpf_prog *new;
@@ -1547,10 +1550,10 @@ static int fanout_set_data_cbpf(struct packet_sock *po, char __user *data,
 
 	if (sock_flag(&po->sk, SOCK_FILTER_LOCKED))
 		return -EPERM;
-	if (len != sizeof(fprog))
-		return -EINVAL;
-	if (copy_from_user(&fprog, data, len))
-		return -EFAULT;
+
+	ret = copy_bpf_fprog_from_user(&fprog, data, len);
+	if (ret)
+		return ret;
 
 	ret = bpf_prog_create_from_user(&new, &fprog, NULL, false);
 	if (ret)
@@ -1560,7 +1563,7 @@ static int fanout_set_data_cbpf(struct packet_sock *po, char __user *data,
 	return 0;
 }
 
-static int fanout_set_data_ebpf(struct packet_sock *po, char __user *data,
+static int fanout_set_data_ebpf(struct packet_sock *po, sockptr_t data,
 				unsigned int len)
 {
 	struct bpf_prog *new;
@@ -1570,7 +1573,7 @@ static int fanout_set_data_ebpf(struct packet_sock *po, char __user *data,
 		return -EPERM;
 	if (len != sizeof(fd))
 		return -EINVAL;
-	if (copy_from_user(&fd, data, len))
+	if (copy_from_sockptr(&fd, data, len))
 		return -EFAULT;
 
 	new = bpf_prog_get_type(fd, BPF_PROG_TYPE_SOCKET_FILTER);
@@ -1581,7 +1584,7 @@ static int fanout_set_data_ebpf(struct packet_sock *po, char __user *data,
 	return 0;
 }
 
-static int fanout_set_data(struct packet_sock *po, char __user *data,
+static int fanout_set_data(struct packet_sock *po, sockptr_t data,
 			   unsigned int len)
 {
 	switch (po->fanout->type) {
@@ -1831,7 +1834,7 @@ static int packet_rcv_spkt(struct sk_buff *skb, struct net_device *dev,
 	skb_dst_drop(skb);
 
 	/* drop conntrack reference */
-	nf_reset(skb);
+	nf_reset_ct(skb);
 
 	spkt = &PACKET_SKB_CB(skb)->sa.pkt;
 
@@ -1859,6 +1862,16 @@ oom:
 	return 0;
 }
 
+static void packet_parse_headers(struct sk_buff *skb, struct socket *sock)
+{
+	if ((!skb->protocol || skb->protocol == htons(ETH_P_ALL)) &&
+	    sock->type == SOCK_RAW) {
+		skb_reset_mac_header(skb);
+		skb->protocol = dev_parse_header_protocol(skb);
+	}
+
+	skb_probe_transport_header(skb);
+}
 
 /*
  *	Output a raw packet to a device layer. This bypasses all the other
@@ -1974,12 +1987,12 @@ retry:
 	skb->mark = sk->sk_mark;
 	skb->tstamp = sockc.transmit_time;
 
-	sock_tx_timestamp(sk, sockc.tsflags, &skb_shinfo(skb)->tx_flags);
+	skb_setup_tx_timestamp(skb, sockc.tsflags);
 
 	if (unlikely(extra_len == 4))
 		skb->no_fcs = 1;
 
-	skb_probe_transport_header(skb, 0);
+	packet_parse_headers(skb, sock);
 
 	dev_queue_xmit(skb);
 	rcu_read_unlock();
@@ -2056,7 +2069,7 @@ static int packet_rcv(struct sk_buff *skb, struct net_device *dev,
 
 	skb->dev = dev;
 
-	if (dev->header_ops) {
+	if (dev_has_header(dev)) {
 		/* The device has an explicit notion of ll header,
 		 * exported to higher levels.
 		 *
@@ -2121,7 +2134,7 @@ static int packet_rcv(struct sk_buff *skb, struct net_device *dev,
 	skb_dst_drop(skb);
 
 	/* drop conntrack reference */
-	nf_reset(skb);
+	nf_reset_ct(skb);
 
 	spin_lock(&sk->sk_receive_queue.lock);
 	po->stats.stats1.tp_packets++;
@@ -2133,10 +2146,8 @@ static int packet_rcv(struct sk_buff *skb, struct net_device *dev,
 
 drop_n_acct:
 	is_drop_n_account = true;
-	spin_lock(&sk->sk_receive_queue.lock);
-	po->stats.stats1.tp_drops++;
+	atomic_inc(&po->tp_drops);
 	atomic_inc(&sk->sk_drops);
-	spin_unlock(&sk->sk_receive_queue.lock);
 
 drop_n_restore:
 	if (skb_head != skb->data && skb_shared(skb)) {
@@ -2165,7 +2176,7 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
 	unsigned short macoff, hdrlen;
 	unsigned int netoff;
 	struct sk_buff *copy_skb = NULL;
-	struct timespec ts;
+	struct timespec64 ts;
 	__u32 ts_status;
 	bool is_drop_n_account = false;
 	unsigned int slot_id = 0;
@@ -2187,7 +2198,7 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
 	if (!net_eq(dev_net(dev), sock_net(sk)))
 		goto drop;
 
-	if (dev->header_ops) {
+	if (dev_has_header(dev)) {
 		if (sk->sk_type != SOCK_DGRAM)
 			skb_push(skb, skb->data - skb_mac_header(skb));
 		else if (skb->pkt_type == PACKET_OUTGOING) {
@@ -2201,6 +2212,12 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
 	res = run_filter(skb, sk, snaplen);
 	if (!res)
 		goto drop_n_restore;
+
+	/* If we are flooded, just give up */
+	if (__packet_rcv_has_room(po, skb) == ROOM_NONE) {
+		atomic_inc(&po->tp_drops);
+		goto drop_n_restore;
+	}
 
 	if (skb->ip_summed == CHECKSUM_PARTIAL)
 		status |= TP_STATUS_CSUMNOTREADY;
@@ -2227,9 +2244,7 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
 		macoff = netoff - maclen;
 	}
 	if (netoff > USHRT_MAX) {
-		spin_lock(&sk->sk_receive_queue.lock);
-		po->stats.stats1.tp_drops++;
-		spin_unlock(&sk->sk_receive_queue.lock);
+		atomic_inc(&po->tp_drops);
 		goto drop_n_restore;
 	}
 	if (po->tp_version <= TPACKET_V2) {
@@ -2295,7 +2310,7 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
 	 * Anyways, moving it for V1/V2 only as V3 doesn't need this
 	 * at packet level.
 	 */
-		if (po->stats.stats1.tp_drops)
+		if (atomic_read(&po->tp_drops))
 			status |= TP_STATUS_LOSING;
 	}
 
@@ -2309,7 +2324,7 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
 	skb_copy_bits(skb, 0, h.raw + macoff, snaplen);
 
 	if (!(ts_status = tpacket_get_timestamp(skb, &ts, po->tp_tstamp)))
-		getnstimeofday(&ts);
+		ktime_get_real_ts64(&ts);
 
 	status |= ts_status;
 
@@ -2408,9 +2423,9 @@ drop:
 	return 0;
 
 drop_n_account:
-	is_drop_n_account = true;
-	po->stats.stats1.tp_drops++;
 	spin_unlock(&sk->sk_receive_queue.lock);
+	atomic_inc(&po->tp_drops);
+	is_drop_n_account = true;
 
 	sk->sk_data_ready(sk);
 	kfree_skb(copy_skb);
@@ -2436,15 +2451,6 @@ static void tpacket_destruct_skb(struct sk_buff *skb)
 	}
 
 	sock_wfree(skb);
-}
-
-static void tpacket_set_protocol(const struct net_device *dev,
-				 struct sk_buff *skb)
-{
-	if (dev->type == ARPHRD_ETHER) {
-		skb_reset_mac_header(skb);
-		skb->protocol = eth_hdr(skb)->h_proto;
-	}
 }
 
 static int __packet_snd_vnet_parse(struct virtio_net_hdr *vnet_hdr, size_t len)
@@ -2494,7 +2500,7 @@ static int tpacket_fill_skb(struct packet_sock *po, struct sk_buff *skb,
 	skb->priority = po->sk.sk_priority;
 	skb->mark = po->sk.sk_mark;
 	skb->tstamp = sockc->transmit_time;
-	sock_tx_timestamp(&po->sk, sockc->tsflags, &skb_shinfo(skb)->tx_flags);
+	skb_setup_tx_timestamp(skb, sockc->tsflags);
 	skb_zcopy_set_nouarg(skb, ph.raw);
 
 	skb_reserve(skb, hlen);
@@ -2517,8 +2523,6 @@ static int tpacket_fill_skb(struct packet_sock *po, struct sk_buff *skb,
 			return err;
 		if (!dev_validate_header(dev, skb->data, hdrlen))
 			return -EINVAL;
-		if (!skb->protocol)
-			tpacket_set_protocol(dev, skb);
 
 		data += hdrlen;
 		to_write -= hdrlen;
@@ -2553,7 +2557,7 @@ static int tpacket_fill_skb(struct packet_sock *po, struct sk_buff *skb,
 		len = ((to_write > len_max) ? len_max : to_write);
 	}
 
-	skb_probe_transport_header(skb, 0);
+	packet_parse_headers(skb, sock);
 
 	return tp_len;
 }
@@ -2958,7 +2962,7 @@ static int packet_snd(struct socket *sock, struct msghdr *msg, size_t len)
 		goto out_free;
 	}
 
-	sock_tx_timestamp(sk, sockc.tsflags, &skb_shinfo(skb)->tx_flags);
+	skb_setup_tx_timestamp(skb, sockc.tsflags);
 
 	if (!vnet_hdr.gso_type && (len > dev->mtu + reserve + extra_len) &&
 	    !packet_extra_vlan_len_allowed(dev, skb)) {
@@ -2980,7 +2984,7 @@ static int packet_snd(struct socket *sock, struct msghdr *msg, size_t len)
 		virtio_net_hdr_set_proto(skb, &vnet_hdr);
 	}
 
-	skb_probe_transport_header(skb, reserve);
+	packet_parse_headers(skb, sock);
 
 	if (unlikely(extra_len == 4))
 		skb->no_fcs = 1;
@@ -3365,8 +3369,7 @@ static int packet_recvmsg(struct socket *sock, struct msghdr *msg, size_t len,
 	if (skb == NULL)
 		goto out;
 
-	if (pkt_sk(sk)->pressure)
-		packet_rcv_has_room(pkt_sk(sk), NULL);
+	packet_rcv_try_clear_pressure(pkt_sk(sk));
 
 	if (pkt_sk(sk)->has_vnet_hdr) {
 		err = packet_rcv_vnet(msg, skb, &len);
@@ -3662,7 +3665,8 @@ static void packet_flush_mclist(struct sock *sk)
 }
 
 static int
-packet_setsockopt(struct socket *sock, int level, int optname, char __user *optval, unsigned int optlen)
+packet_setsockopt(struct socket *sock, int level, int optname, sockptr_t optval,
+		  unsigned int optlen)
 {
 	struct sock *sk = sock->sk;
 	struct packet_sock *po = pkt_sk(sk);
@@ -3682,7 +3686,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 			return -EINVAL;
 		if (len > sizeof(mreq))
 			len = sizeof(mreq);
-		if (copy_from_user(&mreq, optval, len))
+		if (copy_from_sockptr(&mreq, optval, len))
 			return -EFAULT;
 		if (len < (mreq.mr_alen + offsetof(struct packet_mreq, mr_address)))
 			return -EINVAL;
@@ -3713,7 +3717,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 		if (optlen < len) {
 			ret = -EINVAL;
 		} else {
-			if (copy_from_user(&req_u.req, optval, len))
+			if (copy_from_sockptr(&req_u.req, optval, len))
 				ret = -EFAULT;
 			else
 				ret = packet_set_ring(sk, &req_u, 0,
@@ -3728,7 +3732,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen != sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		pkt_sk(sk)->copy_thresh = val;
@@ -3740,7 +3744,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen != sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 		switch (val) {
 		case TPACKET_V1:
@@ -3766,7 +3770,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen != sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 		if (val > INT_MAX)
 			return -EINVAL;
@@ -3786,7 +3790,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen != sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		lock_sock(sk);
@@ -3805,7 +3809,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen < sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		lock_sock(sk);
@@ -3819,7 +3823,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen < sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		lock_sock(sk);
@@ -3835,7 +3839,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 			return -EINVAL;
 		if (optlen < sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		lock_sock(sk);
@@ -3854,7 +3858,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen != sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		po->tp_tstamp = val;
@@ -3866,7 +3870,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen != sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		return fanout_add(sk, val & 0xffff, val >> 16);
@@ -3878,13 +3882,27 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		return fanout_set_data(po, optval, optlen);
 	}
+	case PACKET_IGNORE_OUTGOING:
+	{
+		int val;
+
+		if (optlen != sizeof(val))
+			return -EINVAL;
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
+			return -EFAULT;
+		if (val < 0 || val > 1)
+			return -EINVAL;
+
+		po->prot_hook.ignore_outgoing = !!val;
+		return 0;
+	}
 	case PACKET_TX_HAS_OFF:
 	{
 		unsigned int val;
 
 		if (optlen != sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		lock_sock(sk);
@@ -3903,7 +3921,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
 
 		if (optlen != sizeof(val))
 			return -EINVAL;
-		if (copy_from_user(&val, optval, sizeof(val)))
+		if (copy_from_sockptr(&val, optval, sizeof(val)))
 			return -EFAULT;
 
 		po->xmit = val ? packet_direct_xmit : dev_queue_xmit;
@@ -3924,6 +3942,7 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
 	void *data = &val;
 	union tpacket_stats_u st;
 	struct tpacket_rollover_stats rstats;
+	int drops;
 
 	if (level != SOL_PACKET)
 		return -ENOPROTOOPT;
@@ -3940,14 +3959,17 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
 		memcpy(&st, &po->stats, sizeof(st));
 		memset(&po->stats, 0, sizeof(po->stats));
 		spin_unlock_bh(&sk->sk_receive_queue.lock);
+		drops = atomic_xchg(&po->tp_drops, 0);
 
 		if (po->tp_version == TPACKET_V3) {
 			lv = sizeof(struct tpacket_stats_v3);
-			st.stats3.tp_packets += st.stats3.tp_drops;
+			st.stats3.tp_drops = drops;
+			st.stats3.tp_packets += drops;
 			data = &st.stats3;
 		} else {
 			lv = sizeof(struct tpacket_stats);
-			st.stats1.tp_packets += st.stats1.tp_drops;
+			st.stats1.tp_drops = drops;
+			st.stats1.tp_packets += drops;
 			data = &st.stats1;
 		}
 
@@ -4001,6 +4023,9 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
 			((u32)po->fanout->flags << 24)) :
 		       0);
 		break;
+	case PACKET_IGNORE_OUTGOING:
+		val = po->prot_hook.ignore_outgoing;
+		break;
 	case PACKET_ROLLOVER_STATS:
 		if (!po->rollover)
 			return -EINVAL;
@@ -4029,28 +4054,6 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
 	return 0;
 }
 
-
-#ifdef CONFIG_COMPAT
-static int compat_packet_setsockopt(struct socket *sock, int level, int optname,
-				    char __user *optval, unsigned int optlen)
-{
-	struct packet_sock *po = pkt_sk(sock->sk);
-
-	if (level != SOL_PACKET)
-		return -ENOPROTOOPT;
-
-	if (optname == PACKET_FANOUT_DATA &&
-	    po->fanout && po->fanout->type == PACKET_FANOUT_CBPF) {
-		optval = (char __user *)get_compat_bpf_fprog(optval);
-		if (!optval)
-			return -EFAULT;
-		optlen = sizeof(struct sock_fprog);
-	}
-
-	return packet_setsockopt(sock, level, optname, optval, optlen);
-}
-#endif
-
 static int packet_notifier(struct notifier_block *this,
 			   unsigned long msg, void *ptr)
 {
@@ -4066,7 +4069,7 @@ static int packet_notifier(struct notifier_block *this,
 		case NETDEV_UNREGISTER:
 			if (po->mclist)
 				packet_dev_mclist_delete(dev, &po->mclist);
-			/* fallthrough */
+			fallthrough;
 
 		case NETDEV_DOWN:
 			if (dev->ifindex == po->ifindex) {
@@ -4126,11 +4129,6 @@ static int packet_ioctl(struct socket *sock, unsigned int cmd,
 		spin_unlock_bh(&sk->sk_receive_queue.lock);
 		return put_user(amount, (int __user *)arg);
 	}
-	case SIOCGSTAMP:
-		return sock_get_timestamp(sk, (struct timeval __user *)arg);
-	case SIOCGSTAMPNS:
-		return sock_get_timestampns(sk, (struct timespec __user *)arg);
-
 #ifdef CONFIG_INET
 	case SIOCADDRT:
 	case SIOCDELRT:
@@ -4168,8 +4166,7 @@ static __poll_t packet_poll(struct file *file, struct socket *sock,
 			TP_STATUS_KERNEL))
 			mask |= EPOLLIN | EPOLLRDNORM;
 	}
-	if (po->pressure && __packet_rcv_has_room(po, NULL) == ROOM_NORMAL)
-		po->pressure = 0;
+	packet_rcv_try_clear_pressure(po);
 	spin_unlock_bh(&sk->sk_receive_queue.lock);
 	spin_lock_bh(&sk->sk_write_queue.lock);
 	if (po->tx_ring.pg_vec) {
@@ -4288,7 +4285,7 @@ static int packet_set_ring(struct sock *sk, union tpacket_req_u *req_u,
 	struct packet_ring_buffer *rb;
 	struct sk_buff_head *rb_queue;
 	__be16 num;
-	int err = -EINVAL;
+	int err;
 	/* Added to avoid minimal code churn */
 	struct tpacket_req *req = &req_u->req;
 
@@ -4517,10 +4514,9 @@ static const struct proto_ops packet_ops_spkt = {
 	.getname =	packet_getname_spkt,
 	.poll =		datagram_poll,
 	.ioctl =	packet_ioctl,
+	.gettstamp =	sock_gettstamp,
 	.listen =	sock_no_listen,
 	.shutdown =	sock_no_shutdown,
-	.setsockopt =	sock_no_setsockopt,
-	.getsockopt =	sock_no_getsockopt,
 	.sendmsg =	packet_sendmsg_spkt,
 	.recvmsg =	packet_recvmsg,
 	.mmap =		sock_no_mmap,
@@ -4538,13 +4534,11 @@ static const struct proto_ops packet_ops = {
 	.getname =	packet_getname,
 	.poll =		packet_poll,
 	.ioctl =	packet_ioctl,
+	.gettstamp =	sock_gettstamp,
 	.listen =	sock_no_listen,
 	.shutdown =	sock_no_shutdown,
 	.setsockopt =	packet_setsockopt,
 	.getsockopt =	packet_getsockopt,
-#ifdef CONFIG_COMPAT
-	.compat_setsockopt = compat_packet_setsockopt,
-#endif
 	.sendmsg =	packet_sendmsg,
 	.recvmsg =	packet_recvmsg,
 	.mmap =		packet_mmap,

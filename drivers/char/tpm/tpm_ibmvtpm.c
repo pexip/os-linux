@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2012-2020 IBM Corporation
  *
@@ -7,12 +8,6 @@
  *
  * Device driver for TCG/TCPA TPM (trusted platform module).
  * Specifications at www.trustedcomputinggroup.org
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation, version 2 of the
- * License.
- *
  */
 
 #include <linux/dma-mapping.h>
@@ -34,13 +29,13 @@ static const char tpm_ibmvtpm_driver_name[] = "tpm_ibmvtpm";
 
 static const struct vio_device_id tpm_ibmvtpm_device_table[] = {
 	{ "IBM,vtpm", "IBM,vtpm"},
+	{ "IBM,vtpm", "IBM,vtpm20"},
 	{ "", "" }
 };
 MODULE_DEVICE_TABLE(vio, tpm_ibmvtpm_device_table);
 
 /**
- *
- * ibmvtpm_send_crq_word - Send a CRQ request
+ * ibmvtpm_send_crq_word() - Send a CRQ request
  * @vdev:	vio device struct
  * @w1:		pre-constructed first word of tpm crq (second word is reserved)
  *
@@ -54,8 +49,7 @@ static int ibmvtpm_send_crq_word(struct vio_dev *vdev, u64 w1)
 }
 
 /**
- *
- * ibmvtpm_send_crq - Send a CRQ request
+ * ibmvtpm_send_crq() - Send a CRQ request
  *
  * @vdev:	vio device struct
  * @valid:	Valid field
@@ -694,6 +688,13 @@ static int tpm_ibmvtpm_probe(struct vio_dev *vio_dev,
 				HZ)) {
 		dev_err(dev, "CRQ response timed out\n");
 		goto init_irq_cleanup;
+	}
+
+	if (!strcmp(id->compat, "IBM,vtpm20")) {
+		chip->flags |= TPM_CHIP_FLAG_TPM2;
+		rc = tpm2_get_cc_attrs_tbl(chip);
+		if (rc)
+			goto init_irq_cleanup;
 	}
 
 	return tpm_chip_register(chip);

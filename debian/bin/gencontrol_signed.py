@@ -11,8 +11,9 @@ import subprocess
 import sys
 
 from debian_linux.config import ConfigCoreDump
-from debian_linux.debian import VersionLinux
-from debian_linux.gencontrol import Gencontrol as Base, merge_packages
+from debian_linux.debian import PackageRelation, VersionLinux
+from debian_linux.gencontrol import Gencontrol as Base, merge_packages, \
+    iter_flavours
 from debian_linux.utils import Templates, read_control
 
 
@@ -36,26 +37,26 @@ class Gencontrol(Base):
             'template': 'linux-image-%s-signed-template' % arch,
             'upstreamversion': self.version.linux_upstream,
             'version': self.version.linux_version,
+            'source_basename': re.sub(r'-[\d.]+$', '',
+                                      self.changelog[0].source),
             'source_upstream': self.version.upstream,
             'abiname': self.abiname,
             'imagebinaryversion': image_binary_version,
             'imagesourceversion': self.version.complete,
             'arch': arch,
         }
+        self.vars['source_suffix'] = \
+            self.changelog[0].source[len(self.vars['source_basename']):]
 
         self.package_dir = 'debian/%(template)s' % self.vars
-        self.template_top_dir = (self.package_dir +
-                                 '/usr/share/code-signing/%(template)s' %
-                                 self.vars)
-        self.template_debian_dir = (self.template_top_dir +
-                                    '/source-template/debian')
+        self.template_top_dir = (self.package_dir
+                                 + '/usr/share/code-signing/%(template)s'
+                                 % self.vars)
+        self.template_debian_dir = (self.template_top_dir
+                                    + '/source-template/debian')
         os.makedirs(self.template_debian_dir, exist_ok=True)
 
         self.image_packages = []
-
-    def _substitute_file(self, template, vars, target, append=False):
-        with codecs.open(target, 'a' if append else 'w', 'utf-8') as f:
-            f.write(self.substitute(self.templates[template], vars))
 
     def do_main_setup(self, vars, makeflags, extra):
         makeflags['VERSION'] = self.version.linux_version
@@ -109,7 +110,7 @@ class Gencontrol(Base):
 
     def do_main_recurse(self, packages, makefile, vars, makeflags, extra):
         # Each signed source package only covers a single architecture
-        self.do_arch(packages, makefile, self.vars['arch'], vars.copy(),
+        self.do_arch(packages, makefile, vars['arch'], vars.copy(),
                      makeflags.copy(), extra)
 
     def do_extra(self, packages, makefile):
@@ -142,12 +143,33 @@ class Gencontrol(Base):
                           (arch, makeflags,
                            ' '.join(p['Package'] for p in udeb_packages))])
 
+    def do_featureset_setup(self, vars, makeflags, arch, featureset, extra):
+        self.default_flavour = self.config.merge('base', arch, featureset) \
+                                          .get('default-flavour')
+        if self.default_flavour is not None:
+            if featureset != 'none':
+                raise RuntimeError("default-flavour set for %s %s,"
+                                   " but must only be set for featureset none"
+                                   % (arch, featureset))
+            if self.default_flavour \
+               not in iter_flavours(self.config, arch, featureset):
+                raise RuntimeError("default-flavour %s for %s %s does not exist"
+                                   % (self.default_flavour, arch, featureset))
+
     def do_flavour_setup(self, vars, makeflags, arch, featureset, flavour,
                          extra):
         super(Gencontrol, self).do_flavour_setup(vars, makeflags, arch,
                                                  featureset, flavour, extra)
 
+        config_description = self.config.merge('description', arch, featureset,
+                                               flavour)
         config_image = self.config.merge('image', arch, featureset, flavour)
+
+        vars['flavour'] = vars['localversion'][1:]
+        vars['class'] = config_description['hardware']
+        vars['longclass'] = (config_description.get('hardware-long')
+                             or vars['class'])
+
         vars['image-stem'] = config_image.get('install-stem')
         makeflags['IMAGE_INSTALL_STEM'] = vars['image-stem']
 
@@ -184,45 +206,61 @@ class Gencontrol(Base):
                                     cert_file_name))
 
         packages['source']['Build-Depends'].append(
-            image_package_name +
-            ' (= %(imagebinaryversion)s) [%(arch)s]' % vars)
+            image_package_name
+            + ' (= %(imagebinaryversion)s) [%(arch)s]' % vars)
 
-        packages_signed = self.process_packages(
+        packages_own = self.process_packages(
             self.templates['control.image'], vars)
+        assert len(packages_own) == 1
+        cmds_binary_arch = ["$(MAKE) -f debian/rules.real install-signed "
+                            "PACKAGE_NAME='%s' %s" %
+                            (packages_own[0]['Package'], makeflags)]
 
-        for package in packages_signed:
-            name = package['Package']
-            if name in packages:
-                package = packages.get(name)
-                package['Architecture'].add(arch)
-            else:
-                package['Architecture'] = arch
-                packages.append(package)
+        if self.config.merge('packages').get('meta', True):
+            packages_meta = self.process_packages(
+                self.templates['control.image.meta'], vars)
+            assert len(packages_meta) == 1
+            packages_meta += self.process_packages(
+                self.templates['control.headers.meta'], vars)
+            assert len(packages_meta) == 2
 
-        cmds_binary_arch = []
-        for i in packages_signed:
-            cmds_binary_arch += ["$(MAKE) -f debian/rules.real install-signed "
-                                 "PACKAGE_NAME='%s' %s" %
-                                 (i['Package'], makeflags)]
+            # Don't pretend to support build-profiles
+            for package in packages_meta:
+                del package['Build-Profiles']
+
+            if flavour == self.default_flavour \
+               and not self.vars['source_suffix']:
+                packages_meta[0].setdefault('Provides', PackageRelation()) \
+                                .append('linux-image-generic')
+                packages_meta[1].setdefault('Provides', PackageRelation()) \
+                                .append('linux-headers-generic')
+
+            packages_own.extend(packages_meta)
+
+            cmds_binary_arch += [
+                "$(MAKE) -f debian/rules.real install-meta "
+                "PACKAGE_NAME='%s' LINK_DOC_PACKAGE_NAME='%s' %s" %
+                (package['Package'], package['Depends'][0][0].name, makeflags)
+                for package in packages_meta
+            ]
+
+            self.substitute_debhelper_config(
+                'image.meta', vars,
+                'linux-image%(localversion)s' % vars,
+                output_dir=self.template_debian_dir)
+            self.substitute_debhelper_config(
+                'headers.meta', vars,
+                'linux-headers%(localversion)s' % vars,
+                output_dir=self.template_debian_dir)
+
+        merge_packages(packages, packages_own, arch)
         makefile.add('binary-arch_%s_%s_%s_real' % (arch, featureset, flavour),
                      cmds=cmds_binary_arch)
 
-        os.makedirs(self.package_dir + '/usr/share/lintian/overrides', 0o755,
-                    exist_ok=True)
-        with open(self.package_dir +
-                  '/usr/share/lintian/overrides/%(template)s' % self.vars,
-                  'a') as lintian_overrides:
-            for script_base in ['postinst', 'postrm', 'preinst', 'prerm']:
-                script_name = (self.template_debian_dir +
-                               '/linux-image-%s%s.%s' %
-                               (vars['abiname'], vars['localversion'],
-                                script_base))
-                self._substitute_file('image.%s' % script_base, vars,
-                                      script_name)
-                lintian_overrides.write('%s: script-not-executable %s\n' %
-                                        (self.vars['template'],
-                                         os.path.relpath(script_name,
-                                                         self.package_dir)))
+        self.substitute_debhelper_config(
+            'image', vars,
+            'linux-image-%(abiname)s%(localversion)s' % vars,
+            output_dir=self.template_debian_dir)
 
     def write(self, packages, makefile):
         self.write_changelog()
@@ -233,15 +271,16 @@ class Gencontrol(Base):
         self.write_files_json()
 
     def write_changelog(self):
-        # We need to insert a new version entry.
-        # Take the distribution and urgency from the linux changelog, and
-        # the base version from the changelog template.
+        # Copy the linux changelog, but:
+        # * Change the source package name and version
+        # * Insert a line to refer to refer to the linux source version
         vars = self.vars.copy()
         vars['source'] = self.changelog[0].source
         vars['distribution'] = self.changelog[0].distribution
         vars['urgency'] = self.changelog[0].urgency
-        vars['signedsourceversion'] = (re.sub(r'-', r'+',
-                                              vars['imagebinaryversion']))
+        vars['signedsourceversion'] = \
+            re.sub(r'\+b(\d+)$', r'.b\1',
+                   re.sub(r'-', r'+', vars['imagebinaryversion']))
 
         with codecs.open(self.template_debian_dir + '/changelog', 'w',
                          'utf-8') as f:
@@ -293,26 +332,31 @@ linux-signed-@arch@ (@signedsourceversion@) @distribution@; urgency=@urgency@
             hasher.update(ssl.PEM_cert_to_DER_cert(cert))
             return hasher.hexdigest()
 
-        all_files = {}
+        all_files = {'packages': {}}
 
         for image_suffix, image_package_name, cert_file_name in \
                 self.image_packages:
             package_dir = 'debian/%s' % image_package_name
             package_files = []
+            package_modules = []
             package_files.append({'sig_type': 'efi',
                                   'file': 'boot/vmlinuz-%s' % image_suffix})
             for root, dirs, files in os.walk('%s/lib/modules' % package_dir,
                                              onerror=raise_func):
                 for name in files:
                     if name.endswith('.ko'):
-                        package_files.append(
-                            {'sig_type': 'linux-module',
-                             'file': '%s/%s' %
-                             (root[(len(package_dir) + 1):], name)})
+                        package_modules.append(
+                            '%s/%s' %
+                            (root[(len(package_dir) + 1):], name))
+            package_modules.sort()
+            for module in package_modules:
+                package_files.append(
+                    {'sig_type': 'linux-module',
+                     'file': module})
             package_certs = [get_cert_fingerprint(cert, 'sha256')
                              for cert in get_certs(cert_file_name)]
             assert len(package_certs) >= 1
-            all_files[image_package_name] = {
+            all_files['packages'][image_package_name] = {
                 'trusted_certs': package_certs,
                 'files': package_files
             }

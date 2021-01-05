@@ -1,12 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Defines interfaces for interacting wtih the Raspberry Pi firmware's
  * property channel.
  *
  * Copyright © 2015 Broadcom
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
  */
 
 #include <linux/dma-mapping.h>
@@ -23,6 +20,7 @@
 #define MBOX_CHAN_PROPERTY		8
 
 static struct platform_device *rpi_hwmon;
+static struct platform_device *rpi_clk;
 
 struct rpi_firmware {
 	struct mbox_client cl;
@@ -55,8 +53,12 @@ rpi_firmware_transaction(struct rpi_firmware *fw, u32 chan, u32 data)
 	reinit_completion(&fw->c);
 	ret = mbox_send_message(fw->chan, &message);
 	if (ret >= 0) {
-		wait_for_completion(&fw->c);
-		ret = 0;
+		if (wait_for_completion_timeout(&fw->c, HZ)) {
+			ret = 0;
+		} else {
+			ret = -ETIMEDOUT;
+			WARN_ONCE(1, "Firmware transaction timeout");
+		}
 	} else {
 		dev_err(fw->cl.dev, "mbox_send_message returned %d\n", ret);
 	}
@@ -175,21 +177,18 @@ EXPORT_SYMBOL_GPL(rpi_firmware_property);
 static void
 rpi_firmware_print_firmware_revision(struct rpi_firmware *fw)
 {
+	time64_t date_and_time;
 	u32 packet;
 	int ret = rpi_firmware_property(fw,
 					RPI_FIRMWARE_GET_FIRMWARE_REVISION,
 					&packet, sizeof(packet));
 
-	if (ret == 0) {
-		struct tm tm;
+	if (ret)
+		return;
 
-		time64_to_tm(packet, 0, &tm);
-
-		dev_info(fw->cl.dev,
-			 "Attached to firmware from %04ld-%02d-%02d %02d:%02d\n",
-			 tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-			 tm.tm_hour, tm.tm_min);
-	}
+	/* This is not compatible with y2038 */
+	date_and_time = packet;
+	dev_info(fw->cl.dev, "Attached to firmware from %ptT\n", &date_and_time);
 }
 
 static void
@@ -204,6 +203,26 @@ rpi_register_hwmon_driver(struct device *dev, struct rpi_firmware *fw)
 
 	rpi_hwmon = platform_device_register_data(dev, "raspberrypi-hwmon",
 						  -1, NULL, 0);
+}
+
+static void rpi_register_clk_driver(struct device *dev)
+{
+	struct device_node *firmware;
+
+	/*
+	 * Earlier DTs don't have a node for the firmware clocks but
+	 * rely on us creating a platform device by hand. If we do
+	 * have a node for the firmware clocks, just bail out here.
+	 */
+	firmware = of_get_compatible_child(dev->of_node,
+					   "raspberrypi,firmware-clocks");
+	if (firmware) {
+		of_node_put(firmware);
+		return;
+	}
+
+	rpi_clk = platform_device_register_data(dev, "raspberrypi-clk",
+						-1, NULL, 0);
 }
 
 static int rpi_firmware_probe(struct platform_device *pdev)
@@ -233,8 +252,19 @@ static int rpi_firmware_probe(struct platform_device *pdev)
 
 	rpi_firmware_print_firmware_revision(fw);
 	rpi_register_hwmon_driver(dev, fw);
+	rpi_register_clk_driver(dev);
 
 	return 0;
+}
+
+static void rpi_firmware_shutdown(struct platform_device *pdev)
+{
+	struct rpi_firmware *fw = platform_get_drvdata(pdev);
+
+	if (!fw)
+		return;
+
+	rpi_firmware_property(fw, RPI_FIRMWARE_NOTIFY_REBOOT, NULL, 0);
 }
 
 static int rpi_firmware_remove(struct platform_device *pdev)
@@ -243,6 +273,8 @@ static int rpi_firmware_remove(struct platform_device *pdev)
 
 	platform_device_unregister(rpi_hwmon);
 	rpi_hwmon = NULL;
+	platform_device_unregister(rpi_clk);
+	rpi_clk = NULL;
 	mbox_free_channel(fw->chan);
 
 	return 0;
@@ -277,6 +309,7 @@ static struct platform_driver rpi_firmware_driver = {
 		.of_match_table = rpi_firmware_of_match,
 	},
 	.probe		= rpi_firmware_probe,
+	.shutdown	= rpi_firmware_shutdown,
 	.remove		= rpi_firmware_remove,
 };
 module_platform_driver(rpi_firmware_driver);

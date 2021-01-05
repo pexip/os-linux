@@ -2,7 +2,6 @@
 abiname: 1pexip1
 ignore-changes:
  __cpuhp_*
- __xive_vm_h_*
  bpf_analyzer
  cxl_*
  dax_flush
@@ -10,8 +9,6 @@ ignore-changes:
  inet_add_protocol
  inet_del_protocol
  iommu_device_*
- kvm_async_pf_task_wait
- kvmppc_*
  mm_iommu_*
  mv_mbus_*
  perf_*
@@ -19,7 +16,6 @@ ignore-changes:
  register_key_type
  unregister_cxl_calls
  *_hw_breakpoint
- module:arch/x86/kvm/*
  module:drivers/crypto/ccp/*
  module:drivers/hv/*
  module:drivers/gpu/drm/sun4i/*
@@ -29,6 +25,7 @@ ignore-changes:
  module:drivers/net/ethernet/**
  module:drivers/net/wireless/**
  module:drivers/nvdimm/*
+ module:drivers/nvme/**
  module:drivers/power/supply/bq27xxx_battery
  module:drivers/scsi/cxgbi/*
  module:drivers/scsi/libiscs*
@@ -80,6 +77,24 @@ ignore-changes:
 # Not OOT
  nf_nat_masquerade_ipv4_register_notifier
  nf_nat_masquerade_ipv6_register_notifier
+# ignore changes to hisi_sas/*
+ module:drivers/scsi/hisi_sas/*
+# KVM internal
+ __gfn_*
+ __kvmhv_*
+ __kvm_*
+ __xive_vm_h_*
+ gfn_*
+ h_ipi_redirect
+ halt_poll_ns*
+ kvm_*
+ kvmhv_*
+ kvmppc_*
+ mark_page_dirty
+ vcpu_*
+ module:arch/powerpc/kvm/*
+ module:arch/s390/kvm/*
+ module:arch/x86/kvm/*
 
 [base]
 arches:
@@ -106,7 +121,6 @@ arches:
  mipsr6
  mipsr6el
  powerpc
- powerpcspe
  ppc64
  ppc64el
  riscv64
@@ -117,7 +131,7 @@ arches:
  sparc
  sparc64
  x32
-compiler: gcc-8
+compiler: gcc-10
 featuresets:
  none
  rt
@@ -136,11 +150,12 @@ part-long-up: This kernel is not suitable for SMP (multi-processor,
 
 [image]
 initramfs-generators: initramfs-tools initramfs-fallback
+breaks: wireless-regdb (<< 2019.06.03-1~)
 recommends: apparmor
 
 [relations]
 # compilers
-gcc-8: gcc-8 <!stage1 !cross>, gcc-8-@gnu-type-package@ <!stage1 cross>
+gcc-10: gcc-10 <!stage1 !cross !pkg.linux.nokernel>, gcc-10-@gnu-type-package@ <!stage1 cross !pkg.linux.nokernel>
 
 # initramfs-generators
 initramfs-fallback: linux-initramfs-tool

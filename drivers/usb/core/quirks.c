@@ -342,11 +342,18 @@ static const struct usb_device_id usb_quirk_list[] = {
 	{ USB_DEVICE(0x06a3, 0x0006), .driver_info =
 			USB_QUIRK_CONFIG_INTF_STRINGS },
 
+	/* Agfa SNAPSCAN 1212U */
+	{ USB_DEVICE(0x06bd, 0x0001), .driver_info = USB_QUIRK_RESET_RESUME },
+
 	/* Guillemot Webcam Hercules Dualpix Exchange (2nd ID) */
 	{ USB_DEVICE(0x06f8, 0x0804), .driver_info = USB_QUIRK_RESET_RESUME },
 
 	/* Guillemot Webcam Hercules Dualpix Exchange*/
 	{ USB_DEVICE(0x06f8, 0x3005), .driver_info = USB_QUIRK_RESET_RESUME },
+
+	/* Guillemot Hercules DJ Console audio card (BZ 208357) */
+	{ USB_DEVICE(0x06f8, 0xb000), .driver_info =
+			USB_QUIRK_ENDPOINT_IGNORE },
 
 	/* Midiman M-Audio Keystation 88es */
 	{ USB_DEVICE(0x0763, 0x0192), .driver_info = USB_QUIRK_RESET_RESUME },
@@ -368,11 +375,11 @@ static const struct usb_device_id usb_quirk_list[] = {
 
 	/* Sound Devices USBPre2 */
 	{ USB_DEVICE(0x0926, 0x0202), .driver_info =
-			USB_QUIRK_ENDPOINT_BLACKLIST },
+			USB_QUIRK_ENDPOINT_IGNORE },
 
 	/* Sound Devices MixPre-D */
 	{ USB_DEVICE(0x0926, 0x0208), .driver_info =
-			USB_QUIRK_ENDPOINT_BLACKLIST },
+			USB_QUIRK_ENDPOINT_IGNORE },
 
 	/* Keytouch QWERTY Panel keyboard */
 	{ USB_DEVICE(0x0926, 0x3333), .driver_info =
@@ -420,6 +427,10 @@ static const struct usb_device_id usb_quirk_list[] = {
 	/* Razer - Razer Blade Keyboard */
 	{ USB_DEVICE(0x1532, 0x0116), .driver_info =
 			USB_QUIRK_LINEAR_UFRAME_INTR_BINTERVAL },
+
+	/* Lenovo ThinkCenter A630Z TI024Gen3 usb-audio */
+	{ USB_DEVICE(0x17ef, 0xa012), .driver_info =
+			USB_QUIRK_DISCONNECT_SUSPEND },
 
 	/* BUILDWIN Photo Frame */
 	{ USB_DEVICE(0x1908, 0x1315), .driver_info =
@@ -515,25 +526,27 @@ static const struct usb_device_id usb_amd_resume_quirk_list[] = {
 };
 
 /*
- * Entries for blacklisted endpoints that should be ignored when parsing
- * configuration descriptors.
+ * Entries for endpoints that should be ignored when parsing configuration
+ * descriptors.
  *
- * Matched for devices with USB_QUIRK_ENDPOINT_BLACKLIST.
+ * Matched for devices with USB_QUIRK_ENDPOINT_IGNORE.
  */
-static const struct usb_device_id usb_endpoint_blacklist[] = {
+static const struct usb_device_id usb_endpoint_ignore[] = {
+	{ USB_DEVICE_INTERFACE_NUMBER(0x06f8, 0xb000, 5), .driver_info = 0x01 },
+	{ USB_DEVICE_INTERFACE_NUMBER(0x06f8, 0xb000, 5), .driver_info = 0x81 },
 	{ USB_DEVICE_INTERFACE_NUMBER(0x0926, 0x0202, 1), .driver_info = 0x85 },
 	{ USB_DEVICE_INTERFACE_NUMBER(0x0926, 0x0208, 1), .driver_info = 0x85 },
 	{ }
 };
 
-bool usb_endpoint_is_blacklisted(struct usb_device *udev,
-		struct usb_host_interface *intf,
-		struct usb_endpoint_descriptor *epd)
+bool usb_endpoint_is_ignored(struct usb_device *udev,
+			     struct usb_host_interface *intf,
+			     struct usb_endpoint_descriptor *epd)
 {
 	const struct usb_device_id *id;
 	unsigned int address;
 
-	for (id = usb_endpoint_blacklist; id->match_flags; ++id) {
+	for (id = usb_endpoint_ignore; id->match_flags; ++id) {
 		if (!usb_match_device(udev, id))
 			continue;
 

@@ -1,9 +1,4 @@
 ##
-## file: arch/powerpc/Kconfig
-##
-# CONFIG_CMDLINE_BOOL is not set
-
-##
 ## file: arch/powerpc/platforms/Kconfig.cputype
 ##
 ## choice: Endianness selection
@@ -27,6 +22,11 @@ CONFIG_CPU_LITTLE_ENDIAN=y
 CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
 # CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
 ## end choice
+
+##
+## file: drivers/pcmcia/Kconfig
+##
+# CONFIG_PCMCIA is not set
 
 ##
 ## file: kernel/power/Kconfig

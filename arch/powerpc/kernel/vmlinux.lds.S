@@ -4,36 +4,23 @@
 #else
 #define PROVIDE32(x)	PROVIDE(x)
 #endif
+
+#define BSS_FIRST_SECTIONS *(.bss.prominit)
+#define EMITS_PT_NOTE
+#define RO_EXCEPTION_TABLE_ALIGN	0
+
 #include <asm/page.h>
 #include <asm-generic/vmlinux.lds.h>
 #include <asm/cache.h>
 #include <asm/thread_info.h>
 
-#if defined(CONFIG_STRICT_KERNEL_RWX) && !defined(CONFIG_PPC32)
-#define STRICT_ALIGN_SIZE	(1 << 24)
-#else
-#define STRICT_ALIGN_SIZE	PAGE_SIZE
-#endif
+#define STRICT_ALIGN_SIZE	(1 << CONFIG_DATA_SHIFT)
 
 ENTRY(_stext)
 
 PHDRS {
-	kernel PT_LOAD FLAGS(7); /* RWX */
-	notes PT_NOTE FLAGS(0);
-	dummy PT_NOTE FLAGS(0);
-
-	/* binutils < 2.18 has a bug that makes it misbehave when taking an
-	   ELF file with all segments at load address 0 as input.  This
-	   happens when running "strip" on vmlinux, because of the AT() magic
-	   in this linker script.  People using GCC >= 4.2 won't run into
-	   this problem, because the "build-id" support will put some data
-	   into the "notes" segment (at a non-zero load address).
-
-	   To work around this, we force some data into both the "dummy"
-	   segment and the kernel segment, so the dummy segment will get a
-	   non-zero load address.  It's not enough to always create the
-	   "notes" segment, since if nothing gets assigned to it, its load
-	   address will be zero.  */
+	text PT_LOAD FLAGS(7); /* RWX */
+	note PT_NOTE FLAGS(0);
 }
 
 #ifdef CONFIG_PPC64
@@ -77,17 +64,17 @@ SECTIONS
 #else /* !CONFIG_PPC64 */
 		HEAD_TEXT
 #endif
-	} :kernel
+	} :text
 
 	__head_end = .;
 
 #ifdef CONFIG_PPC64
 	/*
-	 * BLOCK(0) overrides the default output section alignment because
+	 * ALIGN(0) overrides the default output section alignment because
 	 * this needs to start right after .head.text in order for fixed
 	 * section placement to work.
 	 */
-	.text BLOCK(0) : AT(ADDR(.text) - LOAD_OFFSET) {
+	.text ALIGN(0) : AT(ADDR(.text) - LOAD_OFFSET) {
 #ifdef CONFIG_LD_HEAD_STUB_CATCH
 		KEEP(*(.linker_stub_catch));
 		. = . ;
@@ -99,6 +86,10 @@ SECTIONS
 #endif
 		/* careful! __ftr_alt_* sections need to be close to .text */
 		*(.text.hot TEXT_MAIN .text.fixup .text.unlikely .fixup __ftr_alt_* .ref.text);
+#ifdef CONFIG_PPC64
+		*(.tramp.ftrace.text);
+#endif
+		NOINSTR_TEXT
 		SCHED_TEXT
 		CPUIDLE_TEXT
 		LOCK_TEXT
@@ -123,7 +114,7 @@ SECTIONS
 		__got2_end = .;
 #endif /* CONFIG_PPC32 */
 
-	} :kernel
+	} :text
 
 	. = ALIGN(PAGE_SIZE);
 	_etext = .;
@@ -186,24 +177,21 @@ SECTIONS
 		__stop__btb_flush_fixup = .;
 	}
 #endif
-	EXCEPTION_TABLE(0)
-
-	NOTES :kernel :notes
-
-	/* The dummy segment contents for the bug workaround mentioned above
-	   near PHDRS.  */
-	.dummy : AT(ADDR(.dummy) - LOAD_OFFSET) {
-		LONG(0)
-		LONG(0)
-		LONG(0)
-	} :kernel :dummy
 
 /*
  * Init sections discarded at runtime
  */
 	. = ALIGN(STRICT_ALIGN_SIZE);
 	__init_begin = .;
-	INIT_TEXT_SECTION(PAGE_SIZE) :kernel
+	. = ALIGN(PAGE_SIZE);
+	.init.text : AT(ADDR(.init.text) - LOAD_OFFSET) {
+		_sinittext = .;
+		INIT_TEXT
+		_einittext = .;
+#ifdef CONFIG_PPC64
+		*(.tramp.ftrace.init);
+#endif
+	} :text
 
 	/* .exit.text is discarded at runtime, not link time,
 	 * to deal with references from __bug_table
@@ -214,12 +202,6 @@ SECTIONS
 
 	.init.data : AT(ADDR(.init.data) - LOAD_OFFSET) {
 		INIT_DATA
-		__vtop_table_begin = .;
-		KEEP(*(.vtop_fixup));
-		__vtop_table_end = .;
-		__ptov_table_begin = .;
-		KEEP(*(.ptov_fixup));
-		__ptov_table_end = .;
 	}
 
 	.init.setup : AT(ADDR(.init.setup) - LOAD_OFFSET) {
@@ -233,8 +215,6 @@ SECTIONS
 	.con_initcall.init : AT(ADDR(.con_initcall.init) - LOAD_OFFSET) {
 		CON_INITCALL
 	}
-
-	SECURITY_INIT
 
 	. = ALIGN(8);
 	__ftr_fixup : AT(ADDR(__ftr_fixup) - LOAD_OFFSET) {
@@ -290,6 +270,7 @@ SECTIONS
 		*(.dynamic)
 	}
 	.hash : AT(ADDR(.hash) - LOAD_OFFSET) { *(.hash) }
+	.gnu.hash : AT(ADDR(.gnu.hash) - LOAD_OFFSET) { *(.gnu.hash) }
 	.interp : AT(ADDR(.interp) - LOAD_OFFSET) { *(.interp) }
 	.rela.dyn : AT(ADDR(.rela.dyn) - LOAD_OFFSET)
 	{
@@ -327,6 +308,7 @@ SECTIONS
 		*(.sdata2)
 		*(.got.plt) *(.got)
 		*(.plt)
+		*(.branch_lt)
 	}
 #else
 	.data : AT(ADDR(.data) - LOAD_OFFSET) {
@@ -335,12 +317,6 @@ SECTIONS
 		*(.toc1)
 		*(.branch_lt)
 	}
-
-#ifdef CONFIG_DEBUG_INFO_BTF
-	.BTF : AT(ADDR(.BTF) - LOAD_OFFSET) {
-		*(.BTF)
-	}
-#endif
 
 	.opd : AT(ADDR(.opd) - LOAD_OFFSET) {
 		__start_opd = .;
@@ -362,7 +338,7 @@ SECTIONS
 #endif
 
 	/* The initial task and kernel stack */
-	INIT_TASK_DATA_SECTION(THREAD_SIZE)
+	INIT_TASK_DATA_SECTION(THREAD_ALIGN)
 
 	.data..page_aligned : AT(ADDR(.data..page_aligned) - LOAD_OFFSET) {
 		PAGE_ALIGNED_DATA(PAGE_SIZE)
@@ -398,8 +374,8 @@ SECTIONS
 	PROVIDE32 (end = .);
 
 	STABS_DEBUG
-
 	DWARF_DEBUG
+	ELF_DETAILS
 
 	DISCARDS
 	/DISCARD/ : {

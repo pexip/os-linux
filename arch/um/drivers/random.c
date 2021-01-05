@@ -23,8 +23,6 @@
 #define RNG_VERSION "1.0.0"
 #define RNG_MODULE_NAME "hw_random"
 
-#define RNG_MISCDEV_MINOR		183 /* official */
-
 /* Changed at init time, in the non-modular case, and at module load
  * time, in the module case.  Presumably, the module subsystem
  * protects against a module being loaded twice at the same time.
@@ -73,7 +71,6 @@ static ssize_t rng_dev_read (struct file *filp, char __user *buf, size_t size,
 				return ret ? : -EAGAIN;
 
 			atomic_inc(&host_sleep_count);
-			reactivate_fd(random_fd, RANDOM_IRQ);
 			add_sigio_fd(random_fd);
 
 			add_wait_queue(&host_read_wait, &wait);
@@ -105,7 +102,7 @@ static const struct file_operations rng_chrdev_ops = {
 
 /* rng_init shouldn't be called more than once at boot time */
 static struct miscdevice rng_miscdev = {
-	RNG_MISCDEV_MINOR,
+	HWRNG_MINOR,
 	RNG_MODULE_NAME,
 	&rng_chrdev_ops,
 };

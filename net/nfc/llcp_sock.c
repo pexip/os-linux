@@ -1,18 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Copyright (C) 2011  Intel Corporation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #define pr_fmt(fmt) "llcp: %s: " fmt, __func__
@@ -230,7 +218,7 @@ error:
 }
 
 static int nfc_llcp_setsockopt(struct socket *sock, int level, int optname,
-			       char __user *optval, unsigned int optlen)
+			       sockptr_t optval, unsigned int optlen)
 {
 	struct sock *sk = sock->sk;
 	struct nfc_llcp_sock *llcp_sock = nfc_llcp_sock(sk);
@@ -253,7 +241,7 @@ static int nfc_llcp_setsockopt(struct socket *sock, int level, int optname,
 			break;
 		}
 
-		if (get_user(opt, (u32 __user *) optval)) {
+		if (copy_from_sockptr(&opt, optval, sizeof(u32))) {
 			err = -EFAULT;
 			break;
 		}
@@ -275,7 +263,7 @@ static int nfc_llcp_setsockopt(struct socket *sock, int level, int optname,
 			break;
 		}
 
-		if (get_user(opt, (u32 __user *) optval)) {
+		if (copy_from_sockptr(&opt, optval, sizeof(u32))) {
 			err = -EFAULT;
 			break;
 		}
@@ -731,6 +719,10 @@ static int llcp_sock_connect(struct socket *sock, struct sockaddr *_addr,
 	llcp_sock->service_name = kmemdup(addr->service_name,
 					  llcp_sock->service_name_len,
 					  GFP_KERNEL);
+	if (!llcp_sock->service_name) {
+		ret = -ENOMEM;
+		goto sock_llcp_release;
+	}
 
 	nfc_llcp_sock_link(&local->connecting_sockets, sk);
 
@@ -750,9 +742,10 @@ static int llcp_sock_connect(struct socket *sock, struct sockaddr *_addr,
 	return ret;
 
 sock_unlink:
-	nfc_llcp_put_ssap(local, llcp_sock->ssap);
-
 	nfc_llcp_sock_unlink(&local->connecting_sockets, sk);
+
+sock_llcp_release:
+	nfc_llcp_put_ssap(local, llcp_sock->ssap);
 
 put_dev:
 	nfc_put_device(dev);
@@ -928,8 +921,6 @@ static const struct proto_ops llcp_rawsock_ops = {
 	.ioctl          = sock_no_ioctl,
 	.listen         = sock_no_listen,
 	.shutdown       = sock_no_shutdown,
-	.setsockopt     = sock_no_setsockopt,
-	.getsockopt     = sock_no_getsockopt,
 	.sendmsg        = sock_no_sendmsg,
 	.recvmsg        = llcp_sock_recvmsg,
 	.mmap           = sock_no_mmap,
