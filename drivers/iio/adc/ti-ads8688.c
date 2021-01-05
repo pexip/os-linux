@@ -1,9 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2015 Prevas A/S
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
  */
 
 #include <linux/device.h>
@@ -452,8 +449,6 @@ static int ads8688_probe(struct spi_device *spi)
 	st->spi = spi;
 
 	indio_dev->name = spi_get_device_id(spi)->name;
-	indio_dev->dev.parent = &spi->dev;
-	indio_dev->dev.of_node = spi->dev.of_node;
 	indio_dev->modes = INDIO_DIRECT_MODE;
 	indio_dev->channels = st->chip_info->channels;
 	indio_dev->num_channels = st->chip_info->num_channels;
@@ -523,6 +518,6 @@ static struct spi_driver ads8688_driver = {
 };
 module_spi_driver(ads8688_driver);
 
-MODULE_AUTHOR("Sean Nyekjaer <sean.nyekjaer@prevas.dk>");
+MODULE_AUTHOR("Sean Nyekjaer <sean@geanix.dk>");
 MODULE_DESCRIPTION("Texas Instruments ADS8688 driver");
 MODULE_LICENSE("GPL v2");

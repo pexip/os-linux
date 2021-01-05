@@ -317,7 +317,7 @@ static int pci1710_ai_read_sample(struct comedi_device *dev,
 		chan = sample >> 12;
 		if (chan != devpriv->act_chanlist[cur_chan]) {
 			dev_err(dev->class_dev,
-				"A/D data droput: received from channel %d, expected %d\n",
+				"A/D data dropout: received from channel %d, expected %d\n",
 				chan, devpriv->act_chanlist[cur_chan]);
 			return -ENODATA;
 		}
@@ -958,6 +958,6 @@ static struct pci_driver adv_pci1710_pci_driver = {
 };
 module_comedi_pci_driver(adv_pci1710_driver, adv_pci1710_pci_driver);
 
-MODULE_AUTHOR("Comedi http://www.comedi.org");
+MODULE_AUTHOR("Comedi https://www.comedi.org");
 MODULE_DESCRIPTION("Comedi: Advantech PCI-1710 Series Multifunction DAS Cards");
 MODULE_LICENSE("GPL");

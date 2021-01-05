@@ -1,23 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * HD audio interface patch for Conexant HDA audio codec
  *
  * Copyright (c) 2006 Pototskiy Akex <alex.pototskiy@gmail.com>
  * 		      Takashi Iwai <tiwai@suse.de>
  * 		      Tobin Davis  <tdavis@dsl-only.net>
- *
- *  This driver is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This driver is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
 #include <linux/init.h>
@@ -27,7 +14,7 @@
 #include <sound/core.h>
 #include <sound/jack.h>
 
-#include "hda_codec.h"
+#include <sound/hda_codec.h>
 #include "hda_local.h"
 #include "hda_auto_parser.h"
 #include "hda_beep.h"
@@ -129,7 +116,7 @@ static void cx_auto_parse_eapd(struct hda_codec *codec)
 }
 
 static void cx_auto_turn_eapd(struct hda_codec *codec, int num_pins,
-			      hda_nid_t *pins, bool on)
+			      const hda_nid_t *pins, bool on)
 {
 	int i;
 	for (i = 0; i < num_pins; i++) {
@@ -150,14 +137,16 @@ static void cx_auto_vmaster_hook(void *private_data, int enabled)
 }
 
 /* turn on/off EAPD according to Master switch (inversely!) for mute LED */
-static void cx_auto_vmaster_hook_mute_led(void *private_data, int enabled)
+static int cx_auto_vmaster_mute_led(struct led_classdev *led_cdev,
+				    enum led_brightness brightness)
 {
-	struct hda_codec *codec = private_data;
+	struct hda_codec *codec = dev_to_hda_codec(led_cdev->dev->parent);
 	struct conexant_spec *spec = codec->spec;
 
 	snd_hda_codec_write(codec, spec->mute_led_eapd, 0,
 			    AC_VERB_SET_EAPD_BTLENABLE,
-			    enabled ? 0x00 : 0x02);
+			    brightness ? 0x02 : 0x00);
+	return 0;
 }
 
 static int cx_auto_init(struct hda_codec *codec)
@@ -579,7 +568,7 @@ static void cxt_fixup_mute_led_eapd(struct hda_codec *codec,
 	if (action == HDA_FIXUP_ACT_PRE_PROBE) {
 		spec->mute_led_eapd = 0x1b;
 		spec->dynamic_eapd = 1;
-		spec->gen.vmaster_mute.hook = cx_auto_vmaster_hook_mute_led;
+		snd_hda_gen_add_mute_led_cdev(codec, cx_auto_vmaster_mute_led);
 	}
 }
 
@@ -644,21 +633,25 @@ static void cxt_update_gpio_led(struct hda_codec *codec, unsigned int mask,
 }
 
 /* turn on/off mute LED via GPIO per vmaster hook */
-static void cxt_fixup_gpio_mute_hook(void *private_data, int enabled)
+static int cxt_gpio_mute_update(struct led_classdev *led_cdev,
+				enum led_brightness brightness)
 {
-	struct hda_codec *codec = private_data;
+	struct hda_codec *codec = dev_to_hda_codec(led_cdev->dev->parent);
 	struct conexant_spec *spec = codec->spec;
-	/* muted -> LED on */
-	cxt_update_gpio_led(codec, spec->gpio_mute_led_mask, !enabled);
+
+	cxt_update_gpio_led(codec, spec->gpio_mute_led_mask, brightness);
+	return 0;
 }
 
 /* turn on/off mic-mute LED via GPIO per capture hook */
-static void cxt_gpio_micmute_update(struct hda_codec *codec)
+static int cxt_gpio_micmute_update(struct led_classdev *led_cdev,
+				   enum led_brightness brightness)
 {
+	struct hda_codec *codec = dev_to_hda_codec(led_cdev->dev->parent);
 	struct conexant_spec *spec = codec->spec;
 
-	cxt_update_gpio_led(codec, spec->gpio_mic_led_mask,
-			    spec->gen.micmute_led.led_value);
+	cxt_update_gpio_led(codec, spec->gpio_mic_led_mask, brightness);
+	return 0;
 }
 
 
@@ -673,12 +666,12 @@ static void cxt_fixup_mute_led_gpio(struct hda_codec *codec,
 	};
 
 	if (action == HDA_FIXUP_ACT_PRE_PROBE) {
-		spec->gen.vmaster_mute.hook = cxt_fixup_gpio_mute_hook;
+		snd_hda_gen_add_mute_led_cdev(codec, cxt_gpio_mute_update);
 		spec->gpio_led = 0;
 		spec->mute_led_polarity = 0;
 		spec->gpio_mute_led_mask = 0x01;
 		spec->gpio_mic_led_mask = 0x02;
-		snd_hda_gen_add_micmute_led(codec, cxt_gpio_micmute_update);
+		snd_hda_gen_add_micmute_led_cdev(codec, cxt_gpio_micmute_update);
 	}
 	snd_hda_add_verbs(codec, gpio_init);
 	if (spec->gpio_led)
@@ -973,10 +966,10 @@ static const struct hda_model_fixup cxt5066_fixup_models[] = {
 static void add_cx5051_fake_mutes(struct hda_codec *codec)
 {
 	struct conexant_spec *spec = codec->spec;
-	static hda_nid_t out_nids[] = {
+	static const hda_nid_t out_nids[] = {
 		0x10, 0x11, 0
 	};
-	hda_nid_t *p;
+	const hda_nid_t *p;
 
 	for (p = out_nids; *p; p++)
 		snd_hda_override_amp_caps(codec, *p, HDA_OUTPUT,
@@ -1001,8 +994,6 @@ static int patch_conexant_auto(struct hda_codec *codec)
 
 	cx_auto_parse_eapd(codec);
 	spec->gen.own_eapd_ctl = 1;
-	if (spec->dynamic_eapd)
-		spec->gen.vmaster_mute.hook = cx_auto_vmaster_hook;
 
 	switch (codec->core.vendor_id) {
 	case 0x14f15045:
@@ -1027,7 +1018,7 @@ static int patch_conexant_auto(struct hda_codec *codec)
 		break;
 	case 0x14f150f2:
 		codec->power_save_node = 1;
-		/* Fall through */
+		fallthrough;
 	default:
 		codec->pin_amp_workaround = 1;
 		snd_hda_pick_fixup(codec, cxt5066_fixup_models,
@@ -1035,17 +1026,8 @@ static int patch_conexant_auto(struct hda_codec *codec)
 		break;
 	}
 
-	/* Show mute-led control only on HP laptops
-	 * This is a sort of white-list: on HP laptops, EAPD corresponds
-	 * only to the mute-LED without actualy amp function.  Meanwhile,
-	 * others may use EAPD really as an amp switch, so it might be
-	 * not good to expose it blindly.
-	 */
-	switch (codec->core.subsystem_id >> 16) {
-	case 0x103c:
-		spec->gen.vmaster_mute_enum = 1;
-		break;
-	}
+	if (!spec->gen.vmaster_mute.hook && spec->dynamic_eapd)
+		spec->gen.vmaster_mute.hook = cx_auto_vmaster_hook;
 
 	snd_hda_apply_fixup(codec, HDA_FIXUP_ACT_PRE_PROBE);
 

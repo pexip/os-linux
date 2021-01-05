@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
     i2c-dev.c - i2c-bus driver, char device interface
 
@@ -5,15 +6,6 @@
     Copyright (C) 1998-99 Frodo Looijaard <frodol@dds.nl>
     Copyright (C) 2003 Greg Kroah-Hartman <greg@kroah.com>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
 */
 
 /* Note that this is a complete rewrite of Simon Vogl's i2c-dev module.
@@ -23,6 +15,7 @@
 /* The I2C_RDWR ioctl code is written by Kolja Waschk <waschk@telos.de> */
 
 #include <linux/cdev.h>
+#include <linux/compat.h>
 #include <linux/device.h>
 #include <linux/fs.h>
 #include <linux/i2c-dev.h>
@@ -35,7 +28,6 @@
 #include <linux/notifier.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
-#include <linux/compat.h>
 
 /*
  * An i2c_dev represents an i2c_adapter ... an I2C or SMBus master, not a
@@ -52,7 +44,7 @@ struct i2c_dev {
 	struct cdev cdev;
 };
 
-#define I2C_MINORS	MINORMASK
+#define I2C_MINORS	(MINORMASK + 1)
 static LIST_HEAD(i2c_dev_list);
 static DEFINE_SPINLOCK(i2c_dev_list_lock);
 
@@ -769,8 +761,8 @@ static void __exit i2c_dev_exit(void)
 	unregister_chrdev_region(MKDEV(I2C_MAJOR, 0), I2C_MINORS);
 }
 
-MODULE_AUTHOR("Frodo Looijaard <frodol@dds.nl> and "
-		"Simon G. Vogl <simon@tk.uni-linz.ac.at>");
+MODULE_AUTHOR("Frodo Looijaard <frodol@dds.nl>");
+MODULE_AUTHOR("Simon G. Vogl <simon@tk.uni-linz.ac.at>");
 MODULE_DESCRIPTION("I2C /dev entries driver");
 MODULE_LICENSE("GPL");
 

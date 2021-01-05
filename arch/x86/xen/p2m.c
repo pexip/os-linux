@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0
+
 /*
  * Xen leaves the responsibility for maintaining p2m mappings to the
  * guests themselves, but it must also access and update the p2m array
@@ -65,7 +67,7 @@
 #include <linux/hash.h>
 #include <linux/sched.h>
 #include <linux/seq_file.h>
-#include <linux/bootmem.h>
+#include <linux/memblock.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 
@@ -179,8 +181,15 @@ static void p2m_init_identity(unsigned long *p2m, unsigned long pfn)
 
 static void * __ref alloc_p2m_page(void)
 {
-	if (unlikely(!slab_is_available()))
-		return alloc_bootmem_align(PAGE_SIZE, PAGE_SIZE);
+	if (unlikely(!slab_is_available())) {
+		void *ptr = memblock_alloc(PAGE_SIZE, PAGE_SIZE);
+
+		if (!ptr)
+			panic("%s: Failed to allocate %lu bytes align=0x%lx\n",
+			      __func__, PAGE_SIZE, PAGE_SIZE);
+
+		return ptr;
+	}
 
 	return (void *)__get_free_page(GFP_KERNEL);
 }
@@ -188,7 +197,7 @@ static void * __ref alloc_p2m_page(void)
 static void __ref free_p2m_page(void *p)
 {
 	if (unlikely(!slab_is_available())) {
-		free_bootmem((unsigned long)p, PAGE_SIZE);
+		memblock_free((unsigned long)p, PAGE_SIZE);
 		return;
 	}
 
@@ -370,12 +379,8 @@ static void __init xen_rebuild_p2m_list(unsigned long *p2m)
 
 		if (type == P2M_TYPE_PFN || i < chunk) {
 			/* Use initial p2m page contents. */
-#ifdef CONFIG_X86_64
 			mfns = alloc_p2m_page();
 			copy_page(mfns, xen_p2m_addr + pfn);
-#else
-			mfns = xen_p2m_addr + pfn;
-#endif
 			ptep = populate_extra_pte((unsigned long)(p2m + pfn));
 			set_pte(ptep,
 				pfn_pte(PFN_DOWN(__pa(mfns)), PAGE_KERNEL));
@@ -458,7 +463,7 @@ EXPORT_SYMBOL_GPL(get_phys_to_machine);
  * Allocate new pmd(s). It is checked whether the old pmd is still in place.
  * If not, nothing is changed. This is okay as the only reason for allocating
  * a new pmd is to replace p2m_missing_pte or p2m_identity_pte by a individual
- * pmd. In case of PAE/x86-32 there are multiple pmds to allocate!
+ * pmd.
  */
 static pte_t *alloc_p2m_pmd(unsigned long addr, pte_t *pte_pg)
 {
@@ -654,8 +659,7 @@ bool __set_phys_to_machine(unsigned long pfn, unsigned long mfn)
 
 	/*
 	 * The interface requires atomic updates on p2m elements.
-	 * xen_safe_write_ulong() is using __put_user which does an atomic
-	 * store via asm().
+	 * xen_safe_write_ulong() is using an atomic store via asm().
 	 */
 	if (likely(!xen_safe_write_ulong(xen_p2m_addr + pfn, mfn)))
 		return true;
@@ -808,9 +812,6 @@ static struct dentry *d_mmu_debug;
 static int __init xen_p2m_debugfs(void)
 {
 	struct dentry *d_xen = xen_init_debugfs();
-
-	if (d_xen == NULL)
-		return -ENOMEM;
 
 	d_mmu_debug = debugfs_create_dir("mmu", d_xen);
 

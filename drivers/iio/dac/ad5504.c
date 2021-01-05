@@ -1,9 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * AD5504, AD5501 High Voltage Digital to Analog Converter
  *
  * Copyright 2011 Analog Devices Inc.
- *
- * Licensed under the GPL-2.
  */
 
 #include <linux/interrupt.h>
@@ -44,8 +43,8 @@
  * @spi:			spi_device
  * @reg:		supply regulator
  * @vref_mv:		actual reference voltage used
- * @pwr_down_mask	power down mask
- * @pwr_down_mode	current power down mode
+ * @pwr_down_mask:	power down mask
+ * @pwr_down_mode:	current power down mode
  * @data:		transfer buffer
  */
 struct ad5504_state {
@@ -58,10 +57,9 @@ struct ad5504_state {
 	__be16				data[2] ____cacheline_aligned;
 };
 
-/**
+/*
  * ad5504_supported_device_ids:
  */
-
 enum ad5504_supported_device_ids {
 	ID_AD5504,
 	ID_AD5501,
@@ -305,7 +303,6 @@ static int ad5504_probe(struct spi_device *spi)
 
 	st->reg = reg;
 	st->spi = spi;
-	indio_dev->dev.parent = &spi->dev;
 	indio_dev->name = spi_get_device_id(st->spi)->name;
 	indio_dev->info = &ad5504_info;
 	if (spi_get_device_id(st->spi)->driver_data == ID_AD5501)
@@ -369,6 +366,6 @@ static struct spi_driver ad5504_driver = {
 };
 module_spi_driver(ad5504_driver);
 
-MODULE_AUTHOR("Michael Hennerich <hennerich@blackfin.uclinux.org>");
+MODULE_AUTHOR("Michael Hennerich <michael.hennerich@analog.com>");
 MODULE_DESCRIPTION("Analog Devices AD5501/AD5501 DAC");
 MODULE_LICENSE("GPL v2");

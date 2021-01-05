@@ -1,19 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * dwmac-sunxi.c - Allwinner sunxi DWMAC specific glue layer
  *
  * Copyright (C) 2013 Chen-Yu Tsai
  *
  * Chen-Yu Tsai  <wens@csie.org>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
 
 #include <linux/stmmac.h>
@@ -27,7 +18,7 @@
 #include "stmmac_platform.h"
 
 struct sunxi_priv_data {
-	int interface;
+	phy_interface_t interface;
 	int clk_enabled;
 	struct clk *tx_clk;
 	struct regulator *regulator;
@@ -127,7 +118,11 @@ static int sun7i_gmac_probe(struct platform_device *pdev)
 		goto err_remove_config_dt;
 	}
 
-	gmac->interface = of_get_phy_mode(dev->of_node);
+	ret = of_get_phy_mode(dev->of_node, &gmac->interface);
+	if (ret && ret != -ENODEV) {
+		dev_err(dev, "Can't get phy-mode\n");
+		goto err_remove_config_dt;
+	}
 
 	gmac->tx_clk = devm_clk_get(dev, "allwinner_gmac_tx");
 	if (IS_ERR(gmac->tx_clk)) {

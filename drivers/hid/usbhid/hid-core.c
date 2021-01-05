@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *  USB HID support for Linux
  *
@@ -9,10 +10,6 @@
  */
 
 /*
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
  */
 
 #include <linux/module.h>
@@ -1670,7 +1667,7 @@ struct usb_interface *usbhid_find_interface(int minor)
 
 static int __init hid_init(void)
 {
-	int retval = -ENOMEM;
+	int retval;
 
 	retval = hid_quirks_init(quirks_param, BUS_USB, MAX_USBHID_BOOT_QUIRKS);
 	if (retval)

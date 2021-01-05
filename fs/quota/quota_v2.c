@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  *	vfsv0 quota IO operations on file
  */
@@ -20,8 +21,6 @@
 MODULE_AUTHOR("Jan Kara");
 MODULE_DESCRIPTION("Quota format v2 support");
 MODULE_LICENSE("GPL");
-
-#define __QUOTA_V2_PARANOIA
 
 static void v2r0_mem2diskdqb(void *dp, struct dquot *dquot);
 static void v2r0_disk2memdqb(struct dquot *dquot, void *dp);
@@ -78,7 +77,7 @@ static int v2_check_quota_file(struct super_block *sb, int type)
 	struct v2_disk_dqheader dqhead;
 	static const uint quota_magics[] = V2_INITQMAGICS;
 	static const uint quota_versions[] = V2_INITQVERSIONS;
- 
+
 	if (v2_read_header(sb, type, &dqhead))
 		return 0;
 	if (le32_to_cpu(dqhead.dqh_magic) != quota_magics[type] ||
@@ -157,6 +156,25 @@ static int v2_read_file_info(struct super_block *sb, int type)
 	} else {
 		qinfo->dqi_entry_size = sizeof(struct v2r1_disk_dqblk);
 		qinfo->dqi_ops = &v2r1_qtree_ops;
+	}
+	ret = -EUCLEAN;
+	/* Some sanity checks of the read headers... */
+	if ((loff_t)qinfo->dqi_blocks << qinfo->dqi_blocksize_bits >
+	    i_size_read(sb_dqopt(sb)->files[type])) {
+		quota_error(sb, "Number of blocks too big for quota file size (%llu > %llu).",
+		    (loff_t)qinfo->dqi_blocks << qinfo->dqi_blocksize_bits,
+		    i_size_read(sb_dqopt(sb)->files[type]));
+		goto out;
+	}
+	if (qinfo->dqi_free_blk >= qinfo->dqi_blocks) {
+		quota_error(sb, "Free block number too big (%u >= %u).",
+			    qinfo->dqi_free_blk, qinfo->dqi_blocks);
+		goto out;
+	}
+	if (qinfo->dqi_free_entry >= qinfo->dqi_blocks) {
+		quota_error(sb, "Block with free entry too big (%u >= %u).",
+			    qinfo->dqi_free_entry, qinfo->dqi_blocks);
+		goto out;
 	}
 	ret = 0;
 out:
