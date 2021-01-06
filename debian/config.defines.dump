@@ -8,7 +8,7 @@ tp3
 (dp4
 Vabiname
 p5
-V1
+V1pexip1
 p6
 sVignore-changes
 p7
@@ -250,7 +250,7 @@ aVx32
 p127
 asVcompiler
 p128
-Vgcc-10
+Vgcc-8
 p129
 sVfeaturesets
 p130
@@ -277,7 +277,7 @@ tp141
 (dp142
 Venabled
 p143
-I01
+I00
 ss(Vdescription
 p144
 tp145
@@ -311,9 +311,9 @@ ass(Vrelations
 p162
 tp163
 (dp164
-Vgcc-10
+Vgcc-8
 p165
-Vgcc-10 <!stage1 !cross !pkg.linux.nokernel>, gcc-10-@gnu-type-package@ <!stage1 cross !pkg.linux.nokernel>
+Vgcc-8 <!stage1 !cross !pkg.linux.nokernel>, gcc-8-@gnu-type-package@ <!stage1 cross !pkg.linux.nokernel>
 p166
 sVinitramfs-fallback
 p167
@@ -441,7 +441,7 @@ Varch/x86/boot/bzImage
 p234
 sVsigned-code
 p235
-I01
+I00
 sVvdso
 p236
 I01
@@ -473,9 +473,9 @@ p250
 g221
 tp251
 (dp252
-Vheaders%gcc-10
+Vheaders%gcc-8
 p253
-Vlinux-compiler-gcc-10-x86
+Vlinux-compiler-gcc-8-x86
 p254
 ss(Vdescription
 p255
@@ -1104,9 +1104,9 @@ p590
 g556
 tp591
 (dp592
-Vheaders%gcc-10
+Vheaders%gcc-8
 p593
-Vlinux-compiler-gcc-10-x86
+Vlinux-compiler-gcc-8-x86
 p594
 ss(Vdescription
 p595
@@ -3039,7 +3039,7 @@ tp1628
 (dp1629
 Vsource
 p1630
-V5.10.4-1
+V5.10.4-1pexip1
 p1631
 sVupstream
 p1632
@@ -3051,6 +3051,6 @@ V5.10.0
 p1635
 sVabiname
 p1636
-V5.10.0-1
+V5.10.0-1pexip1
 p1637
 ss.

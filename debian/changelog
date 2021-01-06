@@ -1,3 +1,13 @@
+linux (5.10.4-1pexip1) pexip; urgency=medium
+
+  * Update packaging for 5.10
+  * Remove docs packages from template
+  * Revert to using gcc 8
+  * Remove all installer packages	
+  * Regenerate package control files
+
+ -- Vincent Sanders <vince@pexip.com>  Wed, 06 Jan 2021 10:28:54 +0000
+
 linux (5.10.4-1) unstable; urgency=medium
 
   * New upstream stable update:

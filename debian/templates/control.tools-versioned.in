@@ -30,7 +30,6 @@ Recommends: linux-base
 Provides: linux-tools-@version@
 Conflicts: linux-tools-@version@
 Replaces: linux-tools-@version@
-Suggests: linux-doc-@version@
 Description: Performance analysis tools for Linux @version@
  This package contains the 'perf' performance analysis tools for Linux
  kernel version @version@.

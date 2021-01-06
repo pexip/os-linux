@@ -16,9 +16,9 @@ Description: Compiler for Linux on IBM zSeries (meta-package)
  This package depends on GCC of the appropriate version and architecture
  for Linux on s390 and s390x.
 
-Package: linux-compiler-gcc-10-x86
+Package: linux-compiler-gcc-8-x86
 Build-Profiles: <!stage1>
-Depends: gcc-10, ${misc:Depends}
+Depends: gcc-8 (>= 8-20180123-1~), ${misc:Depends}
 Architecture: amd64 i386 x32
 Multi-Arch: foreign
 Description: Compiler for Linux on x86 (meta-package)
