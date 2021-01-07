@@ -44,7 +44,7 @@ b1887cde47d3fafdbfd8b05feb4e6c40  debian/config/i386/defines
 aa0dc1c23ac4dee04d5abc5bca888f72  debian/config/mips64el/defines
 8f2e4969633ff660d026f2b7e02e6336  debian/config/sh3/defines
 27ed61864d13f791e07f6ad8e688de2a  debian/config/armhf/defines
-4e6193d1fc604db8f92d00910dd0fa09  debian/config/amd64/defines
+088a4fe01d53cd0519119044a7920335  debian/config/amd64/defines
 85c1ae5e3f2e17492053f7de76474463  debian/config/mipsr6el/defines
 77050c7df77b8cb300155f7e4876a7bb  debian/config/mips/defines
 44bff3917069a99eeb20ceff24609dda  debian/config/arm64/defines
@@ -77,7 +77,7 @@ c687c34582869dfb08f47ec435997514  debian/config/s390x/defines
 7146ff53fc4f9fbb49948225d8589b69  debian/config/i386/rt/defines
 b4a45606f37c0d82a63779aa862528d9  debian/config/armhf/none/defines
 1cab87ca080defc647d4ae9adcf9a63a  debian/config/armhf/rt/defines
-5ecc16c27932acb9ff514badae52b51f  debian/config/amd64/none/defines
+ac369df163e1b5a5be5a8708c8a41fc0  debian/config/amd64/none/defines
 7dc981827930ed6844a731ed954b9b9d  debian/config/amd64/rt/defines
 50ee12dd2cf9fe79bee7141560985f79  debian/config/arm64/none/defines
 d3c04182d8746e4871de922a63f03f97  debian/config/arm64/rt/defines

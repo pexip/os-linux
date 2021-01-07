@@ -3,7 +3,8 @@ linux (5.10.4-1pexip1) pexip; urgency=medium
   * Update packaging for 5.10
   * Remove docs packages from template
   * Revert to using gcc 8
-  * Remove all installer packages	
+  * Remove all installer packages
+  * Change config to building cloud images (as default) only
   * Regenerate package control files
 
  -- Vincent Sanders <vince@pexip.com>  Wed, 06 Jan 2021 10:28:54 +0000

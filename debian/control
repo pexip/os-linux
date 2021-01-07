@@ -394,66 +394,6 @@ Description: Debugging symbols for Linux amd64 configuration (meta-package)
  Linux kernel amd64 configuration.
 Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
 
-Package: linux-image-5.10.0-1pexip1-cloud-amd64
-Architecture: amd64
-Depends: kmod, linux-base (>= 4.3~), linux-bootwrapper-5.10.0-1pexip1 [powerpc ppc64], ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [amd64] | linux-initramfs-tool [amd64]
-Recommends: firmware-linux-free, apparmor [amd64]
-Suggests: debian-kernel-handbook, grub-pc [amd64] | grub-efi-amd64 [amd64] | extlinux [amd64]
-Breaks: xserver-xorg-input-vmmouse (<< 1:13.0.99) [amd64], wireless-regdb (<< 2019.06.03-1~) [amd64], initramfs-tools (<< 0.120+deb8u2)
-Description: Linux 5.10 for x86-64 cloud
- The Linux kernel 5.10 and modules for use on cloud platforms including
- Amazon EC2, Microsoft Azure, and Google Compute Engine.
-Build-Profiles: <!stage1 !pkg.linux.nokernel>
-
-Package: linux-headers-5.10.0-1pexip1-cloud-amd64
-Architecture: amd64
-Depends: linux-headers-5.10.0-1pexip1-common (= ${source:Version}), linux-kbuild-5.10 (>= ${source:Version}), ${misc:Depends}, linux-compiler-gcc-8-x86
-Description: Header files for Linux 5.10.0-1pexip1-cloud-amd64
- This package provides the architecture-specific kernel header files for
- Linux kernel 5.10.0-1pexip1-cloud-amd64, generally used for building
- out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-5.10.0-1pexip1-cloud-amd64, and can be used for
- building modules that load into the kernel provided by the
- linux-image-5.10.0-1pexip1-cloud-amd64 package.
-Build-Profiles: <!stage1 !pkg.linux.nokernel>
-
-Package: linux-image-cloud-amd64
-Architecture: amd64
-Provides: linux-latest-modules-5.10.0-1pexip1-cloud-amd64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-5.10.0-1pexip1-cloud-amd64 (= ${binary:Version}), ${misc:Depends}
-Description: Linux for x86-64 cloud (meta-package)
- This package depends on the latest Linux kernel and modules for use on
- cloud platforms including Amazon EC2, Microsoft Azure, and Google Compute
- Engine.
-Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
-
-Package: linux-headers-cloud-amd64
-Architecture: amd64
-Depends: linux-headers-5.10.0-1pexip1-cloud-amd64 (= ${binary:Version}), ${misc:Depends}
-Description: Header files for Linux cloud-amd64 configuration (meta-package)
- This package depends on the architecture-specific header files for the
- latest Linux kernel cloud-amd64 configuration.
-Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
-
-Package: linux-image-5.10.0-1pexip1-cloud-amd64-dbg
-Architecture: amd64
-Section: debug
-Priority: optional
-Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-5.10.0-1pexip1-cloud-amd64
- This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-5.10.0-1pexip1-cloud-amd64.
-Build-Profiles: <!stage1 !pkg.linux.nokernel>
-
-Package: linux-image-cloud-amd64-dbg
-Architecture: amd64
-Provides: linux-latest-image-dbg
-Depends: linux-image-5.10.0-1pexip1-cloud-amd64-dbg (= ${binary:Version}), ${misc:Depends}
-Description: Debugging symbols for Linux cloud-amd64 configuration (meta-package)
- This package depends on the detached debugging symbols for the latest
- Linux kernel cloud-amd64 configuration.
-Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
-
 Package: linux-image-arm64-signed-template
 Architecture: arm64
 Depends: dpkg-dev, ${misc:Depends}
