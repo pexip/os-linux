@@ -225,7 +225,6 @@ CONFIG_ACPI_NFIT=m
 ## file: drivers/android/Kconfig
 ##
 # CONFIG_ANDROID is not set
-CONFIG_ANDROID_BINDER_IPC=m
 #. This configuration should support Anbox
 CONFIG_ANDROID_BINDER_DEVICES="binder"
 # CONFIG_ANDROID_BINDER_IPC_SELFTEST is not set
@@ -4956,11 +4955,6 @@ CONFIG_SSB_PCMCIAHOST=y
 CONFIG_STAGING=y
 
 ##
-## file: drivers/staging/android/Kconfig
-##
-CONFIG_ASHMEM=m
-
-##
 ## file: drivers/staging/android/ion/Kconfig
 ##
 # CONFIG_ION is not set
@@ -7681,7 +7675,6 @@ CONFIG_NET_KEY_MIGRATE=y
 ## file: security/Kconfig
 ##
 CONFIG_SECURITY_DMESG_RESTRICT=y
-CONFIG_SECURITY_PERF_EVENTS_RESTRICT=y
 CONFIG_SECURITY=y
 CONFIG_SECURITY_NETWORK=y
 CONFIG_SECURITY_NETWORK_XFRM=y
@@ -7760,7 +7753,6 @@ CONFIG_SECURITY_LOCKDOWN_LSM=y
 ## choice: Kernel default lockdown mode
 CONFIG_LOCK_DOWN_KERNEL_FORCE_NONE=y
 ## end choice
-CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y
 
 ##
 ## file: security/selinux/Kconfig

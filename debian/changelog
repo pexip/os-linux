@@ -1,3 +1,14 @@
+linux (5.10.4-1pexip2) pexip; urgency=medium
+
+  * Update configuration to remove unwanted filesystems:
+    BTRFS CEPH CIFS EROFS NFS ORANGEFS ROMFS XFS ZONEFS
+  * Update configuration to remove unwanted protocols:
+    DCCP SCTP TIPC
+  * Update configuration to add missing network drivers:
+    E1000 R8169
+
+ -- Vincent Sanders <vince@pexip.com>  Mon, 11 Jan 2021 09:40:34 +0000
+
 linux (5.10.4-1pexip1) pexip; urgency=medium
 
   * Update packaging for 5.10

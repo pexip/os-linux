@@ -1,0 +1,76 @@
+##
+## file: drivers/net/ethernet/intel/Kconfig
+##
+CONFIG_E1000=m
+
+##
+## file: drivers/net/ethernet/realtek/Kconfig
+##
+CONFIG_NET_VENDOR_REALTEK=y
+CONFIG_R8169=m
+
+##
+## file: fs/btrfs/Kconfig
+##
+# CONFIG_BTRFS_FS is not set
+
+##
+## file: fs/ceph/Kconfig
+##
+# CONFIG_CEPH_FS is not set
+
+##
+## file: fs/cifs/Kconfig
+##
+# CONFIG_CIFS is not set
+
+##
+## file: fs/erofs/Kconfig
+##
+# CONFIG_EROFS_FS is not set
+
+##
+## file: fs/nfs/Kconfig
+##
+# CONFIG_NFS_FS is not set
+
+##
+## file: fs/nfsd/Kconfig
+##
+# CONFIG_NFSD is not set
+
+##
+## file: fs/orangefs/Kconfig
+##
+# CONFIG_ORANGEFS_FS is not set
+
+##
+## file: fs/romfs/Kconfig
+##
+# CONFIG_ROMFS_FS is not set
+
+##
+## file: fs/xfs/Kconfig
+##
+# CONFIG_XFS_FS is not set
+
+##
+## file: fs/zonefs/Kconfig
+##
+# CONFIG_ZONEFS_FS is not set
+
+##
+## file: net/dccp/Kconfig
+##
+# CONFIG_IP_DCCP is not set
+
+##
+## file: net/sctp/Kconfig
+##
+# CONFIG_IP_SCTP is not set
+
+##
+## file: net/tipc/Kconfig
+##
+# CONFIG_TIPC is not set
+

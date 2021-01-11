@@ -7,3 +7,4 @@ default-flavour: amd64
 configs:
  config.cloud
  amd64/config.cloud-amd64
+ amd64/config.pexip-amd64

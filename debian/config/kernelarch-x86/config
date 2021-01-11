@@ -788,9 +788,6 @@ CONFIG_IRQ_REMAP=y
 ##
 CONFIG_INTEL_IOMMU=y
 CONFIG_INTEL_IOMMU_SVM=y
-## choice: Default state of Intel DMA Remapping Devices
-CONFIG_INTEL_IOMMU_DEFAULT_ON_INTGPU_OFF=y
-## end choice
 
 ##
 ## file: drivers/isdn/Kconfig
