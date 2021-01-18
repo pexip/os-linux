@@ -1,3 +1,9 @@
+linux (5.10.4-1pexip3) pexip; urgency=medium
+
+  * Update configuration to allow commandline control of selinux
+
+ -- Vincent Sanders <vince@pexip.com>  Mon, 18 Jan 2021 09:55:34 +0000
+
 linux (5.10.4-1pexip2) pexip; urgency=medium
 
   * Update configuration to remove unwanted filesystems:

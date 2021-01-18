@@ -74,3 +74,8 @@ CONFIG_R8169=m
 ##
 # CONFIG_TIPC is not set
 
+##
+## file: security/selinux/Kconfig
+##
+CONFIG_SECURITY_SELINUX_BOOTPARAM=y
+
