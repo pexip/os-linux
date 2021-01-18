@@ -1,3 +1,9 @@
+linux (5.10.4-1pexip4) pexip; urgency=medium
+
+  * enable fusion mpt drivers for vmware disc
+
+ -- Vincent Sanders <vince@pexip.com>  Mon, 18 Jan 2021 16:16:14 +0000
+
 linux (5.10.4-1pexip3) pexip; urgency=medium
 
   * Update configuration to allow commandline control of selinux
