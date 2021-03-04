@@ -1,3 +1,9 @@
+linux (5.10.4-1pexip5) pexip; urgency=medium
+
+  * enable suspend to RAM for PSS
+
+ -- Vincent Sanders <vince@pexip.com>  Thu, 04 Mar 2021 10:45:52 +0000
+
 linux (5.10.4-1pexip4) pexip; urgency=medium
 
   * enable fusion mpt drivers for vmware disc

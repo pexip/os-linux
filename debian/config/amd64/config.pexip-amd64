@@ -72,6 +72,11 @@ CONFIG_R8169=m
 # CONFIG_ZONEFS_FS is not set
 
 ##
+## file: kernel/power/Kconfig
+##
+CONFIG_SUSPEND=y
+
+##
 ## file: net/dccp/Kconfig
 ##
 # CONFIG_IP_DCCP is not set
