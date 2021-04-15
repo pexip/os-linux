@@ -1,3 +1,14 @@
+linux (5.10.30-1pexip1) pexip; urgency=medium
+
+  * New upstream release 5.10.30
+  * debian/version.patch
+    bugfix/all/firmware-remove-redundant-log-messages-from-drivers.patch
+    debian/makefile-do-not-check-for-libelf-when-building-oot-module.patch
+    features/all/db-mok-keyring/0003-MODSIGN-checking-the-blacklisted-hash-before-loading-a-kernel-module.patch:
+    Remove fuzz
+
+ -- Vincent Sanders <vince@pexip.com>  Thu, 15 Apr 2021 10:51:38 +0100
+
 linux (5.10.4-1pexip5) pexip; urgency=medium
 
   * enable suspend to RAM for PSS
