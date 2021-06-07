@@ -12,14 +12,14 @@ case for that.
 References: https://buildd.debian.org/status/fetch.php?pkg=linux&arch=ia64&ver=5.8.3-1%7Eexp1&stamp=1598340829&raw=1
 Signed-off-by: Ben Hutchings <benh@debian.org>
 ---
---- a/tools/include/uapi/asm/errno.h
-+++ b/tools/include/uapi/asm/errno.h
-@@ -9,10 +9,8 @@
+Index: linux/tools/include/uapi/asm/errno.h
+===================================================================
+--- linux.orig/tools/include/uapi/asm/errno.h
++++ linux/tools/include/uapi/asm/errno.h
+@@ -9,8 +9,8 @@
  #include "../../../arch/alpha/include/uapi/asm/errno.h"
  #elif defined(__mips__)
  #include "../../../arch/mips/include/uapi/asm/errno.h"
--#elif defined(__ia64__)
--#include "../../../arch/ia64/include/uapi/asm/errno.h"
 -#elif defined(__xtensa__)
 -#include "../../../arch/xtensa/include/uapi/asm/errno.h"
 +#elif defined(__hppa__)
