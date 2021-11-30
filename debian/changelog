@@ -1,3 +1,18 @@
+linux (5.10.82-1pexip1) pexip; urgency=medium
+
+  * New upstream release 5.10.82
+  * debian/patches/bugfix/all/fs-add-module_softdep-declarations-for-hard-coded-cr.patch
+    debian/patches/bugfix/all/tools-perf-pmu-events-fix-reproducibility.patch
+    debian/patches/debian/export-symbols-needed-by-android-drivers.patch
+    debian/patches/bugfix/all/partially-revert-net-socket-implement-64-bit-timestamps.patch
+    debian/patches/features/all/db-mok-keyring/0001-MODSIGN-do-not-load-mok-when-secure-boot-disabled.patch
+    debian/patches/features/all/db-mok-keyring/0002-MODSIGN-load-blacklist-from-MOKx.patch:
+    Remove fuzz
+  * debian/patches/bugfix/all/partially-revert-usb-kconfig-using-select-for-usb_co.patch: Removed as applied upstream
+  * Enable Broadcom BNXT driver for Oracle cloud
+
+ -- Vincent Sanders <vince@pexip.com>  Tue, 30 Nov 2021 15:16:12 +0100
+
 linux (5.10.42-1pexip1) pexip; urgency=medium
 
   * New upstream release 5.10.42

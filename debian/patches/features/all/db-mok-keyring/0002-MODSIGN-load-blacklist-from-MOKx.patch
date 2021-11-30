@@ -20,7 +20,7 @@ Signed-off-by: Ben Hutchings <benh@debian.org>
 
 --- a/security/integrity/platform_certs/load_uefi.c
 +++ b/security/integrity/platform_certs/load_uefi.c
-@@ -76,49 +76,59 @@ static __init void *get_cert_list(efi_ch
+@@ -76,49 +76,59 @@
   *
   * Return:	Status
   */
@@ -94,8 +94,8 @@ Signed-off-by: Ben Hutchings <benh@debian.org>
  	return 0;
  }
  
-@@ -175,12 +185,17 @@ static int __init load_uefi_certs(void)
- 		kfree(dbx);
+@@ -191,12 +201,17 @@
+ 		kfree(mokx);
  	}
  
 -	/* the MOK can not be trusted when secure boot is disabled */

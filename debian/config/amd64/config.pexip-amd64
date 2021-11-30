@@ -11,6 +11,24 @@ CONFIG_FUSION_LAN=m
 # CONFIG_FUSION_LOGGING is not set
 
 ##
+## file: drivers/net/ethernet/broadcom/Kconfig
+##
+CONFIG_NET_VENDOR_BROADCOM=y
+# CONFIG_BCMGENET is not set
+# CONFIG_BNX2 is not set
+# CONFIG_CNIC is not set
+# CONFIG_TIGON3 is not set
+# CONFIG_TIGON3_HWMON is not set
+# CONFIG_BNX2X is not set
+# CONFIG_BNX2X_SRIOV is not set
+# CONFIG_SYSTEMPORT is not set
+CONFIG_BNXT=m
+CONFIG_BNXT_SRIOV=y
+CONFIG_BNXT_FLOWER_OFFLOAD=y
+CONFIG_BNXT_DCB=y
+CONFIG_BNXT_HWMON=y
+
+##
 ## file: drivers/net/ethernet/intel/Kconfig
 ##
 CONFIG_E1000=m
