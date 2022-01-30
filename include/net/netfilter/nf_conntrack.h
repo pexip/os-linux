@@ -44,9 +44,23 @@ union nf_conntrack_expect_proto {
 };
 
 struct nf_conntrack_net {
+	/* only used when new connection is allocated: */
+	atomic_t count;
+	unsigned int expect_count;
+	u8 sysctl_auto_assign_helper;
+	bool auto_assign_helper_warned;
+
+	/* only used from work queues, configuration plane, and so on: */
 	unsigned int users4;
 	unsigned int users6;
 	unsigned int users_bridge;
+#ifdef CONFIG_SYSCTL
+	struct ctl_table_header	*sysctl_header;
+#endif
+#ifdef CONFIG_NF_CONNTRACK_EVENTS
+	struct delayed_work ecache_dwork;
+	struct netns_ct *ct_net;
+#endif
 };
 
 #include <linux/types.h>
@@ -262,14 +276,14 @@ static inline bool nf_is_loopback_packet(const struct sk_buff *skb)
 /* jiffies until ct expires, 0 if already expired */
 static inline unsigned long nf_ct_expires(const struct nf_conn *ct)
 {
-	s32 timeout = ct->timeout - nfct_time_stamp;
+	s32 timeout = READ_ONCE(ct->timeout) - nfct_time_stamp;
 
 	return timeout > 0 ? timeout : 0;
 }
 
 static inline bool nf_ct_is_expired(const struct nf_conn *ct)
 {
-	return (__s32)(ct->timeout - nfct_time_stamp) <= 0;
+	return (__s32)(READ_ONCE(ct->timeout) - nfct_time_stamp) <= 0;
 }
 
 /* use after obtaining a reference count */
@@ -288,7 +302,7 @@ static inline bool nf_ct_should_gc(const struct nf_conn *ct)
 static inline void nf_ct_offload_timeout(struct nf_conn *ct)
 {
 	if (nf_ct_expires(ct) < NF_CT_DAY / 2)
-		ct->timeout = nfct_time_stamp + NF_CT_DAY;
+		WRITE_ONCE(ct->timeout, nfct_time_stamp + NF_CT_DAY);
 }
 
 struct kernel_param;
@@ -324,11 +338,19 @@ struct nf_conn *nf_ct_tmpl_alloc(struct net *net,
 void nf_ct_tmpl_free(struct nf_conn *tmpl);
 
 u32 nf_ct_get_id(const struct nf_conn *ct);
+u32 nf_conntrack_count(const struct net *net);
 
 static inline void
 nf_ct_set(struct sk_buff *skb, struct nf_conn *ct, enum ip_conntrack_info info)
 {
 	skb_set_nfct(skb, (unsigned long)ct | info);
+}
+
+extern unsigned int nf_conntrack_net_id;
+
+static inline struct nf_conntrack_net *nf_ct_pernet(const struct net *net)
+{
+	return net_generic(net, nf_conntrack_net_id);
 }
 
 #define NF_CT_STAT_INC(net, count)	  __this_cpu_inc((net)->ct.stat->count)

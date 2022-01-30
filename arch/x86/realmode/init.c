@@ -9,7 +9,7 @@
 #include <asm/realmode.h>
 #include <asm/tlbflush.h>
 #include <asm/crash.h>
-#include <asm/sev-es.h>
+#include <asm/sev.h>
 
 struct real_mode_header *real_mode_header;
 u32 *trampoline_cr4_features;
@@ -28,15 +28,17 @@ void __init reserve_real_mode(void)
 	WARN_ON(slab_is_available());
 
 	/* Has to be under 1M so we can execute real-mode AP code. */
-	mem = memblock_find_in_range(0, 1<<20, size, PAGE_SIZE);
-	if (!mem) {
+	mem = memblock_phys_alloc_range(size, PAGE_SIZE, 0, 1<<20);
+	if (!mem)
 		pr_info("No sub-1M memory is available for the trampoline\n");
-		return;
-	}
+	else
+		set_real_mode_mem(mem);
 
-	memblock_reserve(mem, size);
-	set_real_mode_mem(mem);
-	crash_reserve_low_1M();
+	/*
+	 * Unconditionally reserve the entire fisrt 1M, see comment in
+	 * setup_arch().
+	 */
+	memblock_reserve(0, SZ_1M);
 }
 
 static void sme_sev_setup_real_mode(struct trampoline_header *th)
@@ -70,6 +72,7 @@ static void __init setup_real_mode(void)
 #ifdef CONFIG_X86_64
 	u64 *trampoline_pgd;
 	u64 efer;
+	int i;
 #endif
 
 	base = (unsigned char *)real_mode_header;
@@ -103,7 +106,7 @@ static void __init setup_real_mode(void)
 		*ptr += phys_base;
 	}
 
-	/* Must be perfomed *after* relocation. */
+	/* Must be performed *after* relocation. */
 	trampoline_header = (struct trampoline_header *)
 		__va(real_mode_header->trampoline_header);
 
@@ -126,8 +129,17 @@ static void __init setup_real_mode(void)
 	trampoline_header->flags = 0;
 
 	trampoline_pgd = (u64 *) __va(real_mode_header->trampoline_pgd);
+
+	/* Map the real mode stub as virtual == physical */
 	trampoline_pgd[0] = trampoline_pgd_entry.pgd;
-	trampoline_pgd[511] = init_top_pgt[511].pgd;
+
+	/*
+	 * Include the entirety of the kernel mapping into the trampoline
+	 * PGD.  This way, all mappings present in the normal kernel page
+	 * tables are usable while running on trampoline_pgd.
+	 */
+	for (i = pgd_index(__PAGE_OFFSET); i < PTRS_PER_PGD; i++)
+		trampoline_pgd[i] = init_top_pgt[i].pgd;
 #endif
 
 	sme_sev_setup_real_mode(trampoline_header);

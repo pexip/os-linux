@@ -198,7 +198,7 @@ static void ath11k_copy_regd(struct ieee80211_regdomain *regd_orig,
 		       sizeof(struct ieee80211_reg_rule));
 }
 
-int ath11k_regd_update(struct ath11k *ar, bool init)
+int ath11k_regd_update(struct ath11k *ar)
 {
 	struct ieee80211_regdomain *regd, *regd_copy = NULL;
 	int ret, regd_len, pdev_id;
@@ -209,7 +209,10 @@ int ath11k_regd_update(struct ath11k *ar, bool init)
 
 	spin_lock_bh(&ab->base_lock);
 
-	if (init) {
+	/* Prefer the latest regd update over default if it's available */
+	if (ab->new_regd[pdev_id]) {
+		regd = ab->new_regd[pdev_id];
+	} else {
 		/* Apply the regd received during init through
 		 * WMI_REG_CHAN_LIST_CC event. In case of failure to
 		 * receive the regd, initialize with a default world
@@ -222,8 +225,6 @@ int ath11k_regd_update(struct ath11k *ar, bool init)
 				    "failed to receive default regd during init\n");
 			regd = (struct ieee80211_regdomain *)&ath11k_world_regd;
 		}
-	} else {
-		regd = ab->new_regd[pdev_id];
 	}
 
 	if (!regd) {
@@ -247,7 +248,9 @@ int ath11k_regd_update(struct ath11k *ar, bool init)
 	}
 
 	rtnl_lock();
-	ret = regulatory_set_wiphy_regd_sync_rtnl(ar->hw->wiphy, regd_copy);
+	wiphy_lock(ar->hw->wiphy);
+	ret = regulatory_set_wiphy_regd_sync(ar->hw->wiphy, regd_copy);
+	wiphy_unlock(ar->hw->wiphy);
 	rtnl_unlock();
 
 	kfree(regd_copy);
@@ -278,6 +281,7 @@ ath11k_map_fw_dfs_region(enum ath11k_dfs_region dfs_region)
 	case ATH11K_DFS_REG_KR:
 		return NL80211_DFS_ETSI;
 	case ATH11K_DFS_REG_MKK:
+	case ATH11K_DFS_REG_MKK_N:
 		return NL80211_DFS_JP;
 	default:
 		return NL80211_DFS_UNSET;
@@ -680,7 +684,7 @@ void ath11k_regd_update_work(struct work_struct *work)
 					 regd_update_work);
 	int ret;
 
-	ret = ath11k_regd_update(ar, false);
+	ret = ath11k_regd_update(ar);
 	if (ret) {
 		/* Firmware has already moved to the new regd. We need
 		 * to maintain channel consistency across FW, Host driver

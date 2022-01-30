@@ -903,8 +903,14 @@ u64 *aq_nic_get_stats(struct aq_nic_s *self, u64 *data)
 	data[++i] = stats->mbtc;
 	data[++i] = stats->bbrc;
 	data[++i] = stats->bbtc;
-	data[++i] = stats->ubrc + stats->mbrc + stats->bbrc;
-	data[++i] = stats->ubtc + stats->mbtc + stats->bbtc;
+	if (stats->brc)
+		data[++i] = stats->brc;
+	else
+		data[++i] = stats->ubrc + stats->mbrc + stats->bbrc;
+	if (stats->btc)
+		data[++i] = stats->btc;
+	else
+		data[++i] = stats->ubtc + stats->mbtc + stats->bbtc;
 	data[++i] = stats->dma_pkt_rc;
 	data[++i] = stats->dma_pkt_tc;
 	data[++i] = stats->dma_oct_rc;
@@ -1474,7 +1480,7 @@ int aq_nic_setup_tc_mqprio(struct aq_nic_s *self, u32 tcs, u8 *prio_tc_map)
 		for (i = 0; i < sizeof(cfg->prio_tc_map); i++)
 			cfg->prio_tc_map[i] = cfg->tcs * i / 8;
 
-	cfg->is_qos = (tcs != 0 ? true : false);
+	cfg->is_qos = !!tcs;
 	cfg->is_ptp = (cfg->tcs <= AQ_HW_PTP_TC);
 	if (!cfg->is_ptp)
 		netdev_warn(self->ndev, "%s\n",
