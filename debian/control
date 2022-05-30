@@ -10,7 +10,7 @@ Homepage: https://www.kernel.org/
 Rules-Requires-Root: no
 Vcs-Browser: https://salsa.debian.org/kernel-team/linux
 Vcs-Git: https://salsa.debian.org/kernel-team/linux.git
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ bullseye
 XSBC-Pexip-Original-Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
 XSBC-Pexip-Original-Uploaders: Bastian Blank <waldi@debian.org>, maximilian attems <maks@debian.org>, Ben Hutchings <benh@debian.org>, Salvatore Bonaccorso <carnil@debian.org>
 

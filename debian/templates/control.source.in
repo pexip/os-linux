@@ -42,4 +42,4 @@ Rules-Requires-Root: no
 Vcs-Git: https://salsa.debian.org/kernel-team/linux.git
 Vcs-Browser: https://salsa.debian.org/kernel-team/linux
 Homepage: https://www.kernel.org/
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ bullseye
