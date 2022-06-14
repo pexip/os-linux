@@ -1,5 +1,5 @@
 a46eb172db472ccbe5364b1de7eeb2a0  debian/bin/gencontrol.py
-c7f84194d14c2ac2928bfc82b5e58aad  debian/build/version-info
+27ede20f5617368dc95d313f6e7b02c7  debian/build/version-info
 74b180a87aa1f6377d9bf8a10368c657  debian/templates/control.main.in
 38004750aa03cea41d5d3aeafff16fcc  debian/templates/image.preinst.in
 ce8590d760adf6efb95181ec626c4aca  debian/templates/control.headers.meta.in
