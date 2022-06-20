@@ -480,8 +480,8 @@ int aq_nic_start(struct aq_nic_s *self)
 	if (err < 0)
 		goto err_exit;
 
-	for (i = 0U; self->aq_vecs > i; ++i) {
-		aq_vec = self->aq_vec[i];
+	for (i = 0U, aq_vec = self->aq_vec[0];
+		self->aq_vecs > i; ++i, aq_vec = self->aq_vec[i]) {
 		err = aq_vec_start(aq_vec);
 		if (err < 0)
 			goto err_exit;
@@ -511,8 +511,8 @@ int aq_nic_start(struct aq_nic_s *self)
 		mod_timer(&self->polling_timer, jiffies +
 			  AQ_CFG_POLLING_TIMER_INTERVAL);
 	} else {
-		for (i = 0U; self->aq_vecs > i; ++i) {
-			aq_vec = self->aq_vec[i];
+		for (i = 0U, aq_vec = self->aq_vec[0];
+			self->aq_vecs > i; ++i, aq_vec = self->aq_vec[i]) {
 			err = aq_pci_func_alloc_irq(self, i, self->ndev->name,
 						    aq_vec_isr, aq_vec,
 						    aq_vec_get_affinity_mask(aq_vec));
@@ -1480,7 +1480,7 @@ int aq_nic_setup_tc_mqprio(struct aq_nic_s *self, u32 tcs, u8 *prio_tc_map)
 		for (i = 0; i < sizeof(cfg->prio_tc_map); i++)
 			cfg->prio_tc_map[i] = cfg->tcs * i / 8;
 
-	cfg->is_qos = (tcs != 0 ? true : false);
+	cfg->is_qos = !!tcs;
 	cfg->is_ptp = (cfg->tcs <= AQ_HW_PTP_TC);
 	if (!cfg->is_ptp)
 		netdev_warn(self->ndev, "%s\n",

@@ -144,12 +144,13 @@ static int create_txqs(struct hinic_dev *nic_dev)
 {
 	int err, i, j, num_txqs = hinic_hwdev_num_qps(nic_dev->hwdev);
 	struct net_device *netdev = nic_dev->netdev;
+	size_t txq_size;
 
 	if (nic_dev->txqs)
 		return -EINVAL;
 
-	nic_dev->txqs = devm_kcalloc(&netdev->dev, num_txqs,
-				     sizeof(*nic_dev->txqs), GFP_KERNEL);
+	txq_size = num_txqs * sizeof(*nic_dev->txqs);
+	nic_dev->txqs = devm_kzalloc(&netdev->dev, txq_size, GFP_KERNEL);
 	if (!nic_dev->txqs)
 		return -ENOMEM;
 
@@ -171,7 +172,6 @@ static int create_txqs(struct hinic_dev *nic_dev)
 				  "Failed to add SQ%d debug\n", i);
 			goto err_add_sq_dbg;
 		}
-
 	}
 
 	return 0;
@@ -232,7 +232,7 @@ static void free_txqs(struct hinic_dev *nic_dev)
 }
 
 /**
- * create_txqs - Create the Logical Rx Queues of specific NIC device
+ * create_rxqs - Create the Logical Rx Queues of specific NIC device
  * @nic_dev: the specific NIC device
  *
  * Return 0 - Success, negative - Failure
@@ -241,12 +241,13 @@ static int create_rxqs(struct hinic_dev *nic_dev)
 {
 	int err, i, j, num_rxqs = hinic_hwdev_num_qps(nic_dev->hwdev);
 	struct net_device *netdev = nic_dev->netdev;
+	size_t rxq_size;
 
 	if (nic_dev->rxqs)
 		return -EINVAL;
 
-	nic_dev->rxqs = devm_kcalloc(&netdev->dev, num_rxqs,
-				     sizeof(*nic_dev->rxqs), GFP_KERNEL);
+	rxq_size = num_rxqs * sizeof(*nic_dev->rxqs);
+	nic_dev->rxqs = devm_kzalloc(&netdev->dev, rxq_size, GFP_KERNEL);
 	if (!nic_dev->rxqs)
 		return -ENOMEM;
 
@@ -287,7 +288,7 @@ err_init_rxq:
 }
 
 /**
- * free_txqs - Free the Logical Rx Queues of specific NIC device
+ * free_rxqs - Free the Logical Rx Queues of specific NIC device
  * @nic_dev: the specific NIC device
  **/
 static void free_rxqs(struct hinic_dev *nic_dev)
@@ -311,13 +312,7 @@ static void free_rxqs(struct hinic_dev *nic_dev)
 
 static int hinic_configure_max_qnum(struct hinic_dev *nic_dev)
 {
-	int err;
-
-	err = hinic_set_max_qnum(nic_dev, nic_dev->hwdev->nic_cap.max_qps);
-	if (err)
-		return err;
-
-	return 0;
+	return hinic_set_max_qnum(nic_dev, nic_dev->hwdev->nic_cap.max_qps);
 }
 
 static int hinic_rss_init(struct hinic_dev *nic_dev)
@@ -1188,7 +1183,7 @@ static int nic_dev_init(struct pci_dev *pdev)
 	struct devlink *devlink;
 	int err, num_qps;
 
-	devlink = hinic_devlink_alloc();
+	devlink = hinic_devlink_alloc(&pdev->dev);
 	if (!devlink) {
 		dev_err(&pdev->dev, "Hinic devlink alloc failed\n");
 		return -ENOMEM;
@@ -1397,25 +1392,13 @@ static int hinic_probe(struct pci_dev *pdev,
 
 	pci_set_master(pdev);
 
-	err = pci_set_dma_mask(pdev, DMA_BIT_MASK(64));
+	err = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(64));
 	if (err) {
 		dev_warn(&pdev->dev, "Couldn't set 64-bit DMA mask\n");
-		err = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+		err = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
 		if (err) {
 			dev_err(&pdev->dev, "Failed to set DMA mask\n");
 			goto err_dma_mask;
-		}
-	}
-
-	err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(64));
-	if (err) {
-		dev_warn(&pdev->dev,
-			 "Couldn't set 64-bit consistent DMA mask\n");
-		err = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32));
-		if (err) {
-			dev_err(&pdev->dev,
-				"Failed to set consistent DMA mask\n");
-			goto err_dma_consistent_mask;
 		}
 	}
 
@@ -1429,7 +1412,6 @@ static int hinic_probe(struct pci_dev *pdev,
 	return 0;
 
 err_nic_dev_init:
-err_dma_consistent_mask:
 err_dma_mask:
 	pci_release_regions(pdev);
 

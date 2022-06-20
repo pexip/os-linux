@@ -560,28 +560,22 @@ exit:
 EXPORT_SYMBOL(cros_ec_query_all);
 
 /**
- * cros_ec_cmd_xfer() - Send a command to the ChromeOS EC.
+ * cros_ec_cmd_xfer_status() - Send a command to the ChromeOS EC.
  * @ec_dev: EC device.
  * @msg: Message to write.
  *
- * Call this to send a command to the ChromeOS EC. This should be used instead
- * of calling the EC's cmd_xfer() callback directly. This function does not
- * convert EC command execution error codes to Linux error codes. Most
- * in-kernel users will want to use cros_ec_cmd_xfer_status() instead since
- * that function implements the conversion.
+ * Call this to send a command to the ChromeOS EC. This should be used instead of calling the EC's
+ * cmd_xfer() callback directly. It returns success status only if both the command was transmitted
+ * successfully and the EC replied with success status.
  *
  * Return:
- * >0 - EC command was executed successfully. The return value is the number
- *      of bytes returned by the EC (excluding the header).
- * =0 - EC communication was successful. EC command execution results are
- *      reported in msg->result. The result will be EC_RES_SUCCESS if the
- *      command was executed successfully or report an EC command execution
- *      error.
- * <0 - EC communication error. Return value is the Linux error code.
+ * >=0 - The number of bytes transferred
+ * <0 - Linux error code
  */
-int cros_ec_cmd_xfer(struct cros_ec_device *ec_dev, struct cros_ec_command *msg)
+int cros_ec_cmd_xfer_status(struct cros_ec_device *ec_dev,
+			    struct cros_ec_command *msg)
 {
-	int ret;
+	int ret, mapped;
 
 	mutex_lock(&ec_dev->lock);
 	if (ec_dev->proto_version == EC_PROTO_VERSION_UNKNOWN) {
@@ -621,32 +615,6 @@ int cros_ec_cmd_xfer(struct cros_ec_device *ec_dev, struct cros_ec_command *msg)
 
 	ret = send_command(ec_dev, msg);
 	mutex_unlock(&ec_dev->lock);
-
-	return ret;
-}
-EXPORT_SYMBOL(cros_ec_cmd_xfer);
-
-/**
- * cros_ec_cmd_xfer_status() - Send a command to the ChromeOS EC.
- * @ec_dev: EC device.
- * @msg: Message to write.
- *
- * Call this to send a command to the ChromeOS EC. This should be used instead of calling the EC's
- * cmd_xfer() callback directly. It returns success status only if both the command was transmitted
- * successfully and the EC replied with success status.
- *
- * Return:
- * >=0 - The number of bytes transferred.
- * <0 - Linux error code
- */
-int cros_ec_cmd_xfer_status(struct cros_ec_device *ec_dev,
-			    struct cros_ec_command *msg)
-{
-	int ret, mapped;
-
-	ret = cros_ec_cmd_xfer(ec_dev, msg);
-	if (ret < 0)
-		return ret;
 
 	mapped = cros_ec_map_error(msg->result);
 	if (mapped) {
@@ -785,12 +753,16 @@ int cros_ec_get_next_event(struct cros_ec_device *ec_dev,
 		 * Sensor events need to be parsed by the sensor sub-device.
 		 * Defer them, and don't report the wakeup here.
 		 */
-		if (event_type == EC_MKBP_EVENT_SENSOR_FIFO)
+		if (event_type == EC_MKBP_EVENT_SENSOR_FIFO) {
 			*wake_event = false;
-		/* Masked host-events should not count as wake events. */
-		else if (host_event &&
-			 !(host_event & ec_dev->host_event_wake_mask))
-			*wake_event = false;
+		} else if (host_event) {
+			/* rtc_update_irq() already handles wakeup events. */
+			if (host_event & EC_HOST_EVENT_MASK(EC_HOST_EVENT_RTC))
+				*wake_event = false;
+			/* Masked host-events should not count as wake events. */
+			if (!(host_event & ec_dev->host_event_wake_mask))
+				*wake_event = false;
+		}
 	}
 
 	return ret;

@@ -504,7 +504,7 @@ not_unique:
 	return -EADDRNOTAVAIL;
 }
 
-static u64 inet_sk_port_offset(const struct sock *sk)
+static u32 inet_sk_port_offset(const struct sock *sk)
 {
 	const struct inet_sock *inet = inet_sk(sk);
 
@@ -637,9 +637,7 @@ int __inet_hash(struct sock *sk, struct sock *osk)
 	int err = 0;
 
 	if (sk->sk_state != TCP_LISTEN) {
-		local_bh_disable();
 		inet_ehash_nolisten(sk, osk, NULL);
-		local_bh_enable();
 		return 0;
 	}
 	WARN_ON(!sk_unhashed(sk));
@@ -671,54 +669,45 @@ int inet_hash(struct sock *sk)
 {
 	int err = 0;
 
-	if (sk->sk_state != TCP_CLOSE)
+	if (sk->sk_state != TCP_CLOSE) {
+		local_bh_disable();
 		err = __inet_hash(sk, NULL);
+		local_bh_enable();
+	}
 
 	return err;
 }
 EXPORT_SYMBOL_GPL(inet_hash);
 
-static void __inet_unhash(struct sock *sk, struct inet_listen_hashbucket *ilb)
-{
-	if (sk_unhashed(sk))
-		return;
-
-	if (rcu_access_pointer(sk->sk_reuseport_cb))
-		reuseport_detach_sock(sk);
-	if (ilb) {
-		struct inet_hashinfo *hashinfo = sk->sk_prot->h.hashinfo;
-
-		inet_unhash2(hashinfo, sk);
-		ilb->count--;
-	}
-	__sk_nulls_del_node_init_rcu(sk);
-	sock_prot_inuse_add(sock_net(sk), sk->sk_prot, -1);
-}
-
 void inet_unhash(struct sock *sk)
 {
 	struct inet_hashinfo *hashinfo = sk->sk_prot->h.hashinfo;
+	struct inet_listen_hashbucket *ilb = NULL;
+	spinlock_t *lock;
 
 	if (sk_unhashed(sk))
 		return;
 
 	if (sk->sk_state == TCP_LISTEN) {
-		struct inet_listen_hashbucket *ilb;
-
 		ilb = &hashinfo->listening_hash[inet_sk_listen_hashfn(sk)];
-		/* Don't disable bottom halves while acquiring the lock to
-		 * avoid circular locking dependency on PREEMPT_RT.
-		 */
-		spin_lock(&ilb->lock);
-		__inet_unhash(sk, ilb);
-		spin_unlock(&ilb->lock);
+		lock = &ilb->lock;
 	} else {
-		spinlock_t *lock = inet_ehash_lockp(hashinfo, sk->sk_hash);
-
-		spin_lock_bh(lock);
-		__inet_unhash(sk, NULL);
-		spin_unlock_bh(lock);
+		lock = inet_ehash_lockp(hashinfo, sk->sk_hash);
 	}
+	spin_lock_bh(lock);
+	if (sk_unhashed(sk))
+		goto unlock;
+
+	if (rcu_access_pointer(sk->sk_reuseport_cb))
+		reuseport_stop_listen_sock(sk);
+	if (ilb) {
+		inet_unhash2(hashinfo, sk);
+		ilb->count--;
+	}
+	__sk_nulls_del_node_init_rcu(sk);
+	sock_prot_inuse_add(sock_net(sk), sk->sk_prot, -1);
+unlock:
+	spin_unlock_bh(lock);
 }
 EXPORT_SYMBOL_GPL(inet_unhash);
 
@@ -734,7 +723,7 @@ EXPORT_SYMBOL_GPL(inet_unhash);
 static u32 table_perturb[1 << INET_TABLE_PERTURB_SHIFT];
 
 int __inet_hash_connect(struct inet_timewait_death_row *death_row,
-		struct sock *sk, u64 port_offset,
+		struct sock *sk, u32 port_offset,
 		int (*check_established)(struct inet_timewait_death_row *,
 			struct sock *, __u16, struct inet_timewait_sock **))
 {
@@ -777,9 +766,7 @@ int __inet_hash_connect(struct inet_timewait_death_row *death_row,
 	net_get_random_once(table_perturb, sizeof(table_perturb));
 	index = hash_32(port_offset, INET_TABLE_PERTURB_SHIFT);
 
-	offset = READ_ONCE(table_perturb[index]) + port_offset;
-	offset %= remaining;
-
+	offset = (READ_ONCE(table_perturb[index]) + port_offset) % remaining;
 	/* In first pass we try ports of @low parity.
 	 * inet_csk_get_port() does the opposite choice.
 	 */
@@ -833,6 +820,11 @@ next_port:
 	return -EADDRNOTAVAIL;
 
 ok:
+	/* If our first attempt found a candidate, skip next candidate
+	 * in 1/16 of cases to add some noise.
+	 */
+	if (!i && !(prandom_u32() % 16))
+		i = 2;
 	WRITE_ONCE(table_perturb[index], READ_ONCE(table_perturb[index]) + i + 2);
 
 	/* Head lock still held and bh's disabled */
@@ -856,7 +848,7 @@ ok:
 int inet_hash_connect(struct inet_timewait_death_row *death_row,
 		      struct sock *sk)
 {
-	u64 port_offset = 0;
+	u32 port_offset = 0;
 
 	if (!inet_sk(sk)->inet_num)
 		port_offset = inet_sk_port_offset(sk);

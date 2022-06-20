@@ -175,11 +175,8 @@ static void __ath11k_ahb_ext_irq_disable(struct ath11k_base *ab)
 
 		ath11k_ahb_ext_grp_disable(irq_grp);
 
-		if (irq_grp->napi_enabled) {
-			napi_synchronize(&irq_grp->napi);
-			napi_disable(&irq_grp->napi);
-			irq_grp->napi_enabled = false;
-		}
+		napi_synchronize(&irq_grp->napi);
+		napi_disable(&irq_grp->napi);
 	}
 }
 
@@ -209,13 +206,13 @@ static void ath11k_ahb_clearbit32(struct ath11k_base *ab, u8 bit, u32 offset)
 
 static void ath11k_ahb_ce_irq_enable(struct ath11k_base *ab, u16 ce_id)
 {
-	const struct ce_attr *ce_attr;
+	const struct ce_pipe_config *ce_config;
 
-	ce_attr = &ab->hw_params.host_ce_config[ce_id];
-	if (ce_attr->src_nentries)
+	ce_config = &ab->hw_params.target_ce_config[ce_id];
+	if (__le32_to_cpu(ce_config->pipedir) & PIPEDIR_OUT)
 		ath11k_ahb_setbit32(ab, ce_id, CE_HOST_IE_ADDRESS);
 
-	if (ce_attr->dest_nentries) {
+	if (__le32_to_cpu(ce_config->pipedir) & PIPEDIR_IN) {
 		ath11k_ahb_setbit32(ab, ce_id, CE_HOST_IE_2_ADDRESS);
 		ath11k_ahb_setbit32(ab, ce_id + CE_HOST_IE_3_SHIFT,
 				    CE_HOST_IE_3_ADDRESS);
@@ -224,13 +221,13 @@ static void ath11k_ahb_ce_irq_enable(struct ath11k_base *ab, u16 ce_id)
 
 static void ath11k_ahb_ce_irq_disable(struct ath11k_base *ab, u16 ce_id)
 {
-	const struct ce_attr *ce_attr;
+	const struct ce_pipe_config *ce_config;
 
-	ce_attr = &ab->hw_params.host_ce_config[ce_id];
-	if (ce_attr->src_nentries)
+	ce_config = &ab->hw_params.target_ce_config[ce_id];
+	if (__le32_to_cpu(ce_config->pipedir) & PIPEDIR_OUT)
 		ath11k_ahb_clearbit32(ab, ce_id, CE_HOST_IE_ADDRESS);
 
-	if (ce_attr->dest_nentries) {
+	if (__le32_to_cpu(ce_config->pipedir) & PIPEDIR_IN) {
 		ath11k_ahb_clearbit32(ab, ce_id, CE_HOST_IE_2_ADDRESS);
 		ath11k_ahb_clearbit32(ab, ce_id + CE_HOST_IE_3_SHIFT,
 				      CE_HOST_IE_3_ADDRESS);
@@ -303,10 +300,7 @@ static void ath11k_ahb_ext_irq_enable(struct ath11k_base *ab)
 	for (i = 0; i < ATH11K_EXT_IRQ_GRP_NUM_MAX; i++) {
 		struct ath11k_ext_irq_grp *irq_grp = &ab->ext_irq_grp[i];
 
-		if (!irq_grp->napi_enabled) {
-			napi_enable(&irq_grp->napi);
-			irq_grp->napi_enabled = true;
-		}
+		napi_enable(&irq_grp->napi);
 		ath11k_ahb_ext_grp_enable(irq_grp);
 	}
 }
@@ -346,6 +340,31 @@ static void ath11k_ahb_power_down(struct ath11k_base *ab)
 	rproc_shutdown(ab_ahb->tgt_rproc);
 }
 
+static int ath11k_ahb_fwreset_from_cold_boot(struct ath11k_base *ab)
+{
+	int timeout;
+
+	if (ath11k_cold_boot_cal == 0 || ab->qmi.cal_done ||
+	    ab->hw_params.cold_boot_calib == 0)
+		return 0;
+
+	ath11k_dbg(ab, ATH11K_DBG_AHB, "wait for cold boot done\n");
+	timeout = wait_event_timeout(ab->qmi.cold_boot_waitq,
+				     (ab->qmi.cal_done  == 1),
+				     ATH11K_COLD_BOOT_FW_RESET_DELAY);
+	if (timeout <= 0) {
+		ath11k_cold_boot_cal = 0;
+		ath11k_warn(ab, "Coldboot Calibration failed timed out\n");
+	}
+
+	/* reset the firmware */
+	ath11k_ahb_power_down(ab);
+	ath11k_ahb_power_up(ab);
+
+	ath11k_dbg(ab, ATH11K_DBG_AHB, "exited from cold boot mode\n");
+	return 0;
+}
+
 static void ath11k_ahb_init_qmi_ce_config(struct ath11k_base *ab)
 {
 	struct ath11k_qmi_ce_cfg *cfg = &ab->qmi.ce_cfg;
@@ -354,7 +373,7 @@ static void ath11k_ahb_init_qmi_ce_config(struct ath11k_base *ab)
 	cfg->tgt_ce = ab->hw_params.target_ce_config;
 	cfg->svc_to_ce_map_len = ab->hw_params.svc_to_ce_map_len;
 	cfg->svc_to_ce_map = ab->hw_params.svc_to_ce_map;
-	ab->qmi.service_ins_id = ATH11K_QMI_WLFW_SERVICE_INS_ID_V01_IPQ8074;
+	ab->qmi.service_ins_id = ab->hw_params.qmi_service_ins_id;
 }
 
 static void ath11k_ahb_free_ext_irq(struct ath11k_base *ab)
@@ -366,8 +385,6 @@ static void ath11k_ahb_free_ext_irq(struct ath11k_base *ab)
 
 		for (j = 0; j < irq_grp->num_irq; j++)
 			free_irq(ab->irq_num[irq_grp->irqs[j]], irq_grp);
-
-		netif_napi_del(&irq_grp->napi);
 	}
 }
 
@@ -708,6 +725,8 @@ static int ath11k_ahb_probe(struct platform_device *pdev)
 		goto err_ce_free;
 	}
 
+	ath11k_ahb_fwreset_from_cold_boot(ab);
+
 	return 0;
 
 err_ce_free:
@@ -728,6 +747,13 @@ static int ath11k_ahb_remove(struct platform_device *pdev)
 	struct ath11k_base *ab = platform_get_drvdata(pdev);
 	unsigned long left;
 
+	if (test_bit(ATH11K_FLAG_QMI_FAIL, &ab->dev_flags)) {
+		ath11k_ahb_power_down(ab);
+		ath11k_debugfs_soc_destroy(ab);
+		ath11k_qmi_deinit_service(ab);
+		goto qmi_fail;
+	}
+
 	reinit_completion(&ab->driver_recovery);
 
 	if (test_bit(ATH11K_FLAG_RECOVERY, &ab->dev_flags)) {
@@ -741,8 +767,8 @@ static int ath11k_ahb_remove(struct platform_device *pdev)
 	cancel_work_sync(&ab->restart_work);
 
 	ath11k_core_deinit(ab);
+qmi_fail:
 	ath11k_ahb_free_irq(ab);
-
 	ath11k_hal_srng_deinit(ab);
 	ath11k_ce_free_pipes(ab);
 	ath11k_core_free(ab);

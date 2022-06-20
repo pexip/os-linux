@@ -31,8 +31,6 @@
 	aliases {
 		display0 = &lcd;
 		display1 = &tv0;
-		/delete-property/ mmc2;
-		/delete-property/ mmc3;
 	};
 
 	ldo_3v3: fixedregulator {
@@ -490,8 +488,8 @@
 		};
 
 		twl_power: power {
-			compatible = "ti,twl4030-power";
-			ti,use_poweroff;
+			compatible = "ti,twl4030-power-idle";
+			ti,system-power-controller;
 		};
 	};
 };

@@ -22,6 +22,7 @@
 #include <linux/slab.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
+#include <linux/kernel.h>
 
 #include <linux/i2c.h>
 #include <linux/i2c-mux.h>
@@ -910,18 +911,11 @@ static void __init of_unittest_dma_ranges_one(const char *path,
 	if (!rc) {
 		phys_addr_t	paddr;
 		dma_addr_t	dma_addr;
-		struct device	*dev_bogus;
+		struct device	dev_bogus;
 
-		dev_bogus = kzalloc(sizeof(struct device), GFP_KERNEL);
-		if (!dev_bogus) {
-			unittest(0, "kzalloc() failed\n");
-			kfree(map);
-			return;
-		}
-
-		dev_bogus->dma_range_map = map;
-		paddr = dma_to_phys(dev_bogus, expect_dma_addr);
-		dma_addr = phys_to_dma(dev_bogus, expect_paddr);
+		dev_bogus.dma_range_map = map;
+		paddr = dma_to_phys(&dev_bogus, expect_dma_addr);
+		dma_addr = phys_to_dma(&dev_bogus, expect_paddr);
 
 		unittest(paddr == expect_paddr,
 			 "of_dma_get_range: wrong phys addr %pap (expecting %llx) on node %pOF\n",
@@ -931,7 +925,6 @@ static void __init of_unittest_dma_ranges_one(const char *path,
 			 &dma_addr, expect_dma_addr, np);
 
 		kfree(map);
-		kfree(dev_bogus);
 	}
 	of_node_put(np);
 #endif
@@ -941,9 +934,8 @@ static void __init of_unittest_parse_dma_ranges(void)
 {
 	of_unittest_dma_ranges_one("/testcase-data/address-tests/device@70000000",
 		0x0, 0x20000000);
-	if (IS_ENABLED(CONFIG_ARCH_DMA_ADDR_T_64BIT))
-		of_unittest_dma_ranges_one("/testcase-data/address-tests/bus@80000000/device@1000",
-			0x100000000, 0x20000000);
+	of_unittest_dma_ranges_one("/testcase-data/address-tests/bus@80000000/device@1000",
+		0x100000000, 0x20000000);
 	of_unittest_dma_ranges_one("/testcase-data/address-tests/pci@90000000",
 		0x80000000, 0x20000000);
 }
@@ -1217,11 +1209,7 @@ static void __init of_unittest_match_node(void)
 	}
 }
 
-static struct resource test_bus_res = {
-	.start = 0xfffffff8,
-	.end = 0xfffffff9,
-	.flags = IORESOURCE_MEM,
-};
+static struct resource test_bus_res = DEFINE_RES_MEM(0xfffffff8, 2);
 static const struct platform_device_info test_bus_info = {
 	.name = "unittest-bus",
 };
@@ -1295,7 +1283,7 @@ static void __init of_unittest_platform_populate(void)
 			unittest(pdev,
 				 "Could not create device for node '%pOFn'\n",
 				 grandchild);
-			of_dev_put(pdev);
+			platform_device_put(pdev);
 		}
 	}
 
@@ -1417,7 +1405,8 @@ static void attach_node_and_children(struct device_node *np)
 static int __init unittest_data_add(void)
 {
 	void *unittest_data;
-	struct device_node *unittest_data_node, *np;
+	void *unittest_data_align;
+	struct device_node *unittest_data_node = NULL, *np;
 	/*
 	 * __dtb_testcases_begin[] and __dtb_testcases_end[] are magically
 	 * created by cmd_dt_S_dtb in scripts/Makefile.lib
@@ -1426,21 +1415,29 @@ static int __init unittest_data_add(void)
 	extern uint8_t __dtb_testcases_end[];
 	const int size = __dtb_testcases_end - __dtb_testcases_begin;
 	int rc;
+	void *ret;
 
 	if (!size) {
-		pr_warn("%s: No testcase data to attach; not running tests\n",
-			__func__);
+		pr_warn("%s: testcases is empty\n", __func__);
 		return -ENODATA;
 	}
 
 	/* creating copy */
-	unittest_data = kmemdup(__dtb_testcases_begin, size, GFP_KERNEL);
+	unittest_data = kmalloc(size + FDT_ALIGN_SIZE, GFP_KERNEL);
 	if (!unittest_data)
 		return -ENOMEM;
 
-	of_fdt_unflatten_tree(unittest_data, NULL, &unittest_data_node);
+	unittest_data_align = PTR_ALIGN(unittest_data, FDT_ALIGN_SIZE);
+	memcpy(unittest_data_align, __dtb_testcases_begin, size);
+
+	ret = of_fdt_unflatten_tree(unittest_data_align, NULL, &unittest_data_node);
+	if (!ret) {
+		pr_warn("%s: unflatten testcases tree failed\n", __func__);
+		kfree(unittest_data);
+		return -ENODATA;
+	}
 	if (!unittest_data_node) {
-		pr_warn("%s: No tree to attach; not running tests\n", __func__);
+		pr_warn("%s: testcases tree is empty\n", __func__);
 		kfree(unittest_data);
 		return -ENODATA;
 	}

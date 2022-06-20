@@ -481,7 +481,7 @@ static int rk3328_platform_probe(struct platform_device *pdev)
 	ret = clk_prepare_enable(rk3328->pclk);
 	if (ret < 0) {
 		dev_err(&pdev->dev, "failed to enable acodec pclk\n");
-		goto err_unprepare_mclk;
+		return ret;
 	}
 
 	base = devm_platform_ioremap_resource(pdev, 0);
@@ -515,7 +515,7 @@ err_unprepare_mclk:
 	return ret;
 }
 
-static const struct of_device_id rk3328_codec_of_match[] = {
+static const struct of_device_id rk3328_codec_of_match[] __maybe_unused = {
 		{ .compatible = "rockchip,rk3328-codec", },
 		{},
 };

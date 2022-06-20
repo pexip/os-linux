@@ -442,15 +442,15 @@ static int btmtksdio_rx_packet(struct btmtksdio_dev *bdev, u16 rx_size)
 	}
 
 	switch ((&pkts[i])->lsize) {
-		case 1:
-			dlen = skb->data[(&pkts[i])->loff];
-			break;
-		case 2:
-			dlen = get_unaligned_le16(skb->data +
+	case 1:
+		dlen = skb->data[(&pkts[i])->loff];
+		break;
+	case 2:
+		dlen = get_unaligned_le16(skb->data +
 						  (&pkts[i])->loff);
-			break;
-		default:
-			goto err_kfree_skb;
+		break;
+	default:
+		goto err_kfree_skb;
 	}
 
 	pad_size = skb->len - (&pkts[i])->hlen -  dlen;
@@ -981,14 +981,14 @@ static int btmtksdio_probe(struct sdio_func *func,
 	hdev->manufacturer = 70;
 	set_bit(HCI_QUIRK_NON_PERSISTENT_SETUP, &hdev->quirks);
 
-	sdio_set_drvdata(func, bdev);
-
 	err = hci_register_dev(hdev);
 	if (err < 0) {
 		dev_err(&func->dev, "Can't register HCI device\n");
 		hci_free_dev(hdev);
 		return err;
 	}
+
+	sdio_set_drvdata(func, bdev);
 
 	/* pm_runtime_enable would be done after the firmware is being
 	 * downloaded because the core layer probably already enables
@@ -1041,8 +1041,6 @@ static int btmtksdio_runtime_suspend(struct device *dev)
 	bdev = sdio_get_drvdata(func);
 	if (!bdev)
 		return 0;
-
-	sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
 
 	sdio_claim_host(bdev->func);
 

@@ -157,7 +157,7 @@ static void rxrpc_congestion_timeout(struct rxrpc_call *call)
 static void rxrpc_resend(struct rxrpc_call *call, unsigned long now_j)
 {
 	struct sk_buff *skb;
-	unsigned long resend_at;
+	unsigned long resend_at, rto_j;
 	rxrpc_seq_t cursor, seq, top;
 	ktime_t now, max_age, oldest, ack_ts;
 	int ix;
@@ -165,8 +165,10 @@ static void rxrpc_resend(struct rxrpc_call *call, unsigned long now_j)
 
 	_enter("{%d,%d}", call->tx_hard_ack, call->tx_top);
 
+	rto_j = call->peer->rto_j;
+
 	now = ktime_get_real();
-	max_age = ktime_sub(now, jiffies_to_usecs(call->peer->rto_j));
+	max_age = ktime_sub(now, jiffies_to_usecs(rto_j));
 
 	spin_lock_bh(&call->lock);
 
@@ -211,7 +213,7 @@ static void rxrpc_resend(struct rxrpc_call *call, unsigned long now_j)
 	}
 
 	resend_at = nsecs_to_jiffies(ktime_to_ns(ktime_sub(now, oldest)));
-	resend_at += jiffies + rxrpc_get_rto_backoff(call->peer, retrans);
+	resend_at += jiffies + rto_j;
 	WRITE_ONCE(call->resend_at, resend_at);
 
 	if (unacked)
@@ -310,7 +312,7 @@ recheck_state:
 	}
 
 	if (call->state == RXRPC_CALL_COMPLETE) {
-		rxrpc_delete_call_timer(call);
+		del_timer_sync(&call->timer);
 		goto out_put;
 	}
 
@@ -377,9 +379,9 @@ recheck_state:
 		if (test_bit(RXRPC_CALL_RX_HEARD, &call->flags) &&
 		    (int)call->conn->hi_serial - (int)call->rx_serial > 0) {
 			trace_rxrpc_call_reset(call);
-			rxrpc_abort_call("EXP", call, 0, RX_CALL_DEAD, -ECONNRESET);
+			rxrpc_abort_call("EXP", call, 0, RX_USER_ABORT, -ECONNRESET);
 		} else {
-			rxrpc_abort_call("EXP", call, 0, RX_CALL_TIMEOUT, -ETIME);
+			rxrpc_abort_call("EXP", call, 0, RX_USER_ABORT, -ETIME);
 		}
 		set_bit(RXRPC_CALL_EV_ABORT, &call->events);
 		goto recheck_state;
@@ -406,8 +408,7 @@ recheck_state:
 		goto recheck_state;
 	}
 
-	if (test_and_clear_bit(RXRPC_CALL_EV_RESEND, &call->events) &&
-	    call->state != RXRPC_CALL_CLIENT_RECV_REPLY) {
+	if (test_and_clear_bit(RXRPC_CALL_EV_RESEND, &call->events)) {
 		rxrpc_resend(call, now);
 		goto recheck_state;
 	}
