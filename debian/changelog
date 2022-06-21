@@ -1,3 +1,19 @@
+linux (5.15.48-1pexip1) pexip; urgency=medium
+
+  * New upstream release 5.15.48
+  * bugfix/all/firmware-remove-redundant-log-messages-from-drivers.patch
+    bugfix/all/kbuild-fix-recordmcount-dependency.patch
+    features/all/lockdown/arm64-add-kernel-config-option-to-lock-down-when.patch:
+    Remove fuzz
+  * bugfix/all/drm-vmwgfx-Fix-stale-file-descriptors-on-failed-user.patch
+    bugfix/all/ucount-Make-get_ucount-a-safe-get_user-replacement.patch
+    bugfix/all/vfs-fs_context-fix-up-param-length-parsing-in-legacy.patch
+    bugfix/x86/drm-i915-Flush-TLBs-before-releasing-backing-store.patch
+    bugfix/x86/mwifiex-Fix-skb_over_panic-in-mwifiex_usb_recv.patch:
+    Removed as applied upstream
+
+ -- Vincent Sanders <vince@pexip.com>  Tue, 21 Jul 2022 16:31:55 +0100
+
 linux (5.15.15-2pexip3) pexip; urgency=medium
 
   * Remove pahole dependancy
