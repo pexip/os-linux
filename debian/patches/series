@@ -25,6 +25,7 @@ debian/android-enable-building-ashmem-and-binder-as-modules.patch
 debian/documentation-drop-sphinx-version-check.patch
 debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
 debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+debian/kbuild-abort-build-if-subdirs-used.patch
 
 # Fixes/improvements to firmware loading
 features/all/drivers-media-dvb-usb-af9005-request_firmware.patch
@@ -77,15 +78,14 @@ bugfix/arm64/arm64-acpi-Add-fixup-for-HPE-m400-quirks.patch
 bugfix/x86/x86-32-disable-3dnow-in-generic-config.patch
 
 # Arch features
-features/arm64/arm64-dts-rockchip-Add-basic-support-for-Kobol-s-Hel.patch
+features/arm64/arm64-dts-rockchip-Add-support-for-two-PWM-fans-on-h.patch
+features/arm64/arm64-dts-rockchip-Add-support-for-PCIe-on-helios64.patch
 features/x86/x86-memtest-WARN-if-bad-RAM-found.patch
 features/x86/x86-make-x32-syscall-support-conditional.patch
 
 # Miscellaneous bug fixes
 bugfix/all/disable-some-marvell-phys.patch
 bugfix/all/fs-add-module_softdep-declarations-for-hard-coded-cr.patch
-debian/makefile-do-not-check-for-libelf-when-building-oot-module.patch
-bugfix/all/partially-revert-net-socket-implement-64-bit-timestamps.patch
 
 # Miscellaneous features
 
@@ -97,7 +97,6 @@ features/all/lockdown/arm64-add-kernel-config-option-to-lock-down-when.patch
 
 # Improve integrity platform keyring for kernel modules verification
 features/all/db-mok-keyring/0001-MODSIGN-do-not-load-mok-when-secure-boot-disabled.patch
-features/all/db-mok-keyring/0002-MODSIGN-load-blacklist-from-MOKx.patch
 features/all/db-mok-keyring/0003-MODSIGN-checking-the-blacklisted-hash-before-loading-a-kernel-module.patch
 features/all/db-mok-keyring/0004-MODSIGN-check-the-attributes-of-db-and-mok.patch
 features/all/db-mok-keyring/modsign-make-shash-allocation-failure-fatal.patch
@@ -106,6 +105,11 @@ features/all/db-mok-keyring/KEYS-Make-use-of-platform-keyring-for-module-signatu
 # Security fixes
 debian/i386-686-pae-pci-set-pci-nobios-by-default.patch
 debian/ntfs-mark-it-as-broken.patch
+bugfix/all/vfs-fs_context-fix-up-param-length-parsing-in-legacy.patch
+bugfix/x86/mwifiex-Fix-skb_over_panic-in-mwifiex_usb_recv.patch
+bugfix/x86/drm-i915-Flush-TLBs-before-releasing-backing-store.patch
+bugfix/all/drm-vmwgfx-Fix-stale-file-descriptors-on-failed-user.patch
+bugfix/all/ucount-Make-get_ucount-a-safe-get_user-replacement.patch
 
 # Fix exported symbol versions
 bugfix/all/module-disable-matching-missing-version-crc.patch
@@ -118,14 +122,11 @@ bugfix/all/tools-perf-remove-shebangs.patch
 bugfix/x86/revert-perf-build-fix-libunwind-feature-detection-on.patch
 bugfix/all/tools-build-remove-bpf-run-time-check-at-build-time.patch
 bugfix/all/cpupower-bump-soname-version.patch
-bugfix/all/libcpupower-hide-private-function.patch
 bugfix/all/cpupower-fix-checks-for-cpu-existence.patch
 bugfix/all/tools-perf-pmu-events-fix-reproducibility.patch
 bugfix/all/bpftool-fix-version-string-in-recursive-builds.patch
 bugfix/all/tools-include-uapi-fix-errno.h.patch
-
-# overlay: allow mounting in user namespaces
-debian/overlayfs-permit-mounts-in-userns.patch
+bugfix/all/perf-srcline-Use-long-running-addr2line-per-DSO.patch
 
 # ABI maintenance
 

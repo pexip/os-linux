@@ -17,10 +17,8 @@ Don't both storing the stat buffers as we don't need them.
 References: https://tests.reproducible-builds.org/debian/dbdtxt/bullseye/i386/linux_4.19.37-6.diffoscope.txt.gz
 Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
-Index: linux/tools/perf/pmu-events/jevents.c
-===================================================================
---- linux.orig/tools/perf/pmu-events/jevents.c
-+++ linux/tools/perf/pmu-events/jevents.c
+--- a/tools/perf/pmu-events/jevents.c
++++ b/tools/perf/pmu-events/jevents.c
 @@ -50,6 +50,18 @@
  #include "json.h"
  #include "pmu-events.h"
@@ -40,7 +38,7 @@ Index: linux/tools/perf/pmu-events/jevents.c
  int verbose;
  char *prog;
  
-@@ -905,6 +917,78 @@ static int get_maxfds(void)
+@@ -971,6 +983,78 @@ static int get_maxfds(void)
   */
  static FILE *eventsfp;
  static char *mapfile;
@@ -87,14 +85,14 @@ Index: linux/tools/perf/pmu-events/jevents.c
 + */
 +static int ordered_ftw(const char *dirpath,
 +		       int (*fn)(const char *, int, struct FTW *),
-+		       int nopenfd)
++		       int nopenfd, int flags)
 +{
 +	struct ordered_ftw_state state = { NULL, 0, 0 };
 +	size_t i;
 +	int rc;
 +
 +	ordered_ftw_state = &state;
-+	rc = nftw(dirpath, ordered_ftw_add, nopenfd, 0);
++	rc = nftw(dirpath, ordered_ftw_add, nopenfd, flags);
 +	if (rc)
 +		goto out;
 +
@@ -111,7 +109,7 @@ Index: linux/tools/perf/pmu-events/jevents.c
 +
 +out:
 +	for (i = 0; i < state.n; i++)
-+		free(state.entries[i].fpath);
++		free((char *)state.entries[i].fpath);
 +	free(state.entries);;
 +
 +	return rc;
@@ -119,7 +117,7 @@ Index: linux/tools/perf/pmu-events/jevents.c
  
  static int is_leaf_dir(const char *fpath)
  {
-@@ -957,19 +1041,19 @@ static int is_json_file(const char *name
+@@ -1023,19 +1107,19 @@ static int is_json_file(const char *name
  	return 0;
  }
  
@@ -142,7 +140,7 @@ Index: linux/tools/perf/pmu-events/jevents.c
  			    int typeflag, struct FTW *ftwbuf)
  {
  	char *tblname, *bname;
-@@ -994,9 +1078,9 @@ static int process_one_file(const char *
+@@ -1065,9 +1149,9 @@ static int process_one_file(const char *
  	} else
  		bname = (char *) fpath + ftwbuf->base;
  
@@ -153,25 +151,30 @@ Index: linux/tools/perf/pmu-events/jevents.c
 +		 level, bname, fpath);
  
  	/* base dir or too deep */
- 	if (level == 0 || level > 3)
-@@ -1152,17 +1236,17 @@ int main(int argc, char *argv[])
+ 	if (level == 0 || level > 4)
+@@ -1241,21 +1325,21 @@ int main(int argc, char *argv[])
  	 */
  
  	maxfds = get_maxfds();
 -	rc = nftw(ldirname, preprocess_arch_std_files, maxfds, 0);
-+	rc = ordered_ftw(ldirname, preprocess_arch_std_files, maxfds);
++	rc = ordered_ftw(ldirname, preprocess_arch_std_files, maxfds, 0);
  	if (rc)
  		goto err_processing_std_arch_event_dir;
  
 -	rc = nftw(ldirname, process_one_file, maxfds, 0);
-+	rc = ordered_ftw(ldirname, process_one_file, maxfds);
++	rc = ordered_ftw(ldirname, process_one_file, maxfds, 0);
  	if (rc)
  		goto err_processing_dir;
  
  	sprintf(ldirname, "%s/test", start_dirname);
  
+-	rc = nftw(ldirname, preprocess_arch_std_files, maxfds, 0);
++	rc = ordered_ftw(ldirname, preprocess_arch_std_files, maxfds, 0);
+ 	if (rc)
+ 		goto err_processing_std_arch_event_dir;
+ 
 -	rc = nftw(ldirname, process_one_file, maxfds, 0);
-+	rc = ordered_ftw(ldirname, process_one_file, maxfds);
++	rc = ordered_ftw(ldirname, process_one_file, maxfds, 0);
  	if (rc)
  		goto err_processing_dir;
  

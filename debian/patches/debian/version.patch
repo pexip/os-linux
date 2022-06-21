@@ -19,17 +19,17 @@ Index: linux/Makefile
 ===================================================================
 --- linux.orig/Makefile
 +++ linux/Makefile
-@@ -1207,7 +1207,7 @@ PHONY += prepare archprepare
+@@ -1205,7 +1205,7 @@ PHONY += prepare archprepare
  
  archprepare: outputmakefile archheaders archscripts scripts include/config/kernel.release \
  	asm-generic $(version_h) $(autoksyms_h) include/generated/utsrelease.h \
--	include/generated/autoconf.h
-+	include/generated/autoconf.h include/generated/package.h
+-	include/generated/autoconf.h remove-stale-files
++	include/generated/autoconf.h include/generated/package.h remove-stale-files
  
  prepare0: archprepare
  	$(Q)$(MAKE) $(build)=scripts/mod
-@@ -1270,6 +1270,16 @@ define filechk_version.h
- 	((c) > 255 ? 255 : (c)))'
+@@ -1259,6 +1259,16 @@ define filechk_version.h
+ 	echo \#define LINUX_VERSION_SUBLEVEL $(SUBLEVEL)
  endef
  
 +ifneq ($(DISTRIBUTION_OFFICIAL_BUILD),)
@@ -45,7 +45,7 @@ Index: linux/Makefile
  $(version_h): PATCHLEVEL := $(if $(PATCHLEVEL), $(PATCHLEVEL), 0)
  $(version_h): SUBLEVEL := $(if $(SUBLEVEL), $(SUBLEVEL), 0)
  $(version_h): FORCE
-@@ -1279,6 +1289,9 @@ $(version_h): FORCE
+@@ -1267,6 +1277,9 @@ $(version_h): FORCE
  include/generated/utsrelease.h: include/config/kernel.release FORCE
  	$(call filechk,utsrelease.h)
  
@@ -89,9 +89,9 @@ Index: linux/arch/powerpc/kernel/process.c
  #include <linux/seq_buf.h>
 +#include <generated/package.h>
  
+ #include <asm/interrupt.h>
  #include <asm/io.h>
- #include <asm/processor.h>
-@@ -1474,8 +1475,9 @@ void show_regs(struct pt_regs * regs)
+@@ -1487,8 +1488,9 @@ static void __show_regs(struct pt_regs *
  
  	printk("NIP:  "REG" LR: "REG" CTR: "REG"\n",
  	       regs->nip, regs->link, regs->ctr);
@@ -131,7 +131,7 @@ Index: linux/kernel/hung_task.c
 ===================================================================
 --- linux.orig/kernel/hung_task.c
 +++ linux/kernel/hung_task.c
-@@ -23,6 +23,7 @@
+@@ -24,6 +24,7 @@
  #include <linux/sched/sysctl.h>
  
  #include <trace/events/sched.h>
@@ -139,7 +139,7 @@ Index: linux/kernel/hung_task.c
  
  /*
   * The number of tasks checked:
-@@ -128,10 +129,11 @@ static void check_hung_task(struct task_
+@@ -129,10 +130,11 @@ static void check_hung_task(struct task_
  			sysctl_hung_task_warnings--;
  		pr_err("INFO: task %s:%d blocked for more than %ld seconds.\n",
  		       t->comm, t->pid, (jiffies - t->last_switch_time) / HZ);
@@ -157,28 +157,29 @@ Index: linux/lib/dump_stack.c
 ===================================================================
 --- linux.orig/lib/dump_stack.c
 +++ linux/lib/dump_stack.c
-@@ -12,6 +12,7 @@
- #include <linux/atomic.h>
+@@ -14,6 +14,7 @@
  #include <linux/kexec.h>
  #include <linux/utsname.h>
+ #include <linux/stop_machine.h>
 +#include <generated/package.h>
  
  static char dump_stack_arch_desc_str[128];
  
-@@ -44,13 +45,14 @@ void __init dump_stack_set_arch_desc(con
+@@ -54,13 +55,15 @@ void __init dump_stack_set_arch_desc(con
   */
  void dump_stack_print_info(const char *log_lvl)
  {
--	printk("%sCPU: %d PID: %d Comm: %.20s %s%s %s %.*s\n",
-+	printk("%sCPU: %d PID: %d Comm: %.20s %s%s %s %.*s%s\n",
+-	printk("%sCPU: %d PID: %d Comm: %.20s %s%s %s %.*s" BUILD_ID_FMT "\n",
++	printk("%sCPU: %d PID: %d Comm: %.20s %s%s %s %.*s %s" BUILD_ID_FMT "\n",
  	       log_lvl, raw_smp_processor_id(), current->pid, current->comm,
  	       kexec_crash_loaded() ? "Kdump: loaded " : "",
  	       print_tainted(),
  	       init_utsname()->release,
  	       (int)strcspn(init_utsname()->version, " "),
--	       init_utsname()->version);
+-	       init_utsname()->version, BUILD_ID_VAL);
 +	       init_utsname()->version,
-+	       LINUX_PACKAGE_ID);
++	       LINUX_PACKAGE_ID,
++	       BUILD_ID_VAL);
  
  	if (dump_stack_arch_desc_str[0] != '\0')
  		printk("%sHardware name: %s\n",

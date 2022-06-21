@@ -24,10 +24,8 @@ Signed-off-by: "Lee, Chun-Yi" <jlee@suse.com>
  kernel/module_signing.c | 59 +++++++++++++++++++++++++++++++++++++++--
  1 file changed, 57 insertions(+), 2 deletions(-)
 
-Index: linux/kernel/module_signing.c
-===================================================================
---- linux.orig/kernel/module_signing.c
-+++ linux/kernel/module_signing.c
+--- a/kernel/module_signing.c
++++ b/kernel/module_signing.c
 @@ -12,15 +12,62 @@
  #include <linux/string.h>
  #include <linux/verification.h>

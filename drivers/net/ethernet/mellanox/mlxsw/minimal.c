@@ -112,10 +112,23 @@ mlxsw_m_get_module_eeprom(struct net_device *netdev, struct ethtool_eeprom *ee,
 					   ee, data);
 }
 
+static int
+mlxsw_m_get_module_eeprom_by_page(struct net_device *netdev,
+				  const struct ethtool_module_eeprom *page,
+				  struct netlink_ext_ack *extack)
+{
+	struct mlxsw_m_port *mlxsw_m_port = netdev_priv(netdev);
+	struct mlxsw_core *core = mlxsw_m_port->mlxsw_m->core;
+
+	return mlxsw_env_get_module_eeprom_by_page(core, mlxsw_m_port->module,
+						   page, extack);
+}
+
 static const struct ethtool_ops mlxsw_m_port_ethtool_ops = {
 	.get_drvinfo		= mlxsw_m_module_get_drvinfo,
 	.get_module_info	= mlxsw_m_get_module_info,
 	.get_module_eeprom	= mlxsw_m_get_module_eeprom,
+	.get_module_eeprom_by_page = mlxsw_m_get_module_eeprom_by_page,
 };
 
 static int
@@ -295,7 +308,8 @@ static int mlxsw_m_ports_create(struct mlxsw_m *mlxsw_m)
 
 	/* Create port objects for each valid entry */
 	for (i = 0; i < mlxsw_m->max_ports; i++) {
-		if (mlxsw_m->module_to_port[i] > 0) {
+		if (mlxsw_m->module_to_port[i] > 0 &&
+		    !mlxsw_core_port_is_xm(mlxsw_m->core, i)) {
 			err = mlxsw_m_port_create(mlxsw_m,
 						  mlxsw_m->module_to_port[i],
 						  i);

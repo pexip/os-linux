@@ -40,6 +40,66 @@ static void i40e_vc_vf_broadcast(struct i40e_pf *pf,
 }
 
 /**
+ * i40e_vc_link_speed2mbps
+ * converts i40e_aq_link_speed to integer value of Mbps
+ * @link_speed: the speed to convert
+ *
+ * return the speed as direct value of Mbps.
+ **/
+static u32
+i40e_vc_link_speed2mbps(enum i40e_aq_link_speed link_speed)
+{
+	switch (link_speed) {
+	case I40E_LINK_SPEED_100MB:
+		return SPEED_100;
+	case I40E_LINK_SPEED_1GB:
+		return SPEED_1000;
+	case I40E_LINK_SPEED_2_5GB:
+		return SPEED_2500;
+	case I40E_LINK_SPEED_5GB:
+		return SPEED_5000;
+	case I40E_LINK_SPEED_10GB:
+		return SPEED_10000;
+	case I40E_LINK_SPEED_20GB:
+		return SPEED_20000;
+	case I40E_LINK_SPEED_25GB:
+		return SPEED_25000;
+	case I40E_LINK_SPEED_40GB:
+		return SPEED_40000;
+	case I40E_LINK_SPEED_UNKNOWN:
+		return SPEED_UNKNOWN;
+	}
+	return SPEED_UNKNOWN;
+}
+
+/**
+ * i40e_set_vf_link_state
+ * @vf: pointer to the VF structure
+ * @pfe: pointer to PF event structure
+ * @ls: pointer to link status structure
+ *
+ * set a link state on a single vf
+ **/
+static void i40e_set_vf_link_state(struct i40e_vf *vf,
+				   struct virtchnl_pf_event *pfe, struct i40e_link_status *ls)
+{
+	u8 link_status = ls->link_info & I40E_AQ_LINK_UP;
+
+	if (vf->link_forced)
+		link_status = vf->link_up;
+
+	if (vf->driver_caps & VIRTCHNL_VF_CAP_ADV_LINK_SPEED) {
+		pfe->event_data.link_event_adv.link_speed = link_status ?
+			i40e_vc_link_speed2mbps(ls->link_speed) : 0;
+		pfe->event_data.link_event_adv.link_status = link_status;
+	} else {
+		pfe->event_data.link_event.link_speed = link_status ?
+			i40e_virtchnl_link_speed(ls->link_speed) : 0;
+		pfe->event_data.link_event.link_status = link_status;
+	}
+}
+
+/**
  * i40e_vc_notify_vf_link_state
  * @vf: pointer to the VF structure
  *
@@ -55,16 +115,9 @@ static void i40e_vc_notify_vf_link_state(struct i40e_vf *vf)
 
 	pfe.event = VIRTCHNL_EVENT_LINK_CHANGE;
 	pfe.severity = PF_EVENT_SEVERITY_INFO;
-	if (vf->link_forced) {
-		pfe.event_data.link_event.link_status = vf->link_up;
-		pfe.event_data.link_event.link_speed =
-			(vf->link_up ? VIRTCHNL_LINK_SPEED_40GB : 0);
-	} else {
-		pfe.event_data.link_event.link_status =
-			ls->link_info & I40E_AQ_LINK_UP;
-		pfe.event_data.link_event.link_speed =
-			i40e_virtchnl_link_speed(ls->link_speed);
-	}
+
+	i40e_set_vf_link_state(vf, &pfe, ls);
+
 	i40e_aq_send_msg_to_vf(hw, abs_vf_id, VIRTCHNL_OP_EVENT,
 			       0, (u8 *)&pfe, sizeof(pfe), NULL);
 }
@@ -1324,32 +1377,6 @@ static i40e_status i40e_config_vf_promiscuous_mode(struct i40e_vf *vf,
 }
 
 /**
- * i40e_sync_vfr_reset
- * @hw: pointer to hw struct
- * @vf_id: VF identifier
- *
- * Before trigger hardware reset, we need to know if no other process has
- * reserved the hardware for any reset operations. This check is done by
- * examining the status of the RSTAT1 register used to signal the reset.
- **/
-static int i40e_sync_vfr_reset(struct i40e_hw *hw, int vf_id)
-{
-	u32 reg;
-	int i;
-
-	for (i = 0; i < I40E_VFR_WAIT_COUNT; i++) {
-		reg = rd32(hw, I40E_VFINT_ICR0_ENA(vf_id)) &
-			   I40E_VFINT_ICR0_ADMINQ_MASK;
-		if (reg)
-			return 0;
-
-		usleep_range(100, 200);
-	}
-
-	return -EAGAIN;
-}
-
-/**
  * i40e_trigger_vf_reset
  * @vf: pointer to the VF structure
  * @flr: VFLR was issued or not
@@ -1363,11 +1390,9 @@ static void i40e_trigger_vf_reset(struct i40e_vf *vf, bool flr)
 	struct i40e_pf *pf = vf->pf;
 	struct i40e_hw *hw = &pf->hw;
 	u32 reg, reg_idx, bit_idx;
-	bool vf_active;
-	u32 radq;
 
 	/* warn the VF */
-	vf_active = test_and_clear_bit(I40E_VF_STATE_ACTIVE, &vf->vf_states);
+	clear_bit(I40E_VF_STATE_ACTIVE, &vf->vf_states);
 
 	/* Disable VF's configuration API during reset. The flag is re-enabled
 	 * in i40e_alloc_vf_res(), when it's safe again to access VF's VSI.
@@ -1381,19 +1406,7 @@ static void i40e_trigger_vf_reset(struct i40e_vf *vf, bool flr)
 	 * just need to clean up, so don't hit the VFRTRIG register.
 	 */
 	if (!flr) {
-		/* Sync VFR reset before trigger next one */
-		radq = rd32(hw, I40E_VFINT_ICR0_ENA(vf->vf_id)) &
-			    I40E_VFINT_ICR0_ADMINQ_MASK;
-		if (vf_active && !radq)
-			/* waiting for finish reset by virtual driver */
-			if (i40e_sync_vfr_reset(hw, vf->vf_id))
-				dev_info(&pf->pdev->dev,
-					 "Reset VF %d never finished\n",
-				vf->vf_id);
-
-		/* Reset VF using VPGEN_VFRTRIG reg. It is also setting
-		 * in progress state in rstat1 register.
-		 */
+		/* reset VF using VPGEN_VFRTRIG reg */
 		reg = rd32(hw, I40E_VPGEN_VFRTRIG(vf->vf_id));
 		reg |= I40E_VPGEN_VFRTRIG_VFSWR_MASK;
 		wr32(hw, I40E_VPGEN_VFRTRIG(vf->vf_id), reg);
@@ -2060,6 +2073,7 @@ static int i40e_vc_get_vf_resources_msg(struct i40e_vf *vf, u8 *msg)
 				  VIRTCHNL_VF_OFFLOAD_VLAN;
 
 	vfres->vf_cap_flags = VIRTCHNL_VF_OFFLOAD_L2;
+	vfres->vf_cap_flags |= VIRTCHNL_VF_CAP_ADV_LINK_SPEED;
 	vsi = pf->vsi[vf->lan_vsi_idx];
 	if (!vsi->info.pvid)
 		vfres->vf_cap_flags |= VIRTCHNL_VF_OFFLOAD_VLAN;
@@ -2604,59 +2618,6 @@ error_param:
 }
 
 /**
- * i40e_check_enough_queue - find big enough queue number
- * @vf: pointer to the VF info
- * @needed: the number of items needed
- *
- * Returns the base item index of the queue, or negative for error
- **/
-static int i40e_check_enough_queue(struct i40e_vf *vf, u16 needed)
-{
-	unsigned int  i, cur_queues, more, pool_size;
-	struct i40e_lump_tracking *pile;
-	struct i40e_pf *pf = vf->pf;
-	struct i40e_vsi *vsi;
-
-	vsi = pf->vsi[vf->lan_vsi_idx];
-	cur_queues = vsi->alloc_queue_pairs;
-
-	/* if current allocated queues are enough for need */
-	if (cur_queues >= needed)
-		return vsi->base_queue;
-
-	pile = pf->qp_pile;
-	if (cur_queues > 0) {
-		/* if the allocated queues are not zero
-		 * just check if there are enough queues for more
-		 * behind the allocated queues.
-		 */
-		more = needed - cur_queues;
-		for (i = vsi->base_queue + cur_queues;
-			i < pile->num_entries; i++) {
-			if (pile->list[i] & I40E_PILE_VALID_BIT)
-				break;
-
-			if (more-- == 1)
-				/* there is enough */
-				return vsi->base_queue;
-		}
-	}
-
-	pool_size = 0;
-	for (i = 0; i < pile->num_entries; i++) {
-		if (pile->list[i] & I40E_PILE_VALID_BIT) {
-			pool_size = 0;
-			continue;
-		}
-		if (needed <= ++pool_size)
-			/* there is enough */
-			return i;
-	}
-
-	return -ENOMEM;
-}
-
-/**
  * i40e_vc_request_queues_msg
  * @vf: pointer to the VF info
  * @msg: pointer to the msg buffer
@@ -2690,12 +2651,6 @@ static int i40e_vc_request_queues_msg(struct i40e_vf *vf, u8 *msg)
 			 req_pairs - cur_pairs,
 			 pf->queues_left);
 		vfres->num_queue_pairs = pf->queues_left + cur_pairs;
-	} else if (i40e_check_enough_queue(vf, req_pairs) < 0) {
-		dev_warn(&pf->pdev->dev,
-			 "VF %d requested %d more queues, but there is not enough for it.\n",
-			 vf->vf_id,
-			 req_pairs - cur_pairs);
-		vfres->num_queue_pairs = cur_pairs;
 	} else {
 		/* successful request */
 		vf->num_req_queues = req_pairs;
@@ -3863,26 +3818,8 @@ static int i40e_vc_add_qch_msg(struct i40e_vf *vf, u8 *msg)
 	}
 
 	/* get link speed in MB to validate rate limit */
-	switch (ls->link_speed) {
-	case VIRTCHNL_LINK_SPEED_100MB:
-		speed = SPEED_100;
-		break;
-	case VIRTCHNL_LINK_SPEED_1GB:
-		speed = SPEED_1000;
-		break;
-	case VIRTCHNL_LINK_SPEED_10GB:
-		speed = SPEED_10000;
-		break;
-	case VIRTCHNL_LINK_SPEED_20GB:
-		speed = SPEED_20000;
-		break;
-	case VIRTCHNL_LINK_SPEED_25GB:
-		speed = SPEED_25000;
-		break;
-	case VIRTCHNL_LINK_SPEED_40GB:
-		speed = SPEED_40000;
-		break;
-	default:
+	speed = i40e_vc_link_speed2mbps(ls->link_speed);
+	if (speed == SPEED_UNKNOWN) {
 		dev_err(&pf->pdev->dev,
 			"Cannot detect link speed\n");
 		aq_ret = I40E_ERR_PARAM;
@@ -4558,6 +4495,7 @@ int i40e_ndo_set_vf_link_state(struct net_device *netdev, int vf_id, int link)
 {
 	struct i40e_netdev_priv *np = netdev_priv(netdev);
 	struct i40e_pf *pf = np->vsi->back;
+	struct i40e_link_status *ls = &pf->hw.phy.link_info;
 	struct virtchnl_pf_event pfe;
 	struct i40e_hw *hw = &pf->hw;
 	struct i40e_vf *vf;
@@ -4585,23 +4523,17 @@ int i40e_ndo_set_vf_link_state(struct net_device *netdev, int vf_id, int link)
 	switch (link) {
 	case IFLA_VF_LINK_STATE_AUTO:
 		vf->link_forced = false;
-		pfe.event_data.link_event.link_status =
-			pf->hw.phy.link_info.link_info & I40E_AQ_LINK_UP;
-		pfe.event_data.link_event.link_speed =
-			(enum virtchnl_link_speed)
-			pf->hw.phy.link_info.link_speed;
+		i40e_set_vf_link_state(vf, &pfe, ls);
 		break;
 	case IFLA_VF_LINK_STATE_ENABLE:
 		vf->link_forced = true;
 		vf->link_up = true;
-		pfe.event_data.link_event.link_status = true;
-		pfe.event_data.link_event.link_speed = VIRTCHNL_LINK_SPEED_40GB;
+		i40e_set_vf_link_state(vf, &pfe, ls);
 		break;
 	case IFLA_VF_LINK_STATE_DISABLE:
 		vf->link_forced = true;
 		vf->link_up = false;
-		pfe.event_data.link_event.link_status = false;
-		pfe.event_data.link_event.link_speed = 0;
+		i40e_set_vf_link_state(vf, &pfe, ls);
 		break;
 	default:
 		ret = -EINVAL;

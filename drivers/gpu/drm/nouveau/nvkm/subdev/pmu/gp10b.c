@@ -78,7 +78,7 @@ gp10b_pmu_acr = {
 
 static const struct nvkm_pmu_func
 gp10b_pmu = {
-	.flcn = &gm200_pmu_flcn,
+	.flcn = &gt215_pmu_flcn,
 	.enabled = gf100_pmu_enabled,
 	.intr = gt215_pmu_intr,
 	.recv = gm20b_pmu_recv,
@@ -99,7 +99,8 @@ gp10b_pmu_fwif[] = {
 };
 
 int
-gp10b_pmu_new(struct nvkm_device *device, int index, struct nvkm_pmu **ppmu)
+gp10b_pmu_new(struct nvkm_device *device, enum nvkm_subdev_type type, int inst,
+	      struct nvkm_pmu **ppmu)
 {
-	return nvkm_pmu_new_(gp10b_pmu_fwif, device, index, ppmu);
+	return nvkm_pmu_new_(gp10b_pmu_fwif, device, type, inst, ppmu);
 }

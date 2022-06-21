@@ -265,6 +265,7 @@ static int jent_stuck(struct rand_data *ec, __u64 current_delta)
 {
 	__u64 delta2 = jent_delta(ec->last_delta, current_delta);
 	__u64 delta3 = jent_delta(ec->last_delta2, delta2);
+	unsigned int delta_masked = current_delta & JENT_APT_WORD_MASK;
 
 	ec->last_delta = current_delta;
 	ec->last_delta2 = delta2;
@@ -273,7 +274,7 @@ static int jent_stuck(struct rand_data *ec, __u64 current_delta)
 	 * Insert the result of the comparison of two back-to-back time
 	 * deltas.
 	 */
-	jent_apt_insert(ec, current_delta);
+	jent_apt_insert(ec, delta_masked);
 
 	if (!current_delta || !delta2 || !delta3) {
 		/* RCT with a stuck bit */
@@ -596,7 +597,7 @@ int jent_read_entropy(struct rand_data *ec, unsigned char *data,
 	if (!ec)
 		return -1;
 
-	while (0 < len) {
+	while (len > 0) {
 		unsigned int tocopy;
 
 		jent_gen_entropy(ec);
@@ -677,7 +678,7 @@ struct rand_data *jent_entropy_collector_alloc(unsigned int osr,
 	}
 
 	/* verify and set the oversampling rate */
-	if (0 == osr)
+	if (osr == 0)
 		osr = 1; /* minimum sampling rate is 1 */
 	entropy_collector->osr = osr;
 
@@ -768,7 +769,7 @@ int jent_entropy_init(void)
 		 * etc. with the goal to clear it to get the worst case
 		 * measurements.
 		 */
-		if (CLEARCACHE > i)
+		if (i < CLEARCACHE)
 			continue;
 
 		if (stuck)
@@ -825,7 +826,7 @@ int jent_entropy_init(void)
 	 * should not fail. The value of 3 should cover the NTP case being
 	 * performed during our test run.
 	 */
-	if (3 < time_backwards)
+	if (time_backwards > 3)
 		return JENT_ENOMONOTONIC;
 
 	/*

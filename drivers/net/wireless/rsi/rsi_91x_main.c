@@ -23,7 +23,6 @@
 #include "rsi_common.h"
 #include "rsi_coex.h"
 #include "rsi_hal.h"
-#include "rsi_usb.h"
 
 u32 rsi_zone_enabled = /* INFO_ZONE |
 			INIT_ZONE |
@@ -169,9 +168,6 @@ int rsi_read_pkt(struct rsi_common *common, u8 *rx_pkt, s32 rcv_pkt_len)
 		frame_desc = &rx_pkt[index];
 		actual_length = *(u16 *)&frame_desc[0];
 		offset = *(u16 *)&frame_desc[2];
-		if (!rcv_pkt_len && offset >
-			RSI_MAX_RX_USB_PKT_SIZE - FRAME_DESC_SZ)
-			goto fail;
 
 		queueno = rsi_get_queueno(frame_desc, offset);
 		length = rsi_get_length(frame_desc, offset);
@@ -456,6 +452,5 @@ module_init(rsi_91x_hal_module_init);
 module_exit(rsi_91x_hal_module_exit);
 MODULE_AUTHOR("Redpine Signals Inc");
 MODULE_DESCRIPTION("Station driver for RSI 91x devices");
-MODULE_SUPPORTED_DEVICE("RSI-91x");
 MODULE_VERSION("0.1");
 MODULE_LICENSE("Dual BSD/GPL");

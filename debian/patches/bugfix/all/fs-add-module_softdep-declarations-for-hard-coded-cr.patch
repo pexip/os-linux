@@ -17,11 +17,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  fs/nfsd/nfsctl.c  | 3 +++
  5 files changed, 7 insertions(+), 2 deletions(-)
 
-Index: linux/fs/btrfs/super.c
-===================================================================
---- linux.orig/fs/btrfs/super.c
-+++ linux/fs/btrfs/super.c
-@@ -2597,7 +2597,7 @@ late_initcall(init_btrfs_fs);
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2697,7 +2697,7 @@
  module_exit(exit_btrfs_fs)
  
  MODULE_LICENSE("GPL");
@@ -30,11 +28,9 @@ Index: linux/fs/btrfs/super.c
  MODULE_SOFTDEP("pre: xxhash64");
  MODULE_SOFTDEP("pre: sha256");
  MODULE_SOFTDEP("pre: blake2b-256");
-Index: linux/fs/ext4/super.c
-===================================================================
---- linux.orig/fs/ext4/super.c
-+++ linux/fs/ext4/super.c
-@@ -6755,6 +6755,6 @@ static void __exit ext4_exit_fs(void)
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -6822,6 +6822,6 @@
  MODULE_AUTHOR("Remy Card, Stephen Tweedie, Andrew Morton, Andreas Dilger, Theodore Ts'o and others");
  MODULE_DESCRIPTION("Fourth Extended Filesystem");
  MODULE_LICENSE("GPL");
@@ -42,22 +38,9 @@ Index: linux/fs/ext4/super.c
 +MODULE_SOFTDEP("pre: crypto-crc32c");
  module_init(ext4_init_fs)
  module_exit(ext4_exit_fs)
-Index: linux/fs/f2fs/super.c
-===================================================================
---- linux.orig/fs/f2fs/super.c
-+++ linux/fs/f2fs/super.c
-@@ -4157,5 +4157,4 @@ module_exit(exit_f2fs_fs)
- MODULE_AUTHOR("Samsung Electronics's Praesto Team");
- MODULE_DESCRIPTION("Flash Friendly File System");
- MODULE_LICENSE("GPL");
--MODULE_SOFTDEP("pre: crc32");
--
-+MODULE_SOFTDEP("pre: crypto-crc32");
-Index: linux/fs/jbd2/journal.c
-===================================================================
---- linux.orig/fs/jbd2/journal.c
-+++ linux/fs/jbd2/journal.c
-@@ -3012,6 +3012,7 @@ static void __exit journal_exit(void)
+--- a/fs/jbd2/journal.c
++++ b/fs/jbd2/journal.c
+@@ -3008,6 +3008,7 @@
  }
  
  MODULE_LICENSE("GPL");
@@ -65,11 +48,9 @@ Index: linux/fs/jbd2/journal.c
  module_init(journal_init);
  module_exit(journal_exit);
  
-Index: linux/fs/nfsd/nfsctl.c
-===================================================================
---- linux.orig/fs/nfsd/nfsctl.c
-+++ linux/fs/nfsd/nfsctl.c
-@@ -1583,5 +1583,8 @@ static void __exit exit_nfsd(void)
+--- a/fs/nfsd/nfsctl.c
++++ b/fs/nfsd/nfsctl.c
+@@ -1579,5 +1579,8 @@
  
  MODULE_AUTHOR("Olaf Kirch <okir@monad.swb.de>");
  MODULE_LICENSE("GPL");

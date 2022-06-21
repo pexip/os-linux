@@ -202,7 +202,6 @@ static void ftdi_elan_delete(struct kref *kref)
 	mutex_unlock(&ftdi_module_lock);
 	kfree(ftdi->bulk_in_buffer);
 	ftdi->bulk_in_buffer = NULL;
-	kfree(ftdi);
 }
 
 static void ftdi_elan_put_kref(struct usb_ftdi *ftdi)
@@ -2099,7 +2098,6 @@ more:{
 				} else
 					d += sprintf(d, " ..");
 				bytes_read += 1;
-				continue;
 			}
 			goto more;
 		} else if (packet_bytes > 1) {

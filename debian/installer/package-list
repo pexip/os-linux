@@ -76,8 +76,8 @@
 #
 #Package: cdrom-core-modules
 #Depends: kernel-image, scsi-core-modules
-#Depends_ia64: kernel-image, scsi-core-modules, ide-modules
-#Depends_m68k: kernel-image, scsi-core-modules, ide-modules
+#Depends_ia64: kernel-image, scsi-core-modules
+#Depends_m68k: kernel-image, scsi-core-modules
 #Priority: standard
 #Description: CDROM support
 # This package contains core CDROM support for the kernel.
@@ -456,3 +456,4 @@
 # This package contains the module for dasd DIAG support. The udeb is
 # not loaded by default as the installer does not actually support this.
 # It can however be useful to have available in rescue situations.
+

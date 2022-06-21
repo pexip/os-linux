@@ -379,14 +379,7 @@ int xenbus_grant_ring(struct xenbus_device *dev, void *vaddr,
 		      unsigned int nr_pages, grant_ref_t *grefs)
 {
 	int err;
-	unsigned int i;
-	grant_ref_t gref_head;
-
-	err = gnttab_alloc_grant_references(nr_pages, &gref_head);
-	if (err) {
-		xenbus_dev_fatal(dev, err, "granting access to ring page");
-		return err;
-	}
+	int i, j;
 
 	for (i = 0; i < nr_pages; i++) {
 		unsigned long gfn;
@@ -396,14 +389,23 @@ int xenbus_grant_ring(struct xenbus_device *dev, void *vaddr,
 		else
 			gfn = virt_to_gfn(vaddr);
 
-		grefs[i] = gnttab_claim_grant_reference(&gref_head);
-		gnttab_grant_foreign_access_ref(grefs[i], dev->otherend_id,
-						gfn, 0);
+		err = gnttab_grant_foreign_access(dev->otherend_id, gfn, 0);
+		if (err < 0) {
+			xenbus_dev_fatal(dev, err,
+					 "granting access to ring page");
+			goto fail;
+		}
+		grefs[i] = err;
 
 		vaddr = vaddr + XEN_PAGE_SIZE;
 	}
 
 	return 0;
+
+fail:
+	for (j = 0; j < i; j++)
+		gnttab_end_foreign_access_ref(grefs[j], 0);
+	return err;
 }
 EXPORT_SYMBOL_GPL(xenbus_grant_ring);
 
@@ -540,8 +542,7 @@ static int __xenbus_map_ring(struct xenbus_device *dev,
 		}
 	}
 
-	if (HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, info->unmap, j))
-		BUG();
+	BUG_ON(HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, info->unmap, j));
 
 	*leaked = false;
 	for (i = 0; i < j; i++) {
@@ -579,8 +580,7 @@ static int xenbus_unmap_ring(struct xenbus_device *dev, grant_handle_t *handles,
 		gnttab_set_unmap_op(&unmap[i], vaddrs[i],
 				    GNTMAP_host_map, handles[i]);
 
-	if (HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap, i))
-		BUG();
+	BUG_ON(HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap, i));
 
 	err = GNTST_okay;
 	for (i = 0; i < nr_handles; i++) {
@@ -776,8 +776,7 @@ static int xenbus_unmap_ring_pv(struct xenbus_device *dev, void *vaddr)
 		unmap[i].handle = node->handles[i];
 	}
 
-	if (HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap, i))
-		BUG();
+	BUG_ON(HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap, i));
 
 	err = GNTST_okay;
 	leaked = false;

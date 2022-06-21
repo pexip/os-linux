@@ -11,11 +11,12 @@ case for that.
 
 References: https://buildd.debian.org/status/fetch.php?pkg=linux&arch=ia64&ver=5.8.3-1%7Eexp1&stamp=1598340829&raw=1
 Signed-off-by: Ben Hutchings <benh@debian.org>
+[Salvatore Bonaccorso: Inclusion for ia64 was dropped in upstream 5.10.32,
+refresh patch for context changes]
+Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
 ---
-Index: linux/tools/include/uapi/asm/errno.h
-===================================================================
---- linux.orig/tools/include/uapi/asm/errno.h
-+++ linux/tools/include/uapi/asm/errno.h
+--- a/tools/include/uapi/asm/errno.h
++++ b/tools/include/uapi/asm/errno.h
 @@ -9,8 +9,8 @@
  #include "../../../arch/alpha/include/uapi/asm/errno.h"
  #elif defined(__mips__)

@@ -14,12 +14,6 @@ CONFIG_KEXEC=y
 CONFIG_CRASH_DUMP=y
 
 ##
-## file: arch/arm/crypto/Kconfig
-##
-CONFIG_CRYPTO_SHA1_ARM=m
-CONFIG_CRYPTO_AES_ARM=m
-
-##
 ## file: arch/arm/Kconfig.debug
 ##
 CONFIG_DEBUG_WX=y
@@ -27,10 +21,25 @@ CONFIG_DEBUG_LL=y
 CONFIG_EARLY_PRINTK=y
 
 ##
+## file: arch/arm/crypto/Kconfig
+##
+CONFIG_CRYPTO_SHA1_ARM=m
+CONFIG_CRYPTO_SHA256_ARM=m
+CONFIG_CRYPTO_SHA512_ARM=m
+CONFIG_CRYPTO_BLAKE2S_ARM=m
+CONFIG_CRYPTO_AES_ARM=m
+
+##
 ## file: arch/arm/mm/Kconfig
 ##
 #. Support Thumb user binaries
 CONFIG_ARM_THUMB=y
+
+##
+## file: drivers/gpu/drm/vc4/Kconfig
+##
+CONFIG_DRM_VC4=m
+CONFIG_DRM_VC4_HDMI_CEC=y
 
 ##
 ## file: drivers/iio/humidity/Kconfig
@@ -54,6 +63,11 @@ CONFIG_MOUSE_APPLETOUCH=m
 ## file: drivers/input/touchscreen/Kconfig
 ##
 # CONFIG_TOUCHSCREEN_EETI is not set
+
+##
+## file: drivers/leds/trigger/Kconfig
+##
+CONFIG_LEDS_TRIGGER_HEARTBEAT=y
 
 ##
 ## file: drivers/mtd/maps/Kconfig
@@ -125,4 +139,3 @@ CONFIG_CPU_THERMAL=y
 ##
 CONFIG_XZ_DEC_ARM=y
 CONFIG_XZ_DEC_ARMTHUMB=y
-

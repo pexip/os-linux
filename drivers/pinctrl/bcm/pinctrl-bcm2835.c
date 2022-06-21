@@ -395,8 +395,8 @@ static void bcm2835_gpio_irq_handle_bank(struct bcm2835_pinctrl *pc,
 	events &= pc->enabled_irq_map[bank];
 	for_each_set_bit(offset, &events, 32) {
 		gpio = (32 * bank) + offset;
-		generic_handle_irq(irq_linear_revmap(pc->gpio_chip.irq.domain,
-						     gpio));
+		generic_handle_domain_irq(pc->gpio_chip.irq.domain,
+					  gpio);
 	}
 }
 
@@ -416,8 +416,7 @@ static void bcm2835_gpio_irq_handler(struct irq_desc *desc)
 		}
 	}
 	/* This should not happen, every IRQ has a bank */
-	if (i == BCM2835_NUM_IRQS)
-		BUG();
+	BUG_ON(i == BCM2835_NUM_IRQS);
 
 	chained_irq_enter(host_chip, desc);
 
@@ -1264,18 +1263,16 @@ static int bcm2835_pinctrl_probe(struct platform_device *pdev)
 				     sizeof(*girq->parents),
 				     GFP_KERNEL);
 	if (!girq->parents) {
-		err = -ENOMEM;
-		goto out_remove;
+		pinctrl_remove_gpio_range(pc->pctl_dev, &pc->gpio_range);
+		return -ENOMEM;
 	}
 
 	if (is_7211) {
 		pc->wake_irq = devm_kcalloc(dev, BCM2835_NUM_IRQS,
 					    sizeof(*pc->wake_irq),
 					    GFP_KERNEL);
-		if (!pc->wake_irq) {
-			err = -ENOMEM;
-			goto out_remove;
-		}
+		if (!pc->wake_irq)
+			return -ENOMEM;
 	}
 
 	/*
@@ -1290,19 +1287,21 @@ static int bcm2835_pinctrl_probe(struct platform_device *pdev)
 		char *name;
 
 		girq->parents[i] = irq_of_parse_and_map(np, i);
-		if (!is_7211)
+		if (!is_7211) {
+			if (!girq->parents[i]) {
+				girq->num_parents = i;
+				break;
+			}
 			continue;
-
+		}
 		/* Skip over the all banks interrupts */
 		pc->wake_irq[i] = irq_of_parse_and_map(np, i +
 						       BCM2835_NUM_IRQS + 1);
 
 		len = strlen(dev_name(pc->dev)) + 16;
 		name = devm_kzalloc(pc->dev, len, GFP_KERNEL);
-		if (!name) {
-			err = -ENOMEM;
-			goto out_remove;
-		}
+		if (!name)
+			return -ENOMEM;
 
 		snprintf(name, len, "%s:bank%d", dev_name(pc->dev), i);
 
@@ -1321,14 +1320,11 @@ static int bcm2835_pinctrl_probe(struct platform_device *pdev)
 	err = gpiochip_add_data(&pc->gpio_chip, pc);
 	if (err) {
 		dev_err(dev, "could not add GPIO chip\n");
-		goto out_remove;
+		pinctrl_remove_gpio_range(pc->pctl_dev, &pc->gpio_range);
+		return err;
 	}
 
 	return 0;
-
-out_remove:
-	pinctrl_remove_gpio_range(pc->pctl_dev, &pc->gpio_range);
-	return err;
 }
 
 static struct platform_driver bcm2835_pinctrl_driver = {

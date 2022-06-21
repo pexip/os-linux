@@ -168,7 +168,7 @@ error_chan_id:
 	return ERR_PTR(ret);
 }
 
-static const struct of_device_id stm32_stm32dma_master_match[] = {
+static const struct of_device_id stm32_stm32dma_master_match[] __maybe_unused = {
 	{ .compatible = "st,stm32-dma", },
 	{},
 };
@@ -292,12 +292,10 @@ static int stm32_dmamux_probe(struct platform_device *pdev)
 	ret = of_dma_router_register(node, stm32_dmamux_route_allocate,
 				     &stm32_dmamux->dmarouter);
 	if (ret)
-		goto pm_disable;
+		goto err_clk;
 
 	return 0;
 
-pm_disable:
-	pm_runtime_disable(&pdev->dev);
 err_clk:
 	clk_disable_unprepare(stm32_dmamux->clk);
 

@@ -11,28 +11,8 @@
 #define ADF_DH895XCC_ERRMSK5	(ADF_DH895XCC_EP_OFFSET + 0xDC)
 #define ADF_DH895XCC_ERRMSK5_VF2PF_U_MASK(vf_mask) (vf_mask >> 16)
 
-void adf_enable_pf2vf_interrupts(struct adf_accel_dev *accel_dev)
-{
-	struct adf_accel_pci *pci_info = &accel_dev->accel_pci_dev;
-	struct adf_hw_device_data *hw_data = accel_dev->hw_device;
-	void __iomem *pmisc_bar_addr =
-		pci_info->pci_bars[hw_data->get_misc_bar_id(hw_data)].virt_addr;
-
-	ADF_CSR_WR(pmisc_bar_addr, hw_data->get_vintmsk_offset(0), 0x0);
-}
-
-void adf_disable_pf2vf_interrupts(struct adf_accel_dev *accel_dev)
-{
-	struct adf_accel_pci *pci_info = &accel_dev->accel_pci_dev;
-	struct adf_hw_device_data *hw_data = accel_dev->hw_device;
-	void __iomem *pmisc_bar_addr =
-		pci_info->pci_bars[hw_data->get_misc_bar_id(hw_data)].virt_addr;
-
-	ADF_CSR_WR(pmisc_bar_addr, hw_data->get_vintmsk_offset(0), 0x2);
-}
-
-void adf_enable_vf2pf_interrupts(struct adf_accel_dev *accel_dev,
-				 u32 vf_mask)
+static void __adf_enable_vf2pf_interrupts(struct adf_accel_dev *accel_dev,
+					  u32 vf_mask)
 {
 	struct adf_hw_device_data *hw_data = accel_dev->hw_device;
 	struct adf_bar *pmisc =
@@ -55,7 +35,17 @@ void adf_enable_vf2pf_interrupts(struct adf_accel_dev *accel_dev,
 	}
 }
 
-void adf_disable_vf2pf_interrupts(struct adf_accel_dev *accel_dev, u32 vf_mask)
+void adf_enable_vf2pf_interrupts(struct adf_accel_dev *accel_dev, u32 vf_mask)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&accel_dev->pf.vf2pf_ints_lock, flags);
+	__adf_enable_vf2pf_interrupts(accel_dev, vf_mask);
+	spin_unlock_irqrestore(&accel_dev->pf.vf2pf_ints_lock, flags);
+}
+
+static void __adf_disable_vf2pf_interrupts(struct adf_accel_dev *accel_dev,
+					   u32 vf_mask)
 {
 	struct adf_hw_device_data *hw_data = accel_dev->hw_device;
 	struct adf_bar *pmisc =
@@ -76,6 +66,22 @@ void adf_disable_vf2pf_interrupts(struct adf_accel_dev *accel_dev, u32 vf_mask)
 			ADF_DH895XCC_ERRMSK5_VF2PF_U_MASK(vf_mask);
 		ADF_CSR_WR(pmisc_addr, ADF_DH895XCC_ERRMSK5, reg);
 	}
+}
+
+void adf_disable_vf2pf_interrupts(struct adf_accel_dev *accel_dev, u32 vf_mask)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&accel_dev->pf.vf2pf_ints_lock, flags);
+	__adf_disable_vf2pf_interrupts(accel_dev, vf_mask);
+	spin_unlock_irqrestore(&accel_dev->pf.vf2pf_ints_lock, flags);
+}
+
+void adf_disable_vf2pf_interrupts_irq(struct adf_accel_dev *accel_dev, u32 vf_mask)
+{
+	spin_lock(&accel_dev->pf.vf2pf_ints_lock);
+	__adf_disable_vf2pf_interrupts(accel_dev, vf_mask);
+	spin_unlock(&accel_dev->pf.vf2pf_ints_lock);
 }
 
 static int __adf_iov_putmsg(struct adf_accel_dev *accel_dev, u32 msg, u8 vf_nr)
@@ -111,19 +117,37 @@ static int __adf_iov_putmsg(struct adf_accel_dev *accel_dev, u32 msg, u8 vf_nr)
 
 	mutex_lock(lock);
 
-	/* Check if the PFVF CSR is in use by remote function */
+	/* Check if PF2VF CSR is in use by remote function */
 	val = ADF_CSR_RD(pmisc_bar_addr, pf2vf_offset);
 	if ((val & remote_in_use_mask) == remote_in_use_pattern) {
 		dev_dbg(&GET_DEV(accel_dev),
-			"PFVF CSR in use by remote function\n");
+			"PF2VF CSR in use by remote function\n");
 		ret = -EBUSY;
 		goto out;
 	}
 
+	/* Attempt to get ownership of PF2VF CSR */
 	msg &= ~local_in_use_mask;
 	msg |= local_in_use_pattern;
+	ADF_CSR_WR(pmisc_bar_addr, pf2vf_offset, msg);
 
-	/* Attempt to get ownership of the PFVF CSR */
+	/* Wait in case remote func also attempting to get ownership */
+	msleep(ADF_IOV_MSG_COLLISION_DETECT_DELAY);
+
+	val = ADF_CSR_RD(pmisc_bar_addr, pf2vf_offset);
+	if ((val & local_in_use_mask) != local_in_use_pattern) {
+		dev_dbg(&GET_DEV(accel_dev),
+			"PF2VF CSR in use by remote - collision detected\n");
+		ret = -EBUSY;
+		goto out;
+	}
+
+	/*
+	 * This function now owns the PV2VF CSR.  The IN_USE_BY pattern must
+	 * remain in the PF2VF CSR for all writes including ACK from remote
+	 * until this local function relinquishes the CSR.  Send the message
+	 * by interrupting the remote.
+	 */
 	ADF_CSR_WR(pmisc_bar_addr, pf2vf_offset, msg | int_bit);
 
 	/* Wait for confirmation from remote func it received the message */
@@ -132,12 +156,6 @@ static int __adf_iov_putmsg(struct adf_accel_dev *accel_dev, u32 msg, u8 vf_nr)
 		val = ADF_CSR_RD(pmisc_bar_addr, pf2vf_offset);
 	} while ((val & int_bit) && (count++ < ADF_IOV_MSG_ACK_MAX_RETRY));
 
-	if (val & int_bit) {
-		dev_dbg(&GET_DEV(accel_dev), "ACK not received from remote\n");
-		val &= ~int_bit;
-		ret = -EIO;
-	}
-
 	if (val != msg) {
 		dev_dbg(&GET_DEV(accel_dev),
 			"Collision - PFVF CSR overwritten by remote function\n");
@@ -145,7 +163,13 @@ static int __adf_iov_putmsg(struct adf_accel_dev *accel_dev, u32 msg, u8 vf_nr)
 		goto out;
 	}
 
-	/* Finished with the PFVF CSR; relinquish it and leave msg in CSR */
+	if (val & int_bit) {
+		dev_dbg(&GET_DEV(accel_dev), "ACK not received from remote\n");
+		val &= ~int_bit;
+		ret = -EIO;
+	}
+
+	/* Finished with PF2VF CSR; relinquish it and leave msg in CSR */
 	ADF_CSR_WR(pmisc_bar_addr, pf2vf_offset, val & ~local_in_use_mask);
 out:
 	mutex_unlock(lock);
@@ -153,13 +177,12 @@ out:
 }
 
 /**
- * adf_iov_putmsg() - send PFVF message
+ * adf_iov_putmsg() - send PF2VF message
  * @accel_dev:  Pointer to acceleration device.
  * @msg:	Message to send
- * @vf_nr:	VF number to which the message will be sent if on PF, ignored
- *		otherwise
+ * @vf_nr:	VF number to which the message will be sent
  *
- * Function sends a message through the PFVF channel
+ * Function sends a message from the PF to a VF
  *
  * Return: 0 on success, error code otherwise.
  */
@@ -210,7 +233,7 @@ void adf_vf2pf_req_hndl(struct adf_accel_vf_info *vf_info)
 		resp = (ADF_PF2VF_MSGORIGIN_SYSTEM |
 			 (ADF_PF2VF_MSGTYPE_VERSION_RESP <<
 			  ADF_PF2VF_MSGTYPE_SHIFT) |
-			 (ADF_PFVF_COMPATIBILITY_VERSION <<
+			 (ADF_PFVF_COMPAT_THIS_VERSION <<
 			  ADF_PF2VF_VERSION_RESP_VERS_SHIFT));
 
 		dev_dbg(&GET_DEV(accel_dev),
@@ -220,19 +243,19 @@ void adf_vf2pf_req_hndl(struct adf_accel_vf_info *vf_info)
 		if (vf_compat_ver < hw_data->min_iov_compat_ver) {
 			dev_err(&GET_DEV(accel_dev),
 				"VF (vers %d) incompatible with PF (vers %d)\n",
-				vf_compat_ver, ADF_PFVF_COMPATIBILITY_VERSION);
+				vf_compat_ver, ADF_PFVF_COMPAT_THIS_VERSION);
 			resp |= ADF_PF2VF_VF_INCOMPATIBLE <<
 				ADF_PF2VF_VERSION_RESP_RESULT_SHIFT;
-		} else if (vf_compat_ver > ADF_PFVF_COMPATIBILITY_VERSION) {
+		} else if (vf_compat_ver > ADF_PFVF_COMPAT_THIS_VERSION) {
 			dev_err(&GET_DEV(accel_dev),
 				"VF (vers %d) compat with PF (vers %d) unkn.\n",
-				vf_compat_ver, ADF_PFVF_COMPATIBILITY_VERSION);
+				vf_compat_ver, ADF_PFVF_COMPAT_THIS_VERSION);
 			resp |= ADF_PF2VF_VF_COMPAT_UNKNOWN <<
 				ADF_PF2VF_VERSION_RESP_RESULT_SHIFT;
 		} else {
 			dev_dbg(&GET_DEV(accel_dev),
 				"VF (vers %d) compatible with PF (vers %d)\n",
-				vf_compat_ver, ADF_PFVF_COMPATIBILITY_VERSION);
+				vf_compat_ver, ADF_PFVF_COMPAT_THIS_VERSION);
 			resp |= ADF_PF2VF_VF_COMPATIBLE <<
 				ADF_PF2VF_VERSION_RESP_RESULT_SHIFT;
 		}
@@ -245,7 +268,7 @@ void adf_vf2pf_req_hndl(struct adf_accel_vf_info *vf_info)
 		resp = (ADF_PF2VF_MSGORIGIN_SYSTEM |
 			 (ADF_PF2VF_MSGTYPE_VERSION_RESP <<
 			  ADF_PF2VF_MSGTYPE_SHIFT) |
-			 (ADF_PFVF_COMPATIBILITY_VERSION <<
+			 (ADF_PFVF_COMPAT_THIS_VERSION <<
 			  ADF_PF2VF_VERSION_RESP_VERS_SHIFT));
 		resp |= ADF_PF2VF_VF_COMPATIBLE <<
 			ADF_PF2VF_VERSION_RESP_RESULT_SHIFT;
@@ -279,6 +302,7 @@ void adf_vf2pf_req_hndl(struct adf_accel_vf_info *vf_info)
 out:
 	/* re-enable interrupt on PF from this VF */
 	adf_enable_vf2pf_interrupts(accel_dev, (1 << vf_nr));
+
 	return;
 err:
 	dev_dbg(&GET_DEV(accel_dev), "Unknown message from VF%d (0x%x);\n",
@@ -308,8 +332,8 @@ static int adf_vf2pf_request_version(struct adf_accel_dev *accel_dev)
 
 	msg = ADF_VF2PF_MSGORIGIN_SYSTEM;
 	msg |= ADF_VF2PF_MSGTYPE_COMPAT_VER_REQ << ADF_VF2PF_MSGTYPE_SHIFT;
-	msg |= ADF_PFVF_COMPATIBILITY_VERSION << ADF_VF2PF_COMPAT_VER_REQ_SHIFT;
-	BUILD_BUG_ON(ADF_PFVF_COMPATIBILITY_VERSION > 255);
+	msg |= ADF_PFVF_COMPAT_THIS_VERSION << ADF_VF2PF_COMPAT_VER_REQ_SHIFT;
+	BUILD_BUG_ON(ADF_PFVF_COMPAT_THIS_VERSION > 255);
 
 	reinit_completion(&accel_dev->vf.iov_msg_completion);
 
@@ -335,14 +359,16 @@ static int adf_vf2pf_request_version(struct adf_accel_dev *accel_dev)
 		break;
 	case ADF_PF2VF_VF_COMPAT_UNKNOWN:
 		/* VF is newer than PF and decides whether it is compatible */
-		if (accel_dev->vf.pf_version >= hw_data->min_iov_compat_ver)
+		if (accel_dev->vf.pf_version >= hw_data->min_iov_compat_ver) {
+			accel_dev->vf.compatible = ADF_PF2VF_VF_COMPATIBLE;
 			break;
+		}
 		fallthrough;
 	case ADF_PF2VF_VF_INCOMPATIBLE:
 		dev_err(&GET_DEV(accel_dev),
 			"PF (vers %d) and VF (vers %d) are not compatible\n",
 			accel_dev->vf.pf_version,
-			ADF_PFVF_COMPATIBILITY_VERSION);
+			ADF_PFVF_COMPAT_THIS_VERSION);
 		return -EINVAL;
 	default:
 		dev_err(&GET_DEV(accel_dev),
