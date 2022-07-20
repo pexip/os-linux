@@ -1,4 +1,4 @@
-linux (5.15.48-1pexip3) pexip; urgency=medium
+linux (5.15.48-1pexip3) pexip-bullseye; urgency=medium
 
   * Add linux-image-virtual
 
