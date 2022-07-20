@@ -1,3 +1,9 @@
+linux (5.15.48-1pexip3) pexip; urgency=medium
+
+  * Add linux-image-virtual
+
+ -- Vincent Sanders <vince@pexip.com>  Wed, 20 Jul 2022 16:41:10 +0100
+
 linux (5.15.48-1pexip2) pexip-bullseye; urgency=medium
 
   * Main bullseye build

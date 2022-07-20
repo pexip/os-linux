@@ -2199,3 +2199,9 @@ Description: Linux for multiprocessor 32-bit PA-RISC (dummy package)
  This is a dummy transitional package.  It can be safely removed.
 Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
 
+Package: linux-image-virtual
+Architecture: amd64
+Depends: linux-image-amd64, ${misc:Depends}
+Description: Linux kernel suitable for virtual machines (meta-package)
+ This package depends on the binary Linux image.
+
