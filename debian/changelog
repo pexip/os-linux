@@ -1,3 +1,14 @@
+linux (5.15.48-1pexip5) pexip-bullseye; urgency=medium
+
+  * Add gcc-arm-linux-gnueabihf to B-D for arm64 only.
+    It is listed in config/arm64/defines but not in control for some reason.
+    (We may not have fully regenerated the control file since moving to 5.15,
+    especially as it refers to gcc-11 for arm64 which is not in bullseye).
+  * Note that the arm64 kernel version is not to be shipped as it
+    needs to be stripped down to a minimal image.
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Wed, 31 Aug 2022 22:49:35 +0100
+
 linux (5.15.48-1pexip4) pexip-bullseye; urgency=medium
 
   * Rebuild for override changes
