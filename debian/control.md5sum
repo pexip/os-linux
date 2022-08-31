@@ -41,7 +41,7 @@ afb508873a44a1f196c2a525fec4b415  debian/templates/image.prerm.in
 f059309d291811b071b8d25c0d51362a  debian/config/defines
 59a811890d2e7129bec940075850f11f  debian/config/alpha/defines
 634f8347b8728486620098a35b01a874  debian/config/amd64/defines
-44bff3917069a99eeb20ceff24609dda  debian/config/arm64/defines
+ae3dc013facc79cfbc482f3a3318b113  debian/config/arm64/defines
 3e673c1434c6132c73c0cfb4bfe38763  debian/config/arm64ilp32/defines
 69ad9a016e41e5d08c7b765e6c8a0275  debian/config/armel/defines
 6fefd2f8c907e251e7d8ed620df0a5a1  debian/config/armhf/defines

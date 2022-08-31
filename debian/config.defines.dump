@@ -577,7 +577,7 @@ Varch/arm64/boot/Image
 p307
 sVsigned-code
 p308
-I01
+I00
 sVvdso
 p309
 I01

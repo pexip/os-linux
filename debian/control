@@ -394,22 +394,12 @@ Description: Debugging symbols for Linux amd64 configuration (meta-package)
  Linux kernel amd64 configuration.
 Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
 
-Package: linux-image-arm64-signed-template
+Package: linux-image-5.15.0-1pexip1-arm64
 Architecture: arm64
-Depends: dpkg-dev, ${misc:Depends}
-Description: Template for signed linux-image packages for arm64
- This package is used to control code signing by the Debian signing
- service.
-Build-Profiles: <!stage1 !pkg.linux.nokernel>
-
-Package: linux-image-5.15.0-1pexip1-arm64-unsigned
-Architecture: arm64
-Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [arm64] | linux-initramfs-tool [arm64]
+Depends: kmod, linux-base (>= 4.3~), linux-bootwrapper-5.15.0-1pexip1 [powerpc ppc64], ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [arm64] | linux-initramfs-tool [arm64]
 Recommends: firmware-linux-free, apparmor [arm64]
 Suggests: debian-kernel-handbook
-Replaces: linux-image-5.15.0-1pexip1-arm64
 Breaks: libmozjs185-1.0 [arm64], libmozjs-24-0 (<< 24.2.0-5.1~) [arm64], fwupdate (<< 12-7) [arm64], wireless-regdb (<< 2019.06.03-1~) [arm64], initramfs-tools (<< 0.120+deb8u2)
-Conflicts: linux-image-5.15.0-1pexip1-arm64
 Description: Linux 5.15 for 64-bit ARMv8 machines
  The Linux kernel 5.15 and modules for use on 64-bit ARMv8 machines.
 Build-Profiles: <!stage1 !pkg.linux.nokernel>
@@ -425,6 +415,24 @@ Description: Header files for Linux 5.15.0-1pexip1-arm64
  modules that load into the kernel provided by the
  linux-image-5.15.0-1pexip1-arm64 package.
 Build-Profiles: <!stage1 !pkg.linux.nokernel>
+
+Package: linux-image-arm64
+Architecture: arm64
+Provides: linux-latest-modules-5.15.0-1pexip1-arm64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-5.15.0-1pexip1-arm64 (= ${binary:Version}), ${misc:Depends}
+Description: Linux for 64-bit ARMv8 machines (meta-package)
+ This package depends on the latest Linux kernel and modules for use on
+ 64-bit ARMv8 machines.
+Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
+
+Package: linux-headers-arm64
+Architecture: arm64
+Provides: linux-headers-generic
+Depends: linux-headers-5.15.0-1pexip1-arm64 (= ${binary:Version}), ${misc:Depends}
+Description: Header files for Linux arm64 configuration (meta-package)
+ This package depends on the architecture-specific header files for the
+ latest Linux kernel arm64 configuration.
+Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
 
 Package: linux-image-5.15.0-1pexip1-arm64-dbg
 Architecture: arm64
@@ -445,14 +453,12 @@ Description: Debugging symbols for Linux arm64 configuration (meta-package)
  Linux kernel arm64 configuration.
 Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
 
-Package: linux-image-5.15.0-1pexip1-cloud-arm64-unsigned
+Package: linux-image-5.15.0-1pexip1-cloud-arm64
 Architecture: arm64
-Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [arm64] | linux-initramfs-tool [arm64]
+Depends: kmod, linux-base (>= 4.3~), linux-bootwrapper-5.15.0-1pexip1 [powerpc ppc64], ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [arm64] | linux-initramfs-tool [arm64]
 Recommends: firmware-linux-free, apparmor [arm64]
 Suggests: debian-kernel-handbook
-Replaces: linux-image-5.15.0-1pexip1-cloud-arm64
 Breaks: libmozjs185-1.0 [arm64], libmozjs-24-0 (<< 24.2.0-5.1~) [arm64], fwupdate (<< 12-7) [arm64], wireless-regdb (<< 2019.06.03-1~) [arm64], initramfs-tools (<< 0.120+deb8u2)
-Conflicts: linux-image-5.15.0-1pexip1-cloud-arm64
 Description: Linux 5.15 for arm64 cloud
  The Linux kernel 5.15 and modules for use on cloud platforms supporting
  arm64 virtual machines.
@@ -469,6 +475,23 @@ Description: Header files for Linux 5.15.0-1pexip1-cloud-arm64
  building modules that load into the kernel provided by the
  linux-image-5.15.0-1pexip1-cloud-arm64 package.
 Build-Profiles: <!stage1 !pkg.linux.nokernel>
+
+Package: linux-image-cloud-arm64
+Architecture: arm64
+Provides: linux-latest-modules-5.15.0-1pexip1-cloud-arm64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-5.15.0-1pexip1-cloud-arm64 (= ${binary:Version}), ${misc:Depends}
+Description: Linux for arm64 cloud (meta-package)
+ This package depends on the latest Linux kernel and modules for use on
+ cloud platforms supporting arm64 virtual machines.
+Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
+
+Package: linux-headers-cloud-arm64
+Architecture: arm64
+Depends: linux-headers-5.15.0-1pexip1-cloud-arm64 (= ${binary:Version}), ${misc:Depends}
+Description: Header files for Linux cloud-arm64 configuration (meta-package)
+ This package depends on the architecture-specific header files for the
+ latest Linux kernel cloud-arm64 configuration.
+Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
 
 Package: linux-image-5.15.0-1pexip1-cloud-arm64-dbg
 Architecture: arm64
