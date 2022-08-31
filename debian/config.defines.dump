@@ -635,13 +635,13 @@ p337
 g292
 tp338
 (dp339
-Vgcc-11
+Vgcc-10
 p340
-Vgcc-11 <!stage1 !cross !pkg.linux.nokernel>, gcc-11-aarch64-linux-gnu <!stage1 cross !pkg.linux.nokernel>, gcc-arm-linux-gnueabihf <!stage1 !pkg.linux.nokernel>
+Vgcc-10 <!stage1 !cross !pkg.linux.nokernel>, gcc-10-aarch64-linux-gnu <!stage1 cross !pkg.linux.nokernel>, gcc-arm-linux-gnueabihf <!stage1 !pkg.linux.nokernel>
 p341
-sVheaders%gcc-11
+sVheaders%gcc-10
 p342
-Vgcc-11
+Vgcc-10
 p343
 ss(Vbase
 p344
@@ -3033,7 +3033,7 @@ tp1626
 (dp1627
 Vsource
 p1628
-V5.15.48-1pexip3
+V5.15.48-1pexip5
 p1629
 sVupstream
 p1630
