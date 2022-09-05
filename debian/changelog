@@ -1,3 +1,9 @@
+linux (5.15.48-1pexip6) pexip-bullseye; urgency=medium
+
+  * Bullseye rebuild for ARM64 inclusion
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Mon, 05 Sep 2022 10:32:43 +0100
+
 linux (5.15.48-1pexip5) pexip-bullseye; urgency=medium
 
   * Add gcc-arm-linux-gnueabihf to B-D for arm64 only.
