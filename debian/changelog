@@ -1,3 +1,13 @@
+linux (5.15.75-1pexip1) pexip; urgency=medium
+
+  * New upstream release 5.15.75
+  * debian/export-symbols-needed-by-android-drivers.patch:
+    Remove fuzz
+  * debian/patches/bugfix/all/tools-include-uapi-fix-errno.h.patch:
+    removed as applied upstream
+
+ -- Vincent Sanders <vince@pexip.com>  Fri, 28 Oct 2022 11:22:33 +0100
+
 linux (5.15.48-1pexip6) pexip-bullseye; urgency=medium
 
   * Bullseye rebuild for ARM64 inclusion
