@@ -1,0 +1,332 @@
+diff --git a/scripts/extract-cert.c b/scripts/extract-cert.c
+index 3bc48c726c..274c93cb23 100644
+--- a/scripts/extract-cert.c
++++ b/scripts/extract-cert.c
+@@ -43,12 +43,13 @@ static void display_openssl_errors(int l)
+ 		return;
+ 	fprintf(stderr, "At main.c:%d:\n", l);
+ 
+-	while ((e = ERR_get_error_line(&file, &line))) {
++	while ((e = ERR_get_error_all(&file, &line, NULL, NULL, NULL))) {
+ 		ERR_error_string(e, buf);
+ 		fprintf(stderr, "- SSL %s: %s:%d\n", buf, file, line);
+ 	}
+ }
+ 
++#if OPENSSL_VERSION_NUMBER < 0x30000000L
+ static void drain_openssl_errors(void)
+ {
+ 	const char *file;
+@@ -58,6 +59,7 @@ static void drain_openssl_errors(void)
+ 		return;
+ 	while (ERR_get_error_line(&file, &line)) {}
+ }
++#endif
+ 
+ #define ERR(cond, fmt, ...)				\
+ 	do {						\
+@@ -91,8 +93,10 @@ int main(int argc, char **argv)
+ {
+ 	char *cert_src;
+ 
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 	OpenSSL_add_all_algorithms();
+ 	ERR_load_crypto_strings();
++#endif
+ 	ERR_clear_error();
+ 
+ 	kbuild_verbose = atoi(getenv("KBUILD_VERBOSE")?:"0");
+@@ -112,6 +116,7 @@ int main(int argc, char **argv)
+ 		fclose(f);
+ 		exit(0);
+ 	} else if (!strncmp(cert_src, "pkcs11:", 7)) {
++#if OPENSSL_VERSION_NUMBER < 0x30000000L
+ 		ENGINE *e;
+ 		struct {
+ 			const char *cert_id;
+@@ -134,6 +139,9 @@ int main(int argc, char **argv)
+ 		ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1);
+ 		ERR(!parms.cert, "Get X.509 from PKCS#11");
+ 		write_cert(parms.cert);
++#else
++		ERR(1, "OpenSSL ENGINEs not supported");
++#endif
+ 	} else {
+ 		BIO *b;
+ 		X509 *x509;
+diff --git a/scripts/sign-file.c b/scripts/sign-file.c
+index fbd34b8e8f..8403f6f321 100644
+--- a/scripts/sign-file.c
++++ b/scripts/sign-file.c
+@@ -86,12 +86,13 @@ static void display_openssl_errors(int l)
+ 		return;
+ 	fprintf(stderr, "At main.c:%d:\n", l);
+ 
+-	while ((e = ERR_get_error_line(&file, &line))) {
++	while ((e = ERR_get_error_all(&file, &line, NULL, NULL, NULL))) {
+ 		ERR_error_string(e, buf);
+ 		fprintf(stderr, "- SSL %s: %s:%d\n", buf, file, line);
+ 	}
+ }
+ 
++#if OPENSSL_VERSION_NUMBER < 0x30000000L
+ static void drain_openssl_errors(void)
+ {
+ 	const char *file;
+@@ -101,6 +102,7 @@ static void drain_openssl_errors(void)
+ 		return;
+ 	while (ERR_get_error_line(&file, &line)) {}
+ }
++#endif
+ 
+ #define ERR(cond, fmt, ...)				\
+ 	do {						\
+@@ -137,6 +139,7 @@ static EVP_PKEY *read_private_key(const char *private_key_name)
+ 	EVP_PKEY *private_key;
+ 
+ 	if (!strncmp(private_key_name, "pkcs11:", 7)) {
++#if OPENSSL_VERSION_NUMBER < 0x30000000L
+ 		ENGINE *e;
+ 
+ 		ENGINE_load_builtin_engines();
+@@ -153,6 +156,9 @@ static EVP_PKEY *read_private_key(const char *private_key_name)
+ 		private_key = ENGINE_load_private_key(e, private_key_name,
+ 						      NULL, NULL);
+ 		ERR(!private_key, "%s", private_key_name);
++#else
++		ERR(1, "OpenSSL ENGINEs not supported");
++#endif
+ 	} else {
+ 		BIO *b;
+ 
+@@ -229,8 +235,10 @@ int main(int argc, char **argv)
+ 	X509 *x509;
+ 	BIO *bd, *bm;
+ 	int opt, n;
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 	OpenSSL_add_all_algorithms();
+ 	ERR_load_crypto_strings();
++#endif
+ 	ERR_clear_error();
+ 
+ 	key_pass = getenv("KBUILD_SIGN_PIN");
+@@ -298,7 +306,9 @@ int main(int argc, char **argv)
+ 		x509 = read_x509(x509_name);
+ 
+ 		/* Digest the module data. */
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 		OpenSSL_add_all_digests();
++#endif
+ 		display_openssl_errors(__LINE__);
+ 		digest_algo = EVP_get_digestbyname(hash_algo);
+ 		ERR(!digest_algo, "EVP_get_digestbyname");
+diff --git a/tools/build/feature/test-libcrypto.c b/tools/build/feature/test-libcrypto.c
+index bc34a5bbb5..cfce82e553 100644
+--- a/tools/build/feature/test-libcrypto.c
++++ b/tools/build/feature/test-libcrypto.c
+@@ -19,7 +19,14 @@ int main(void)
+ 	EVP_DigestFinal_ex(mdctx, &md[0], &digest_len);
+ 	EVP_MD_CTX_free(mdctx);
+ 
+-	SHA1(&dat[0], sizeof(dat), &md[0]);
++	mdctx = EVP_MD_CTX_new();
++	if (!mdctx)
++		return 0;
++
++	EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL);
++	EVP_DigestUpdate(mdctx, &dat[0], sizeof(dat));
++	EVP_DigestFinal_ex(mdctx, &md[0], &digest_len);
++	EVP_MD_CTX_free(mdctx);
+ 
+ 	return 0;
+ }
+diff --git a/tools/perf/util/genelf.c b/tools/perf/util/genelf.c
+index 02cd9f75e3..212ea8e92b 100644
+--- a/tools/perf/util/genelf.c
++++ b/tools/perf/util/genelf.c
+@@ -41,11 +41,11 @@
+ #undef BUILD_ID_URANDOM /* different uuid for each run */
+ 
+ #ifdef BUILD_ID_SHA
+-#include <openssl/sha.h>
++#include <openssl/evp.h>
+ #endif
+ 
+ #ifdef BUILD_ID_MD5
+-#include <openssl/md5.h>
++#include <openssl/evp.h>
+ #endif
+ #endif
+ 
+@@ -131,10 +131,20 @@ gen_build_id(struct buildid_note *note,
+ 	     const void *code,
+ 	     size_t csize)
+ {
++	EVP_MD_CTX *mdctx;
++	size_t digest_len;
++
+ 	if (sizeof(note->build_id) < SHA_DIGEST_LENGTH)
+ 		errx(1, "build_id too small for SHA1");
+ 
+-	SHA1(code, csize, (unsigned char *)note->build_id);
++	mdctx = EVP_MD_CTX_new();
++	if (!mdctx)
++		errx(1, "Failed allocating EVP_MD_CTX");
++
++	EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL);
++	EVP_DigestUpdate(mdctx, code, csize);
++	EVP_DigestFinal_ex(mdctx, (unsigned char *)note->build_id, &digest_len);
++	EVP_MD_CTX_free(mdctx);
+ }
+ #endif
+ 
+@@ -142,15 +152,21 @@ gen_build_id(struct buildid_note *note,
+ static void
+ gen_build_id(struct buildid_note *note, unsigned long load_addr, const void *code, size_t csize)
+ {
+-	MD5_CTX context;
++	EVP_MD_CTX *mdctx;
++	size_t digest_len;
+ 
+ 	if (sizeof(note->build_id) < 16)
+ 		errx(1, "build_id too small for MD5");
+ 
+-	MD5_Init(&context);
+-	MD5_Update(&context, &load_addr, sizeof(load_addr));
+-	MD5_Update(&context, code, csize);
+-	MD5_Final((unsigned char *)note->build_id, &context);
++	mdctx = EVP_MD_CTX_new();
++	if (!mdctx)
++		errx(1, "Failed allocating EVP_MD_CTX");
++
++	EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);
++	EVP_DigestUpdate(mdctx, &load_addr, sizeof(load_addr));
++	EVP_DigestUpdate(mdctx, code, csize);
++	EVP_DigestFinal_ex(mdctx, (unsigned char *)note->build_id, &digest_len);
++	EVP_MD_CTX_free(mdctx);
+ }
+ #endif
+ 
+diff --git a/tools/testing/selftests/sgx/sigstruct.c b/tools/testing/selftests/sgx/sigstruct.c
+index 92bbc5a15c..7452399a72 100644
+--- a/tools/testing/selftests/sgx/sigstruct.c
++++ b/tools/testing/selftests/sgx/sigstruct.c
+@@ -144,19 +144,25 @@ static bool check_crypto_errors(void)
+ 	return had_errors;
+ }
+ 
+-static inline const BIGNUM *get_modulus(RSA *key)
++static inline BIGNUM *get_modulus(EVP_PKEY *key)
+ {
+-	const BIGNUM *n;
+-
+-	RSA_get0_key(key, &n, NULL, NULL);
++	BIGNUM *n = NULL;
++
++#if OPENSSL_VERSION_NUMBER < 0x30000000L
++	const BIGNUM *tmp;
++	RSA_get0_key(EVP_PKEY_get0_RSA(key), &tmp, NULL, NULL);
++	n = BN_dup(tmp);
++#else
++	EVP_PKEY_get_bn_param(key, "n", &n);
++#endif
+ 	return n;
+ }
+ 
+-static RSA *gen_sign_key(void)
++static EVP_PKEY *gen_sign_key(void)
+ {
+ 	unsigned long sign_key_length;
+ 	BIO *bio;
+-	RSA *key;
++	EVP_PKEY *key;
+ 
+ 	sign_key_length = (unsigned long)&sign_key_end -
+ 			  (unsigned long)&sign_key;
+@@ -165,7 +171,7 @@ static RSA *gen_sign_key(void)
+ 	if (!bio)
+ 		return NULL;
+ 
+-	key = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
++	key = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
+ 	BIO_free(bio);
+ 
+ 	return key;
+@@ -311,8 +317,10 @@ bool encl_measure(struct encl *encl)
+ 	struct sgx_sigstruct_payload payload;
+ 	uint8_t digest[SHA256_DIGEST_LENGTH];
+ 	unsigned int siglen;
+-	RSA *key = NULL;
+-	EVP_MD_CTX *ctx;
++	EVP_PKEY *key = NULL;
++	EVP_MD_CTX *ctx = NULL, *ctx2 = NULL;
++	EVP_PKEY_CTX *sctx = NULL;
++	BIGNUM *modulus = NULL;
+ 	int i;
+ 
+ 	memset(sigstruct, 0, sizeof(*sigstruct));
+@@ -335,7 +343,12 @@ bool encl_measure(struct encl *encl)
+ 		goto err;
+ 	}
+ 
+-	BN_bn2bin(get_modulus(key), sigstruct->modulus);
++	modulus = get_modulus(key);
++	if (!modulus) {
++		ERR_print_errors_fp(stdout);
++		goto err;
++	}
++	BN_bn2bin(modulus, sigstruct->modulus);
+ 
+ 	ctx = EVP_MD_CTX_create();
+ 	if (!ctx)
+@@ -354,13 +367,26 @@ bool encl_measure(struct encl *encl)
+ 	if (!mrenclave_commit(ctx, sigstruct->body.mrenclave))
+ 		goto err;
+ 
++	ctx2 = EVP_MD_CTX_create();
++	if (!ctx2)
++		goto err;
++
+ 	memcpy(&payload.header, &sigstruct->header, sizeof(sigstruct->header));
+ 	memcpy(&payload.body, &sigstruct->body, sizeof(sigstruct->body));
+ 
+-	SHA256((unsigned char *)&payload, sizeof(payload), digest);
++	EVP_DigestInit_ex(ctx2, EVP_sha256(), NULL);
++	EVP_DigestUpdate(ctx2, (unsigned char *)&payload, sizeof(payload));
++	EVP_DigestFinal_ex(ctx2, digest, &siglen);
++
++	sctx = EVP_PKEY_CTX_new(key, NULL);
++	if (!sctx)
++		goto err;
+ 
+-	if (!RSA_sign(NID_sha256, digest, SHA256_DIGEST_LENGTH,
+-		      sigstruct->signature, &siglen, key))
++	siglen = sizeof(sigstruct->signature);
++	if (EVP_PKEY_sign_init(sctx) != 1 ||
++			EVP_PKEY_CTX_set_signature_md(sctx, EVP_sha256()) != 1 ||
++			EVP_PKEY_sign(sctx, sigstruct->signature, &siglen,
++				digest, SHA256_DIGEST_LENGTH) != 1)
+ 		goto err;
+ 
+ 	if (!calc_q1q2(sigstruct->signature, sigstruct->modulus, sigstruct->q1,
+@@ -371,12 +397,18 @@ bool encl_measure(struct encl *encl)
+ 	reverse_bytes(sigstruct->signature, SGX_MODULUS_SIZE);
+ 	reverse_bytes(sigstruct->modulus, SGX_MODULUS_SIZE);
+ 
++	EVP_PKEY_CTX_free(sctx);
++	EVP_MD_CTX_destroy(ctx2);
+ 	EVP_MD_CTX_destroy(ctx);
+-	RSA_free(key);
++	BN_free(modulus);
++	EVP_PKEY_free(key);
+ 	return true;
+ 
+ err:
++	EVP_PKEY_CTX_free(sctx);
++	EVP_MD_CTX_destroy(ctx2);
+ 	EVP_MD_CTX_destroy(ctx);
+-	RSA_free(key);
++	BN_free(modulus);
++	EVP_PKEY_free(key);
+ 	return false;
+ }

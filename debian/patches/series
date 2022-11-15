@@ -126,4 +126,5 @@ bugfix/all/perf-srcline-Use-long-running-addr2line-per-DSO.patch
 
 # Pexip fixes
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
+openssl3-deprecations.patch
 
