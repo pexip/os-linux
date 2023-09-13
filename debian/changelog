@@ -1,3 +1,14 @@
+linux (5.15.131-1pexip1) pexip; urgency=medium
+
+  * New upstream release 5.15.131
+  * bugfix/all/radeon-amdgpu-firmware-is-required-for-drm-and-kms-on-r600-onward.patch
+    features/all/security-perf-allow-further-restriction-of-perf_event_open.patch:
+    Remove fuzz
+  * debian/decnet-Disable-auto-loading-as-mitigation-against-lo.patch:
+    removed as decnet deleted upstream
+
+ -- Vincent Sanders <vince@pexip.com>  Wed, 13 Sep 2023 10:58:00 +0100
+
 linux (5.15.75-1pexip3) pexip; urgency=medium
 
   * Merge openssl3 changes for bullseye
