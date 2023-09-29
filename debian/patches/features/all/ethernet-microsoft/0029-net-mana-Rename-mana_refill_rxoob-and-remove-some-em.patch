@@ -1,0 +1,67 @@
+From 609fba0ab4ebdde830c8c52ef0dcc2ea8f5e82fe Mon Sep 17 00:00:00 2001
+From: Haiyang Zhang <haiyangz@microsoft.com>
+Date: Fri, 21 Apr 2023 10:06:57 -0700
+Subject: [PATCH 29/30] net: mana: Rename mana_refill_rxoob and remove some
+ empty lines
+
+Rename mana_refill_rxoob for naming consistency.
+And remove some empty lines between function call and error
+checking.
+
+Signed-off-by: Haiyang Zhang <haiyangz@microsoft.com>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit 5c74064f43c291d9add2b436a2d70205b71a7cc7)
+Signed-off-by: Bastian Blank <waldi@debian.org>
+---
+ drivers/net/ethernet/microsoft/mana/mana_en.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
+index 75c1f81ce64f..6aa273b68327 100644
+--- a/drivers/net/ethernet/microsoft/mana/mana_en.c
++++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
+@@ -579,7 +579,6 @@ static int mana_pre_alloc_rxbufs(struct mana_port_context *mpc, int new_mtu)
+ 
+ 		da = dma_map_single(dev, va + mpc->rxbpre_headroom,
+ 				    mpc->rxbpre_datasize, DMA_FROM_DEVICE);
+-
+ 		if (dma_mapping_error(dev, da)) {
+ 			put_page(virt_to_head_page(va));
+ 			goto error;
+@@ -1543,7 +1542,6 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
+ 
+ 	*da = dma_map_single(dev, va + rxq->headroom, rxq->datasize,
+ 			     DMA_FROM_DEVICE);
+-
+ 	if (dma_mapping_error(dev, *da)) {
+ 		put_page(virt_to_head_page(va));
+ 		return NULL;
+@@ -1553,14 +1551,13 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
+ }
+ 
+ /* Allocate frag for rx buffer, and save the old buf */
+-static void mana_refill_rxoob(struct device *dev, struct mana_rxq *rxq,
+-			      struct mana_recv_buf_oob *rxoob, void **old_buf)
++static void mana_refill_rx_oob(struct device *dev, struct mana_rxq *rxq,
++			       struct mana_recv_buf_oob *rxoob, void **old_buf)
+ {
+ 	dma_addr_t da;
+ 	void *va;
+ 
+ 	va = mana_get_rxfrag(rxq, dev, &da, true);
+-
+ 	if (!va)
+ 		return;
+ 
+@@ -1625,7 +1622,7 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
+ 	rxbuf_oob = &rxq->rx_oobs[curr];
+ 	WARN_ON_ONCE(rxbuf_oob->wqe_inf.wqe_size_in_bu != 1);
+ 
+-	mana_refill_rxoob(dev, rxq, rxbuf_oob, &old_buf);
++	mana_refill_rx_oob(dev, rxq, rxbuf_oob, &old_buf);
+ 
+ 	/* Unsuccessful refill will have old_buf == NULL.
+ 	 * In this case, mana_rx_skb() will drop the packet.
+-- 
+2.40.1
+

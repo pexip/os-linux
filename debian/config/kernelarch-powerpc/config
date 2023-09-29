@@ -25,6 +25,11 @@ CONFIG_XMON_DISASSEMBLY=y
 CONFIG_BOOTX_TEXT=y
 
 ##
+## file: arch/powerpc/crypto/Kconfig
+##
+CONFIG_CRYPTO_SHA1_PPC=m
+
+##
 ## file: arch/powerpc/kvm/Kconfig
 ##
 CONFIG_VIRTUALIZATION=y
@@ -76,11 +81,6 @@ CONFIG_AMIGA_PARTITION=y
 CONFIG_MAC_PARTITION=y
 
 ##
-## file: crypto/Kconfig
-##
-CONFIG_CRYPTO_SHA1_PPC=m
-
-##
 ## file: drivers/ata/Kconfig
 ##
 CONFIG_ATA=y
@@ -107,19 +107,12 @@ CONFIG_ATM_LANAI=m
 CONFIG_ATM_ENI=m
 # CONFIG_ATM_ENI_DEBUG is not set
 # CONFIG_ATM_ENI_TUNE_BURST is not set
-CONFIG_ATM_FIRESTREAM=m
-CONFIG_ATM_ZATM=m
-CONFIG_ATM_ZATM_DEBUG=y
 CONFIG_ATM_NICSTAR=m
 CONFIG_ATM_NICSTAR_USE_SUNI=y
 CONFIG_ATM_NICSTAR_USE_IDT77105=y
 CONFIG_ATM_IDT77252=m
 # CONFIG_ATM_IDT77252_DEBUG is not set
 # CONFIG_ATM_IDT77252_RCV_ALL is not set
-CONFIG_ATM_AMBASSADOR=m
-# CONFIG_ATM_AMBASSADOR_DEBUG is not set
-CONFIG_ATM_HORIZON=m
-# CONFIG_ATM_HORIZON_DEBUG is not set
 CONFIG_ATM_IA=m
 # CONFIG_ATM_IA_DEBUG is not set
 CONFIG_ATM_FORE200E_USE_TASKLET=y
@@ -132,7 +125,6 @@ CONFIG_ATM_HE=m
 ## file: drivers/block/Kconfig
 ##
 CONFIG_BLK_DEV_FD=m
-CONFIG_BLK_DEV_SX8=m
 CONFIG_CDROM_PKTCDVD=m
 CONFIG_CDROM_PKTCDVD_BUFFERS=8
 # CONFIG_CDROM_PKTCDVD_WCACHE is not set
@@ -364,8 +356,8 @@ CONFIG_PMAC_RACKMETER=m
 ##
 ## file: drivers/media/radio/Kconfig
 ##
-CONFIG_USB_DSBR=m
 CONFIG_RADIO_MAXIRADIO=m
+CONFIG_USB_DSBR=m
 
 ##
 ## file: drivers/misc/Kconfig
@@ -555,7 +547,6 @@ CONFIG_HIPPI=y
 ## file: drivers/net/wan/Kconfig
 ##
 CONFIG_WAN=y
-CONFIG_LANMEDIA=m
 CONFIG_PCI200SYN=m
 CONFIG_WANXL=m
 CONFIG_FARSYNC=m
@@ -645,7 +636,6 @@ CONFIG_RTC_DRV_GENERIC=y
 ##
 ## file: drivers/scsi/Kconfig
 ##
-CONFIG_SCSI_DPT_I2O=m
 CONFIG_SCSI_ARCMSR=m
 CONFIG_SCSI_BUSLOGIC=m
 CONFIG_SCSI_MYRB=m
@@ -803,17 +793,6 @@ CONFIG_SGETMASK_SYSCALL=y
 ## file: lib/xz/Kconfig
 ##
 CONFIG_XZ_DEC_POWERPC=y
-
-##
-## file: net/decnet/Kconfig
-##
-CONFIG_DECNET=m
-CONFIG_DECNET_ROUTER=y
-
-##
-## file: net/decnet/netfilter/Kconfig
-##
-CONFIG_DECNET_NF_GRABULATOR=m
 
 ##
 ## file: net/lapb/Kconfig

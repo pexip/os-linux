@@ -50,8 +50,6 @@ struct cs_etm_auxtrace {
 	u8 timeless_decoding;
 	u8 snapshot_mode;
 	u8 data_queued;
-	u8 sample_branches;
-	u8 sample_instructions;
 
 	int num_cpu;
 	u64 latest_kernel_timestamp;
@@ -410,8 +408,8 @@ static void cs_etm__packet_swap(struct cs_etm_auxtrace *etm,
 {
 	struct cs_etm_packet *tmp;
 
-	if (etm->sample_branches || etm->synth_opts.last_branch ||
-	    etm->sample_instructions) {
+	if (etm->synth_opts.branches || etm->synth_opts.last_branch ||
+	    etm->synth_opts.instructions) {
 		/*
 		 * Swap PACKET with PREV_PACKET: PACKET becomes PREV_PACKET for
 		 * the next incoming packet.
@@ -537,7 +535,7 @@ static void cs_etm__dump_event(struct cs_etm_queue *etmq,
 
 	fprintf(stdout, "\n");
 	color_fprintf(stdout, color,
-		     ". ... CoreSight %s Trace data: size %zu bytes\n",
+		     ". ... CoreSight %s Trace data: size %#zx bytes\n",
 		     cs_etm_decoder__get_name(etmq->decoder), buffer->size);
 
 	do {
@@ -1365,7 +1363,6 @@ static int cs_etm__synth_events(struct cs_etm_auxtrace *etm,
 		err = cs_etm__synth_event(session, &attr, id);
 		if (err)
 			return err;
-		etm->sample_branches = true;
 		etm->branches_sample_type = attr.sample_type;
 		etm->branches_id = id;
 		id += 1;
@@ -1389,7 +1386,6 @@ static int cs_etm__synth_events(struct cs_etm_auxtrace *etm,
 		err = cs_etm__synth_event(session, &attr, id);
 		if (err)
 			return err;
-		etm->sample_instructions = true;
 		etm->instructions_sample_type = attr.sample_type;
 		etm->instructions_id = id;
 		id += 1;
@@ -1420,7 +1416,7 @@ static int cs_etm__sample(struct cs_etm_queue *etmq,
 	    tidq->prev_packet->last_instr_taken_branch)
 		cs_etm__update_last_branch_rb(etmq, tidq);
 
-	if (etm->sample_instructions &&
+	if (etm->synth_opts.instructions &&
 	    tidq->period_instructions >= etm->instructions_sample_period) {
 		/*
 		 * Emit instruction sample periodically
@@ -1455,7 +1451,7 @@ static int cs_etm__sample(struct cs_etm_queue *etmq,
 		 * tidq->packet->instr_count represents the number of
 		 * instructions in the current etm packet.
 		 *
-		 * Period instructions (Pi) contains the the number of
+		 * Period instructions (Pi) contains the number of
 		 * instructions executed after the sample point(n) from the
 		 * previous etm packet.  This will always be less than
 		 * etm->instructions_sample_period.
@@ -1503,7 +1499,7 @@ static int cs_etm__sample(struct cs_etm_queue *etmq,
 		}
 	}
 
-	if (etm->sample_branches) {
+	if (etm->synth_opts.branches) {
 		bool generate_sample = false;
 
 		/* Generate sample for tracing on packet */
@@ -1557,6 +1553,7 @@ static int cs_etm__flush(struct cs_etm_queue *etmq,
 		goto swap_packet;
 
 	if (etmq->etm->synth_opts.last_branch &&
+	    etmq->etm->synth_opts.instructions &&
 	    tidq->prev_packet->sample_type == CS_ETM_RANGE) {
 		u64 addr;
 
@@ -1582,7 +1579,7 @@ static int cs_etm__flush(struct cs_etm_queue *etmq,
 
 	}
 
-	if (etm->sample_branches &&
+	if (etm->synth_opts.branches &&
 	    tidq->prev_packet->sample_type == CS_ETM_RANGE) {
 		err = cs_etm__synth_branch_sample(etmq, tidq);
 		if (err)
@@ -1614,6 +1611,7 @@ static int cs_etm__end_block(struct cs_etm_queue *etmq,
 	 * the trace.
 	 */
 	if (etmq->etm->synth_opts.last_branch &&
+	    etmq->etm->synth_opts.instructions &&
 	    tidq->prev_packet->sample_type == CS_ETM_RANGE) {
 		u64 addr;
 
@@ -2490,26 +2488,29 @@ static int cs_etm__process_auxtrace_event(struct perf_session *session,
 	return 0;
 }
 
-static bool cs_etm__is_timeless_decoding(struct cs_etm_auxtrace *etm)
+static int cs_etm__setup_timeless_decoding(struct cs_etm_auxtrace *etm)
 {
 	struct evsel *evsel;
 	struct evlist *evlist = etm->session->evlist;
-	bool timeless_decoding = true;
 
 	/* Override timeless mode with user input from --itrace=Z */
-	if (etm->synth_opts.timeless_decoding)
-		return true;
-
-	/*
-	 * Circle through the list of event and complain if we find one
-	 * with the time bit set.
-	 */
-	evlist__for_each_entry(evlist, evsel) {
-		if ((evsel->core.attr.sample_type & PERF_SAMPLE_TIME))
-			timeless_decoding = false;
+	if (etm->synth_opts.timeless_decoding) {
+		etm->timeless_decoding = true;
+		return 0;
 	}
 
-	return timeless_decoding;
+	/*
+	 * Find the cs_etm evsel and look at what its timestamp setting was
+	 */
+	evlist__for_each_entry(evlist, evsel)
+		if (cs_etm__evsel_is_auxtrace(etm->session, evsel)) {
+			etm->timeless_decoding =
+				!(evsel->core.attr.config & BIT(ETM_OPT_TS));
+			return 0;
+		}
+
+	pr_err("CS ETM: Couldn't find ETM evsel\n");
+	return -EINVAL;
 }
 
 static const char * const cs_etm_global_header_fmts[] = {
@@ -3053,7 +3054,6 @@ int cs_etm__process_auxtrace_info(union perf_event *event,
 	etm->snapshot_mode = (hdr[CS_ETM_SNAPSHOT] != 0);
 	etm->metadata = metadata;
 	etm->auxtrace_type = auxtrace_info->type;
-	etm->timeless_decoding = cs_etm__is_timeless_decoding(etm);
 
 	etm->auxtrace.process_event = cs_etm__process_event;
 	etm->auxtrace.process_auxtrace_event = cs_etm__process_auxtrace_event;
@@ -3062,6 +3062,10 @@ int cs_etm__process_auxtrace_info(union perf_event *event,
 	etm->auxtrace.free = cs_etm__free;
 	etm->auxtrace.evsel_is_auxtrace = cs_etm__evsel_is_auxtrace;
 	session->auxtrace = &etm->auxtrace;
+
+	err = cs_etm__setup_timeless_decoding(etm);
+	if (err)
+		return err;
 
 	etm->unknown_thread = thread__new(999999999, 999999999);
 	if (!etm->unknown_thread) {

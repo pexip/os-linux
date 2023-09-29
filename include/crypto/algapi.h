@@ -7,9 +7,14 @@
 #ifndef _CRYPTO_ALGAPI_H
 #define _CRYPTO_ALGAPI_H
 
+#include <linux/align.h>
 #include <linux/crypto.h>
+#include <linux/kconfig.h>
 #include <linux/list.h>
-#include <linux/kernel.h>
+#include <linux/types.h>
+#include <linux/workqueue.h>
+
+#include <asm/unaligned.h>
 
 /*
  * Maximum values for blocksize and alignmask, used to allocate
@@ -24,6 +29,7 @@
 struct crypto_aead;
 struct crypto_instance;
 struct module;
+struct notifier_block;
 struct rtattr;
 struct seq_file;
 struct sk_buff;
@@ -54,6 +60,8 @@ struct crypto_instance {
 		/* List of attached spawns before registration. */
 		struct crypto_spawn *spawns;
 	};
+
+	struct work_struct free_work;
 
 	void *__ctx[] CRYPTO_MINALIGN_ATTR;
 };
@@ -151,9 +159,11 @@ static inline void crypto_xor(u8 *dst, const u8 *src, unsigned int size)
 	    (size % sizeof(unsigned long)) == 0) {
 		unsigned long *d = (unsigned long *)dst;
 		unsigned long *s = (unsigned long *)src;
+		unsigned long l;
 
 		while (size > 0) {
-			*d++ ^= *s++;
+			l = get_unaligned(d) ^ get_unaligned(s++);
+			put_unaligned(l, d++);
 			size -= sizeof(unsigned long);
 		}
 	} else {
@@ -170,9 +180,11 @@ static inline void crypto_xor_cpy(u8 *dst, const u8 *src1, const u8 *src2,
 		unsigned long *d = (unsigned long *)dst;
 		unsigned long *s1 = (unsigned long *)src1;
 		unsigned long *s2 = (unsigned long *)src2;
+		unsigned long l;
 
 		while (size > 0) {
-			*d++ = *s1++ ^ *s2++;
+			l = get_unaligned(s1++) ^ get_unaligned(s2++);
+			put_unaligned(l, d++);
 			size -= sizeof(unsigned long);
 		}
 	} else {
@@ -255,5 +267,12 @@ enum {
 	CRYPTO_MSG_ALG_REGISTER,
 	CRYPTO_MSG_ALG_LOADED,
 };
+
+static inline void crypto_request_complete(struct crypto_async_request *req,
+					   int err)
+{
+	crypto_completion_t complete = req->complete;
+	complete(req, err);
+}
 
 #endif	/* _CRYPTO_ALGAPI_H */

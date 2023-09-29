@@ -21,7 +21,8 @@ extern int ima_file_check(struct file *file, int mask);
 extern void ima_post_create_tmpfile(struct user_namespace *mnt_userns,
 				    struct inode *inode);
 extern void ima_file_free(struct file *file);
-extern int ima_file_mmap(struct file *file, unsigned long prot);
+extern int ima_file_mmap(struct file *file, unsigned long reqprot,
+			 unsigned long prot, unsigned long flags);
 extern int ima_file_mprotect(struct vm_area_struct *vma, unsigned long prot);
 extern int ima_load_data(enum kernel_load_data_id id, bool contents);
 extern int ima_post_load_data(char *buf, loff_t size,
@@ -50,21 +51,6 @@ static inline void ima_appraise_parse_cmdline(void) {}
 extern void ima_add_kexec_buffer(struct kimage *image);
 #endif
 
-#ifdef CONFIG_IMA_SECURE_AND_OR_TRUSTED_BOOT
-extern bool arch_ima_get_secureboot(void);
-extern const char * const *arch_get_ima_policy(void);
-#else
-static inline bool arch_ima_get_secureboot(void)
-{
-	return false;
-}
-
-static inline const char * const *arch_get_ima_policy(void)
-{
-	return NULL;
-}
-#endif
-
 #else
 static inline enum hash_algo ima_get_current_hash_algo(void)
 {
@@ -91,7 +77,8 @@ static inline void ima_file_free(struct file *file)
 	return;
 }
 
-static inline int ima_file_mmap(struct file *file, unsigned long prot)
+static inline int ima_file_mmap(struct file *file, unsigned long reqprot,
+				unsigned long prot, unsigned long flags)
 {
 	return 0;
 }
@@ -154,6 +141,26 @@ static inline int ima_measure_critical_data(const char *event_label,
 }
 
 #endif /* CONFIG_IMA */
+
+#ifdef CONFIG_HAVE_IMA_KEXEC
+int __init ima_free_kexec_buffer(void);
+int __init ima_get_kexec_buffer(void **addr, size_t *size);
+#endif
+
+#ifdef CONFIG_IMA_SECURE_AND_OR_TRUSTED_BOOT
+extern bool arch_ima_get_secureboot(void);
+extern const char * const *arch_get_ima_policy(void);
+#else
+static inline bool arch_ima_get_secureboot(void)
+{
+	return false;
+}
+
+static inline const char * const *arch_get_ima_policy(void)
+{
+	return NULL;
+}
+#endif
 
 #ifndef CONFIG_IMA_KEXEC
 struct kimage;

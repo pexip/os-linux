@@ -14,6 +14,7 @@
  */
 
 #include <linux/linkage.h>
+#include <linux/cfi_types.h>
 #include <asm/frame.h>
 
 #define rRIP         (%rip)
@@ -268,7 +269,7 @@ SYM_FUNC_START_LOCAL(__sm4_crypt_blk16)
 	vpshufb RTMP2, RB3, RB3;
 
 	FRAME_END
-	ret;
+	RET;
 SYM_FUNC_END(__sm4_crypt_blk16)
 
 #define inc_le128(x, minus_one, tmp) \
@@ -282,7 +283,7 @@ SYM_FUNC_END(__sm4_crypt_blk16)
  *                                   const u8 *src, u8 *iv)
  */
 .align 8
-SYM_FUNC_START(sm4_aesni_avx2_ctr_enc_blk16)
+SYM_TYPED_FUNC_START(sm4_aesni_avx2_ctr_enc_blk16)
 	/* input:
 	 *	%rdi: round key array, CTX
 	 *	%rsi: dst (16 blocks)
@@ -387,7 +388,7 @@ SYM_FUNC_START(sm4_aesni_avx2_ctr_enc_blk16)
 
 	vzeroall;
 	FRAME_END
-	ret;
+	RET;
 SYM_FUNC_END(sm4_aesni_avx2_ctr_enc_blk16)
 
 /*
@@ -395,7 +396,7 @@ SYM_FUNC_END(sm4_aesni_avx2_ctr_enc_blk16)
  *                                   const u8 *src, u8 *iv)
  */
 .align 8
-SYM_FUNC_START(sm4_aesni_avx2_cbc_dec_blk16)
+SYM_TYPED_FUNC_START(sm4_aesni_avx2_cbc_dec_blk16)
 	/* input:
 	 *	%rdi: round key array, CTX
 	 *	%rsi: dst (16 blocks)
@@ -441,7 +442,7 @@ SYM_FUNC_START(sm4_aesni_avx2_cbc_dec_blk16)
 
 	vzeroall;
 	FRAME_END
-	ret;
+	RET;
 SYM_FUNC_END(sm4_aesni_avx2_cbc_dec_blk16)
 
 /*
@@ -449,7 +450,7 @@ SYM_FUNC_END(sm4_aesni_avx2_cbc_dec_blk16)
  *                                   const u8 *src, u8 *iv)
  */
 .align 8
-SYM_FUNC_START(sm4_aesni_avx2_cfb_dec_blk16)
+SYM_TYPED_FUNC_START(sm4_aesni_avx2_cfb_dec_blk16)
 	/* input:
 	 *	%rdi: round key array, CTX
 	 *	%rsi: dst (16 blocks)
@@ -497,5 +498,5 @@ SYM_FUNC_START(sm4_aesni_avx2_cfb_dec_blk16)
 
 	vzeroall;
 	FRAME_END
-	ret;
+	RET;
 SYM_FUNC_END(sm4_aesni_avx2_cfb_dec_blk16)

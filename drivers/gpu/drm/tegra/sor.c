@@ -16,12 +16,12 @@
 
 #include <soc/tegra/pmc.h>
 
+#include <drm/display/drm_dp_helper.h>
+#include <drm/display/drm_scdc_helper.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_debugfs.h>
-#include <drm/drm_dp_helper.h>
 #include <drm/drm_file.h>
 #include <drm/drm_panel.h>
-#include <drm/drm_scdc_helper.h>
 #include <drm/drm_simple_kms_helper.h>
 
 #include "dc.h"
@@ -1153,7 +1153,7 @@ static int tegra_sor_compute_config(struct tegra_sor *sor,
 				    struct drm_dp_link *link)
 {
 	const u64 f = 100000, link_rate = link->rate * 1000;
-	const u64 pclk = mode->clock * 1000;
+	const u64 pclk = (u64)mode->clock * 1000;
 	u64 input, output, watermark, num;
 	struct tegra_sor_params params;
 	u32 num_syms_per_line;

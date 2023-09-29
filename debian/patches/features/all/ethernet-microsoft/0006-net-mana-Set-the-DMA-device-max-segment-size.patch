@@ -1,0 +1,40 @@
+From 09b5391c16655893159fe8a58c8b7e31499ef107 Mon Sep 17 00:00:00 2001
+From: Ajay Sharma <sharmaajay@microsoft.com>
+Date: Thu, 3 Nov 2022 12:16:22 -0700
+Subject: [PATCH 06/23] net: mana: Set the DMA device max segment size
+
+MANA hardware doesn't have any restrictions on the DMA segment size, set it
+to the max allowed value.
+
+Signed-off-by: Ajay Sharma <sharmaajay@microsoft.com>
+Reviewed-by: Dexuan Cui <decui@microsoft.com>
+Signed-off-by: Long Li <longli@microsoft.com>
+Link: https://lore.kernel.org/r/1667502990-2559-5-git-send-email-longli@linuxonhyperv.com
+Acked-by: Haiyang Zhang <haiyangz@microsoft.com>
+Signed-off-by: Leon Romanovsky <leonro@nvidia.com>
+(cherry picked from commit 6fe254160bd033a1e62dbad9b734183b31144678)
+Signed-off-by: Bastian Blank <waldi@debian.org>
+---
+ drivers/net/ethernet/microsoft/mana/gdma_main.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/net/ethernet/microsoft/mana/gdma_main.c b/drivers/net/ethernet/microsoft/mana/gdma_main.c
+index a00bd88443d3..bc00a7d07232 100644
+--- a/drivers/net/ethernet/microsoft/mana/gdma_main.c
++++ b/drivers/net/ethernet/microsoft/mana/gdma_main.c
+@@ -1403,6 +1403,12 @@ static int mana_gd_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 	if (err)
+ 		goto release_region;
+ 
++	err = dma_set_max_seg_size(&pdev->dev, UINT_MAX);
++	if (err) {
++		dev_err(&pdev->dev, "Failed to set dma device segment size\n");
++		goto release_region;
++	}
++
+ 	err = -ENOMEM;
+ 	gc = vzalloc(sizeof(*gc));
+ 	if (!gc)
+-- 
+2.40.1
+

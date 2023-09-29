@@ -64,7 +64,8 @@ endmenu
 
 config INTEL_BXT_PMIC_THERMAL
 	tristate "Intel Broxton PMIC thermal driver"
-	depends on X86 && INTEL_SOC_PMIC_BXTWC && REGMAP
+	depends on X86 && INTEL_SOC_PMIC_BXTWC
+	select REGMAP
 	help
 	  Select this driver for Intel Broxton PMIC with ADC channels monitoring
 	  system temperature measurements and alerts.
@@ -99,3 +100,17 @@ config INTEL_MENLOW
 	  Intel Menlow platform.
 
 	  If unsure, say N.
+
+config INTEL_HFI_THERMAL
+	bool "Intel Hardware Feedback Interface"
+	depends on NET
+	depends on CPU_SUP_INTEL
+	depends on X86_THERMAL_VECTOR
+	select THERMAL_NETLINK
+	help
+	  Select this option to enable the Hardware Feedback Interface. If
+	  selected, hardware provides guidance to the operating system on
+	  the performance and energy efficiency capabilities of each CPU.
+	  These capabilities may change as a result of changes in the operating
+	  conditions of the system such power and thermal limits. If selected,
+	  the kernel relays updates in CPUs' capabilities to userspace.

@@ -18,27 +18,26 @@
  * Read a file data page for Merkle tree construction.  Do aggressive readahead,
  * since we're sequentially reading the entire file.
  */
-static struct page *read_file_data_page(struct file *filp, pgoff_t index,
+static struct page *read_file_data_page(struct file *file, pgoff_t index,
 					struct file_ra_state *ra,
 					unsigned long remaining_pages)
 {
-	struct page *page;
+	DEFINE_READAHEAD(ractl, file, ra, file->f_mapping, index);
+	struct folio *folio;
 
-	page = find_get_page_flags(filp->f_mapping, index, FGP_ACCESSED);
-	if (!page || !PageUptodate(page)) {
-		if (page)
-			put_page(page);
+	folio = __filemap_get_folio(ractl.mapping, index, FGP_ACCESSED, 0);
+	if (!folio || !folio_test_uptodate(folio)) {
+		if (folio)
+			folio_put(folio);
 		else
-			page_cache_sync_readahead(filp->f_mapping, ra, filp,
-						  index, remaining_pages);
-		page = read_mapping_page(filp->f_mapping, index, NULL);
-		if (IS_ERR(page))
-			return page;
+			page_cache_sync_ra(&ractl, remaining_pages);
+		folio = read_cache_folio(ractl.mapping, index, NULL, file);
+		if (IS_ERR(folio))
+			return &folio->page;
 	}
-	if (PageReadahead(page))
-		page_cache_async_readahead(filp->f_mapping, ra, filp, page,
-					   index, remaining_pages);
-	return page;
+	if (folio_test_readahead(folio))
+		page_cache_async_ra(&ractl, folio, remaining_pages);
+	return folio_file_page(folio, index);
 }
 
 static int build_merkle_tree_level(struct file *filp, unsigned int level,
@@ -202,7 +201,7 @@ static int enable_verity(struct file *filp,
 	const struct fsverity_operations *vops = inode->i_sb->s_vop;
 	struct merkle_tree_params params = { };
 	struct fsverity_descriptor *desc;
-	size_t desc_size = sizeof(*desc) + arg->sig_size;
+	size_t desc_size = struct_size(desc, signature, arg->sig_size);
 	struct fsverity_info *vi;
 	int err;
 
@@ -281,7 +280,7 @@ static int enable_verity(struct file *filp,
 	 * from disk.  This is simpler, and it serves as an extra check that the
 	 * metadata we're writing is valid before actually enabling verity.
 	 */
-	vi = fsverity_create_info(inode, desc, desc_size);
+	vi = fsverity_create_info(inode, desc);
 	if (IS_ERR(vi)) {
 		err = PTR_ERR(vi);
 		goto rollback;
@@ -391,25 +390,27 @@ int fsverity_ioctl_enable(struct file *filp, const void __user *uarg)
 		goto out_drop_write;
 
 	err = enable_verity(filp, &arg);
-	if (err)
-		goto out_allow_write_access;
 
 	/*
-	 * Some pages of the file may have been evicted from pagecache after
-	 * being used in the Merkle tree construction, then read into pagecache
-	 * again by another process reading from the file concurrently.  Since
-	 * these pages didn't undergo verification against the file digest which
-	 * fs-verity now claims to be enforcing, we have to wipe the pagecache
-	 * to ensure that all future reads are verified.
+	 * We no longer drop the inode's pagecache after enabling verity.  This
+	 * used to be done to try to avoid a race condition where pages could be
+	 * evicted after being used in the Merkle tree construction, then
+	 * re-instantiated by a concurrent read.  Such pages are unverified, and
+	 * the backing storage could have filled them with different content, so
+	 * they shouldn't be used to fulfill reads once verity is enabled.
+	 *
+	 * But, dropping the pagecache has a big performance impact, and it
+	 * doesn't fully solve the race condition anyway.  So for those reasons,
+	 * and also because this race condition isn't very important relatively
+	 * speaking (especially for small-ish files, where the chance of a page
+	 * being used, evicted, *and* re-instantiated all while enabling verity
+	 * is quite small), we no longer drop the inode's pagecache.
 	 */
-	filemap_write_and_wait(inode->i_mapping);
-	invalidate_inode_pages2(inode->i_mapping);
 
 	/*
 	 * allow_write_access() is needed to pair with deny_write_access().
 	 * Regardless, the filesystem won't allow writing to verity files.
 	 */
-out_allow_write_access:
 	allow_write_access(filp);
 out_drop_write:
 	mnt_drop_write_file(filp);

@@ -174,7 +174,7 @@ int ptrace_get_reg(struct task_struct *task, int regno, unsigned long *data)
 
 	/*
 	 * softe copies paca->irq_soft_mask variable state. Since irq_soft_mask is
-	 * no more used as a flag, lets force usr to alway see the softe value as 1
+	 * no more used as a flag, lets force usr to always see the softe value as 1
 	 * which means interrupts are not soft disabled.
 	 */
 	if (IS_ENABLED(CONFIG_PPC64) && regno == PT_SOFTE) {
@@ -290,6 +290,9 @@ static int gpr_set(struct task_struct *target, const struct user_regset *regset,
 static int ppr_get(struct task_struct *target, const struct user_regset *regset,
 		   struct membuf to)
 {
+	if (!target->thread.regs)
+		return -EINVAL;
+
 	return membuf_write(&to, &target->thread.regs->ppr, sizeof(u64));
 }
 
@@ -297,6 +300,9 @@ static int ppr_set(struct task_struct *target, const struct user_regset *regset,
 		   unsigned int pos, unsigned int count, const void *kbuf,
 		   const void __user *ubuf)
 {
+	if (!target->thread.regs)
+		return -EINVAL;
+
 	return user_regset_copyin(&pos, &count, &kbuf, &ubuf,
 				  &target->thread.regs->ppr, 0, sizeof(u64));
 }
@@ -841,7 +847,7 @@ static const struct user_regset_view user_ppc_compat_view = {
 
 const struct user_regset_view *task_user_regset_view(struct task_struct *task)
 {
-	if (IS_ENABLED(CONFIG_PPC64) && test_tsk_thread_flag(task, TIF_32BIT))
+	if (IS_ENABLED(CONFIG_COMPAT) && is_tsk_32bit_task(task))
 		return &user_ppc_compat_view;
 	return &user_ppc_native_view;
 }

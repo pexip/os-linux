@@ -4,6 +4,7 @@ drivers/net/wireless/**
 # Include staging wireless drivers
 prism2_usb ?
 drivers/staging/rtl8** ?
+r8188eu ?
 vt6656_stage ?
 
 # Exclude drivers packaged in nic-pcmcia-modules
@@ -25,3 +26,6 @@ mac80211_hwsim -
 lib80211_crypt_wep ?
 lib80211_crypt_ccmp ?
 lib80211_crypt_tkip ?
+
+# (pending) ath11k_pci soft-dep:
+qrtr_mhi ?

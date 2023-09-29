@@ -54,7 +54,7 @@ CONFIG_SCx200HR_TIMER=m
 CONFIG_X86_GENERIC=y
 
 ##
-## file: crypto/Kconfig
+## file: arch/x86/crypto/Kconfig
 ##
 CONFIG_CRYPTO_SERPENT_SSE2_586=m
 CONFIG_CRYPTO_TWOFISH_586=m
@@ -74,7 +74,6 @@ CONFIG_PATA_CS5536=m
 CONFIG_PATA_SC1200=m
 CONFIG_PATA_ISAPNP=m
 CONFIG_PATA_OPTI=m
-CONFIG_PATA_LEGACY=m
 
 ##
 ## file: drivers/atm/Kconfig
@@ -232,12 +231,12 @@ CONFIG_LEDS_WRAP=m
 ## file: drivers/media/radio/Kconfig
 ##
 CONFIG_V4L_RADIO_ISA_DRIVERS=y
-CONFIG_RADIO_CADET=m
-CONFIG_RADIO_RTRACK=m
-CONFIG_RADIO_RTRACK2=m
 CONFIG_RADIO_AZTECH=m
+CONFIG_RADIO_CADET=m
 CONFIG_RADIO_GEMTEK=m
 CONFIG_RADIO_MIROPCM20=m
+CONFIG_RADIO_RTRACK=m
+CONFIG_RADIO_RTRACK2=m
 CONFIG_RADIO_SF16FMI=m
 CONFIG_RADIO_SF16FMR2=m
 CONFIG_RADIO_TERRATEC=m
@@ -254,7 +253,6 @@ CONFIG_MFD_VX855=m
 ##
 ## file: drivers/misc/Kconfig
 ##
-CONFIG_CS5535_MFGPT=m
 CONFIG_CS5535_CLOCK_EVENT_SRC=m
 CONFIG_PCH_PHUB=m
 
@@ -285,14 +283,12 @@ CONFIG_CAN_CC770_ISA=m
 ##
 ## file: drivers/net/ethernet/3com/Kconfig
 ##
-CONFIG_NET_VENDOR_3COM=y
 CONFIG_EL3=m
 CONFIG_3C515=m
 
 ##
 ## file: drivers/net/ethernet/8390/Kconfig
 ##
-CONFIG_NET_VENDOR_8390=y
 CONFIG_NE2000=m
 CONFIG_ULTRA=m
 CONFIG_WD80x3=m
@@ -300,9 +296,7 @@ CONFIG_WD80x3=m
 ##
 ## file: drivers/net/ethernet/amd/Kconfig
 ##
-CONFIG_NET_VENDOR_AMD=y
 CONFIG_LANCE=m
-CONFIG_NI65=m
 
 ##
 ## file: drivers/net/ethernet/cirrus/Kconfig
@@ -316,11 +310,6 @@ CONFIG_CS89x0_ISA=m
 CONFIG_NET_VENDOR_DEC=y
 
 ##
-## file: drivers/net/ethernet/fujitsu/Kconfig
-##
-CONFIG_NET_VENDOR_FUJITSU=y
-
-##
 ## file: drivers/net/ethernet/oki-semi/pch_gbe/Kconfig
 ##
 CONFIG_PCH_GBE=m
@@ -328,15 +317,11 @@ CONFIG_PCH_GBE=m
 ##
 ## file: drivers/net/ethernet/smsc/Kconfig
 ##
-CONFIG_NET_VENDOR_SMSC=y
 CONFIG_SMC9194=m
 
 ##
 ## file: drivers/net/wan/Kconfig
 ##
-CONFIG_HOSTESS_SV11=m
-CONFIG_COSA=m
-CONFIG_SEALEVEL_4021=m
 CONFIG_N2=m
 CONFIG_C101=m
 

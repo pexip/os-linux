@@ -223,7 +223,9 @@ static int caam_rsa_count_leading_zeros(struct scatterlist *sgl,
 		if (len && *buff)
 			break;
 
-		sg_miter_next(&miter);
+		if (!sg_miter_next(&miter))
+			break;
+
 		buff = miter.addr;
 		len = miter.length;
 
@@ -379,6 +381,9 @@ static int akcipher_do_one_req(struct crypto_engine *engine, void *areq)
 	req_ctx->edesc->bklog = true;
 
 	ret = caam_jr_enqueue(jrdev, desc, req_ctx->akcipher_op_done, req);
+
+	if (ret == -ENOSPC && engine->retry_support)
+		return ret;
 
 	if (ret != -EINPROGRESS) {
 		rsa_pub_unmap(jrdev, req_ctx->edesc, req);

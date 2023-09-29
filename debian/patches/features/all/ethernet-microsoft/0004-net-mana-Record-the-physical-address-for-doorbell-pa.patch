@@ -1,0 +1,63 @@
+From 108ed3960c8f1e65ad64b22a4a073c4e42204132 Mon Sep 17 00:00:00 2001
+From: Long Li <longli@microsoft.com>
+Date: Thu, 3 Nov 2022 12:16:20 -0700
+Subject: [PATCH 04/23] net: mana: Record the physical address for doorbell
+ page region
+
+For supporting RDMA device with multiple user contexts with their
+individual doorbell pages, record the start address of doorbell page
+region for use by the RDMA driver to allocate user context doorbell IDs.
+
+Reviewed-by: Dexuan Cui <decui@microsoft.com>
+Signed-off-by: Long Li <longli@microsoft.com>
+Link: https://lore.kernel.org/r/1667502990-2559-3-git-send-email-longli@linuxonhyperv.com
+Acked-by: Haiyang Zhang <haiyangz@microsoft.com>
+Signed-off-by: Leon Romanovsky <leonro@nvidia.com>
+(cherry picked from commit f3dc096246091048677c45cfc0e24ad512927b52)
+Signed-off-by: Bastian Blank <waldi@debian.org>
+---
+ drivers/net/ethernet/microsoft/mana/gdma.h      | 2 ++
+ drivers/net/ethernet/microsoft/mana/gdma_main.c | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/net/ethernet/microsoft/mana/gdma.h b/drivers/net/ethernet/microsoft/mana/gdma.h
+index df0ffe35db92..86d8a9e36005 100644
+--- a/drivers/net/ethernet/microsoft/mana/gdma.h
++++ b/drivers/net/ethernet/microsoft/mana/gdma.h
+@@ -354,9 +354,11 @@ struct gdma_context {
+ 	u32			test_event_eq_id;
+ 
+ 	bool			is_pf;
++	phys_addr_t		bar0_pa;
+ 	void __iomem		*bar0_va;
+ 	void __iomem		*shm_base;
+ 	void __iomem		*db_page_base;
++	phys_addr_t		phys_db_page_base;
+ 	u32 db_page_size;
+ 	int                     numa_node;
+ 
+diff --git a/drivers/net/ethernet/microsoft/mana/gdma_main.c b/drivers/net/ethernet/microsoft/mana/gdma_main.c
+index abe9888a40aa..a00bd88443d3 100644
+--- a/drivers/net/ethernet/microsoft/mana/gdma_main.c
++++ b/drivers/net/ethernet/microsoft/mana/gdma_main.c
+@@ -44,6 +44,9 @@ static void mana_gd_init_vf_regs(struct pci_dev *pdev)
+ 	gc->db_page_base = gc->bar0_va +
+ 				mana_gd_r64(gc, GDMA_REG_DB_PAGE_OFFSET);
+ 
++	gc->phys_db_page_base = gc->bar0_pa +
++				mana_gd_r64(gc, GDMA_REG_DB_PAGE_OFFSET);
++
+ 	gc->shm_base = gc->bar0_va + mana_gd_r64(gc, GDMA_REG_SHM_OFFSET);
+ }
+ 
+@@ -1407,6 +1410,7 @@ static int mana_gd_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 
+ 	mutex_init(&gc->eq_test_event_mutex);
+ 	pci_set_drvdata(pdev, gc);
++	gc->bar0_pa = pci_resource_start(pdev, 0);
+ 
+ 	bar0_va = pci_iomap(pdev, bar, 0);
+ 	if (!bar0_va)
+-- 
+2.40.1
+

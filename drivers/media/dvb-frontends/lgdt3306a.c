@@ -1859,7 +1859,7 @@ fail:
 	kfree(state);
 	return NULL;
 }
-EXPORT_SYMBOL(lgdt3306a_attach);
+EXPORT_SYMBOL_GPL(lgdt3306a_attach);
 
 #ifdef DBG_DUMP
 
@@ -2226,7 +2226,7 @@ fail:
 	return ret;
 }
 
-static int lgdt3306a_remove(struct i2c_client *client)
+static void lgdt3306a_remove(struct i2c_client *client)
 {
 	struct lgdt3306a_state *state = i2c_get_clientdata(client);
 
@@ -2237,8 +2237,6 @@ static int lgdt3306a_remove(struct i2c_client *client)
 
 	kfree(state->cfg);
 	kfree(state);
-
-	return 0;
 }
 
 static const struct i2c_device_id lgdt3306a_id_table[] = {

@@ -1,20 +1,19 @@
 #!/usr/bin/python3
 
-import codecs
 import hashlib
-import io
 import json
 import os.path
+import pathlib
 import re
 import ssl
 import subprocess
 import sys
 
 from debian_linux.config import ConfigCoreDump
-from debian_linux.debian import PackageRelation, VersionLinux
-from debian_linux.gencontrol import Gencontrol as Base, merge_packages, \
-    iter_flavours
-from debian_linux.utils import Templates, read_control
+from debian_linux.debian import VersionLinux, BinaryPackage
+from debian_linux.gencontrol import Gencontrol as Base, \
+    iter_flavours, PackagesBundle
+from debian_linux.utils import Templates
 
 
 class Gencontrol(Base):
@@ -59,11 +58,17 @@ class Gencontrol(Base):
 
         self.image_packages = []
 
+        # We need a separate base dir for now
+        self.bundles = {None: PackagesBundle(None, self.templates,
+                                             pathlib.Path(self.template_debian_dir))}
+        self.packages = self.bundle.packages
+        self.makefile = self.bundle.makefile
+
     def do_main_setup(self, vars, makeflags, extra):
         makeflags['VERSION'] = self.version.linux_version
         makeflags['GENCONTROL_ARGS'] = (
             '-v%(imagebinaryversion)s '
-            '-DBuilt-Using="linux (= %(imagesourceversion)s)"' %
+            '-DBuilt-Using="%(source_basename)s%(source_suffix)s (= %(imagesourceversion)s)"' %
             vars)
         makeflags['PACKAGE_VERSION'] = vars['imagebinaryversion']
 
@@ -86,12 +91,9 @@ class Gencontrol(Base):
             kw_proc = subprocess.Popen(
                 ['kernel-wedge', 'gen-control', vars['abiname']],
                 stdout=subprocess.PIPE,
+                text=True,
                 env=kw_env)
-            if not isinstance(kw_proc.stdout, io.IOBase):
-                udeb_packages = read_control(io.open(kw_proc.stdout.fileno(),
-                                                     closefd=False))
-            else:
-                udeb_packages = read_control(io.TextIOWrapper(kw_proc.stdout))
+            udeb_packages = BinaryPackage.read_rfc822(kw_proc.stdout)
             kw_proc.wait()
             if kw_proc.returncode != 0:
                 raise RuntimeError('kernel-wedge exited with code %d' %
@@ -104,45 +106,41 @@ class Gencontrol(Base):
                         self.installer_packages.setdefault(arch, []) \
                                                .append(package)
 
-    def do_main_packages(self, packages, vars, makeflags, extra):
+    def do_main_packages(self, vars, makeflags, extra):
         # Assume that arch:all packages do not get binNMU'd
-        packages['source']['Build-Depends'].append(
+        self.packages['source']['Build-Depends'].append(
             'linux-support-%(abiname)s (= %(imagesourceversion)s)' % vars)
 
-    def do_main_recurse(self, packages, makefile, vars, makeflags, extra):
+    def do_main_recurse(self, vars, makeflags, extra):
         # Each signed source package only covers a single architecture
-        self.do_arch(packages, makefile, vars['arch'], vars.copy(),
+        self.do_arch(vars['arch'], vars.copy(),
                      makeflags.copy(), extra)
 
-    def do_extra(self, packages, makefile):
+    def do_extra(self):
         pass
 
     def do_arch_setup(self, vars, makeflags, arch, extra):
         super(Gencontrol, self).do_main_setup(vars, makeflags, extra)
 
-        if self.version.linux_modifier is None:
-            abiname_part = '-%s' % self.config.merge('abi', arch)['abiname']
-        else:
-            abiname_part = ''
+        abiname_part = '-%s' % self.config.merge('abi', arch)['abiname']
         makeflags['ABINAME'] = vars['abiname'] = \
             self.config['version', ]['abiname_base'] + abiname_part
 
-    def do_arch_packages(self, packages, makefile, arch, vars, makeflags,
-                         extra):
+    def do_arch_packages(self, arch, vars, makeflags, extra):
         udeb_packages = self.installer_packages.get(arch, [])
-        if udeb_packages:
-            merge_packages(packages, udeb_packages, arch)
 
-            # These packages must be built after the per-flavour/
-            # per-featureset packages.  Also, this won't work
-            # correctly with an empty package list.
-            if udeb_packages:
-                makefile.add(
-                    'binary-arch_%s' % arch,
-                    cmds=["$(MAKE) -f debian/rules.real install-udeb_%s %s "
-                          "PACKAGE_NAMES='%s'" %
-                          (arch, makeflags,
-                           ' '.join(p['Package'] for p in udeb_packages))])
+        if udeb_packages:
+            makeflags_local = makeflags.copy()
+            makeflags_local['PACKAGE_NAMES'] = ' '.join(p['Package'] for p in udeb_packages)
+
+            for package in udeb_packages:
+                package.meta['rules-target'] = 'udeb'
+
+            self.bundle.add_packages(
+                udeb_packages,
+                (arch, 'real'),
+                makeflags_local, arch=arch,
+            )
 
     def do_featureset_setup(self, vars, makeflags, arch, featureset, extra):
         self.default_flavour = self.config.merge('base', arch, featureset) \
@@ -156,6 +154,9 @@ class Gencontrol(Base):
                not in iter_flavours(self.config, arch, featureset):
                 raise RuntimeError("default-flavour %s for %s %s does not exist"
                                    % (self.default_flavour, arch, featureset))
+
+        self.quick_flavour = self.config.merge('base', arch, featureset) \
+                                        .get('quick-flavour')
 
     def do_flavour_setup(self, vars, makeflags, arch, featureset, flavour,
                          extra):
@@ -174,10 +175,18 @@ class Gencontrol(Base):
         vars['image-stem'] = config_image.get('install-stem')
         makeflags['IMAGE_INSTALL_STEM'] = vars['image-stem']
 
-    def do_flavour_packages(self, packages, makefile, arch, featureset,
+    def do_flavour_packages(self, arch, featureset,
                             flavour, vars, makeflags, extra):
+        ruleid = (arch, featureset, flavour, 'real')
+
         config_build = self.config.merge('build', arch, featureset, flavour)
         if not config_build.get('signed-code', False):
+            return
+
+        # In a quick build, only build the quick flavour (if any).
+        if 'pkg.linux.quick' in \
+           os.environ.get('DEB_BUILD_PROFILES', '').split() \
+           and flavour != self.quick_flavour:
             return
 
         image_suffix = '%(abiname)s%(localversion)s' % vars
@@ -194,23 +203,23 @@ class Gencontrol(Base):
         self.image_packages.append((image_suffix, image_package_name,
                                     cert_file_name))
 
-        packages['source']['Build-Depends'].append(
+        self.packages['source']['Build-Depends'].append(
             image_package_name
             + ' (= %(imagebinaryversion)s) [%(arch)s]' % vars)
 
-        packages_own = self.process_packages(
-            self.templates['control.image'], vars)
-        assert len(packages_own) == 1
-        cmds_binary_arch = ["$(MAKE) -f debian/rules.real install-signed "
-                            "PACKAGE_NAME='%s' %s" %
-                            (packages_own[0]['Package'], makeflags)]
+        packages_own = (
+            self.bundle.add('image',
+                            ruleid, makeflags, vars, arch=arch)
+        )
 
         if self.config.merge('packages').get('meta', True):
-            packages_meta = self.process_packages(
-                self.templates['control.image.meta'], vars)
+            packages_meta = (
+                self.bundle.add('image.meta', ruleid, makeflags, vars, arch=arch)
+            )
             assert len(packages_meta) == 1
-            packages_meta += self.process_packages(
-                self.templates['control.headers.meta'], vars)
+            packages_meta += (
+                self.bundle.add('headers.meta', ruleid, makeflags, vars, arch=arch)
+            )
             assert len(packages_meta) == 2
 
             # Don't pretend to support build-profiles
@@ -219,45 +228,20 @@ class Gencontrol(Base):
 
             if flavour == self.default_flavour \
                and not self.vars['source_suffix']:
-                packages_meta[0].setdefault('Provides', PackageRelation()) \
+                packages_meta[0].setdefault('Provides') \
                                 .append('linux-image-generic')
-                packages_meta[1].setdefault('Provides', PackageRelation()) \
+                packages_meta[1].setdefault('Provides') \
                                 .append('linux-headers-generic')
 
             packages_own.extend(packages_meta)
 
-            cmds_binary_arch += [
-                "$(MAKE) -f debian/rules.real install-meta "
-                "PACKAGE_NAME='%s' LINK_DOC_PACKAGE_NAME='%s' %s" %
-                (package['Package'], package['Depends'][0][0].name, makeflags)
-                for package in packages_meta
-            ]
-
-            self.substitute_debhelper_config(
-                'image.meta', vars,
-                'linux-image%(localversion)s' % vars,
-                output_dir=self.template_debian_dir)
-            self.substitute_debhelper_config(
-                'headers.meta', vars,
-                'linux-headers%(localversion)s' % vars,
-                output_dir=self.template_debian_dir)
-
-        merge_packages(packages, packages_own, arch)
-        makefile.add('binary-arch_%s_%s_%s_real' % (arch, featureset, flavour),
-                     cmds=cmds_binary_arch)
-
-        self.substitute_debhelper_config(
-            'image', vars,
-            'linux-image-%(abiname)s%(localversion)s' % vars,
-            output_dir=self.template_debian_dir)
-
-    def write(self, packages, makefile):
+    def write(self):
+        self.bundle.extract_makefile()
         self.write_changelog()
-        self.write_control(packages.values(),
-                           name=(self.template_debian_dir + '/control'))
-        self.write_makefile(makefile,
-                            name=(self.template_debian_dir + '/rules.gen'))
+        self.write_control(name=(self.template_debian_dir + '/control'))
+        self.write_makefile(name=(self.template_debian_dir + '/rules.gen'))
         self.write_files_json()
+        self.write_source_lintian_overrides()
 
     def write_changelog(self):
         # Copy the linux changelog, but:
@@ -271,8 +255,8 @@ class Gencontrol(Base):
             re.sub(r'\+b(\d+)$', r'.b\1',
                    re.sub(r'-', r'+', vars['imagebinaryversion']))
 
-        with codecs.open(self.template_debian_dir + '/changelog', 'w',
-                         'utf-8') as f:
+        with open(self.template_debian_dir + '/changelog', 'w',
+                  encoding='utf-8') as f:
             f.write(self.substitute('''\
 linux-signed@source_suffix@-@arch@ (@signedsourceversion@) @distribution@; urgency=@urgency@
 
@@ -281,7 +265,8 @@ linux-signed@source_suffix@-@arch@ (@signedsourceversion@) @distribution@; urgen
 ''',
                                     vars))
 
-            with codecs.open('debian/changelog', 'r', 'utf-8') as changelog_in:
+            with open('debian/changelog', 'r', encoding='utf-8') \
+                 as changelog_in:
                 # Ignore first two header lines
                 changelog_in.readline()
                 changelog_in.readline()
@@ -350,8 +335,16 @@ linux-signed@source_suffix@-@arch@ (@signedsourceversion@) @distribution@; urgen
                 'files': package_files
             }
 
-        with codecs.open(self.template_top_dir + '/files.json', 'w') as f:
+        with open(self.template_top_dir + '/files.json', 'w') as f:
             json.dump(all_files, f)
+
+    def write_source_lintian_overrides(self):
+        os.makedirs(os.path.join(self.template_debian_dir, 'source'),
+                    exist_ok=True)
+        with open(os.path.join(self.template_debian_dir,
+                               'source/lintian-overrides'), 'w') as f:
+            f.write(self.substitute(self.templates.get('source.lintian-overrides'),
+                                    self.vars))
 
 
 if __name__ == '__main__':

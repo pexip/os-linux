@@ -7,13 +7,28 @@
 #include <drm/drm_edid.h>
 #include <drm/drm_print.h>
 
+static const struct displayid_header *
+displayid_get_header(const u8 *displayid, int length, int index)
+{
+	const struct displayid_header *base;
+
+	if (sizeof(*base) > length - index)
+		return ERR_PTR(-EINVAL);
+
+	base = (const struct displayid_header *)&displayid[index];
+
+	return base;
+}
+
 static int validate_displayid(const u8 *displayid, int length, int idx)
 {
 	int i, dispid_length;
 	u8 csum = 0;
 	const struct displayid_header *base;
 
-	base = (const struct displayid_header *)&displayid[idx];
+	base = displayid_get_header(displayid, length, idx);
+	if (IS_ERR(base))
+		return PTR_ERR(base);
 
 	DRM_DEBUG_KMS("base revision 0x%x, length %d, %d %d\n",
 		      base->rev, base->bytes, base->prod_id, base->ext_count);
@@ -33,11 +48,11 @@ static int validate_displayid(const u8 *displayid, int length, int idx)
 	return 0;
 }
 
-static const u8 *drm_find_displayid_extension(const struct edid *edid,
+static const u8 *drm_find_displayid_extension(const struct drm_edid *drm_edid,
 					      int *length, int *idx,
 					      int *ext_index)
 {
-	const u8 *displayid = drm_find_edid_extension(edid, DISPLAYID_EXT, ext_index);
+	const u8 *displayid = drm_find_edid_extension(drm_edid, DISPLAYID_EXT, ext_index);
 	const struct displayid_header *base;
 	int ret;
 
@@ -58,12 +73,12 @@ static const u8 *drm_find_displayid_extension(const struct edid *edid,
 	return displayid;
 }
 
-void displayid_iter_edid_begin(const struct edid *edid,
+void displayid_iter_edid_begin(const struct drm_edid *drm_edid,
 			       struct displayid_iter *iter)
 {
 	memset(iter, 0, sizeof(*iter));
 
-	iter->edid = edid;
+	iter->drm_edid = drm_edid;
 }
 
 static const struct displayid_block *
@@ -88,7 +103,7 @@ __displayid_iter_next(struct displayid_iter *iter)
 {
 	const struct displayid_block *block;
 
-	if (!iter->edid)
+	if (!iter->drm_edid)
 		return NULL;
 
 	if (iter->section) {
@@ -96,7 +111,7 @@ __displayid_iter_next(struct displayid_iter *iter)
 		block = displayid_iter_block(iter);
 		if (WARN_ON(!block)) {
 			iter->section = NULL;
-			iter->edid = NULL;
+			iter->drm_edid = NULL;
 			return NULL;
 		}
 
@@ -109,12 +124,12 @@ __displayid_iter_next(struct displayid_iter *iter)
 	}
 
 	for (;;) {
-		iter->section = drm_find_displayid_extension(iter->edid,
+		iter->section = drm_find_displayid_extension(iter->drm_edid,
 							     &iter->length,
 							     &iter->idx,
 							     &iter->ext_index);
 		if (!iter->section) {
-			iter->edid = NULL;
+			iter->drm_edid = NULL;
 			return NULL;
 		}
 

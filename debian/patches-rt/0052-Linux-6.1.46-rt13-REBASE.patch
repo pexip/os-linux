@@ -1,0 +1,21 @@
+From 5092842be6930a45bc0be44a2c24eb532077f55f Mon Sep 17 00:00:00 2001
+From: Clark Williams <clrkwllms@kernel.org>
+Date: Fri, 18 Aug 2023 10:45:35 -0500
+Subject: [PATCH 52/64] 'Linux 6.1.46-rt13 REBASE'
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.54-rt15.tar.xz
+
+Signed-off-by: Clark Williams <clrkwllms@kernel.org>
+---
+ localversion-rt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/localversion-rt b/localversion-rt
+index 045478966e9f..9f7d0bdbffb1 100644
+--- a/localversion-rt
++++ b/localversion-rt
+@@ -1 +1 @@
+--rt7
++-rt13
+-- 
+2.41.0
+

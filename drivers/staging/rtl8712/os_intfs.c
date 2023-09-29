@@ -166,7 +166,7 @@ static int r871x_net_set_mac_address(struct net_device *pnetdev, void *p)
 	struct sockaddr *addr = p;
 
 	if (!padapter->bup)
-		ether_addr_copy(pnetdev->dev_addr, addr->sa_data);
+		eth_hw_addr_set(pnetdev, addr->sa_data);
 	return 0;
 }
 
@@ -323,6 +323,7 @@ int r8712_init_drv_sw(struct _adapter *padapter)
 	mp871xinit(padapter);
 	init_default_value(padapter);
 	r8712_InitSwLeds(padapter);
+	mutex_init(&padapter->mutex_start);
 	return ret;
 }
 
@@ -332,7 +333,6 @@ void r8712_free_drv_sw(struct _adapter *padapter)
 	r8712_free_evt_priv(&padapter->evtpriv);
 	r8712_DeInitSwLeds(padapter);
 	r8712_free_mlme_priv(&padapter->mlmepriv);
-	r8712_free_io_queue(padapter);
 	_free_xmit_priv(&padapter->xmitpriv);
 	_r8712_free_sta_priv(&padapter->stapriv);
 	_r8712_free_recv_priv(&padapter->recvpriv);
@@ -381,14 +381,15 @@ static int netdev_open(struct net_device *pnetdev)
 			goto netdev_open_error;
 		if (!r8712_initmac) {
 			/* Use the mac address stored in the Efuse */
-			memcpy(pnetdev->dev_addr,
-			       padapter->eeprompriv.mac_addr, ETH_ALEN);
+			eth_hw_addr_set(pnetdev,
+					padapter->eeprompriv.mac_addr);
 		} else {
 			/* We have to inform f/w to use user-supplied MAC
 			 * address.
 			 */
 			msleep(200);
-			r8712_setMacAddr_cmd(padapter, (u8 *)pnetdev->dev_addr);
+			r8712_setMacAddr_cmd(padapter,
+					     (const u8 *)pnetdev->dev_addr);
 			/*
 			 * The "myid" function will get the wifi mac address
 			 * from eeprompriv structure instead of netdev

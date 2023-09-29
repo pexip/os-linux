@@ -1,0 +1,34 @@
+From 026293abc2d3962ebd7d9a4bc9375fa1bddc2995 Mon Sep 17 00:00:00 2001
+From: Long Li <longli@microsoft.com>
+Date: Thu, 3 Nov 2022 12:16:24 -0700
+Subject: [PATCH 08/23] net: mana: Record port number in netdev
+
+The port number is useful for user-mode application to identify this
+net device based on port index. Set to the correct value in ndev.
+
+Reviewed-by: Dexuan Cui <decui@microsoft.com>
+Signed-off-by: Long Li <longli@microsoft.com>
+Link: https://lore.kernel.org/r/1667502990-2559-7-git-send-email-longli@linuxonhyperv.com
+Acked-by: Haiyang Zhang <haiyangz@microsoft.com>
+Signed-off-by: Leon Romanovsky <leonro@nvidia.com>
+(cherry picked from commit d44089e555ffe63a49cc6e94d0c03d933e413059)
+Signed-off-by: Bastian Blank <waldi@debian.org>
+---
+ drivers/net/ethernet/microsoft/mana/mana_en.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
+index a526657f4edb..5b7aae9bf983 100644
+--- a/drivers/net/ethernet/microsoft/mana/mana_en.c
++++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
+@@ -2139,6 +2139,7 @@ static int mana_probe_port(struct mana_context *ac, int port_idx,
+ 	ndev->max_mtu = ndev->mtu;
+ 	ndev->min_mtu = ndev->mtu;
+ 	ndev->needed_headroom = MANA_HEADROOM;
++	ndev->dev_port = port_idx;
+ 	SET_NETDEV_DEV(ndev, gc->dev);
+ 
+ 	netif_carrier_off(ndev);
+-- 
+2.40.1
+

@@ -26,7 +26,7 @@ CONFIG_MQ_IOSCHED_DEADLINE=m
 ##
 ## file: drivers/android/Kconfig
 ##
-# CONFIG_ANDROID is not set
+# CONFIG_ANDROID_BINDER_IPC is not set
 
 ##
 ## file: drivers/ata/Kconfig
@@ -109,10 +109,8 @@ CONFIG_ATA_PIIX=m
 ## file: drivers/block/Kconfig
 ##
 # CONFIG_BLK_DEV_FD is not set
-# CONFIG_BLK_DEV_SX8 is not set
 # CONFIG_CDROM_PKTCDVD is not set
 CONFIG_XEN_BLKDEV_FRONTEND=m
-# CONFIG_BLK_DEV_RSXX is not set
 
 ##
 ## file: drivers/block/mtip32xx/Kconfig
@@ -126,7 +124,6 @@ CONFIG_XEN_BLKDEV_FRONTEND=m
 # CONFIG_MWAVE is not set
 # CONFIG_DEVPORT is not set
 # CONFIG_TELCLOCK is not set
-CONFIG_RANDOM_TRUST_BOOTLOADER=y
 
 ##
 ## file: drivers/char/agp/Kconfig
@@ -149,7 +146,6 @@ CONFIG_RANDOM_TRUST_BOOTLOADER=y
 ##
 ## file: drivers/char/tpm/Kconfig
 ##
-CONFIG_TCG_TPM=m
 # CONFIG_HW_RANDOM_TPM is not set
 CONFIG_TCG_TIS=m
 # CONFIG_TCG_TIS_SPI is not set
@@ -1090,7 +1086,6 @@ CONFIG_SCSI_FC_ATTRS=m
 # CONFIG_SCSI_ACARD is not set
 # CONFIG_SCSI_AACRAID is not set
 # CONFIG_SCSI_MVUMI is not set
-# CONFIG_SCSI_DPT_I2O is not set
 # CONFIG_SCSI_ADVANSYS is not set
 # CONFIG_SCSI_ARCMSR is not set
 # CONFIG_SCSI_HPTIOP is not set
@@ -1206,11 +1201,6 @@ CONFIG_HYPERV_STORAGE=m
 # CONFIG_SCSI_SMARTPQI is not set
 
 ##
-## file: drivers/scsi/ufs/Kconfig
-##
-# CONFIG_SCSI_UFSHCD is not set
-
-##
 ## file: drivers/spi/Kconfig
 ##
 # CONFIG_SPI is not set
@@ -1229,6 +1219,11 @@ CONFIG_HYPERV_STORAGE=m
 ## file: drivers/staging/Kconfig
 ##
 # CONFIG_STAGING is not set
+
+##
+## file: drivers/staging/vme_user/Kconfig
+##
+# CONFIG_VME_BUS is not set
 
 ##
 ## file: drivers/target/iscsi/cxgbit/Kconfig
@@ -1266,6 +1261,11 @@ CONFIG_HYPERV_STORAGE=m
 # CONFIG_SERIAL_8250_EXAR is not set
 # CONFIG_SERIAL_8250_RSA is not set
 # CONFIG_SERIAL_8250_MID is not set
+
+##
+## file: drivers/ufs/Kconfig
+##
+# CONFIG_SCSI_UFSHCD is not set
 
 ##
 ## file: drivers/usb/Kconfig
@@ -1335,11 +1335,6 @@ CONFIG_FB_HYPERV=m
 ## file: drivers/virt/Kconfig
 ##
 # CONFIG_VIRT_DRIVERS is not set
-
-##
-## file: drivers/vme/Kconfig
-##
-# CONFIG_VME_BUS is not set
 
 ##
 ## file: drivers/w1/Kconfig
@@ -1589,11 +1584,6 @@ CONFIG_KERNEL_LZ4=y
 # CONFIG_CAN is not set
 
 ##
-## file: net/decnet/Kconfig
-##
-# CONFIG_DECNET is not set
-
-##
 ## file: net/dsa/Kconfig
 ##
 # CONFIG_NET_DSA is not set
@@ -1687,11 +1677,6 @@ CONFIG_NET_MPLS_GSO=m
 ## file: security/Kconfig
 ##
 CONFIG_SECURITY_INFINIBAND=y
-
-##
-## file: security/integrity/Kconfig
-##
-# CONFIG_INTEGRITY is not set
 
 ##
 ## file: sound/Kconfig

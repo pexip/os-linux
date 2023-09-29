@@ -567,8 +567,11 @@ static int igc_ethtool_set_eeprom(struct net_device *netdev,
 	return ret_val;
 }
 
-static void igc_ethtool_get_ringparam(struct net_device *netdev,
-				      struct ethtool_ringparam *ring)
+static void
+igc_ethtool_get_ringparam(struct net_device *netdev,
+			  struct ethtool_ringparam *ring,
+			  struct kernel_ethtool_ringparam *kernel_ering,
+			  struct netlink_ext_ack *extack)
 {
 	struct igc_adapter *adapter = netdev_priv(netdev);
 
@@ -578,8 +581,11 @@ static void igc_ethtool_get_ringparam(struct net_device *netdev,
 	ring->tx_pending = adapter->tx_ring_count;
 }
 
-static int igc_ethtool_set_ringparam(struct net_device *netdev,
-				     struct ethtool_ringparam *ring)
+static int
+igc_ethtool_set_ringparam(struct net_device *netdev,
+			  struct ethtool_ringparam *ring,
+			  struct kernel_ethtool_ringparam *kernel_ering,
+			  struct netlink_ext_ack *extack)
 {
 	struct igc_adapter *adapter = netdev_priv(netdev);
 	struct igc_ring *temp_ring;
@@ -1701,6 +1707,8 @@ static int igc_ethtool_get_link_ksettings(struct net_device *netdev,
 	/* twisted pair */
 	cmd->base.port = PORT_TP;
 	cmd->base.phy_address = hw->phy.addr;
+	ethtool_link_ksettings_add_link_mode(cmd, supported, TP);
+	ethtool_link_ksettings_add_link_mode(cmd, advertising, TP);
 
 	/* advertising link modes */
 	if (hw->phy.autoneg_advertised & ADVERTISE_10_HALF)

@@ -238,11 +238,6 @@ CONFIG_MV_XOR=y
 # CONFIG_DRM is not set
 
 ##
-## file: drivers/gpu/vga/Kconfig
-##
-# CONFIG_VGA_ARB is not set
-
-##
 ## file: drivers/hwmon/Kconfig
 ##
 CONFIG_HWMON=m
@@ -421,11 +416,6 @@ CONFIG_MTD_OF_PARTS=m
 # CONFIG_MTD_REDBOOT_PARTS is not set
 
 ##
-## file: drivers/mtd/spi-nor/Kconfig
-##
-CONFIG_MTD_SPI_NOR=m
-
-##
 ## file: drivers/net/arcnet/Kconfig
 ##
 # CONFIG_ARCNET is not set
@@ -503,6 +493,7 @@ CONFIG_MWIFIEX_SDIO=m
 ## file: drivers/pci/Kconfig
 ##
 CONFIG_PCI=y
+# CONFIG_VGA_ARB is not set
 
 ##
 ## file: drivers/pci/controller/Kconfig
@@ -531,6 +522,11 @@ CONFIG_POWER_RESET_QNAP=y
 CONFIG_POWER_RESET_RESTART=y
 
 ##
+## file: drivers/ptp/Kconfig
+##
+CONFIG_PTP_1588_CLOCK=m
+
+##
 ## file: drivers/regulator/Kconfig
 ##
 CONFIG_REGULATOR=y
@@ -553,7 +549,6 @@ CONFIG_RTC_DRV_MV=m
 # CONFIG_BLK_DEV_3W_XXXX_RAID is not set
 # CONFIG_SCSI_3W_9XXX is not set
 # CONFIG_SCSI_AACRAID is not set
-# CONFIG_SCSI_DPT_I2O is not set
 # CONFIG_SCSI_ARCMSR is not set
 # CONFIG_SCSI_HPTIOP is not set
 # CONFIG_SCSI_DMX3191D is not set
@@ -727,17 +722,18 @@ CONFIG_NLS=m
 ## choice: Compiler optimization level
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 ## end choice
-# CONFIG_USERFAULTFD is not set
-# CONFIG_SLUB_DEBUG is not set
-# CONFIG_SLAB_FREELIST_HARDENED is not set
 # CONFIG_PROFILING is not set
-# CONFIG_MODULE_SIG is not set
 
 ##
 ## file: kernel/bpf/Kconfig
 ##
 #. Saves about 3K
 # CONFIG_BPF_JIT is not set
+
+##
+## file: kernel/module/Kconfig
+##
+# CONFIG_MODULE_SIG is not set
 
 ##
 ## file: kernel/power/Kconfig
@@ -749,6 +745,8 @@ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 ##
 ## file: kernel/trace/Kconfig
 ##
+#. Adds ~90K to image
+# CONFIG_FUNCTION_TRACER is not set
 # CONFIG_FUNCTION_GRAPH_TRACER is not set
 # CONFIG_STACK_TRACER is not set
 # CONFIG_FTRACE_SYSCALLS is not set
@@ -762,17 +760,20 @@ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 ##
 ## file: mm/Kconfig
 ##
+# CONFIG_ZSWAP is not set
+# CONFIG_SLAB_FREELIST_HARDENED is not set
 ## choice: Memory model
 CONFIG_FLATMEM_MANUAL=y
 # CONFIG_SPARSEMEM_MANUAL is not set
 ## end choice
 # CONFIG_KSM is not set
-# CONFIG_ZSWAP is not set
+# CONFIG_USERFAULTFD is not set
 
 ##
 ## file: mm/Kconfig.debug
 ##
 # CONFIG_PAGE_EXTENSION is not set
+# CONFIG_SLUB_DEBUG is not set
 # CONFIG_PAGE_POISONING is not set
 
 ##
@@ -802,6 +803,12 @@ CONFIG_IPV6=m
 ## file: net/mpls/Kconfig
 ##
 # CONFIG_NET_MPLS_GSO is not set
+
+##
+## file: net/mptcp/Kconfig
+##
+#. Adds ~40K to image
+# CONFIG_MPTCP is not set
 
 ##
 ## file: net/packet/Kconfig

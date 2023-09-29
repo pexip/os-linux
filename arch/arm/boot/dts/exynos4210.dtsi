@@ -393,7 +393,6 @@
 &cpu_thermal {
 	polling-delay-passive = <0>;
 	polling-delay = <0>;
-	thermal-sensors = <&tmu 0>;
 };
 
 &gic {
@@ -527,8 +526,6 @@
 	compatible = "samsung,exynos4210-tmu";
 	clocks = <&clock CLK_TMU_APBIF>;
 	clock-names = "tmu_apbif";
-	samsung,tmu_gain = <15>;
-	samsung,tmu_reference_voltage = <7>;
 };
 
 #include "exynos4210-pinctrl.dtsi"

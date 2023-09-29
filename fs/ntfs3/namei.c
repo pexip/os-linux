@@ -86,6 +86,16 @@ static struct dentry *ntfs_lookup(struct inode *dir, struct dentry *dentry,
 		__putname(uni);
 	}
 
+	/*
+	 * Check for a null pointer
+	 * If the MFT record of ntfs inode is not a base record, inode->i_op can be NULL.
+	 * This causes null pointer dereference in d_splice_alias().
+	 */
+	if (!IS_ERR_OR_NULL(inode) && !inode->i_op) {
+		iput(inode);
+		inode = ERR_PTR(-EINVAL);
+	}
+
 	return d_splice_alias(inode, dentry);
 }
 
@@ -208,7 +218,7 @@ static int ntfs_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
 }
 
 /*
- * ntfs_rmdir - inode_operations::rm_dir
+ * ntfs_rmdir - inode_operations::rmdir
  */
 static int ntfs_rmdir(struct inode *dir, struct dentry *dentry)
 {
@@ -308,9 +318,7 @@ static int ntfs_rename(struct user_namespace *mnt_userns, struct inode *dir,
 	err = ni_rename(dir_ni, new_dir_ni, ni, de, new_de, &is_bad);
 	if (is_bad) {
 		/* Restore after failed rename failed too. */
-		make_bad_inode(inode);
-		ntfs_inode_err(inode, "failed to undo rename");
-		ntfs_set_state(sbi, NTFS_DIRTY_ERROR);
+		_ntfs_bad_inode(inode);
 	} else if (!err) {
 		inode->i_ctime = dir->i_ctime = dir->i_mtime =
 			current_time(dir);

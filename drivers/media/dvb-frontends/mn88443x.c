@@ -762,15 +762,13 @@ err_i2c_t:
 	return ret;
 }
 
-static int mn88443x_remove(struct i2c_client *client)
+static void mn88443x_remove(struct i2c_client *client)
 {
 	struct mn88443x_priv *chip = i2c_get_clientdata(client);
 
 	mn88443x_cmn_power_off(chip);
 
 	i2c_unregister_device(chip->client_t);
-
-	return 0;
 }
 
 static const struct mn88443x_spec mn88443x_spec_pri = {
@@ -800,7 +798,7 @@ MODULE_DEVICE_TABLE(i2c, mn88443x_i2c_id);
 static struct i2c_driver mn88443x_driver = {
 	.driver = {
 		.name = "mn88443x",
-		.of_match_table = of_match_ptr(mn88443x_of_match),
+		.of_match_table = mn88443x_of_match,
 	},
 	.probe    = mn88443x_probe,
 	.remove   = mn88443x_remove,

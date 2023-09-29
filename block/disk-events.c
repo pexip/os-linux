@@ -4,7 +4,7 @@
  */
 #include <linux/export.h>
 #include <linux/moduleparam.h>
-#include <linux/genhd.h>
+#include <linux/blkdev.h>
 #include "blk.h"
 
 struct disk_events {
@@ -307,6 +307,7 @@ bool disk_force_media_change(struct gendisk *disk, unsigned int events)
 	if (!(events & DISK_EVENT_MEDIA_CHANGE))
 		return false;
 
+	inc_diskseq(disk);
 	if (__invalidate_device(disk->part0, true))
 		pr_warn("VFS: busy inodes on changed media %s\n",
 			disk->disk_name);

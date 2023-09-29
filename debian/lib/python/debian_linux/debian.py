@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import collections
 import collections.abc
+import functools
 import os.path
 import re
 import unittest
-
-from . import utils
+import warnings
 
 
 class Changelog(list):
@@ -448,7 +450,8 @@ class PackageDescription(object):
                 self.append(desc_split[1])
 
     def __str__(self):
-        wrap = utils.TextWrapper(width=74, fix_sentence_endings=True).wrap
+        from .utils import TextWrapper
+        wrap = TextWrapper(width=74, fix_sentence_endings=True).wrap
         short = ', '.join(self.short)
         long_pars = []
         for i in self.long:
@@ -546,7 +549,7 @@ class PackageRelationEntry(object):
     __slots__ = "name", "operator", "version", "arches", "restrictions"
 
     _re = re.compile(r'^(\S+)(?: \((<<|<=|=|!=|>=|>>)\s*([^)]+)\))?'
-                     r'(?: \[([^]]+)\])?(?: <([^>]+)>)?$')
+                     r'(?: \[([^]]+)\])?((?: <[^>]+>)*)$')
 
     class _operator(object):
         OP_LT = 1
@@ -607,7 +610,7 @@ class PackageRelationEntry(object):
         if self.arches:
             ret.extend((' [', ' '.join(self.arches), ']'))
         if self.restrictions:
-            ret.extend((' <', ' '.join(self.restrictions), '>'))
+            ret.extend((' ', str(self.restrictions)))
         return ''.join(ret)
 
     def parse(self, value):
@@ -625,43 +628,197 @@ class PackageRelationEntry(object):
             self.arches = re.split(r'\s+', match[3])
         else:
             self.arches = []
-        if match[4] is not None:
-            self.restrictions = re.split(r'\s+', match[4])
+        self.restrictions = PackageBuildRestrictFormula(match[4])
+
+
+class PackageBuildRestrictFormula(set):
+    _re = re.compile(r' *<([^>]+)>(?: +|$)')
+
+    def __init__(self, value=None):
+        if value:
+            self.update(value)
+
+    def __str__(self):
+        return ' '.join(f'<{i}>' for i in sorted(self))
+
+    def add(self, value):
+        if isinstance(value, str):
+            value = PackageBuildRestrictList(value)
+        elif not isinstance(value, PackageBuildRestrictList):
+            raise ValueError("got %s" % type(value))
+        super(PackageBuildRestrictFormula, self).add(value)
+
+    def update(self, value):
+        if isinstance(value, str):
+            pos = 0
+            for match in self._re.finditer(value):
+                if match.start() != pos:
+                    break
+                pos = match.end()
+            if pos != len(value):
+                raise ValueError(f'invalid restriction formula "{value}"')
+            value = (match.group(1) for match in self._re.finditer(value))
+        for i in value:
+            self.add(i)
+
+    # TODO: union etc.
+
+
+class PackageBuildRestrictList(frozenset):
+    # values are established in frozenset.__new__ not __init__, so we
+    # implement __new__ as well
+    def __new__(cls, value=()):
+        if isinstance(value, str):
+            if not re.fullmatch(r'[^()\[\]<>,]+', value):
+                raise ValueError(f'invalid restriction list "{value}"')
+            value = (PackageBuildRestrictTerm(i) for i in value.split())
         else:
-            self.restrictions = []
+            for i in value:
+                if not isinstance(i, PackageBuildRestrictTerm):
+                    raise ValueError
+        return super(PackageBuildRestrictList, cls).__new__(cls, value)
+
+    def __str__(self):
+        return ' '.join(str(i) for i in sorted(self))
+
+    # TODO: union etc.
 
 
-class _ControlFileDict(dict):
+@functools.total_ordering
+class PackageBuildRestrictTerm(object):
+    def __init__(self, value):
+        if not isinstance(value, str):
+            raise ValueError
+        match = re.fullmatch(r'(!?)([^()\[\]<>,!\s]+)', value)
+        if not match:
+            raise ValueError(f'invalid restriction term "{value}"')
+        self.negated = bool(match.group(1))
+        self.profile = match.group(2)
+
+    def __str__(self):
+        return ('!' if self.negated else '') + self.profile
+
+    def __eq__(self, other):
+        return (self.negated == other.negated
+                and self.profile == other.profile)
+
+    def __lt__(self, other):
+        return (self.profile < other.profile
+                or (self.profile == other.profile
+                    and not self.negated and other.negated))
+
+    def __hash__(self):
+        return hash(self.profile) ^ int(self.negated)
+
+
+def restriction_requires_profile(form, profile):
+    # An empty restriction formula does not require any profile.
+    # Otherwise, a profile is required if each restriction list
+    # includes it without negation.
+    if len(form) == 0:
+        return False
+    term = PackageBuildRestrictTerm(profile)
+    for lst in form:
+        if term not in lst:
+            return False
+    return True
+
+
+class _ControlFileDict(collections.abc.MutableMapping):
+    def __init__(self):
+        self.__data = {}
+        self.meta = {}
+
+    def __getitem__(self, key):
+        return self.__data[key]
+
     def __setitem__(self, key, value):
+        if key.lower().startswith('meta-'):
+            self.meta[key.lower()[5:]] = value
+            return
+
         try:
             cls = self._fields[key]
             if not isinstance(value, cls):
                 value = cls(value)
         except KeyError:
-            pass
-        super(_ControlFileDict, self).__setitem__(key, value)
+            warnings.warn(
+                f'setting unknown field { key } in { type(self).__name__ }',
+                stacklevel=2)
+        self.__data[key] = value
 
-    def keys(self):
-        keys = set(super(_ControlFileDict, self).keys())
-        for i in self._fields.keys():
-            if i in self:
-                keys.remove(i)
-                yield i
-        for i in sorted(list(keys)):
-            yield i
+    def __delitem__(self, key):
+        del self.__data[key]
 
-    def items(self):
-        for i in self.keys():
-            yield (i, self[i])
+    def __iter__(self):
+        keys = set(self.__data.keys())
+        for key in self._fields.keys():
+            if key in self.__data:
+                keys.remove(key)
+                yield key
+        for key in sorted(keys):
+            yield key
 
-    def values(self):
-        for i in self.keys():
-            yield self[i]
+    def __len__(self):
+        return len(self.__data)
+
+    def setdefault(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            try:
+                ret = self[key] = self._fields[key]()
+            except KeyError:
+                warnings.warn(
+                    f'setting unknown field { key } in { type(self).__name__ }',
+                    stacklevel=2)
+                ret = self[key] = ''
+            return ret
+
+    @classmethod
+    def read_rfc822(cls, f):
+        entries = []
+        eof = False
+
+        while not eof:
+            e = cls()
+            last = None
+            lines = []
+            while True:
+                line = f.readline()
+                if not line:
+                    eof = True
+                    break
+                # Strip comments rather than trying to preserve them
+                if line[0] == '#':
+                    continue
+                line = line.strip('\n')
+                if not line:
+                    break
+                if line[0] in ' \t':
+                    if not last:
+                        raise ValueError(
+                            'Continuation line seen before first header')
+                    lines.append(line.lstrip())
+                    continue
+                if last:
+                    e[last] = '\n'.join(lines)
+                i = line.find(':')
+                if i < 0:
+                    raise ValueError(u"Not a header, not a continuation: ``%s''" %
+                                     line)
+                last = line[:i]
+                lines = [line[i + 1:].lstrip()]
+            if last:
+                e[last] = '\n'.join(lines)
+            if e:
+                entries.append(e)
+
+        return entries
 
 
-class Package(_ControlFileDict):
+class SourcePackage(_ControlFileDict):
     _fields = collections.OrderedDict((
-        ('Package', str),
         ('Source', str),
         ('Architecture', PackageArchitecture),
         ('Section', str),
@@ -672,6 +829,28 @@ class Package(_ControlFileDict):
         ('Build-Depends', PackageRelation),
         ('Build-Depends-Arch', PackageRelation),
         ('Build-Depends-Indep', PackageRelation),
+        ('Rules-Requires-Root', str),
+        ('Homepage', str),
+        ('Vcs-Browser', str),
+        ('Vcs-Git', str),
+        ('XS-Autobuild', str),
+    ))
+
+
+class BinaryPackage(_ControlFileDict):
+    _fields = collections.OrderedDict((
+        ('Package', str),
+        ('Package-Type', str),  # for udeb only
+        ('Architecture', PackageArchitecture),
+        ('Section', str),
+        ('Priority', str),
+        # Build-Depends* fields aren't allowed for binary packages in
+        # the real control file, but we move them to the source
+        # package
+        ('Build-Depends', PackageRelation),
+        ('Build-Depends-Arch', PackageRelation),
+        ('Build-Depends-Indep', PackageRelation),
+        ('Build-Profiles', PackageBuildRestrictFormula),
         ('Provides', PackageRelation),
         ('Pre-Depends', PackageRelation),
         ('Depends', PackageRelation),
@@ -680,7 +859,10 @@ class Package(_ControlFileDict):
         ('Replaces', PackageRelation),
         ('Breaks', PackageRelation),
         ('Conflicts', PackageRelation),
+        ('Multi-Arch', str),
+        ('Kernel-Version', str),  # for udeb only
         ('Description', PackageDescription),
+        ('Homepage', str),
     ))
 
 
@@ -688,6 +870,7 @@ class TestsControl(_ControlFileDict):
     _fields = collections.OrderedDict((
         ('Tests', str),
         ('Test-Command', str),
+        ('Architecture', PackageArchitecture),
         ('Restrictions', str),
         ('Features', str),
         ('Depends', PackageRelation),

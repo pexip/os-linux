@@ -634,11 +634,20 @@ static struct regmap_bus regmap_cdce925_bus = {
 	.read = cdce925_regmap_i2c_read,
 };
 
-static int cdce925_probe(struct i2c_client *client,
-		const struct i2c_device_id *id)
+static const struct i2c_device_id cdce925_id[] = {
+	{ "cdce913", CDCE913 },
+	{ "cdce925", CDCE925 },
+	{ "cdce937", CDCE937 },
+	{ "cdce949", CDCE949 },
+	{ }
+};
+MODULE_DEVICE_TABLE(i2c, cdce925_id);
+
+static int cdce925_probe(struct i2c_client *client)
 {
 	struct clk_cdce925_chip *data;
 	struct device_node *node = client->dev.of_node;
+	const struct i2c_device_id *id = i2c_match_id(cdce925_id, client);
 	const char *parent_name;
 	const char *pll_clk_name[MAX_NUMBER_OF_PLLS] = {NULL,};
 	struct clk_init_data init;
@@ -705,6 +714,10 @@ static int cdce925_probe(struct i2c_client *client,
 	for (i = 0; i < data->chip_info->num_plls; ++i) {
 		pll_clk_name[i] = kasprintf(GFP_KERNEL, "%pOFn.pll%d",
 			client->dev.of_node, i);
+		if (!pll_clk_name[i]) {
+			err = -ENOMEM;
+			goto error;
+		}
 		init.name = pll_clk_name[i];
 		data->pll[i].chip = data;
 		data->pll[i].hw.init = &init;
@@ -746,6 +759,10 @@ static int cdce925_probe(struct i2c_client *client,
 	init.num_parents = 1;
 	init.parent_names = &parent_name; /* Mux Y1 to input */
 	init.name = kasprintf(GFP_KERNEL, "%pOFn.Y1", client->dev.of_node);
+	if (!init.name) {
+		err = -ENOMEM;
+		goto error;
+	}
 	data->clk[0].chip = data;
 	data->clk[0].hw.init = &init;
 	data->clk[0].index = 0;
@@ -764,6 +781,10 @@ static int cdce925_probe(struct i2c_client *client,
 	for (i = 1; i < data->chip_info->num_outputs; ++i) {
 		init.name = kasprintf(GFP_KERNEL, "%pOFn.Y%d",
 			client->dev.of_node, i+1);
+		if (!init.name) {
+			err = -ENOMEM;
+			goto error;
+		}
 		data->clk[i].chip = data;
 		data->clk[i].hw.init = &init;
 		data->clk[i].index = i;
@@ -814,15 +835,6 @@ error:
 	return err;
 }
 
-static const struct i2c_device_id cdce925_id[] = {
-	{ "cdce913", CDCE913 },
-	{ "cdce925", CDCE925 },
-	{ "cdce937", CDCE937 },
-	{ "cdce949", CDCE949 },
-	{ }
-};
-MODULE_DEVICE_TABLE(i2c, cdce925_id);
-
 static const struct of_device_id clk_cdce925_of_match[] = {
 	{ .compatible = "ti,cdce913" },
 	{ .compatible = "ti,cdce925" },
@@ -837,7 +849,7 @@ static struct i2c_driver cdce925_driver = {
 		.name = "cdce925",
 		.of_match_table = of_match_ptr(clk_cdce925_of_match),
 	},
-	.probe		= cdce925_probe,
+	.probe_new	= cdce925_probe,
 	.id_table	= cdce925_id,
 };
 module_i2c_driver(cdce925_driver);

@@ -237,7 +237,7 @@ static const struct adxl34x_platform_data adxl34x_default_init = {
 
 static void adxl34x_get_triple(struct adxl34x *ac, struct axis_triple *axis)
 {
-	short buf[3];
+	__le16 buf[3];
 
 	ac->bops->read_block(ac->dev, DATAX0, DATAZ1 - DATAX0 + 1, buf);
 
@@ -811,8 +811,7 @@ struct adxl34x *adxl34x_probe(struct device *dev, int irq,
 	AC_WRITE(ac, POWER_CTL, 0);
 
 	err = request_threaded_irq(ac->irq, NULL, adxl34x_irq,
-				   IRQF_TRIGGER_HIGH | IRQF_ONESHOT,
-				   dev_name(dev), ac);
+				   IRQF_ONESHOT, dev_name(dev), ac);
 	if (err) {
 		dev_err(dev, "irq %d busy?\n", ac->irq);
 		goto err_free_mem;
@@ -896,15 +895,13 @@ struct adxl34x *adxl34x_probe(struct device *dev, int irq,
 }
 EXPORT_SYMBOL_GPL(adxl34x_probe);
 
-int adxl34x_remove(struct adxl34x *ac)
+void adxl34x_remove(struct adxl34x *ac)
 {
 	sysfs_remove_group(&ac->dev->kobj, &adxl34x_attr_group);
 	free_irq(ac->irq, ac);
 	input_unregister_device(ac->input);
 	dev_dbg(ac->dev, "unregistered accelerometer\n");
 	kfree(ac);
-
-	return 0;
 }
 EXPORT_SYMBOL_GPL(adxl34x_remove);
 

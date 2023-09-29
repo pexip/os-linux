@@ -270,7 +270,8 @@ int radeon_cs_parser_init(struct radeon_cs_parser *p, void *data)
 {
 	struct drm_radeon_cs *cs = data;
 	uint64_t *chunk_array_ptr;
-	unsigned size, i;
+	u64 size;
+	unsigned i;
 	u32 ring = RADEON_CS_RING_GFX;
 	s32 priority = 0;
 
@@ -535,6 +536,10 @@ static int radeon_bo_vm_update_pte(struct radeon_cs_parser *p,
 			return r;
 
 		radeon_sync_fence(&p->ib.sync, bo_va->last_pt_update);
+
+		r = dma_resv_reserve_fences(bo->tbo.base.resv, 1);
+		if (r)
+			return r;
 	}
 
 	return radeon_vm_clear_invalids(rdev, vm);

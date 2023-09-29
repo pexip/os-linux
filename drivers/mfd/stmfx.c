@@ -330,9 +330,8 @@ static int stmfx_chip_init(struct i2c_client *client)
 	stmfx->vdd = devm_regulator_get_optional(&client->dev, "vdd");
 	ret = PTR_ERR_OR_ZERO(stmfx->vdd);
 	if (ret) {
-		if (ret == -ENODEV)
-			stmfx->vdd = NULL;
-		else
+		stmfx->vdd = NULL;
+		if (ret != -ENODEV)
 			return dev_err_probe(&client->dev, ret, "Failed to get VDD regulator\n");
 	}
 
@@ -387,22 +386,27 @@ static int stmfx_chip_init(struct i2c_client *client)
 
 err:
 	if (stmfx->vdd)
-		return regulator_disable(stmfx->vdd);
+		regulator_disable(stmfx->vdd);
 
 	return ret;
 }
 
-static int stmfx_chip_exit(struct i2c_client *client)
+static void stmfx_chip_exit(struct i2c_client *client)
 {
 	struct stmfx *stmfx = i2c_get_clientdata(client);
 
 	regmap_write(stmfx->map, STMFX_REG_IRQ_SRC_EN, 0);
 	regmap_write(stmfx->map, STMFX_REG_SYS_CTRL, 0);
 
-	if (stmfx->vdd)
-		return regulator_disable(stmfx->vdd);
+	if (stmfx->vdd) {
+		int ret;
 
-	return 0;
+		ret = regulator_disable(stmfx->vdd);
+		if (ret)
+			dev_err(&client->dev,
+				"Failed to disable vdd regulator: %pe\n",
+				ERR_PTR(ret));
+	}
 }
 
 static int stmfx_probe(struct i2c_client *client,
@@ -462,11 +466,11 @@ err_chip_exit:
 	return ret;
 }
 
-static int stmfx_remove(struct i2c_client *client)
+static void stmfx_remove(struct i2c_client *client)
 {
 	stmfx_irq_exit(client);
 
-	return stmfx_chip_exit(client);
+	stmfx_chip_exit(client);
 }
 
 #ifdef CONFIG_PM_SLEEP

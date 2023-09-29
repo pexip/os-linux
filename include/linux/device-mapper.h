@@ -20,6 +20,7 @@ struct dm_table;
 struct dm_report_zones_args;
 struct mapped_device;
 struct bio_vec;
+enum dax_access_mode;
 
 /*
  * Type of table, mapped_device's mempool and request_queue
@@ -86,10 +87,10 @@ typedef int (*dm_preresume_fn) (struct dm_target *ti);
 typedef void (*dm_resume_fn) (struct dm_target *ti);
 
 typedef void (*dm_status_fn) (struct dm_target *ti, status_type_t status_type,
-			      unsigned status_flags, char *result, unsigned maxlen);
+			      unsigned int status_flags, char *result, unsigned int maxlen);
 
-typedef int (*dm_message_fn) (struct dm_target *ti, unsigned argc, char **argv,
-			      char *result, unsigned maxlen);
+typedef int (*dm_message_fn) (struct dm_target *ti, unsigned int argc, char **argv,
+			      char *result, unsigned int maxlen);
 
 typedef int (*dm_prepare_ioctl_fn) (struct dm_target *ti, struct block_device **bdev);
 
@@ -146,11 +147,18 @@ typedef int (*dm_busy_fn) (struct dm_target *ti);
  * >= 0 : the number of bytes accessible at the address
  */
 typedef long (*dm_dax_direct_access_fn) (struct dm_target *ti, pgoff_t pgoff,
-		long nr_pages, void **kaddr, pfn_t *pfn);
-typedef size_t (*dm_dax_copy_iter_fn)(struct dm_target *ti, pgoff_t pgoff,
-		void *addr, size_t bytes, struct iov_iter *i);
+		long nr_pages, enum dax_access_mode node, void **kaddr,
+		pfn_t *pfn);
 typedef int (*dm_dax_zero_page_range_fn)(struct dm_target *ti, pgoff_t pgoff,
 		size_t nr_pages);
+
+/*
+ * Returns:
+ * != 0 : number of bytes transferred
+ * 0    : recovery write failed
+ */
+typedef size_t (*dm_dax_recovery_write_fn)(struct dm_target *ti, pgoff_t pgoff,
+		void *addr, size_t bytes, struct iov_iter *i);
 
 void dm_error(const char *message);
 
@@ -179,7 +187,7 @@ struct target_type {
 	uint64_t features;
 	const char *name;
 	struct module *module;
-	unsigned version[3];
+	unsigned int version[3];
 	dm_ctr_fn ctr;
 	dm_dtr_fn dtr;
 	dm_map_fn map;
@@ -200,9 +208,8 @@ struct target_type {
 	dm_iterate_devices_fn iterate_devices;
 	dm_io_hints_fn io_hints;
 	dm_dax_direct_access_fn direct_access;
-	dm_dax_copy_iter_fn dax_copy_from_iter;
-	dm_dax_copy_iter_fn dax_copy_to_iter;
 	dm_dax_zero_page_range_fn dax_zero_page_range;
+	dm_dax_recovery_write_fn dax_recovery_write;
 
 	/* For internal device-mapper use. */
 	struct list_head list;
@@ -306,37 +313,31 @@ struct dm_target {
 	 * It is a responsibility of the target driver to remap these bios
 	 * to the real underlying devices.
 	 */
-	unsigned num_flush_bios;
+	unsigned int num_flush_bios;
 
 	/*
 	 * The number of discard bios that will be submitted to the target.
 	 * The bio number can be accessed with dm_bio_get_target_bio_nr.
 	 */
-	unsigned num_discard_bios;
+	unsigned int num_discard_bios;
 
 	/*
 	 * The number of secure erase bios that will be submitted to the target.
 	 * The bio number can be accessed with dm_bio_get_target_bio_nr.
 	 */
-	unsigned num_secure_erase_bios;
-
-	/*
-	 * The number of WRITE SAME bios that will be submitted to the target.
-	 * The bio number can be accessed with dm_bio_get_target_bio_nr.
-	 */
-	unsigned num_write_same_bios;
+	unsigned int num_secure_erase_bios;
 
 	/*
 	 * The number of WRITE ZEROES bios that will be submitted to the target.
 	 * The bio number can be accessed with dm_bio_get_target_bio_nr.
 	 */
-	unsigned num_write_zeroes_bios;
+	unsigned int num_write_zeroes_bios;
 
 	/*
 	 * The minimum number of extra bytes allocated in each io for the
 	 * target to use.
 	 */
-	unsigned per_io_data_size;
+	unsigned int per_io_data_size;
 
 	/* target specific data */
 	void *private;
@@ -362,15 +363,27 @@ struct dm_target {
 	bool limit_swap_bios:1;
 
 	/*
-	 * Set if this target implements a a zoned device and needs emulation of
+	 * Set if this target implements a zoned device and needs emulation of
 	 * zone append operations using regular writes.
 	 */
 	bool emulate_zone_append:1;
+
+	/*
+	 * Set if the target will submit IO using dm_submit_bio_remap()
+	 * after returning DM_MAPIO_SUBMITTED from its map function.
+	 */
+	bool accounts_remapped_io:1;
+
+	/*
+	 * Set if the target will submit the DM bio without first calling
+	 * bio_set_dev(). NOTE: ideally a target should _not_ need this.
+	 */
+	bool needs_bio_set_dev:1;
 };
 
 void *dm_per_bio_data(struct bio *bio, size_t data_size);
 struct bio *dm_bio_from_per_bio_data(void *data, size_t data_size);
-unsigned dm_bio_get_target_bio_nr(const struct bio *bio);
+unsigned int dm_bio_get_target_bio_nr(const struct bio *bio);
 
 u64 dm_start_time_ns_from_clone(struct bio *bio);
 
@@ -381,7 +394,7 @@ void dm_unregister_target(struct target_type *t);
  * Target argument parsing.
  */
 struct dm_arg_set {
-	unsigned argc;
+	unsigned int argc;
 	char **argv;
 };
 
@@ -390,8 +403,8 @@ struct dm_arg_set {
  * the error message to use if the number is found to be outside that range.
  */
 struct dm_arg {
-	unsigned min;
-	unsigned max;
+	unsigned int min;
+	unsigned int max;
 	char *error;
 };
 
@@ -400,7 +413,7 @@ struct dm_arg {
  * returning -EINVAL and setting *error.
  */
 int dm_read_arg(const struct dm_arg *arg, struct dm_arg_set *arg_set,
-		unsigned *value, char **error);
+		unsigned int *value, char **error);
 
 /*
  * Process the next argument as the start of a group containing between
@@ -408,7 +421,7 @@ int dm_read_arg(const struct dm_arg *arg, struct dm_arg_set *arg_set,
  * *num_args or, if invalid, return -EINVAL and set *error.
  */
 int dm_read_arg_group(const struct dm_arg *arg, struct dm_arg_set *arg_set,
-		      unsigned *num_args, char **error);
+		      unsigned int *num_args, char **error);
 
 /*
  * Return the current argument and shift to the next.
@@ -418,7 +431,7 @@ const char *dm_shift_arg(struct dm_arg_set *as);
 /*
  * Move through num_args arguments.
  */
-void dm_consume_args(struct dm_arg_set *as, unsigned num_args);
+void dm_consume_args(struct dm_arg_set *as, unsigned int num_args);
 
 /*-----------------------------------------------------------------
  * Functions for creating and manipulating mapped devices.
@@ -448,7 +461,7 @@ void *dm_get_mdptr(struct mapped_device *md);
 /*
  * A device can still be used while suspended, but I/O is deferred.
  */
-int dm_suspend(struct mapped_device *md, unsigned suspend_flags);
+int dm_suspend(struct mapped_device *md, unsigned int suspend_flags);
 int dm_resume(struct mapped_device *md);
 
 /*
@@ -468,7 +481,8 @@ struct gendisk *dm_disk(struct mapped_device *md);
 int dm_suspended(struct dm_target *ti);
 int dm_post_suspending(struct dm_target *ti);
 int dm_noflush_suspending(struct dm_target *ti);
-void dm_accept_partial_bio(struct bio *bio, unsigned n_sectors);
+void dm_accept_partial_bio(struct bio *bio, unsigned int n_sectors);
+void dm_submit_bio_remap(struct bio *clone, struct bio *tgt_clone);
 union map_info *dm_get_rq_mapinfo(struct request *rq);
 
 #ifdef CONFIG_BLK_DEV_ZONED
@@ -511,7 +525,7 @@ int dm_set_geometry(struct mapped_device *md, struct hd_geometry *geo);
  * First create an empty table.
  */
 int dm_table_create(struct dm_table **result, fmode_t mode,
-		    unsigned num_targets, struct mapped_device *md);
+		    unsigned int num_targets, struct mapped_device *md);
 
 /*
  * Then call this once for each target.
@@ -553,7 +567,6 @@ void dm_sync_table(struct mapped_device *md);
  * Queries
  */
 sector_t dm_table_get_size(struct dm_table *t);
-unsigned int dm_table_get_num_targets(struct dm_table *t);
 fmode_t dm_table_get_mode(struct dm_table *t);
 struct mapped_device *dm_table_get_md(struct dm_table *t);
 const char *dm_table_device_name(struct dm_table *t);
@@ -576,9 +589,9 @@ struct dm_table *dm_swap_table(struct mapped_device *md,
 			       struct dm_table *t);
 
 /*
- * Table keyslot manager functions
+ * Table blk_crypto_profile functions
  */
-void dm_destroy_keyslot_manager(struct blk_keyslot_manager *ksm);
+void dm_destroy_crypto_profile(struct blk_crypto_profile *profile);
 
 /*-----------------------------------------------------------------
  * Macros.

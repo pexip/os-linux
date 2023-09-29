@@ -20,6 +20,7 @@
 #include <linux/threads.h>
 #include <linux/spinlock.h>
 
+#include <asm/asm.h>
 #include <asm/inst.h>
 #include <asm/mipsregs.h>
 
@@ -83,8 +84,6 @@
 
 
 #define KVM_MAX_VCPUS		16
-/* memory slots that does not exposed to userspace */
-#define KVM_PRIVATE_MEM_SLOTS	0
 
 #define KVM_HALT_POLL_NS_DEFAULT 500000
 
@@ -318,7 +317,7 @@ struct kvm_vcpu_arch {
 	unsigned int aux_inuse;
 
 	/* COP0 State */
-	struct mips_coproc *cop0;
+	struct mips_coproc cop0;
 
 	/* Resume PC after MMIO completion */
 	unsigned long io_pc;
@@ -379,9 +378,9 @@ static inline void _kvm_atomic_set_c0_guest_reg(unsigned long *reg,
 		__asm__ __volatile__(
 		"	.set	push				\n"
 		"	.set	"MIPS_ISA_ARCH_LEVEL"		\n"
-		"	" __LL "%0, %1				\n"
+		"	"__stringify(LONG_LL)	" %0, %1	\n"
 		"	or	%0, %2				\n"
-		"	" __SC	"%0, %1				\n"
+		"	"__stringify(LONG_SC)	" %0, %1	\n"
 		"	.set	pop				\n"
 		: "=&r" (temp), "+m" (*reg)
 		: "r" (val));
@@ -396,9 +395,9 @@ static inline void _kvm_atomic_clear_c0_guest_reg(unsigned long *reg,
 		__asm__ __volatile__(
 		"	.set	push				\n"
 		"	.set	"MIPS_ISA_ARCH_LEVEL"		\n"
-		"	" __LL "%0, %1				\n"
+		"	"__stringify(LONG_LL)	" %0, %1	\n"
 		"	and	%0, %2				\n"
-		"	" __SC	"%0, %1				\n"
+		"	"__stringify(LONG_SC)	" %0, %1	\n"
 		"	.set	pop				\n"
 		: "=&r" (temp), "+m" (*reg)
 		: "r" (~val));
@@ -414,10 +413,10 @@ static inline void _kvm_atomic_change_c0_guest_reg(unsigned long *reg,
 		__asm__ __volatile__(
 		"	.set	push				\n"
 		"	.set	"MIPS_ISA_ARCH_LEVEL"		\n"
-		"	" __LL "%0, %1				\n"
+		"	"__stringify(LONG_LL)	" %0, %1	\n"
 		"	and	%0, %2				\n"
 		"	or	%0, %3				\n"
-		"	" __SC	"%0, %1				\n"
+		"	"__stringify(LONG_SC)	" %0, %1	\n"
 		"	.set	pop				\n"
 		: "=&r" (temp), "+m" (*reg)
 		: "r" (~change), "r" (val & change));
@@ -699,7 +698,7 @@ static inline bool kvm_mips_guest_can_have_fpu(struct kvm_vcpu_arch *vcpu)
 static inline bool kvm_mips_guest_has_fpu(struct kvm_vcpu_arch *vcpu)
 {
 	return kvm_mips_guest_can_have_fpu(vcpu) &&
-		kvm_read_c0_guest_config1(vcpu->cop0) & MIPS_CONF1_FP;
+		kvm_read_c0_guest_config1(&vcpu->cop0) & MIPS_CONF1_FP;
 }
 
 static inline bool kvm_mips_guest_can_have_msa(struct kvm_vcpu_arch *vcpu)
@@ -711,7 +710,7 @@ static inline bool kvm_mips_guest_can_have_msa(struct kvm_vcpu_arch *vcpu)
 static inline bool kvm_mips_guest_has_msa(struct kvm_vcpu_arch *vcpu)
 {
 	return kvm_mips_guest_can_have_msa(vcpu) &&
-		kvm_read_c0_guest_config3(vcpu->cop0) & MIPS_CONF3_MSA;
+		kvm_read_c0_guest_config3(&vcpu->cop0) & MIPS_CONF3_MSA;
 }
 
 struct kvm_mips_callbacks {
@@ -897,7 +896,6 @@ static inline void kvm_arch_memslots_updated(struct kvm *kvm, u64 gen) {}
 static inline void kvm_arch_sched_in(struct kvm_vcpu *vcpu, int cpu) {}
 static inline void kvm_arch_vcpu_blocking(struct kvm_vcpu *vcpu) {}
 static inline void kvm_arch_vcpu_unblocking(struct kvm_vcpu *vcpu) {}
-static inline void kvm_arch_vcpu_block_finish(struct kvm_vcpu *vcpu) {}
 
 #define __KVM_HAVE_ARCH_FLUSH_REMOTE_TLB
 int kvm_arch_flush_remote_tlb(struct kvm *kvm);

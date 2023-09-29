@@ -97,6 +97,7 @@ enum wcn36xx_ampdu_state {
 
 #define RF_UNKNOWN	0x0000
 #define RF_IRIS_WCN3620	0x3620
+#define RF_IRIS_WCN3660	0x3660
 #define RF_IRIS_WCN3680	0x3680
 
 static inline void buff_to_be(u32 *buf, size_t len)
@@ -150,6 +151,8 @@ struct wcn36xx_vif {
 	} rekey_data;
 
 	struct list_head sta_list;
+
+	int bmps_fail_ct;
 };
 
 /**
@@ -192,7 +195,14 @@ struct wcn36xx_sta {
 	enum wcn36xx_ampdu_state ampdu_state[16];
 	int non_agg_frame_ct;
 };
+
 struct wcn36xx_dxe_ch;
+
+struct wcn36xx_chan_survey {
+	s8	rssi;
+	u8	snr;
+};
+
 struct wcn36xx {
 	struct ieee80211_hw	*hw;
 	struct device		*dev;
@@ -246,6 +256,7 @@ struct wcn36xx {
 	struct cfg80211_scan_request *scan_req;
 	bool			sw_scan;
 	u8			sw_scan_opchannel;
+	bool			sw_scan_init;
 	u8			sw_scan_channel;
 	struct ieee80211_vif	*sw_scan_vif;
 	struct mutex		scan_lock;
@@ -268,6 +279,9 @@ struct wcn36xx {
 	struct sk_buff		*tx_ack_skb;
 	struct timer_list	tx_ack_timer;
 
+	/* For A-MSDU re-aggregation */
+	struct sk_buff_head amsdu;
+
 	/* RF module */
 	unsigned		rf_id;
 
@@ -276,6 +290,11 @@ struct wcn36xx {
 	struct wcn36xx_dfs_entry    dfs;
 #endif /* CONFIG_WCN36XX_DEBUGFS */
 
+	struct ieee80211_supported_band *band;
+	struct ieee80211_channel *channel;
+
+	spinlock_t survey_lock;		/* protects chan_survey */
+	struct wcn36xx_chan_survey	*chan_survey;
 };
 
 static inline bool wcn36xx_is_fw_version(struct wcn36xx *wcn,
