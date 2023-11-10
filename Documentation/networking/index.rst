@@ -1,12 +1,13 @@
-Linux Networking Documentation
-==============================
+Networking
+==========
+
+Refer to :ref:`netdev-FAQ` for a guide on netdev development process specifics.
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
-   netdev-FAQ
    af_xdp
    bareudp
    batman-adv
@@ -91,10 +92,13 @@ Contents:
    radiotap-headers
    rds
    regulatory
+   representors
    rxrpc
    sctp
    secid
    seg6-sysctl
+   skbuff
+   smc-sysctl
    statistics
    strparser
    switchdev

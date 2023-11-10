@@ -49,7 +49,7 @@
 	gpio-keys {
 		compatible = "gpio-keys";
 
-		restart {
+		button-restart {
 			label = "Reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
@@ -80,6 +80,19 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 			};
+		};
+	};
+};
+
+&gmac0 {
+	phy-mode = "rgmii";
+	phy-handle = <&bcm54210e>;
+
+	mdio {
+		/delete-node/ switch@1e;
+
+		bcm54210e: ethernet-phy@0 {
+			reg = <0>;
 		};
 	};
 };

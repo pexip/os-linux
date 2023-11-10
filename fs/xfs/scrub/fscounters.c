@@ -78,10 +78,10 @@ xchk_fscount_warmup(
 			continue;
 
 		/* Lock both AG headers. */
-		error = xfs_ialloc_read_agi(mp, sc->tp, agno, &agi_bp);
+		error = xfs_ialloc_read_agi(pag, sc->tp, &agi_bp);
 		if (error)
 			break;
-		error = xfs_alloc_read_agf(mp, sc->tp, agno, 0, &agf_bp);
+		error = xfs_alloc_read_agf(pag, sc->tp, 0, &agf_bp);
 		if (error)
 			break;
 
@@ -127,13 +127,6 @@ xchk_setup_fscounters(
 	error = xchk_fscount_warmup(sc);
 	if (error)
 		return error;
-
-	/*
-	 * Pause background reclaim while we're scrubbing to reduce the
-	 * likelihood of background perturbations to the counters throwing off
-	 * our calculations.
-	 */
-	xchk_stop_reaping(sc);
 
 	return xchk_trans_alloc(sc, 0);
 }
@@ -352,6 +345,12 @@ xchk_fscounters(
 	/* See if fdblocks is obviously wrong. */
 	if (fdblocks > mp->m_sb.sb_dblocks)
 		xchk_set_corrupt(sc);
+
+	/*
+	 * XXX: We can't quiesce percpu counter updates, so exit early.
+	 * This can be re-enabled when we gain exclusive freeze functionality.
+	 */
+	return 0;
 
 	/*
 	 * If ifree exceeds icount by more than the minimum variance then

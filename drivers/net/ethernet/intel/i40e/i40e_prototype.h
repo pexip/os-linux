@@ -22,11 +22,30 @@ void i40e_adminq_init_ring_data(struct i40e_hw *hw);
 int i40e_clean_arq_element(struct i40e_hw *hw,
 			   struct i40e_arq_event_info *e,
 			   u16 *events_pending);
-int i40e_asq_send_command(struct i40e_hw *hw,
-			  struct i40e_aq_desc *desc,
-			  void *buff, /* can be NULL */
-			  u16  buff_size,
-			  struct i40e_asq_cmd_details *cmd_details);
+int
+i40e_asq_send_command(struct i40e_hw *hw, struct i40e_aq_desc *desc,
+		      void *buff, /* can be NULL */ u16  buff_size,
+		      struct i40e_asq_cmd_details *cmd_details);
+int
+i40e_asq_send_command_v2(struct i40e_hw *hw,
+			 struct i40e_aq_desc *desc,
+			 void *buff, /* can be NULL */
+			 u16  buff_size,
+			 struct i40e_asq_cmd_details *cmd_details,
+			 enum i40e_admin_queue_err *aq_status);
+int
+i40e_asq_send_command_atomic(struct i40e_hw *hw, struct i40e_aq_desc *desc,
+			     void *buff, /* can be NULL */ u16  buff_size,
+			     struct i40e_asq_cmd_details *cmd_details,
+			     bool is_atomic_context);
+int
+i40e_asq_send_command_atomic_v2(struct i40e_hw *hw,
+				struct i40e_aq_desc *desc,
+				void *buff, /* can be NULL */
+				u16  buff_size,
+				struct i40e_asq_cmd_details *cmd_details,
+				bool is_atomic_context,
+				enum i40e_admin_queue_err *aq_status);
 
 /* debug function for adminq */
 void i40e_debug_aq(struct i40e_hw *hw, enum i40e_debug_mask mask,
@@ -41,16 +60,21 @@ int i40e_aq_get_rss_lut(struct i40e_hw *hw, u16 seid,
 			bool pf_lut, u8 *lut, u16 lut_size);
 int i40e_aq_set_rss_lut(struct i40e_hw *hw, u16 seid,
 			bool pf_lut, u8 *lut, u16 lut_size);
-int i40e_aq_get_rss_key(struct i40e_hw *hw, u16 seid,
+int i40e_aq_get_rss_key(struct i40e_hw *hw,
+			u16 seid,
 			struct i40e_aqc_get_set_rss_key_data *key);
-int i40e_aq_set_rss_key(struct i40e_hw *hw, u16 seid,
+int i40e_aq_set_rss_key(struct i40e_hw *hw,
+			u16 seid,
 			struct i40e_aqc_get_set_rss_key_data *key);
 
 u32 i40e_led_get(struct i40e_hw *hw);
 void i40e_led_set(struct i40e_hw *hw, u32 mode, bool blink);
-int i40e_led_set_phy(struct i40e_hw *hw, bool on, u16 led_addr, u32 mode);
-int i40e_led_get_phy(struct i40e_hw *hw, u16 *led_addr, u16 *val);
-int i40e_blink_phy_link_led(struct i40e_hw *hw, u32 time, u32 interval);
+int i40e_led_set_phy(struct i40e_hw *hw, bool on,
+		     u16 led_addr, u32 mode);
+int i40e_led_get_phy(struct i40e_hw *hw, u16 *led_addr,
+		     u16 *val);
+int i40e_blink_phy_link_led(struct i40e_hw *hw,
+			    u32 time, u32 interval);
 
 /* admin send queue commands */
 
@@ -59,7 +83,8 @@ int i40e_aq_get_firmware_version(struct i40e_hw *hw,
 				 u32 *fw_build,
 				 u16 *api_major_version, u16 *api_minor_version,
 				 struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_debug_write_register(struct i40e_hw *hw, u32 reg_addr, u64 reg_val,
+int i40e_aq_debug_write_register(struct i40e_hw *hw,
+				 u32 reg_addr, u64 reg_val,
 				 struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_debug_read_register(struct i40e_hw *hw,
 				u32 reg_addr, u64 *reg_val,
@@ -74,19 +99,22 @@ int i40e_aq_get_phy_capabilities(struct i40e_hw *hw,
 				 bool qualified_modules, bool report_init,
 				 struct i40e_aq_get_phy_abilities_resp *abilities,
 				 struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_set_phy_config(struct i40e_hw *hw, struct i40e_aq_set_phy_config *config,
+int i40e_aq_set_phy_config(struct i40e_hw *hw,
+			   struct i40e_aq_set_phy_config *config,
 			   struct i40e_asq_cmd_details *cmd_details);
 int i40e_set_fc(struct i40e_hw *hw, u8 *aq_failures, bool atomic_reset);
 int i40e_aq_set_phy_int_mask(struct i40e_hw *hw, u16 mask,
 			     struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_clear_pxe_mode(struct i40e_hw *hw,
 			   struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_set_link_restart_an(struct i40e_hw *hw, bool enable_link,
+int i40e_aq_set_link_restart_an(struct i40e_hw *hw,
+				bool enable_link,
 				struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_get_link_info(struct i40e_hw *hw, bool enable_lse,
-			  struct i40e_link_status *link,
+int i40e_aq_get_link_info(struct i40e_hw *hw,
+			  bool enable_lse, struct i40e_link_status *link,
 			  struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_set_local_advt_reg(struct i40e_hw *hw, u64 advt_reg,
+int i40e_aq_set_local_advt_reg(struct i40e_hw *hw,
+			       u64 advt_reg,
 			       struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_send_driver_version(struct i40e_hw *hw,
 				struct i40e_driver_version *dv,
@@ -94,20 +122,22 @@ int i40e_aq_send_driver_version(struct i40e_hw *hw,
 int i40e_aq_add_vsi(struct i40e_hw *hw,
 		    struct i40e_vsi_context *vsi_ctx,
 		    struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_set_vsi_broadcast(struct i40e_hw *hw, u16 vsi_id, bool set_filter,
+int i40e_aq_set_vsi_broadcast(struct i40e_hw *hw,
+			      u16 vsi_id, bool set_filter,
 			      struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_set_vsi_unicast_promiscuous(struct i40e_hw *hw,
 					u16 vsi_id, bool set,
 					struct i40e_asq_cmd_details *cmd_details,
 					bool rx_only_promisc);
 int i40e_aq_set_vsi_multicast_promiscuous(struct i40e_hw *hw,
-					  u16 vsi_id, bool set,
-					  struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_set_vsi_mc_promisc_on_vlan(struct i40e_hw *hw, u16 seid,
-				       bool enable, u16 vid,
+					  u16 vsi_id, bool set, struct i40e_asq_cmd_details *cmd_details);
+int i40e_aq_set_vsi_mc_promisc_on_vlan(struct i40e_hw *hw,
+				       u16 seid, bool enable,
+				       u16 vid,
 				       struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_set_vsi_uc_promisc_on_vlan(struct i40e_hw *hw,
-				       u16 seid, bool enable, u16 vid,
+				       u16 seid, bool enable,
+				       u16 vid,
 				       struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_set_vsi_bc_promisc_on_vlan(struct i40e_hw *hw,
 				       u16 seid, bool enable, u16 vid,
@@ -134,12 +164,19 @@ int i40e_aq_get_veb_parameters(struct i40e_hw *hw,
 int i40e_aq_add_macvlan(struct i40e_hw *hw, u16 vsi_id,
 			struct i40e_aqc_add_macvlan_element_data *mv_list,
 			u16 count, struct i40e_asq_cmd_details *cmd_details);
+int i40e_aq_add_macvlan_v2(struct i40e_hw *hw, u16 seid,
+			   struct i40e_aqc_add_macvlan_element_data *mv_list,
+			   u16 count, struct i40e_asq_cmd_details *cmd_details,
+			   enum i40e_admin_queue_err *aq_status);
 int i40e_aq_remove_macvlan(struct i40e_hw *hw, u16 vsi_id,
 			   struct i40e_aqc_remove_macvlan_element_data *mv_list,
 			   u16 count, struct i40e_asq_cmd_details *cmd_details);
+int i40e_aq_remove_macvlan_v2(struct i40e_hw *hw, u16 seid,
+			      struct i40e_aqc_remove_macvlan_element_data *mv_list,
+			      u16 count, struct i40e_asq_cmd_details *cmd_details,
+			      enum i40e_admin_queue_err *aq_status);
 int i40e_aq_add_mirrorrule(struct i40e_hw *hw, u16 sw_seid,
-			   u16 rule_type, u16 dest_vsi, u16 count,
-			   __le16 *mr_list,
+			   u16 rule_type, u16 dest_vsi, u16 count, __le16 *mr_list,
 			   struct i40e_asq_cmd_details *cmd_details,
 			   u16 *rule_id, u16 *rules_used, u16 *rules_free);
 int i40e_aq_delete_mirrorrule(struct i40e_hw *hw, u16 sw_seid,
@@ -154,7 +191,8 @@ int i40e_aq_get_switch_config(struct i40e_hw *hw,
 			      struct i40e_aqc_get_switch_config_resp *buf,
 			      u16 buf_size, u16 *start_seid,
 			      struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_set_switch_config(struct i40e_hw *hw, u16 flags,
+int i40e_aq_set_switch_config(struct i40e_hw *hw,
+			      u16 flags,
 			      u16 valid_flags, u8 mode,
 			      struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_request_resource(struct i40e_hw *hw,
@@ -163,10 +201,12 @@ int i40e_aq_request_resource(struct i40e_hw *hw,
 			     u8 sdp_number, u64 *timeout,
 			     struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_release_resource(struct i40e_hw *hw,
-			     enum i40e_aq_resources_ids resource, u8 sdp_number,
+			     enum i40e_aq_resources_ids resource,
+			     u8 sdp_number,
 			     struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_read_nvm(struct i40e_hw *hw, u8 module_pointer,
-		     u32 offset, u16 length, void *data, bool last_command,
+		     u32 offset, u16 length, void *data,
+		     bool last_command,
 		     struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_erase_nvm(struct i40e_hw *hw, u8 module_pointer,
 		      u32 offset, u16 length, bool last_command,
@@ -179,37 +219,42 @@ int i40e_aq_update_nvm(struct i40e_hw *hw, u8 module_pointer,
 		       u32 offset, u16 length, void *data,
 		       bool last_command, u8 preservation_flags,
 		       struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_rearrange_nvm(struct i40e_hw *hw, u8 rearrange_nvm,
+int i40e_aq_rearrange_nvm(struct i40e_hw *hw,
+			  u8 rearrange_nvm,
 			  struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_get_lldp_mib(struct i40e_hw *hw, u8 bridge_type,
 			 u8 mib_type, void *buff, u16 buff_size,
 			 u16 *local_len, u16 *remote_len,
 			 struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_set_lldp_mib(struct i40e_hw *hw, u8 mib_type,
-			 void *buff, u16 buff_size,
+int i40e_aq_set_lldp_mib(struct i40e_hw *hw,
+			 u8 mib_type, void *buff, u16 buff_size,
 			 struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_cfg_lldp_mib_change_event(struct i40e_hw *hw,
 				      bool enable_update,
-				      struct i40e_asq_cmd_details *cmd_details);
+				struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_restore_lldp(struct i40e_hw *hw, u8 *setting, bool restore,
 			 struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_stop_lldp(struct i40e_hw *hw, bool shutdown_agent, bool persist,
+int i40e_aq_stop_lldp(struct i40e_hw *hw, bool shutdown_agent,
+		      bool persist,
 		      struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_set_dcb_parameters(struct i40e_hw *hw, bool dcb_enable,
+int i40e_aq_set_dcb_parameters(struct i40e_hw *hw,
+			       bool dcb_enable,
 			       struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_start_lldp(struct i40e_hw *hw, bool persist,
 		       struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_get_cee_dcb_config(struct i40e_hw *hw,
 			       void *buff, u16 buff_size,
 			       struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_add_udp_tunnel(struct i40e_hw *hw, u16 udp_port,
-			   u8 protocol_index, u8 *filter_index,
+int i40e_aq_add_udp_tunnel(struct i40e_hw *hw,
+			   u16 udp_port, u8 protocol_index,
+			   u8 *filter_index,
 			   struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_del_udp_tunnel(struct i40e_hw *hw, u8 index,
 			   struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_delete_element(struct i40e_hw *hw, u16 seid,
 			   struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_mac_address_write(struct i40e_hw *hw, u16 flags, u8 *mac_addr,
+int i40e_aq_mac_address_write(struct i40e_hw *hw,
+			      u16 flags, u8 *mac_addr,
 			      struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_config_vsi_bw_limit(struct i40e_hw *hw,
 				u16 seid, u16 credit, u8 max_credit,
@@ -222,29 +267,37 @@ int i40e_aq_config_switch_comp_bw_limit(struct i40e_hw *hw,
 int i40e_aq_config_vsi_tc_bw(struct i40e_hw *hw, u16 seid,
 			     struct i40e_aqc_configure_vsi_tc_bw_data *bw_data,
 			     struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_config_switch_comp_ets(struct i40e_hw *hw, u16 seid,
+int i40e_aq_config_switch_comp_ets(struct i40e_hw *hw,
+				   u16 seid,
 				   struct i40e_aqc_configure_switching_comp_ets_data *ets_data,
 				   enum i40e_admin_queue_opc opcode,
 				   struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_config_switch_comp_bw_config(struct i40e_hw *hw, u16 seid,
+int i40e_aq_config_switch_comp_bw_config(struct i40e_hw *hw,
+					 u16 seid,
 					 struct i40e_aqc_configure_switching_comp_bw_config_data *bw_data,
 					 struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_query_vsi_bw_config(struct i40e_hw *hw, u16 seid,
+int i40e_aq_query_vsi_bw_config(struct i40e_hw *hw,
+				u16 seid,
 				struct i40e_aqc_query_vsi_bw_config_resp *bw_data,
 				struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_query_vsi_ets_sla_config(struct i40e_hw *hw, u16 seid,
+int i40e_aq_query_vsi_ets_sla_config(struct i40e_hw *hw,
+				     u16 seid,
 				     struct i40e_aqc_query_vsi_ets_sla_config_resp *bw_data,
 				     struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_query_switch_comp_ets_config(struct i40e_hw *hw, u16 seid,
+int i40e_aq_query_switch_comp_ets_config(struct i40e_hw *hw,
+					 u16 seid,
 					 struct i40e_aqc_query_switching_comp_ets_config_resp *bw_data,
 					 struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_query_port_ets_config(struct i40e_hw *hw, u16 seid,
+int i40e_aq_query_port_ets_config(struct i40e_hw *hw,
+				  u16 seid,
 				  struct i40e_aqc_query_port_ets_config_resp *bw_data,
 				  struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_query_switch_comp_bw_config(struct i40e_hw *hw, u16 seid,
-		struct i40e_aqc_query_switching_comp_bw_config_resp *bw_data,
-		struct i40e_asq_cmd_details *cmd_details);
-int i40e_aq_resume_port_tx(struct i40e_hw *hw, struct i40e_asq_cmd_details *cmd_details);
+int i40e_aq_query_switch_comp_bw_config(struct i40e_hw *hw,
+					u16 seid,
+					struct i40e_aqc_query_switching_comp_bw_config_resp *bw_data,
+					struct i40e_asq_cmd_details *cmd_details);
+int i40e_aq_resume_port_tx(struct i40e_hw *hw,
+			   struct i40e_asq_cmd_details *cmd_details);
 int i40e_aq_add_cloud_filters_bb(struct i40e_hw *hw, u16 seid,
 				 struct i40e_aqc_cloud_filters_element_bb *filters,
 				 u8 filter_count);
@@ -283,13 +336,17 @@ int i40e_init_nvm(struct i40e_hw *hw);
 int i40e_acquire_nvm(struct i40e_hw *hw, enum i40e_aq_resource_access_type access);
 void i40e_release_nvm(struct i40e_hw *hw);
 int i40e_read_nvm_word(struct i40e_hw *hw, u16 offset, u16 *data);
-int i40e_read_nvm_module_data(struct i40e_hw *hw, u8 module_ptr,
-			      u16 module_offset, u16 data_offset,
-			      u16 words_data_size, u16 *data_ptr);
+int i40e_read_nvm_module_data(struct i40e_hw *hw,
+			      u8 module_ptr,
+			      u16 module_offset,
+			      u16 data_offset,
+			      u16 words_data_size,
+			      u16 *data_ptr);
 int i40e_read_nvm_buffer(struct i40e_hw *hw, u16 offset, u16 *words, u16 *data);
 int i40e_update_nvm_checksum(struct i40e_hw *hw);
 int i40e_validate_nvm_checksum(struct i40e_hw *hw, u16 *checksum);
-int i40e_nvmupd_command(struct i40e_hw *hw, struct i40e_nvm_access *cmd,
+int i40e_nvmupd_command(struct i40e_hw *hw,
+			struct i40e_nvm_access *cmd,
 			u8 *bytes, int *);
 void i40e_nvmupd_check_wait_event(struct i40e_hw *hw, u16 opcode,
 				  struct i40e_aq_desc *desc);

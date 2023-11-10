@@ -171,7 +171,8 @@ bool ffa_device_is_valid(struct ffa_device *ffa_dev)
 	return valid;
 }
 
-struct ffa_device *ffa_device_register(const uuid_t *uuid, int vm_id)
+struct ffa_device *ffa_device_register(const uuid_t *uuid, int vm_id,
+				       const struct ffa_ops *ops)
 {
 	int id, ret;
 	struct device *dev;
@@ -193,6 +194,7 @@ struct ffa_device *ffa_device_register(const uuid_t *uuid, int vm_id)
 	dev_set_name(&ffa_dev->dev, "arm-ffa-%d", id);
 
 	ffa_dev->vm_id = vm_id;
+	ffa_dev->ops = ops;
 	uuid_copy(&ffa_dev->uuid, uuid);
 
 	ret = device_register(&ffa_dev->dev);

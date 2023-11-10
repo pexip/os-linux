@@ -72,7 +72,7 @@ SECTIONS
 	.head.text : AT(ADDR(.head.text) - LOAD_OFFSET) {
 #ifdef CONFIG_PPC64
 		KEEP(*(.head.text.first_256B));
-#ifdef CONFIG_PPC_BOOK3E
+#ifdef CONFIG_PPC_BOOK3E_64
 #else
 		KEEP(*(.head.text.real_vectors));
 		*(.head.text.real_trampolines);
@@ -127,14 +127,6 @@ SECTIONS
 		*(.sfpr);
 		MEM_KEEP(init.text)
 		MEM_KEEP(exit.text)
-
-#ifdef CONFIG_PPC32
-		*(.got1)
-		__got2_start = .;
-		*(.got2)
-		__got2_end = .;
-#endif /* CONFIG_PPC32 */
-
 	} :text
 
 	. = ALIGN(PAGE_SIZE);
@@ -144,9 +136,57 @@ SECTIONS
 	/* Read-only data */
 	RO_DATA(PAGE_SIZE)
 
-#ifdef CONFIG_PPC64
+#ifdef CONFIG_PPC32
+	.sdata2 : AT(ADDR(.sdata2) - LOAD_OFFSET) {
+		*(.sdata2)
+	}
+#endif
+
+	.data.rel.ro : AT(ADDR(.data.rel.ro) - LOAD_OFFSET) {
+		*(.data.rel.ro .data.rel.ro.*)
+	}
+
+	.branch_lt : AT(ADDR(.branch_lt) - LOAD_OFFSET) {
+		*(.branch_lt)
+	}
+
+#ifdef CONFIG_PPC32
+	.got1 : AT(ADDR(.got1) - LOAD_OFFSET) {
+		*(.got1)
+	}
+	.got2 : AT(ADDR(.got2) - LOAD_OFFSET) {
+		__got2_start = .;
+		*(.got2)
+		__got2_end = .;
+	}
+	.got : AT(ADDR(.got) - LOAD_OFFSET) {
+		*(.got)
+		*(.got.plt)
+	}
+	.plt : AT(ADDR(.plt) - LOAD_OFFSET) {
+		/* XXX: is .plt (and .got.plt) required? */
+		*(.plt)
+	}
+
+#else /* CONFIG_PPC32 */
+	.toc1 : AT(ADDR(.toc1) - LOAD_OFFSET) {
+		*(.toc1)
+	}
+
+	.got : AT(ADDR(.got) - LOAD_OFFSET) ALIGN(256) {
+		*(.got .toc)
+	}
+
 	SOFT_MASK_TABLE(8)
 	RESTART_TABLE(8)
+
+#ifdef CONFIG_PPC64_ELF_ABI_V1
+	.opd : AT(ADDR(.opd) - LOAD_OFFSET) {
+		__start_opd = .;
+		KEEP(*(.opd))
+		__end_opd = .;
+	}
+#endif
 
 	. = ALIGN(8);
 	__stf_entry_barrier_fixup : AT(ADDR(__stf_entry_barrier_fixup) - LOAD_OFFSET) {
@@ -189,7 +229,7 @@ SECTIONS
 		*(__rfi_flush_fixup)
 		__stop___rfi_flush_fixup = .;
 	}
-#endif /* CONFIG_PPC64 */
+#endif /* CONFIG_PPC32 */
 
 #ifdef CONFIG_PPC_BARRIER_NOSPEC
 	. = ALIGN(8);
@@ -200,7 +240,7 @@ SECTIONS
 	}
 #endif /* CONFIG_PPC_BARRIER_NOSPEC */
 
-#ifdef CONFIG_PPC_FSL_BOOK3E
+#ifdef CONFIG_PPC_E500
 	. = ALIGN(8);
 	__spec_btb_flush_fixup : AT(ADDR(__spec_btb_flush_fixup) - LOAD_OFFSET) {
 		__start__btb_flush_fixup = .;
@@ -214,6 +254,7 @@ SECTIONS
 	 */
 	. = ALIGN(STRICT_ALIGN_SIZE);
 	__srwx_boundary = .;
+	__end_rodata = .;
 	__init_begin = .;
 
 /*
@@ -320,50 +361,13 @@ SECTIONS
 	. = ALIGN(PAGE_SIZE);
 	_sdata = .;
 
+	.data : AT(ADDR(.data) - LOAD_OFFSET) {
+		DATA_DATA
+		*(.data.rel*)
 #ifdef CONFIG_PPC32
-	.data : AT(ADDR(.data) - LOAD_OFFSET) {
-		DATA_DATA
-#ifdef CONFIG_UBSAN
-		*(.data..Lubsan_data*)
-		*(.data..Lubsan_type*)
-#endif
-		*(.data.rel*)
 		*(SDATA_MAIN)
-		*(.sdata2)
-		*(.got.plt) *(.got)
-		*(.plt)
-		*(.branch_lt)
-	}
-#else
-	.data : AT(ADDR(.data) - LOAD_OFFSET) {
-		DATA_DATA
-#ifdef CONFIG_UBSAN
-		*(.data..Lubsan_data*)
-		*(.data..Lubsan_type*)
 #endif
-		*(.data.rel*)
-		*(.toc1)
-		*(.branch_lt)
 	}
-
-	.opd : AT(ADDR(.opd) - LOAD_OFFSET) {
-		__start_opd = .;
-		KEEP(*(.opd))
-		__end_opd = .;
-	}
-
-	. = ALIGN(256);
-	.got : AT(ADDR(.got) - LOAD_OFFSET) {
-		__toc_start = .;
-#ifndef CONFIG_RELOCATABLE
-		__prom_init_toc_start = .;
-		arch/powerpc/kernel/prom_init.o*(.toc .got)
-		__prom_init_toc_end = .;
-#endif
-		*(.got)
-		*(.toc)
-	}
-#endif
 
 	/* The initial task and kernel stack */
 	INIT_TASK_DATA_SECTION(THREAD_ALIGN)
@@ -401,7 +405,6 @@ SECTIONS
 	_end = . ;
 	PROVIDE32 (end = .);
 
-	STABS_DEBUG
 	DWARF_DEBUG
 	ELF_DETAILS
 

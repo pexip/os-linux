@@ -39,8 +39,9 @@ init()
 
 	ns1="ns1-$rndh"
 	ns2="ns2-$rndh"
+	ns_sbox="ns_sbox-$rndh"
 
-	for netns in "$ns1" "$ns2";do
+	for netns in "$ns1" "$ns2" "$ns_sbox";do
 		ip netns add $netns || exit $ksft_skip
 		ip -net $netns link set lo up
 		ip netns exec $netns sysctl -q net.mptcp.enabled=1
@@ -77,7 +78,7 @@ init()
 
 cleanup()
 {
-	for netns in "$ns1" "$ns2"; do
+	for netns in "$ns1" "$ns2" "$ns_sbox"; do
 		ip netns del $netns
 	done
 	rm -f "$cin" "$cout"
@@ -85,6 +86,7 @@ cleanup()
 }
 
 mptcp_lib_check_mptcp
+mptcp_lib_check_kallsyms
 
 ip -Version > /dev/null 2>&1
 if [ $? -ne 0 ];then
@@ -183,9 +185,14 @@ do_transfer()
 		local_addr="0.0.0.0"
 	fi
 
+	cmsg="TIMESTAMPNS"
+	if mptcp_lib_kallsyms_has "mptcp_ioctl$"; then
+		cmsg+=",TCPINQ"
+	fi
+
 	timeout ${timeout_test} \
 		ip netns exec ${listener_ns} \
-			$mptcp_connect -t ${timeout_poll} -l -M 1 -p $port -s ${srv_proto} -c TIMESTAMPNS \
+			$mptcp_connect -t ${timeout_poll} -l -M 1 -p $port -s ${srv_proto} -c "${cmsg}" \
 				${local_addr} < "$sin" > "$sout" &
 	spid=$!
 
@@ -193,7 +200,7 @@ do_transfer()
 
 	timeout ${timeout_test} \
 		ip netns exec ${connector_ns} \
-			$mptcp_connect -t ${timeout_poll} -M 2 -p $port -s ${cl_proto} -c TIMESTAMPNS \
+			$mptcp_connect -t ${timeout_poll} -M 2 -p $port -s ${cl_proto} -c "${cmsg}" \
 				$connect_addr < "$cin" > "$cout" &
 
 	cpid=$!
@@ -246,12 +253,40 @@ make_file()
 	echo "Created $name (size $size KB) containing data sent by $who"
 }
 
+do_mptcp_sockopt_tests()
+{
+	local lret=0
+
+	if ! mptcp_lib_kallsyms_has "mptcp_diag_fill_info$"; then
+		echo "INFO: MPTCP sockopt not supported: SKIP"
+		return
+	fi
+
+	ip netns exec "$ns_sbox" ./mptcp_sockopt
+	lret=$?
+
+	if [ $lret -ne 0 ]; then
+		echo "FAIL: SOL_MPTCP getsockopt" 1>&2
+		ret=$lret
+		return
+	fi
+
+	ip netns exec "$ns_sbox" ./mptcp_sockopt -6
+	lret=$?
+
+	if [ $lret -ne 0 ]; then
+		echo "FAIL: SOL_MPTCP getsockopt (ipv6)" 1>&2
+		ret=$lret
+		return
+	fi
+}
+
 run_tests()
 {
 	listener_ns="$1"
 	connector_ns="$2"
 	connect_addr="$3"
-	lret=0
+	local lret=0
 
 	do_transfer ${listener_ns} ${connector_ns} MPTCP MPTCP ${connect_addr}
 
@@ -261,6 +296,50 @@ run_tests()
 		ret=$lret
 		return
 	fi
+}
+
+do_tcpinq_test()
+{
+	ip netns exec "$ns1" ./mptcp_inq "$@"
+	lret=$?
+	if [ $lret -ne 0 ];then
+		ret=$lret
+		echo "FAIL: mptcp_inq $@" 1>&2
+		return $lret
+	fi
+
+	echo "PASS: TCP_INQ cmsg/ioctl $@"
+	return $lret
+}
+
+do_tcpinq_tests()
+{
+	local lret=0
+
+	ip netns exec "$ns1" ${iptables} -F
+	ip netns exec "$ns1" ${ip6tables} -F
+
+	if ! mptcp_lib_kallsyms_has "mptcp_ioctl$"; then
+		echo "INFO: TCP_INQ not supported: SKIP"
+		return
+	fi
+
+	for args in "-t tcp" "-r tcp"; do
+		do_tcpinq_test $args
+		lret=$?
+		if [ $lret -ne 0 ] ; then
+			return $lret
+		fi
+		do_tcpinq_test -6 $args
+		lret=$?
+		if [ $lret -ne 0 ] ; then
+			return $lret
+		fi
+	done
+
+	do_tcpinq_test -r tcp -t tcp
+
+	return $?
 }
 
 sin=$(mktemp)
@@ -275,9 +354,14 @@ trap cleanup EXIT
 run_tests $ns1 $ns2 10.0.1.1
 run_tests $ns1 $ns2 dead:beef:1::1
 
-
 if [ $ret -eq 0 ];then
 	echo "PASS: all packets had packet mark set"
 fi
 
+do_mptcp_sockopt_tests
+if [ $ret -eq 0 ];then
+	echo "PASS: SOL_MPTCP getsockopt has expected information"
+fi
+
+do_tcpinq_tests
 exit $ret

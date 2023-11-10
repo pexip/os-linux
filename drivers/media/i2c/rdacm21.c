@@ -351,7 +351,7 @@ static void ov10640_power_up(struct rdacm21_device *dev)
 static int ov10640_check_id(struct rdacm21_device *dev)
 {
 	unsigned int i;
-	u8 val;
+	u8 val = 0;
 
 	/* Read OV10640 ID to test communications. */
 	for (i = 0; i < OV10640_PID_TIMEOUT; ++i) {
@@ -614,7 +614,7 @@ error:
 	return ret;
 }
 
-static int rdacm21_remove(struct i2c_client *client)
+static void rdacm21_remove(struct i2c_client *client)
 {
 	struct rdacm21_device *dev = sd_to_rdacm21(i2c_get_clientdata(client));
 
@@ -622,8 +622,6 @@ static int rdacm21_remove(struct i2c_client *client)
 	v4l2_ctrl_handler_free(&dev->ctrls);
 	i2c_unregister_device(dev->isp);
 	fwnode_handle_put(dev->sd.fwnode);
-
-	return 0;
 }
 
 static const struct of_device_id rdacm21_of_ids[] = {

@@ -1023,7 +1023,6 @@ static int fotg210_udc_start(struct usb_gadget *g,
 	u32 value;
 
 	/* hook up the driver */
-	driver->driver.bus = NULL;
 	fotg210->driver = driver;
 
 	/* enable device global interrupt */

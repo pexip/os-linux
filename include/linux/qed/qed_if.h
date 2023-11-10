@@ -24,6 +24,9 @@
 #include <linux/io-64-nonatomic-lo-hi.h>
 #include <net/devlink.h>
 
+#define QED_TX_SWS_TIMER_DFLT  500
+#define QED_TWO_MSL_TIMER_DFLT 4000
+
 enum dcbx_protocol_type {
 	DCBX_PROTOCOL_ISCSI,
 	DCBX_PROTOCOL_FCOE,
@@ -588,7 +591,7 @@ enum qed_int_mode {
 };
 
 struct qed_sb_info {
-	struct status_block_e4 *sb_virt;
+	struct status_block *sb_virt;
 	dma_addr_t sb_phys;
 	u32 sb_ack; /* Last given ack */
 	u16 igu_sb_id;
@@ -613,7 +616,6 @@ enum qed_hw_err_type {
 enum qed_dev_type {
 	QED_DEV_TYPE_BB,
 	QED_DEV_TYPE_AH,
-	QED_DEV_TYPE_E5,
 };
 
 struct qed_dev_info {
@@ -650,6 +652,7 @@ struct qed_dev_info {
 
 	bool wol_support;
 	bool smart_an;
+	bool esl;
 
 	/* MBI version */
 	u32 mbi_version;
@@ -803,6 +806,12 @@ enum qed_nvm_flash_cmd {
 struct qed_devlink {
 	struct qed_dev *cdev;
 	struct devlink_health_reporter *fw_reporter;
+};
+
+struct qed_sb_info_dbg {
+	u32 igu_prod;
+	u32 igu_cons;
+	u16 pi[PIS_PER_SB];
 };
 
 struct qed_common_cb_ops {
@@ -1111,7 +1120,7 @@ struct qed_common_ops {
  *
  * Return: Int.
  */
-	int (*update_mac)(struct qed_dev *cdev, u8 *mac);
+	int (*update_mac)(struct qed_dev *cdev, const u8 *mac);
 
 /**
  * update_mtu(): API to inform the change in the mtu.
@@ -1192,6 +1201,13 @@ struct qed_common_ops {
 	struct devlink* (*devlink_register)(struct qed_dev *cdev);
 
 	void (*devlink_unregister)(struct devlink *devlink);
+
+	__printf(2, 3) void (*mfw_report)(struct qed_dev *cdev, char *fmt, ...);
+
+	int (*get_sb_info)(struct qed_dev *cdev, struct qed_sb_info *sb,
+			   u16 qid, struct qed_sb_info_dbg *sb_dbg);
+
+	int (*get_esl_status)(struct qed_dev *cdev, bool *esl_active);
 };
 
 #define MASK_FIELD(_name, _value) \
@@ -1411,7 +1427,7 @@ static inline u16 qed_sb_update_sb_idx(struct qed_sb_info *sb_info)
 	u16 rc = 0;
 
 	prod = le32_to_cpu(sb_info->sb_virt->prod_index) &
-	       STATUS_BLOCK_E4_PROD_INDEX_MASK;
+	       STATUS_BLOCK_PROD_INDEX_MASK;
 	if (sb_info->sb_ack != prod) {
 		sb_info->sb_ack = prod;
 		rc |= QED_SB_IDX;
