@@ -266,7 +266,7 @@ aVx32
 p135
 asVcompiler
 p136
-Vgcc-10
+Vgcc-12
 p137
 sVfeaturesets
 p138
@@ -333,9 +333,9 @@ ass(Vrelations
 p173
 tp174
 (dp175
-Vgcc-10
+Vgcc-12
 p176
-Vgcc-10 <!stage1 !cross !pkg.linux.nokernel>, gcc-10-@gnu-type-package@ <!stage1 cross !pkg.linux.nokernel>
+Vgcc-12 <!stage1 !cross !pkg.linux.nokernel>, gcc-12-@gnu-type-package@ <!stage1 cross !pkg.linux.nokernel>
 p177
 sVinitramfs-fallback
 p178
@@ -493,9 +493,9 @@ p260
 g232
 tp261
 (dp262
-Vheaders%gcc-10
+Vheaders%gcc-12
 p263
-Vlinux-compiler-gcc-10-x86
+Vlinux-compiler-gcc-12-x86
 p264
 ss(Vdescription
 p265
@@ -635,13 +635,13 @@ p337
 g292
 tp338
 (dp339
-Vgcc-10
+Vgcc-12
 p340
-Vgcc-10 <!stage1 !cross !pkg.linux.nokernel>, gcc-10-aarch64-linux-gnu <!stage1 cross !pkg.linux.nokernel>, gcc-arm-linux-gnueabihf <!stage1 !pkg.linux.nokernel>
+Vgcc-12 <!stage1 !cross !pkg.linux.nokernel>, gcc-12-aarch64-linux-gnu <!stage1 cross !pkg.linux.nokernel>, gcc-arm-linux-gnueabihf <!stage1 !pkg.linux.nokernel>
 p341
-sVheaders%gcc-10
+sVheaders%gcc-12
 p342
-Vgcc-10
+Vgcc-12
 p343
 ss(Vbase
 p344
@@ -3033,7 +3033,7 @@ tp1626
 (dp1627
 Vsource
 p1628
-V5.15.75-1pexip3
+V5.15.131-1pexip2
 p1629
 sVupstream
 p1630

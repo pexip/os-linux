@@ -113,4 +113,3 @@ CONFIG_SUSPEND=y
 ## file: security/selinux/Kconfig
 ##
 CONFIG_SECURITY_SELINUX_BOOTPARAM=y
-
