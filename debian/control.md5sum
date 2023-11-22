@@ -17,7 +17,7 @@ e23b40a54d861f2cba8f8f07bb879e8c  debian/templates/control.image-unsigned.in
 77509b4624f98f87a0b4b1370813935b  debian/templates/control.signed-template.in
 9831ce1b8f9e8792b9a85d8761bdc385  debian/templates/control.sourcebin.in
 4124ed9de89fd889d6cf997ee8da76f0  debian/templates/control.sourcebin.meta.in
-c571e244800e6bd8ad43f49bd9f1da36  debian/templates/control.source.in
+eb64b0fe2ad399fe26fcd5b5e274be00  debian/templates/control.source.in
 692fab5899a4b3e3b3565a51028ddf3b  debian/templates/control.tools-unversioned.in
 188acafa9aaa4bb938b62b3d28571593  debian/templates/control.tools-versioned.in
 6ac27e0078a5284814d0cf7b3a129d5c  debian/templates/control.tools-versioned.meta.in

@@ -7,7 +7,7 @@ Standards-Version: 4.2.0
 Build-Depends:
  debhelper-compat (= 12), dh-exec,
 # used for python2
- python-all (>=2.7),
+ python3-all,
 # used to run debian/bin/*.py
  python3:any,
 # used by debian/rules.real to prepare the source
