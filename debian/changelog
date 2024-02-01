@@ -1,3 +1,9 @@
+linux (5.15.131-1+pexip24u4) pexip-bookworm; urgency=medium
+
+  * New versioning scheme
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 01 Feb 2024 16:09:26 +0000
+
 linux (5.15.131-1pexip3) pexip-bookworm; urgency=medium
 
   * Bookworm build for product distribution
