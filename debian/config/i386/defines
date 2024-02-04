@@ -6,7 +6,6 @@ kernel-arch: x86
 
 [build]
 image-file: arch/x86/boot/bzImage
-signed-code: true
 vdso: true
 
 [description]
@@ -16,11 +15,8 @@ part-long-pae: This kernel requires PAE (Physical Address Extension).
  Turion or Phenom; Transmeta Efficeon; VIA C7; and some other processors.
 
 [image]
-bootloaders: grub-pc grub-efi-ia32 extlinux
+suggests: grub-pc | grub-efi-ia32 | extlinux
 install-stem: vmlinuz
-
-[relations]
-headers%gcc-12: linux-compiler-gcc-12-x86
 
 [686_description]
 hardware: older PCs

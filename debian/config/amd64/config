@@ -10,6 +10,7 @@ CONFIG_ARCH_MMAP_RND_COMPAT_BITS=8
 CONFIG_64BIT=y
 CONFIG_SMP=y
 CONFIG_X86_X2APIC=y
+CONFIG_INTEL_TDX_GUEST=y
 CONFIG_MAXSMP=y
 CONFIG_X86_16BIT=y
 CONFIG_X86_VSYSCALL_EMULATION=y
@@ -20,9 +21,6 @@ CONFIG_NUMA_EMU=y
 CONFIG_X86_INTEL_MEMORY_PROTECTION_KEYS=y
 CONFIG_X86_SGX=y
 CONFIG_EFI_MIXED=y
-CONFIG_KEXEC_FILE=y
-CONFIG_KEXEC_SIG=y
-CONFIG_KEXEC_BZIMAGE_VERIFY_SIG=y
 CONFIG_RANDOMIZE_MEMORY=y
 ## choice: vsyscall table for legacy applications
 CONFIG_LEGACY_VSYSCALL_NONE=y
@@ -70,6 +68,11 @@ CONFIG_CRYPTO_SHA256_SSSE3=m
 CONFIG_CRYPTO_SHA512_SSSE3=m
 CONFIG_CRYPTO_GHASH_CLMUL_NI_INTEL=m
 CONFIG_CRYPTO_CRCT10DIF_PCLMUL=m
+
+##
+## file: arch/x86/ras/Kconfig
+##
+CONFIG_RAS_CEC=y
 
 ##
 ## file: arch/x86/xen/Kconfig
@@ -120,11 +123,28 @@ CONFIG_EDAC_IGEN6=m
 ## file: drivers/gpu/drm/i915/Kconfig
 ##
 CONFIG_DRM_I915_GVT_KVMGT=m
+CONFIG_DRM_I915_PXP=y
 
 ##
 ## file: drivers/hid/amd-sfh-hid/Kconfig
 ##
 CONFIG_AMD_SFH_HID=m
+
+##
+## file: drivers/hwtracing/intel_th/Kconfig
+##
+CONFIG_INTEL_TH_STH=m
+
+##
+## file: drivers/hwtracing/stm/Kconfig
+##
+CONFIG_STM=m
+CONFIG_STM_PROTO_BASIC=m
+CONFIG_STM_PROTO_SYS_T=m
+CONFIG_STM_DUMMY=m
+CONFIG_STM_SOURCE_CONSOLE=m
+CONFIG_STM_SOURCE_HEARTBEAT=m
+CONFIG_STM_SOURCE_FTRACE=m
 
 ##
 ## file: drivers/i2c/Kconfig
@@ -195,14 +215,29 @@ CONFIG_PCI_HYPERV=y
 CONFIG_PINCTRL_AMD=y
 
 ##
-## file: drivers/platform/x86/amd/Kconfig
+## file: drivers/platform/x86/amd/pmc/Kconfig
 ##
 CONFIG_AMD_PMC=m
+
+##
+## file: drivers/platform/x86/intel/Kconfig
+##
+CONFIG_INTEL_TPMI=m
+
+##
+## file: drivers/platform/x86/intel/ifs/Kconfig
+##
+CONFIG_INTEL_IFS=m
 
 ##
 ## file: drivers/platform/x86/intel/uncore-frequency/Kconfig
 ##
 CONFIG_INTEL_UNCORE_FREQ_CONTROL=m
+
+##
+## file: drivers/powercap/Kconfig
+##
+CONFIG_INTEL_RAPL_TPMI=m
 
 ##
 ## file: drivers/scsi/Kconfig
@@ -220,17 +255,17 @@ CONFIG_SPI_PXA2XX=m
 CONFIG_MOXA_INTELLIO=m
 
 ##
-## file: drivers/vfio/mdev/Kconfig
-##
-CONFIG_VFIO_MDEV=m
-
-##
 ## file: drivers/video/fbdev/Kconfig
 ##
 CONFIG_FB_MATROX_G=y
 CONFIG_FB_MATROX_MAVEN=m
 # CONFIG_FB_ATY_GENERIC_LCD is not set
 # CONFIG_FB_SAVAGE_I2C is not set
+
+##
+## file: drivers/virt/coco/tdx-guest/Kconfig
+##
+CONFIG_TDX_GUEST_DRIVER=m
 
 ##
 ## file: drivers/virtio/Kconfig
@@ -241,6 +276,13 @@ CONFIG_VIRTIO_MEM=m
 ## file: init/Kconfig
 ##
 CONFIG_KALLSYMS_ALL=y
+
+##
+## file: kernel/Kconfig.kexec
+##
+CONFIG_KEXEC_FILE=y
+CONFIG_KEXEC_SIG=y
+CONFIG_KEXEC_BZIMAGE_VERIFY_SIG=y
 
 ##
 ## file: kernel/livepatch/Kconfig
@@ -268,6 +310,7 @@ CONFIG_FRAME_WARN=2048
 CONFIG_SPARSEMEM_MANUAL=y
 ## end choice
 CONFIG_SPARSEMEM_VMEMMAP=y
+CONFIG_MEMORY_HOTPLUG_DEFAULT_ONLINE=y
 CONFIG_ZONE_DEVICE=y
 
 ##

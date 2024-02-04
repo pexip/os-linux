@@ -62,8 +62,9 @@ CONFIG_EFI_PARTITION=y
 ##
 ## file: certs/Kconfig
 ##
-#. Signatures are added in linux-signed
-CONFIG_MODULE_SIG_KEY=""
+## choice: Type of module signing key to be generated
+CONFIG_MODULE_SIG_KEY_TYPE_ECDSA=y
+## end choice
 #. Add secondary keyring with keys from UEFI db and MOK.
 CONFIG_SECONDARY_TRUSTED_KEYRING=y
 CONFIG_SYSTEM_BLACKLIST_KEYRING=y
@@ -369,7 +370,6 @@ CONFIG_BCMA_HOST_PCI=y
 ## file: drivers/block/Kconfig
 ##
 CONFIG_BLK_DEV=y
-# CONFIG_PARIDE is not set
 CONFIG_BLK_DEV_LOOP=m
 CONFIG_BLK_DEV_LOOP_MIN_COUNT=8
 CONFIG_BLK_DEV_NBD=m
@@ -381,6 +381,7 @@ CONFIG_XEN_BLKDEV_FRONTEND=m
 CONFIG_XEN_BLKDEV_BACKEND=m
 CONFIG_VIRTIO_BLK=m
 CONFIG_BLK_DEV_RBD=m
+CONFIG_BLK_DEV_UBLK=m
 
 ##
 ## file: drivers/block/drbd/Kconfig
@@ -451,8 +452,6 @@ CONFIG_DEVMEM=y
 CONFIG_DEVPORT=y
 CONFIG_HANGCHECK_TIMER=m
 CONFIG_TELCLOCK=m
-CONFIG_RANDOM_TRUST_CPU=y
-CONFIG_RANDOM_TRUST_BOOTLOADER=y
 
 ##
 ## file: drivers/char/hw_random/Kconfig
@@ -465,15 +464,6 @@ CONFIG_HW_RANDOM_VIRTIO=m
 ## file: drivers/char/ipmi/Kconfig
 ##
 CONFIG_IPMI_SSIF=m
-
-##
-## file: drivers/char/pcmcia/Kconfig
-##
-CONFIG_SYNCLINK_CS=m
-CONFIG_CARDMAN_4000=m
-CONFIG_CARDMAN_4040=m
-CONFIG_SCR24X=m
-CONFIG_IPWIRELESS=m
 
 ##
 ## file: drivers/char/tpm/Kconfig
@@ -686,8 +676,8 @@ CONFIG_GPIO_EXAR=m
 # CONFIG_GPIO_GENERIC_PLATFORM is not set
 # CONFIG_GPIO_GRGPIO is not set
 # CONFIG_GPIO_MB86S7X is not set
-# CONFIG_GPIO_VX855 is not set
 # CONFIG_GPIO_XILINX is not set
+# CONFIG_GPIO_VX855 is not set
 # CONFIG_GPIO_104_IDIO_16 is not set
 # CONFIG_GPIO_IT87 is not set
 # CONFIG_GPIO_SCH311X is not set
@@ -743,7 +733,6 @@ CONFIG_DRM_AMDGPU_USERPTR=y
 ## file: drivers/gpu/drm/amd/display/Kconfig
 ##
 CONFIG_DRM_AMD_DC=y
-CONFIG_DRM_AMD_DC_HDCP=y
 CONFIG_DRM_AMD_DC_SI=y
 # CONFIG_DEBUG_KERNEL_DC is not set
 
@@ -814,7 +803,6 @@ CONFIG_DRM_I915_USERPTR=y
 ## file: drivers/gpu/drm/nouveau/Kconfig
 ##
 CONFIG_DRM_NOUVEAU=m
-# CONFIG_NOUVEAU_LEGACY_CTX_SUPPORT is not set
 CONFIG_NOUVEAU_DEBUG=5
 CONFIG_NOUVEAU_DEBUG_DEFAULT=3
 # CONFIG_NOUVEAU_DEBUG_MMU is not set
@@ -1082,7 +1070,6 @@ CONFIG_SENSORS_EMC2103=m
 CONFIG_SENSORS_EMC6W201=m
 CONFIG_SENSORS_SMSC47M192=m
 CONFIG_SENSORS_SCH5627=m
-CONFIG_SENSORS_SMM665=m
 CONFIG_SENSORS_ADS7828=m
 CONFIG_SENSORS_ADS7871=m
 CONFIG_SENSORS_AMC6821=m
@@ -1668,6 +1655,7 @@ CONFIG_INPUT_EVDEV=m
 ##
 ## file: drivers/input/joystick/Kconfig
 ##
+CONFIG_INPUT_JOYSTICK=y
 CONFIG_JOYSTICK_ANALOG=m
 CONFIG_JOYSTICK_A3D=m
 CONFIG_JOYSTICK_ADI=m
@@ -1872,7 +1860,6 @@ CONFIG_TOUCHSCREEN_PENMOUNT=m
 # CONFIG_TOUCHSCREEN_EDT_FT5X06 is not set
 CONFIG_TOUCHSCREEN_TOUCHRIGHT=m
 CONFIG_TOUCHSCREEN_TOUCHWIN=m
-CONFIG_TOUCHSCREEN_UCB1400=m
 # CONFIG_TOUCHSCREEN_PIXCIR is not set
 # CONFIG_TOUCHSCREEN_WDT87XX_I2C is not set
 CONFIG_TOUCHSCREEN_WM97XX=m
@@ -2169,13 +2156,11 @@ CONFIG_DVB_FIREDTV=m
 ##
 # CONFIG_VIDEO_MT9M001 is not set
 # CONFIG_VIDEO_MT9T112 is not set
-CONFIG_VIDEO_NOON010PC30=m
 # CONFIG_VIDEO_OV2640 is not set
 CONFIG_VIDEO_OV7670=m
 # CONFIG_VIDEO_OV772X is not set
 # CONFIG_VIDEO_OV9640 is not set
 # CONFIG_VIDEO_RJ54N1 is not set
-CONFIG_VIDEO_SR030PC30=m
 CONFIG_VIDEO_CS53L32A=m
 CONFIG_VIDEO_MSP3400=m
 CONFIG_VIDEO_TDA7432=m
@@ -2325,6 +2310,13 @@ CONFIG_VIDEO_SAA7134_RC=y
 CONFIG_VIDEO_SAA7134_DVB=m
 
 ##
+## file: drivers/media/pci/saa7146/Kconfig
+##
+CONFIG_VIDEO_HEXIUM_GEMINI=m
+CONFIG_VIDEO_HEXIUM_ORION=m
+CONFIG_VIDEO_MXB=m
+
+##
 ## file: drivers/media/pci/saa7164/Kconfig
 ##
 CONFIG_VIDEO_SAA7164=m
@@ -2338,6 +2330,14 @@ CONFIG_DVB_SMIPCIE=m
 ## file: drivers/media/pci/solo6x10/Kconfig
 ##
 CONFIG_VIDEO_SOLO6X10=m
+
+##
+## file: drivers/media/pci/ttpci/Kconfig
+##
+CONFIG_DVB_BUDGET_CORE=m
+CONFIG_DVB_BUDGET=m
+CONFIG_DVB_BUDGET_CI=m
+CONFIG_DVB_BUDGET_AV=m
 
 ##
 ## file: drivers/media/pci/tw5864/Kconfig
@@ -2685,7 +2685,7 @@ CONFIG_SMS_USB_DRV=m
 ##
 ## file: drivers/media/usb/stk1160/Kconfig
 ##
-CONFIG_VIDEO_STK1160_COMMON=m
+CONFIG_VIDEO_STK1160=m
 
 ##
 ## file: drivers/media/usb/ttusb-budget/Kconfig
@@ -2779,8 +2779,6 @@ CONFIG_FUSION_LAN=m
 # CONFIG_MFD_MC13XXX_SPI is not set
 # CONFIG_MFD_MC13XXX_I2C is not set
 # CONFIG_MFD_HI6421_PMIC is not set
-# CONFIG_HTC_PASIC3 is not set
-# CONFIG_HTC_I2CPLD is not set
 CONFIG_LPC_SCH=m
 # CONFIG_INTEL_SOC_PMIC is not set
 # CONFIG_MFD_INTEL_LPSS_ACPI is not set
@@ -2806,11 +2804,11 @@ CONFIG_MFD_VIPERBOARD=m
 # CONFIG_MFD_PCF50633 is not set
 CONFIG_PCF50633_ADC=m
 CONFIG_PCF50633_GPIO=m
-# CONFIG_UCB1400_CORE is not set
 # CONFIG_MFD_RDC321X is not set
 # CONFIG_MFD_RT5033 is not set
 # CONFIG_MFD_RC5T583 is not set
-# CONFIG_MFD_RK808 is not set
+# CONFIG_MFD_RK8XX_I2C is not set
+# CONFIG_MFD_RK8XX_SPI is not set
 # CONFIG_MFD_RN5T618 is not set
 # CONFIG_MFD_SEC_CORE is not set
 # CONFIG_MFD_SI476X_CORE is not set
@@ -3415,7 +3413,6 @@ CONFIG_IGB=m
 CONFIG_IGB_HWMON=y
 CONFIG_IGB_DCA=y
 CONFIG_IGBVF=m
-CONFIG_IXGB=m
 CONFIG_IXGBE=m
 CONFIG_IXGBE_HWMON=y
 CONFIG_IXGBE_DCA=y
@@ -3800,6 +3797,7 @@ CONFIG_DP83822_PHY=m
 CONFIG_DP83TC811_PHY=m
 CONFIG_DP83848_PHY=m
 CONFIG_DP83867_PHY=m
+CONFIG_DP83TD510_PHY=m
 CONFIG_VITESSE_PHY=m
 # CONFIG_XILINX_GMII2RGMII is not set
 # CONFIG_MICREL_KS8995MA is not set
@@ -3901,8 +3899,6 @@ CONFIG_HDLC_PPP=m
 ## file: drivers/net/wireless/Kconfig
 ##
 CONFIG_WLAN=y
-CONFIG_MAC80211_HWSIM=m
-CONFIG_USB_NET_RNDIS_WLAN=m
 
 ##
 ## file: drivers/net/wireless/admtek/Kconfig
@@ -4085,7 +4081,6 @@ CONFIG_IWLWIFI=m
 CONFIG_IWLDVM=m
 CONFIG_IWLMVM=m
 # CONFIG_IWLWIFI_DEBUG is not set
-# CONFIG_IWLWIFI_DEVICE_TRACING is not set
 
 ##
 ## file: drivers/net/wireless/intersil/Kconfig
@@ -4119,6 +4114,11 @@ CONFIG_P54_USB=m
 CONFIG_P54_PCI=m
 # CONFIG_P54_SPI is not set
 # CONFIG_P54_SPI_DEFAULT_EEPROM is not set
+
+##
+## file: drivers/net/wireless/legacy/Kconfig
+##
+CONFIG_USB_NET_RNDIS_WLAN=m
 
 ##
 ## file: drivers/net/wireless/marvell/Kconfig
@@ -4253,15 +4253,24 @@ CONFIG_RTL8192CU=m
 ##
 CONFIG_RTW88=m
 CONFIG_RTW88_8822BE=m
+CONFIG_RTW88_8822BS=m
+CONFIG_RTW88_8822BU=m
 CONFIG_RTW88_8822CE=m
+CONFIG_RTW88_8822CS=m
+CONFIG_RTW88_8822CU=m
 CONFIG_RTW88_8723DE=m
+CONFIG_RTW88_8723DU=m
 CONFIG_RTW88_8821CE=m
+CONFIG_RTW88_8821CS=m
+CONFIG_RTW88_8821CU=m
 
 ##
 ## file: drivers/net/wireless/realtek/rtw89/Kconfig
 ##
 CONFIG_RTW89=m
 CONFIG_RTW89_8852AE=m
+CONFIG_RTW89_8852BE=m
+CONFIG_RTW89_8852CE=m
 
 ##
 ## file: drivers/net/wireless/rsi/Kconfig
@@ -4289,6 +4298,11 @@ CONFIG_WLAN_VENDOR_ST=y
 # CONFIG_WLAN_VENDOR_TI is not set
 
 ##
+## file: drivers/net/wireless/virtual/Kconfig
+##
+CONFIG_MAC80211_HWSIM=m
+
+##
 ## file: drivers/net/wireless/zydas/Kconfig
 ##
 CONFIG_WLAN_VENDOR_ZYDAS=y
@@ -4306,6 +4320,7 @@ CONFIG_WWAN=m
 CONFIG_MHI_WWAN_CTRL=m
 CONFIG_MHI_WWAN_MBIM=m
 CONFIG_IOSM=m
+CONFIG_MTK_T7XX=m
 
 ##
 ## file: drivers/nfc/Kconfig
@@ -4373,6 +4388,11 @@ CONFIG_NVME_TARGET_FC=m
 CONFIG_NVME_TARGET_TCP=m
 
 ##
+## file: drivers/nvmem/Kconfig
+##
+CONFIG_NVMEM=y
+
+##
 ## file: drivers/of/Kconfig
 ##
 # CONFIG_OF is not set
@@ -4388,7 +4408,6 @@ CONFIG_PARPORT_SERIAL=m
 # CONFIG_PARPORT_PC_FIFO is not set
 # CONFIG_PARPORT_PC_SUPERIO is not set
 CONFIG_PARPORT_PC_PCMCIA=m
-# CONFIG_PARPORT_AX88796 is not set
 CONFIG_PARPORT_1284=y
 
 ##
@@ -4528,7 +4547,6 @@ CONFIG_YENTA_TOSHIBA=y
 ##
 CONFIG_POWER_SUPPLY=y
 # CONFIG_POWER_SUPPLY_DEBUG is not set
-# CONFIG_PDA_POWER is not set
 # CONFIG_GENERIC_ADC_BATTERY is not set
 CONFIG_WM831X_POWER=m
 CONFIG_WM8350_POWER=m
@@ -4712,7 +4730,6 @@ CONFIG_RTC_DRV_CMOS=m
 # CONFIG_RTC_DRV_MSM6242 is not set
 # CONFIG_RTC_DRV_BQ4802 is not set
 # CONFIG_RTC_DRV_RP5C01 is not set
-# CONFIG_RTC_DRV_V3020 is not set
 CONFIG_RTC_DRV_WM831X=m
 CONFIG_RTC_DRV_WM8350=m
 CONFIG_RTC_DRV_PCF50633=m
@@ -5016,11 +5033,6 @@ CONFIG_STAGING=y
 # CONFIG_AD5933 is not set
 
 ##
-## file: drivers/staging/iio/meter/Kconfig
-##
-# CONFIG_ADE7854 is not set
-
-##
 ## file: drivers/staging/iio/resolver/Kconfig
 ##
 # CONFIG_AD2S1210 is not set
@@ -5031,17 +5043,7 @@ CONFIG_STAGING=y
 # CONFIG_STAGING_MEDIA is not set
 
 ##
-## file: drivers/staging/media/deprecated/cpia2/Kconfig
-##
-CONFIG_VIDEO_CPIA2=m
-
-##
-## file: drivers/staging/media/deprecated/meye/Kconfig
-##
-CONFIG_VIDEO_MEYE=m
-
-##
-## file: drivers/staging/media/deprecated/saa7146/av7110/Kconfig
+## file: drivers/staging/media/av7110/Kconfig
 ##
 CONFIG_DVB_AV7110=m
 CONFIG_DVB_AV7110_OSD=y
@@ -5049,39 +5051,9 @@ CONFIG_DVB_BUDGET_PATCH=m
 CONFIG_DVB_SP8870=m
 
 ##
-## file: drivers/staging/media/deprecated/saa7146/saa7146/Kconfig
-##
-CONFIG_VIDEO_HEXIUM_GEMINI=m
-CONFIG_VIDEO_HEXIUM_ORION=m
-CONFIG_VIDEO_MXB=m
-
-##
-## file: drivers/staging/media/deprecated/saa7146/ttpci/Kconfig
-##
-CONFIG_DVB_BUDGET_CORE=m
-CONFIG_DVB_BUDGET=m
-CONFIG_DVB_BUDGET_CI=m
-CONFIG_DVB_BUDGET_AV=m
-
-##
-## file: drivers/staging/media/deprecated/stkwebcam/Kconfig
-##
-CONFIG_VIDEO_STKWEBCAM=m
-
-##
-## file: drivers/staging/media/deprecated/zr364xx/Kconfig
-##
-CONFIG_USB_ZR364XX=m
-
-##
 ## file: drivers/staging/qlge/Kconfig
 ##
 CONFIG_QLGE=m
-
-##
-## file: drivers/staging/r8188eu/Kconfig
-##
-CONFIG_R8188EU=m
 
 ##
 ## file: drivers/staging/rtl8192e/Kconfig
@@ -5203,8 +5175,10 @@ CONFIG_VT_CONSOLE=y
 CONFIG_VT_HW_CONSOLE_BINDING=y
 CONFIG_UNIX98_PTYS=y
 # CONFIG_LEGACY_PTYS is not set
+# CONFIG_LEGACY_TIOCSTI is not set
 CONFIG_MOXA_SMARTIO=m
 CONFIG_SYNCLINK_GT=m
+CONFIG_IPWIRELESS=m
 CONFIG_N_GSM=m
 CONFIG_NOZOMI=m
 
@@ -5335,6 +5309,12 @@ CONFIG_USB_LEDS_TRIGGER_USBPORT=m
 # CONFIG_USB_DWC3 is not set
 
 ##
+## file: drivers/usb/fotg210/Kconfig
+##
+# CONFIG_USB_FOTG210_HCD is not set
+# CONFIG_USB_FOTG210_UDC is not set
+
+##
 ## file: drivers/usb/gadget/Kconfig
 ##
 # CONFIG_USB_GADGET is not set
@@ -5378,7 +5358,6 @@ CONFIG_USB_G_SERIAL=m
 ## file: drivers/usb/gadget/udc/Kconfig
 ##
 # CONFIG_USB_FUSB300 is not set
-# CONFIG_USB_FOTG210_UDC is not set
 # CONFIG_USB_GR_UDC is not set
 # CONFIG_USB_R8A66597 is not set
 # CONFIG_USB_PXA27X is not set
@@ -5410,11 +5389,9 @@ CONFIG_USB_EHCI_TT_NEWSCHED=y
 # CONFIG_USB_OXU210HP_HCD is not set
 # CONFIG_USB_ISP116X_HCD is not set
 # CONFIG_USB_ISP1362_HCD is not set
-# CONFIG_USB_FOTG210_HCD is not set
 # CONFIG_USB_MAX3421_HCD is not set
 CONFIG_USB_OHCI_HCD_PCI=y
 # CONFIG_USB_OHCI_HCD_PLATFORM is not set
-CONFIG_USB_U132_HCD=m
 # CONFIG_USB_R8A66597_HCD is not set
 # CONFIG_USB_HCD_BCMA is not set
 # CONFIG_USB_HCD_SSB is not set
@@ -5443,7 +5420,6 @@ CONFIG_USB_LCD=m
 CONFIG_USB_CYPRESS_CY7C63=m
 CONFIG_USB_CYTHERM=m
 CONFIG_USB_IDMOUSE=m
-CONFIG_USB_FTDI_ELAN=m
 CONFIG_USB_APPLEDISPLAY=m
 CONFIG_APPLE_MFI_FASTCHARGE=m
 CONFIG_USB_LD=m
@@ -5462,7 +5438,6 @@ CONFIG_USB_CHAOSKEY=m
 ## file: drivers/usb/misc/sisusbvga/Kconfig
 ##
 CONFIG_USB_SISUSBVGA=m
-CONFIG_USB_SISUSBVGA_CON=y
 
 ##
 ## file: drivers/usb/mon/Kconfig
@@ -5479,7 +5454,6 @@ CONFIG_USB_MON=y
 ##
 # CONFIG_AB8500_USB is not set
 # CONFIG_FSL_USB2_OTG is not set
-# CONFIG_ISP1301_OMAP is not set
 # CONFIG_NOP_USB_XCEIV is not set
 # CONFIG_AM335X_PHY_USB is not set
 # CONFIG_TWL6030_USB is not set
@@ -5598,6 +5572,12 @@ CONFIG_USBIP_VUDC=m
 # CONFIG_USBIP_DEBUG is not set
 
 ##
+## file: drivers/vdpa/Kconfig
+##
+CONFIG_VDPA=m
+CONFIG_VDPA_USER=m
+
+##
 ## file: drivers/vfio/Kconfig
 ##
 # CONFIG_VFIO_NOIOMMU is not set
@@ -5608,6 +5588,7 @@ CONFIG_USBIP_VUDC=m
 CONFIG_VHOST_NET=m
 CONFIG_VHOST_SCSI=m
 CONFIG_VHOST_VSOCK=m
+CONFIG_VHOST_VDPA=m
 # CONFIG_VHOST_CROSS_ENDIAN_LEGACY is not set
 
 ##
@@ -5645,8 +5626,6 @@ CONFIG_FRAMEBUFFER_CONSOLE_ROTATION=y
 ## file: drivers/video/fbdev/Kconfig
 ##
 CONFIG_FB=y
-CONFIG_FIRMWARE_EDID=y
-# CONFIG_FB_FOREIGN_ENDIAN is not set
 CONFIG_FB_ARC=m
 # CONFIG_FB_UVESA is not set
 # CONFIG_FB_OPENCORES is not set
@@ -5666,10 +5645,8 @@ CONFIG_FB_VT8623=m
 CONFIG_FB_ARK=m
 CONFIG_FB_PM3=m
 # CONFIG_FB_CARMINE is not set
-# CONFIG_FB_TMIO is not set
 CONFIG_FB_SM501=m
 CONFIG_FB_SMSCUFX=m
-CONFIG_FB_UDL=m
 # CONFIG_FB_IBM_GXT4500 is not set
 # CONFIG_FB_GOLDFISH is not set
 CONFIG_XEN_FBDEV_FRONTEND=y
@@ -5684,6 +5661,12 @@ CONFIG_FB_MB862XX_I2C=y
 # CONFIG_FB_SM712 is not set
 
 ##
+## file: drivers/video/fbdev/core/Kconfig
+##
+CONFIG_FIRMWARE_EDID=y
+# CONFIG_FB_FOREIGN_ENDIAN is not set
+
+##
 ## file: drivers/video/logo/Kconfig
 ##
 # CONFIG_LOGO is not set
@@ -5696,8 +5679,9 @@ CONFIG_VIRT_DRIVERS=y
 ##
 ## file: drivers/virtio/Kconfig
 ##
-CONFIG_VIRTIO_PCI=m
+CONFIG_VIRTIO_PCI=y
 CONFIG_VIRTIO_PCI_LEGACY=y
+CONFIG_VIRTIO_VDPA=m
 CONFIG_VIRTIO_PMEM=m
 CONFIG_VIRTIO_BALLOON=m
 CONFIG_VIRTIO_INPUT=m
@@ -5716,7 +5700,6 @@ CONFIG_W1_CON=y
 # CONFIG_W1_MASTER_MATROX is not set
 CONFIG_W1_MASTER_DS2490=m
 CONFIG_W1_MASTER_DS2482=m
-# CONFIG_W1_MASTER_DS1WM is not set
 CONFIG_W1_MASTER_GPIO=m
 
 ##
@@ -5882,19 +5865,6 @@ CONFIG_CEPH_FSCACHE=y
 CONFIG_CEPH_FS_POSIX_ACL=y
 
 ##
-## file: fs/cifs/Kconfig
-##
-CONFIG_CIFS=m
-CONFIG_CIFS_UPCALL=y
-CONFIG_CIFS_XATTR=y
-CONFIG_CIFS_POSIX=y
-CONFIG_CIFS_DEBUG=y
-# CONFIG_CIFS_DEBUG2 is not set
-CONFIG_CIFS_DFS_UPCALL=y
-CONFIG_CIFS_NFSD_EXPORT=y
-CONFIG_CIFS_FSCACHE=y
-
-##
 ## file: fs/coda/Kconfig
 ##
 CONFIG_CODA_FS=m
@@ -6009,9 +5979,9 @@ CONFIG_FSCACHE_STATS=y
 ##
 ## file: fs/fuse/Kconfig
 ##
-CONFIG_FUSE_FS=m
+CONFIG_FUSE_FS=y
 CONFIG_CUSE=m
-CONFIG_VIRTIO_FS=m
+CONFIG_VIRTIO_FS=y
 
 ##
 ## file: fs/gfs2/Kconfig
@@ -6077,11 +6047,6 @@ CONFIG_JFS_POSIX_ACL=y
 CONFIG_JFS_SECURITY=y
 # CONFIG_JFS_DEBUG is not set
 # CONFIG_JFS_STATISTICS is not set
-
-##
-## file: fs/ksmbd/Kconfig
-##
-CONFIG_SMB_SERVER=m
 
 ##
 ## file: fs/minix/Kconfig
@@ -6279,14 +6244,32 @@ CONFIG_ROMFS_BACKED_BY_BOTH=y
 ## end choice
 
 ##
+## file: fs/smb/client/Kconfig
+##
+CONFIG_CIFS=m
+CONFIG_CIFS_UPCALL=y
+CONFIG_CIFS_XATTR=y
+CONFIG_CIFS_POSIX=y
+CONFIG_CIFS_DEBUG=y
+# CONFIG_CIFS_DEBUG2 is not set
+CONFIG_CIFS_DFS_UPCALL=y
+CONFIG_CIFS_NFSD_EXPORT=y
+CONFIG_CIFS_FSCACHE=y
+
+##
+## file: fs/smb/server/Kconfig
+##
+CONFIG_SMB_SERVER=m
+
+##
 ## file: fs/squashfs/Kconfig
 ##
 CONFIG_SQUASHFS=m
 ## choice: File decompression options
 CONFIG_SQUASHFS_FILE_DIRECT=y
 ## end choice
-## choice: Decompressor parallelisation options
-CONFIG_SQUASHFS_DECOMP_MULTI_PERCPU=y
+## choice: Select decompression parallel mode at compile time
+CONFIG_SQUASHFS_COMPILE_DECOMP_MULTI_PERCPU=y
 ## end choice
 CONFIG_SQUASHFS_XATTR=y
 CONFIG_SQUASHFS_ZLIB=y
@@ -6390,7 +6373,6 @@ CONFIG_CPU_ISOLATION=y
 # CONFIG_IKCONFIG is not set
 CONFIG_LOG_BUF_SHIFT=17
 CONFIG_LOG_CPU_MAX_BUF_SHIFT=12
-CONFIG_PRINTK_SAFE_LOG_BUF_SHIFT=13
 CONFIG_NUMA_BALANCING=y
 CONFIG_NUMA_BALANCING_DEFAULT_ENABLED=y
 CONFIG_CGROUPS=y
@@ -6420,8 +6402,6 @@ CONFIG_PID_NS=y
 CONFIG_NET_NS=y
 CONFIG_CHECKPOINT_RESTORE=y
 CONFIG_SCHED_AUTOGROUP=y
-# CONFIG_SYSFS_DEPRECATED is not set
-# CONFIG_SYSFS_DEPRECATED_V2 is not set
 CONFIG_RELAY=y
 CONFIG_BLK_DEV_INITRD=y
 ## choice: Compiler optimization level
@@ -6453,7 +6433,6 @@ CONFIG_KALLSYMS=y
 # CONFIG_KALLSYMS_ALL is not set
 CONFIG_RSEQ=y
 # CONFIG_DEBUG_RSEQ is not set
-# CONFIG_EMBEDDED is not set
 # CONFIG_PC104 is not set
 CONFIG_PERF_EVENTS=y
 # CONFIG_DEBUG_PERF_USE_VMALLOC is not set
@@ -6514,18 +6493,19 @@ CONFIG_MODULE_UNLOAD=y
 CONFIG_MODULE_FORCE_UNLOAD=y
 CONFIG_MODVERSIONS=y
 # CONFIG_MODULE_SRCVERSION_ALL is not set
-#. This is overridden if the [build]signed-code setting is enabled
-# CONFIG_MODULE_SIG is not set
+CONFIG_MODULE_SIG=y
 #. Signature validation is a run-time option
 # CONFIG_MODULE_SIG_FORCE is not set
-#. Signatures are added in linux-signed
-# CONFIG_MODULE_SIG_ALL is not set
+CONFIG_MODULE_SIG_ALL=y
 ## choice: Which hash algorithm should modules be signed with?
 # CONFIG_MODULE_SIG_SHA1 is not set
 # CONFIG_MODULE_SIG_SHA224 is not set
 CONFIG_MODULE_SIG_SHA256=y
 # CONFIG_MODULE_SIG_SHA384 is not set
 # CONFIG_MODULE_SIG_SHA512 is not set
+## end choice
+## choice: Module compression mode
+CONFIG_MODULE_COMPRESS_XZ=y
 ## end choice
 # CONFIG_TRIM_UNUSED_KSYMS is not set
 
@@ -6579,6 +6559,7 @@ CONFIG_FTRACE=y
 CONFIG_FUNCTION_TRACER=y
 CONFIG_FUNCTION_GRAPH_TRACER=y
 CONFIG_DYNAMIC_FTRACE=y
+CONFIG_FPROBE=y
 # CONFIG_FUNCTION_PROFILER is not set
 CONFIG_STACK_TRACER=y
 # CONFIG_IRQSOFF_TRACER is not set
@@ -6642,7 +6623,6 @@ CONFIG_MAGIC_SYSRQ=y
 CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE=0x01b6
 CONFIG_DEBUG_FS=y
 # CONFIG_DEBUG_OBJECTS is not set
-# CONFIG_DEBUG_KMEMLEAK is not set
 CONFIG_SCHED_STACK_END_CHECK=y
 # CONFIG_DEBUG_VM is not set
 # CONFIG_DEBUG_VIRTUAL is not set
@@ -6662,7 +6642,6 @@ CONFIG_DEFAULT_HUNG_TASK_TIMEOUT=120
 CONFIG_SCHED_DEBUG=y
 CONFIG_SCHEDSTATS=y
 # CONFIG_DEBUG_TIMEKEEPING is not set
-CONFIG_DEBUG_PREEMPT=y
 # CONFIG_PROVE_LOCKING is not set
 # CONFIG_LOCK_STAT is not set
 # CONFIG_DEBUG_RT_MUTEXES is not set
@@ -6678,8 +6657,6 @@ CONFIG_DEBUG_LIST=y
 # CONFIG_DEBUG_PLIST is not set
 # CONFIG_DEBUG_SG is not set
 # CONFIG_DEBUG_NOTIFIERS is not set
-CONFIG_BUG_ON_DATA_CORRUPTION=y
-# CONFIG_DEBUG_CREDENTIALS is not set
 # CONFIG_DEBUG_WQ_FORCE_RR_CPU is not set
 # CONFIG_CPU_HOTPLUG_STATE_CONTROL is not set
 # CONFIG_LATENCYTOP is not set
@@ -6720,6 +6697,12 @@ CONFIG_TEST_STATIC_KEYS=m
 ## file: lib/Kconfig.kasan
 ##
 # CONFIG_KASAN is not set
+
+##
+## file: lib/Kconfig.kfence
+##
+CONFIG_KFENCE=y
+CONFIG_KFENCE_SAMPLE_INTERVAL=0
 
 ##
 ## file: lib/Kconfig.kgdb
@@ -6775,9 +6758,8 @@ CONFIG_Z3FOLD=m
 CONFIG_ZSMALLOC=m
 # CONFIG_ZSMALLOC_STAT is not set
 ## choice: Choose SLAB allocator
-# CONFIG_SLAB is not set
+# CONFIG_SLAB_DEPRECATED is not set
 CONFIG_SLUB=y
-# CONFIG_SLOB is not set
 ## end choice
 CONFIG_SLAB_MERGE_DEFAULT=y
 CONFIG_SLAB_FREELIST_RANDOM=y
@@ -6810,7 +6792,7 @@ CONFIG_VM_EVENT_COUNTERS=y
 # CONFIG_PERCPU_STATS is not set
 CONFIG_USERFAULTFD=y
 CONFIG_LRU_GEN=y
-# CONFIG_LRU_GEN_ENABLED is not set
+CONFIG_LRU_GEN_ENABLED=y
 
 ##
 ## file: mm/Kconfig.debug
@@ -6824,6 +6806,7 @@ CONFIG_PAGE_POISONING=y
 # CONFIG_DEBUG_PAGE_REF is not set
 # CONFIG_DEBUG_RODATA_TEST is not set
 # CONFIG_PTDUMP_DEBUGFS is not set
+# CONFIG_DEBUG_KMEMLEAK is not set
 
 ##
 ## file: net/Kconfig
@@ -7044,7 +7027,7 @@ CONFIG_DNS_RESOLVER=m
 ##
 ## file: net/hsr/Kconfig
 ##
-# CONFIG_HSR is not set
+CONFIG_HSR=m
 
 ##
 ## file: net/ieee802154/Kconfig
@@ -7147,7 +7130,6 @@ CONFIG_IP_NF_TARGET_MASQUERADE=m
 CONFIG_IP_NF_TARGET_NETMAP=m
 CONFIG_IP_NF_TARGET_REDIRECT=m
 CONFIG_IP_NF_MANGLE=m
-CONFIG_IP_NF_TARGET_CLUSTERIP=m
 CONFIG_IP_NF_TARGET_ECN=m
 CONFIG_IP_NF_TARGET_TTL=m
 CONFIG_IP_NF_RAW=m
@@ -7322,7 +7304,6 @@ CONFIG_NFT_MASQ=m
 CONFIG_NFT_REDIR=m
 CONFIG_NFT_NAT=m
 CONFIG_NFT_TUNNEL=m
-CONFIG_NFT_OBJREF=m
 CONFIG_NFT_QUEUE=m
 CONFIG_NFT_QUOTA=m
 CONFIG_NFT_REJECT=m
@@ -7549,10 +7530,8 @@ CONFIG_RXKAD=y
 ## file: net/sched/Kconfig
 ##
 CONFIG_NET_SCHED=y
-CONFIG_NET_SCH_CBQ=m
 CONFIG_NET_SCH_HTB=m
 CONFIG_NET_SCH_HFSC=m
-CONFIG_NET_SCH_ATM=m
 CONFIG_NET_SCH_PRIO=m
 CONFIG_NET_SCH_MULTIQ=m
 CONFIG_NET_SCH_RED=m
@@ -7564,7 +7543,6 @@ CONFIG_NET_SCH_CBS=m
 CONFIG_NET_SCH_ETF=m
 CONFIG_NET_SCH_TAPRIO=m
 CONFIG_NET_SCH_GRED=m
-CONFIG_NET_SCH_DSMARK=m
 CONFIG_NET_SCH_NETEM=m
 CONFIG_NET_SCH_DRR=m
 CONFIG_NET_SCH_MQPRIO=m
@@ -7713,6 +7691,7 @@ CONFIG_CFG80211_WEXT=y
 ## file: net/xdp/Kconfig
 ##
 CONFIG_XDP_SOCKETS=y
+CONFIG_XDP_SOCKETS_DIAG=m
 
 ##
 ## file: net/xfrm/Kconfig
@@ -7753,6 +7732,7 @@ CONFIG_LSM="landlock,lockdown,yama,loadpin,safesetid,integrity,apparmor,selinux,
 ## file: security/Kconfig.hardening
 ##
 CONFIG_INIT_ON_ALLOC_DEFAULT_ON=y
+CONFIG_BUG_ON_DATA_CORRUPTION=y
 
 ##
 ## file: security/apparmor/Kconfig
@@ -7818,8 +7798,7 @@ CONFIG_SECURITY_LANDLOCK=y
 ##
 ## file: security/lockdown/Kconfig
 ##
-#. This is overridden if the [build]signed-code setting is enabled
-# CONFIG_SECURITY_LOCKDOWN_LSM is not set
+CONFIG_SECURITY_LOCKDOWN_LSM=y
 ## choice: Kernel default lockdown mode
 CONFIG_LOCK_DOWN_KERNEL_FORCE_NONE=y
 ## end choice
@@ -7830,10 +7809,8 @@ CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y
 ##
 CONFIG_SECURITY_SELINUX=y
 # CONFIG_SECURITY_SELINUX_BOOTPARAM is not set
-# CONFIG_SECURITY_SELINUX_DISABLE is not set
 CONFIG_SECURITY_SELINUX_DEVELOP=y
 CONFIG_SECURITY_SELINUX_AVC_STATS=y
-CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE=0
 
 ##
 ## file: security/smack/Kconfig

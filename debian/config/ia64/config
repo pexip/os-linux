@@ -7,8 +7,6 @@ CONFIG_PERMIT_BSP_REMOVE=y
 CONFIG_NODES_SHIFT=8
 CONFIG_IA64_MCA_RECOVERY=y
 CONFIG_IA64_PALINFO=m
-CONFIG_KEXEC=y
-CONFIG_CRASH_DUMP=y
 CONFIG_MSPEC=m
 
 ##
@@ -136,7 +134,6 @@ CONFIG_DMIID=y
 ## file: drivers/gpu/drm/Kconfig
 ##
 CONFIG_DRM=m
-CONFIG_DRM_RADEON=m
 
 ##
 ## file: drivers/gpu/drm/i2c/Kconfig
@@ -149,6 +146,11 @@ CONFIG_DRM_I2C_SIL164=m
 ##
 CONFIG_DRM_NOUVEAU=m
 # CONFIG_DRM_NOUVEAU_BACKLIGHT is not set
+
+##
+## file: drivers/gpu/drm/radeon/Kconfig
+##
+CONFIG_DRM_RADEON=m
 
 ##
 ## file: drivers/hid/usbhid/Kconfig
@@ -229,11 +231,6 @@ CONFIG_GAMEPORT_NS558=m
 CONFIG_GAMEPORT_L4=m
 CONFIG_GAMEPORT_EMU10K1=m
 CONFIG_GAMEPORT_FM801=m
-
-##
-## file: drivers/input/joystick/Kconfig
-##
-CONFIG_INPUT_JOYSTICK=y
 
 ##
 ## file: drivers/input/keyboard/Kconfig
@@ -321,11 +318,6 @@ CONFIG_ARCNET_RIM_I=m
 CONFIG_ARCNET_COM20020=m
 CONFIG_ARCNET_COM20020_PCI=m
 CONFIG_ARCNET_COM20020_CS=m
-
-##
-## file: drivers/net/ethernet/Kconfig
-##
-CONFIG_FEALNX=m
 
 ##
 ## file: drivers/net/ethernet/3com/Kconfig
@@ -454,12 +446,6 @@ CONFIG_WANXL=m
 CONFIG_FARSYNC=m
 
 ##
-## file: drivers/net/wireless/Kconfig
-##
-CONFIG_PCMCIA_RAYCS=m
-CONFIG_PCMCIA_WL3501=m
-
-##
 ## file: drivers/net/wireless/atmel/Kconfig
 ##
 CONFIG_ATMEL=m
@@ -486,6 +472,12 @@ CONFIG_TMD_HERMES=m
 CONFIG_PCI_HERMES=m
 CONFIG_PCMCIA_HERMES=m
 CONFIG_PCMCIA_SPECTRUM=m
+
+##
+## file: drivers/net/wireless/legacy/Kconfig
+##
+CONFIG_PCMCIA_RAYCS=m
+CONFIG_PCMCIA_WL3501=m
 
 ##
 ## file: drivers/net/wireless/marvell/mwifiex/Kconfig
@@ -591,7 +583,6 @@ CONFIG_SERIAL_8250_RSA=y
 ## file: drivers/usb/Kconfig
 ##
 CONFIG_USB=m
-CONFIG_USB_USS720=m
 
 ##
 ## file: drivers/usb/host/Kconfig
@@ -603,6 +594,11 @@ CONFIG_USB_SL811_HCD=m
 CONFIG_USB_SL811_CS=m
 
 ##
+## file: drivers/usb/misc/Kconfig
+##
+CONFIG_USB_USS720=m
+
+##
 ## file: drivers/video/console/Kconfig
 ##
 CONFIG_VGA_CONSOLE=y
@@ -612,8 +608,6 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
 ## file: drivers/video/fbdev/Kconfig
 ##
 CONFIG_FB=y
-CONFIG_FB_MODE_HELPERS=y
-CONFIG_FB_TILEBLITTING=y
 CONFIG_FB_CIRRUS=m
 CONFIG_FB_PM2=m
 # CONFIG_FB_PM2_FIFO_DISCONNECT is not set
@@ -648,9 +642,21 @@ CONFIG_FB_TRIDENT=m
 # CONFIG_FB_VIRTUAL is not set
 
 ##
+## file: drivers/video/fbdev/core/Kconfig
+##
+CONFIG_FB_MODE_HELPERS=y
+CONFIG_FB_TILEBLITTING=y
+
+##
 ## file: fs/pstore/Kconfig
 ##
 CONFIG_PSTORE=y
+
+##
+## file: kernel/Kconfig.kexec
+##
+CONFIG_KEXEC=y
+CONFIG_CRASH_DUMP=y
 
 ##
 ## file: lib/Kconfig.debug

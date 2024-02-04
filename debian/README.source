@@ -140,7 +140,7 @@ and the filenames can generally be overridden by explicit lists
    - Filename list: [<flavour>_image]configs in <arch>/<fset>/defines
 
 You can check the final list of configuration files by reading
-debian/rules.gen.  Each binary-arch_<arch>_<fset>_<flavour>_real
+debian/rules.gen.  Each binary-arch_<arch>_<fset>_<flavour>_image
 rule passes the list to debian/rules.real as the KCONFIG variable.
 
 These files should be kept in order using the kconfigeditor2
@@ -177,7 +177,6 @@ into the templates:
 	       this is unset, it will default to @class@.
 @desc@         (Potentially) multi-line verbiage that's appended to
                -image descriptions.
-@abiname@      Current abiname, a single digit.
 
 Normally, the arch-specific contents should be controlled by
 adjusting the corresponding defines file.
@@ -224,15 +223,12 @@ Build profiles
 
 Several build profiles are understood and supported:
 
-- stage1: Needed when bootstrapping an architecture.  A stage1 build
-  produces only the linux-libc-dev package and has no host
-  build-dependencies.
 - nodoc: Exclude most documentation
 - noudeb: Exclude installer udeb packages
 - pkg.linux.notools: Exclude userland tool packages (linux-kbuild-<version>,
   linux-perf, etc.)
 - pkg.linux.mintools: Build minimal set of userland tool packages
-  (linux-kbuild-<version>, linux-bootwrapper-<abiname> on powerpc/ppc64)
+  (linux-kbuild-<version>)
 - pkg.linux.nokernel: Exclude kernel image and header packages
 - pkg.linux.nokerneldbg: Exclude kernel debug packages
 - pkg.linux.nokerneldbginfo: Build kernel without debug symbols (also disables
@@ -241,8 +237,8 @@ Several build profiles are understood and supported:
 - cross: Needed when cross-building.
 - nopython: Disable Python bindings.  This currently disables building the
   linux-perf-<version> package, as the perf program embeds Python.
-- pkg.linux.nometa: Exclude most meta-packages.  The linux-compiler-* and
-  linux-headers-*-all* packages can still be built.
+- pkg.linux.nometa: Exclude most meta-packages.  The linux-headers-*-all*
+  packages can still be built.
 - pkg.linux.quick: Perform a limited build that should provide good
   coverage yet be quick enough for use in CI.
 
