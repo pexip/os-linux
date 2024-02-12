@@ -52,6 +52,7 @@ struct ptp_clock {
 	int *vclock_index;
 	struct mutex n_vclocks_mux; /* protect concurrent n_vclocks access */
 	bool is_virtual_clock;
+	bool has_cycles;
 };
 
 #define info_to_vclock(d) container_of((d), struct ptp_vclock, info)
@@ -62,9 +63,10 @@ struct ptp_vclock {
 	struct ptp_clock *pclock;
 	struct ptp_clock_info info;
 	struct ptp_clock *clock;
+	struct hlist_node vclock_hash_node;
 	struct cyclecounter cc;
 	struct timecounter tc;
-	spinlock_t lock;	/* protects tc/cc */
+	struct mutex lock;	/* protects tc/cc */
 };
 
 /*
@@ -74,9 +76,13 @@ struct ptp_vclock {
  * that a writer might concurrently increment the tail does not
  * matter, since the queue remains nonempty nonetheless.
  */
-static inline int queue_cnt(struct timestamp_event_queue *q)
+static inline int queue_cnt(const struct timestamp_event_queue *q)
 {
-	int cnt = q->tail - q->head;
+	/*
+	 * Paired with WRITE_ONCE() in enqueue_external_timestamp(),
+	 * ptp_read(), extts_fifo_show().
+	 */
+	int cnt = READ_ONCE(q->tail) - READ_ONCE(q->head);
 	return cnt < 0 ? PTP_MAX_TIMESTAMPS + cnt : cnt;
 }
 
@@ -94,6 +100,15 @@ static inline bool ptp_vclock_in_use(struct ptp_clock *ptp)
 	mutex_unlock(&ptp->n_vclocks_mux);
 
 	return in_use;
+}
+
+/* Check if ptp clock shall be free running */
+static inline bool ptp_clock_freerun(struct ptp_clock *ptp)
+{
+	if (ptp->has_cycles)
+		return false;
+
+	return ptp_vclock_in_use(ptp);
 }
 
 extern struct class *ptp_class;

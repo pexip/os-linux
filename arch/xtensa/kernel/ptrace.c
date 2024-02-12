@@ -26,7 +26,6 @@
 #include <linux/security.h>
 #include <linux/signal.h>
 #include <linux/smp.h>
-#include <linux/tracehook.h>
 #include <linux/uaccess.h>
 
 #define CREATE_TRACE_POINTS
@@ -172,8 +171,7 @@ static int tie_set(struct task_struct *target,
 
 #if XTENSA_HAVE_COPROCESSORS
 	/* Flush all coprocessors before we overwrite them. */
-	coprocessor_flush_all(ti);
-	coprocessor_release_all(ti);
+	coprocessor_flush_release_all(ti);
 	ti->xtregs_cp.cp0 = newregs->cp0;
 	ti->xtregs_cp.cp1 = newregs->cp1;
 	ti->xtregs_cp.cp2 = newregs->cp2;
@@ -543,14 +541,13 @@ long arch_ptrace(struct task_struct *child, long request,
 	return ret;
 }
 
-void do_syscall_trace_leave(struct pt_regs *regs);
 int do_syscall_trace_enter(struct pt_regs *regs)
 {
 	if (regs->syscall == NO_SYSCALL)
 		regs->areg[2] = -ENOSYS;
 
 	if (test_thread_flag(TIF_SYSCALL_TRACE) &&
-	    tracehook_report_syscall_entry(regs)) {
+	    ptrace_report_syscall_entry(regs)) {
 		regs->areg[2] = -ENOSYS;
 		regs->syscall = NO_SYSCALL;
 		return 0;
@@ -583,5 +580,5 @@ void do_syscall_trace_leave(struct pt_regs *regs)
 	step = test_thread_flag(TIF_SINGLESTEP);
 
 	if (step || test_thread_flag(TIF_SYSCALL_TRACE))
-		tracehook_report_syscall_exit(regs, step);
+		ptrace_report_syscall_exit(regs, step);
 }

@@ -29,23 +29,23 @@ SECTIONS
 	HEAD_TEXT_SECTION
 	INIT_TEXT_SECTION(PAGE_SIZE)
 	/* we have to discard exit text and such at runtime, not link time */
+	__exittext_begin = .;
 	.exit.text :
 	{
 		EXIT_TEXT
 	}
+	__exittext_end = .;
 
 	.text : {
 		_text = .;
 		_stext = .;
 		TEXT_TEXT
 		SCHED_TEXT
-		CPUIDLE_TEXT
 		LOCK_TEXT
 		KPROBES_TEXT
 		ENTRY_TEXT
 		IRQENTRY_TEXT
 		SOFTIRQENTRY_TEXT
-		*(.fixup)
 		_etext = .;
 	}
 	RO_DATA(L1_CACHE_BYTES)
@@ -64,8 +64,11 @@ SECTIONS
 /*
  * From this point, stuff is considered writable and will be copied to RAM
  */
-	__data_loc = ALIGN(16);		/* location in file */
-	. = LOAD_OFFSET + XIP_OFFSET;	/* location in memory */
+	__data_loc = ALIGN(PAGE_SIZE);		/* location in file */
+	. = KERNEL_LINK_ADDR + XIP_OFFSET;	/* location in memory */
+
+#undef LOAD_OFFSET
+#define LOAD_OFFSET (KERNEL_LINK_ADDR + XIP_OFFSET - (__data_loc & XIP_OFFSET_MASK))
 
 	_sdata = .;			/* Start of data section */
 	_data = .;
@@ -96,14 +99,7 @@ SECTIONS
 		KEEP(*(__soc_builtin_dtb_table))
 		__soc_builtin_dtb_table_end = .;
 	}
-	PERCPU_SECTION(L1_CACHE_BYTES)
 
-	. = ALIGN(8);
-	.alternative : {
-		__alt_start = .;
-		*(.alternative)
-		__alt_end = .;
-	}
 	__init_end = .;
 
 	. = ALIGN(16);
@@ -121,6 +117,8 @@ SECTIONS
 	}
 
 	BSS_SECTION(PAGE_SIZE, PAGE_SIZE, 0)
+
+	PERCPU_SECTION(L1_CACHE_BYTES)
 
 	.rel.dyn : AT(ADDR(.rel.dyn) - LOAD_OFFSET) {
 		*(.rel.dyn*)

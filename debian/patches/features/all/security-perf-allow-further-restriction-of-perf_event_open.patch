@@ -1,7 +1,7 @@
 From: Ben Hutchings <ben@decadent.org.uk>
 Date: Mon, 11 Jan 2016 15:23:55 +0000
 Subject: security,perf: Allow further restriction of perf_event_open
-Forwarded: https://lkml.org/lkml/2016/1/11/587
+Forwarded: https://lore.kernel.org/all/20160111152355.GS28542@decadent.org.uk/
 
 When kernel.perf_event_open is set to 3 (or greater), disallow all
 access to performance events by users without CAP_SYS_ADMIN.
@@ -22,7 +22,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 
 --- a/include/linux/perf_event.h
 +++ b/include/linux/perf_event.h
-@@ -1320,6 +1320,11 @@
+@@ -1387,6 +1387,11 @@ int perf_cpu_time_max_percent_handler(st
  int perf_event_max_stack_handler(struct ctl_table *table, int write,
  		void *buffer, size_t *lenp, loff_t *ppos);
  
@@ -36,7 +36,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
-@@ -415,8 +415,13 @@
+@@ -415,8 +415,13 @@ static struct kmem_cache *perf_event_cac
   *   0 - disallow raw tracepoint access for unpriv
   *   1 - disallow cpu events for unpriv
   *   2 - disallow kernel profiling for unpriv
@@ -50,19 +50,19 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  /* Minimum for 512 kiB + 1 user control page */
  int sysctl_perf_event_mlock __read_mostly = 512 + (PAGE_SIZE / 1024); /* 'free' kiB per user */
-@@ -12219,6 +12224,9 @@
- 	if (flags & ~PERF_FLAG_ALL)
- 		return -EINVAL;
+@@ -12325,6 +12330,9 @@ SYSCALL_DEFINE5(perf_event_open,
+ 	if (err)
+ 		return err;
  
 +	if (perf_paranoid_any() && !capable(CAP_SYS_ADMIN))
 +		return -EACCES;
 +
- 	err = perf_copy_attr(attr_uptr, &attr);
+ 	/* Do we allow access to perf_event_open(2) ? */
+ 	err = security_perf_event_open(&attr, PERF_SECURITY_OPEN);
  	if (err)
- 		return err;
 --- a/security/Kconfig
 +++ b/security/Kconfig
-@@ -19,6 +19,15 @@
+@@ -19,6 +19,15 @@ config SECURITY_DMESG_RESTRICT
  
  	  If you are unsure how to answer this question, answer N.
  

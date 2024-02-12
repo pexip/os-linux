@@ -122,7 +122,9 @@
 struct exar8250;
 
 struct exar8250_platform {
-	int (*rs485_config)(struct uart_port *, struct serial_rs485 *);
+	int (*rs485_config)(struct uart_port *port, struct ktermios *termios,
+			    struct serial_rs485 *rs485);
+	const struct serial_rs485 *rs485_supported;
 	int (*register_gpio)(struct pci_dev *, struct uart_8250_port *);
 	void (*unregister_gpio)(struct uart_8250_port *);
 };
@@ -196,19 +198,23 @@ static int xr17v35x_startup(struct uart_port *port)
 	/*
 	 * Make sure all interrups are masked until initialization is
 	 * complete and the FIFOs are cleared
+	 *
+	 * Synchronize UART_IER access against the console.
 	 */
+	spin_lock_irq(&port->lock);
 	serial_port_out(port, UART_IER, 0);
+	spin_unlock_irq(&port->lock);
 
 	return serial8250_do_startup(port);
 }
 
 static void exar_shutdown(struct uart_port *port)
 {
-	unsigned char lsr;
 	bool tx_complete = false;
 	struct uart_8250_port *up = up_to_u8250p(port);
 	struct circ_buf *xmit = &port->state->xmit;
 	int i = 0;
+	u16 lsr;
 
 	do {
 		lsr = serial_in(up, UART_LSR);
@@ -418,7 +424,7 @@ static void xr17v35x_unregister_gpio(struct uart_8250_port *port)
 	port->port.private_data = NULL;
 }
 
-static int generic_rs485_config(struct uart_port *port,
+static int generic_rs485_config(struct uart_port *port, struct ktermios *termios,
 				struct serial_rs485 *rs485)
 {
 	bool is_rs485 = !!(rs485->flags & SER_RS485_ENABLED);
@@ -436,18 +442,21 @@ static int generic_rs485_config(struct uart_port *port,
 	if (is_rs485)
 		writeb(UART_EXAR_RS485_DLY(4), p + UART_MSR);
 
-	port->rs485 = *rs485;
-
 	return 0;
 }
+
+static const struct serial_rs485 generic_rs485_supported = {
+	.flags = SER_RS485_ENABLED | SER_RS485_RTS_ON_SEND,
+};
 
 static const struct exar8250_platform exar8250_default_platform = {
 	.register_gpio = xr17v35x_register_gpio,
 	.unregister_gpio = xr17v35x_unregister_gpio,
 	.rs485_config = generic_rs485_config,
+	.rs485_supported = &generic_rs485_supported,
 };
 
-static int iot2040_rs485_config(struct uart_port *port,
+static int iot2040_rs485_config(struct uart_port *port, struct ktermios *termios,
 				struct serial_rs485 *rs485)
 {
 	bool is_rs485 = !!(rs485->flags & SER_RS485_ENABLED);
@@ -477,8 +486,13 @@ static int iot2040_rs485_config(struct uart_port *port,
 	value |= mode;
 	writeb(value, p + UART_EXAR_MPIOLVL_7_0);
 
-	return generic_rs485_config(port, rs485);
+	return generic_rs485_config(port, termios, rs485);
 }
+
+static const struct serial_rs485 iot2040_rs485_supported = {
+	.flags = SER_RS485_ENABLED | SER_RS485_RTS_ON_SEND |
+		 SER_RS485_RX_DURING_TX | SER_RS485_TERMINATE_BUS,
+};
 
 static const struct property_entry iot2040_gpio_properties[] = {
 	PROPERTY_ENTRY_U32("exar,first-pin", 10),
@@ -508,6 +522,7 @@ static int iot2040_register_gpio(struct pci_dev *pcidev,
 
 static const struct exar8250_platform iot2040_platform = {
 	.rs485_config = iot2040_rs485_config,
+	.rs485_supported = &iot2040_rs485_supported,
 	.register_gpio = iot2040_register_gpio,
 	.unregister_gpio = xr17v35x_unregister_gpio,
 };
@@ -550,6 +565,7 @@ pci_xr17v35x_setup(struct exar8250 *priv, struct pci_dev *pcidev,
 
 	port->port.uartclk = baud * 16;
 	port->port.rs485_config = platform->rs485_config;
+	port->port.rs485_supported = *(platform->rs485_supported);
 
 	/*
 	 * Setup the UART clock for the devices on expansion slot to

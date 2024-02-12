@@ -183,7 +183,7 @@ static inline int splice_branch(struct inode *inode,
 	*where->p = where->key;
 	write_unlock(&pointers_lock);
 
-	inode->i_ctime = current_time(inode);
+	inode_set_ctime_current(inode);
 
 	/* had we spliced it onto indirect block? */
 	if (where->bh)
@@ -423,7 +423,7 @@ do_indirects:
 		}
 		n++;
 	}
-	inode->i_mtime = inode->i_ctime = current_time(inode);
+	inode->i_mtime = inode_set_ctime_current(inode);
 	if (IS_SYNC(inode))
 		sysv_sync_inode (inode);
 	else
@@ -445,11 +445,12 @@ static unsigned sysv_nblocks(struct super_block *s, loff_t size)
 	return res;
 }
 
-int sysv_getattr(struct user_namespace *mnt_userns, const struct path *path,
+int sysv_getattr(struct mnt_idmap *idmap, const struct path *path,
 		 struct kstat *stat, u32 request_mask, unsigned int flags)
 {
 	struct super_block *s = path->dentry->d_sb;
-	generic_fillattr(&init_user_ns, d_inode(path->dentry), stat);
+	generic_fillattr(&nop_mnt_idmap, request_mask, d_inode(path->dentry),
+			 stat);
 	stat->blocks = (s->s_blocksize / 512) * sysv_nblocks(s, stat->size);
 	stat->blksize = s->s_blocksize;
 	return 0;
@@ -460,9 +461,9 @@ static int sysv_writepage(struct page *page, struct writeback_control *wbc)
 	return block_write_full_page(page,get_block,wbc);
 }
 
-static int sysv_readpage(struct file *file, struct page *page)
+static int sysv_read_folio(struct file *file, struct folio *folio)
 {
-	return block_read_full_page(page,get_block);
+	return block_read_full_folio(folio, get_block);
 }
 
 int sysv_prepare_chunk(struct page *page, loff_t pos, unsigned len)
@@ -481,12 +482,12 @@ static void sysv_write_failed(struct address_space *mapping, loff_t to)
 }
 
 static int sysv_write_begin(struct file *file, struct address_space *mapping,
-			loff_t pos, unsigned len, unsigned flags,
+			loff_t pos, unsigned len,
 			struct page **pagep, void **fsdata)
 {
 	int ret;
 
-	ret = block_write_begin(mapping, pos, len, flags, pagep, get_block);
+	ret = block_write_begin(mapping, pos, len, pagep, get_block);
 	if (unlikely(ret))
 		sysv_write_failed(mapping, pos + len);
 
@@ -499,8 +500,9 @@ static sector_t sysv_bmap(struct address_space *mapping, sector_t block)
 }
 
 const struct address_space_operations sysv_aops = {
-	.set_page_dirty = __set_page_dirty_buffers,
-	.readpage = sysv_readpage,
+	.dirty_folio = block_dirty_folio,
+	.invalidate_folio = block_invalidate_folio,
+	.read_folio = sysv_read_folio,
 	.writepage = sysv_writepage,
 	.write_begin = sysv_write_begin,
 	.write_end = generic_write_end,

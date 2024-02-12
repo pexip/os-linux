@@ -656,7 +656,7 @@ out_unlock:
 	return status;
 }
 
-static void f81534_break_ctl(struct tty_struct *tty, int break_state)
+static int f81534_break_ctl(struct tty_struct *tty, int break_state)
 {
 	struct usb_serial_port *port = tty->driver_data;
 	struct f81534_port_private *port_priv = usb_get_serial_port_data(port);
@@ -675,6 +675,8 @@ static void f81534_break_ctl(struct tty_struct *tty, int break_state)
 		dev_err(&port->dev, "set break failed: %d\n", status);
 
 	mutex_unlock(&port_priv->lcr_mutex);
+
+	return status;
 }
 
 static int f81534_update_mctrl(struct usb_serial_port *port, unsigned int set,
@@ -946,8 +948,8 @@ static int f81534_calc_num_ports(struct usb_serial *serial,
 }
 
 static void f81534_set_termios(struct tty_struct *tty,
-				struct usb_serial_port *port,
-				struct ktermios *old_termios)
+			       struct usb_serial_port *port,
+			       const struct ktermios *old_termios)
 {
 	u8 new_lcr = 0;
 	int status;
@@ -972,21 +974,7 @@ static void f81534_set_termios(struct tty_struct *tty,
 	if (C_CSTOPB(tty))
 		new_lcr |= UART_LCR_STOP;
 
-	switch (C_CSIZE(tty)) {
-	case CS5:
-		new_lcr |= UART_LCR_WLEN5;
-		break;
-	case CS6:
-		new_lcr |= UART_LCR_WLEN6;
-		break;
-	case CS7:
-		new_lcr |= UART_LCR_WLEN7;
-		break;
-	default:
-	case CS8:
-		new_lcr |= UART_LCR_WLEN8;
-		break;
-	}
+	new_lcr |= UART_LCR_WLEN(tty_get_char_size(tty->termios.c_cflag));
 
 	baud = tty_get_baud_rate(tty);
 	if (!baud)

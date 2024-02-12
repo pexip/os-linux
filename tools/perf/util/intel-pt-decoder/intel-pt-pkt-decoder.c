@@ -16,7 +16,7 @@
 
 #define BIT63		((uint64_t)1 << 63)
 
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define le16_to_cpu bswap_16
 #define le32_to_cpu bswap_32
 #define le64_to_cpu bswap_64
@@ -200,8 +200,7 @@ static int intel_pt_get_mnt(const unsigned char *buf, size_t len,
 		return INTEL_PT_NEED_MORE_BYTES;
 	packet->type = INTEL_PT_MNT;
 	memcpy_le64(&packet->payload, buf + 3, 8);
-	return 11
-;
+	return 11;
 }
 
 static int intel_pt_get_3byte(const unsigned char *buf, size_t len,
@@ -505,6 +504,7 @@ static int intel_pt_get_mode(const unsigned char *buf, size_t len,
 	switch (buf[1] >> 5) {
 	case 0:
 		packet->type = INTEL_PT_MODE_EXEC;
+		packet->count = buf[1];
 		switch (buf[1] & 3) {
 		case 0:
 			packet->payload = 16;
@@ -730,7 +730,7 @@ int intel_pt_pkt_desc(const struct intel_pt_pkt *packet, char *buf,
 	case INTEL_PT_FUP:
 		if (!(packet->count))
 			return snprintf(buf, buf_len, "%s no ip", name);
-		__fallthrough;
+		fallthrough;
 	case INTEL_PT_CYC:
 	case INTEL_PT_VMCS:
 	case INTEL_PT_MTC:
@@ -742,7 +742,8 @@ int intel_pt_pkt_desc(const struct intel_pt_pkt *packet, char *buf,
 		return snprintf(buf, buf_len, "%s CTC 0x%x FC 0x%x", name,
 				(unsigned)payload, packet->count);
 	case INTEL_PT_MODE_EXEC:
-		return snprintf(buf, buf_len, "%s %lld", name, payload);
+		return snprintf(buf, buf_len, "%s IF:%d %lld",
+				name, !!(packet->count & 4), payload);
 	case INTEL_PT_MODE_TSX:
 		return snprintf(buf, buf_len, "%s TXAbort:%u InTX:%u",
 				name, (unsigned)(payload >> 1) & 1,

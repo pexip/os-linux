@@ -578,7 +578,7 @@ static void return_abnormal_state(struct st_hba *hba, int status)
 		if (ccb->cmd) {
 			scsi_dma_unmap(ccb->cmd);
 			ccb->cmd->result = status << 16;
-			ccb->cmd->scsi_done(ccb->cmd);
+			scsi_done(ccb->cmd);
 			ccb->cmd = NULL;
 		}
 	}
@@ -594,9 +594,9 @@ stex_slave_config(struct scsi_device *sdev)
 	return 0;
 }
 
-static int
-stex_queuecommand_lck(struct scsi_cmnd *cmd, void (*done)(struct scsi_cmnd *))
+static int stex_queuecommand_lck(struct scsi_cmnd *cmd)
 {
+	void (*done)(struct scsi_cmnd *) = scsi_done;
 	struct st_hba *hba;
 	struct Scsi_Host *host;
 	unsigned int id, lun;
@@ -693,8 +693,6 @@ stex_queuecommand_lck(struct scsi_cmnd *cmd, void (*done)(struct scsi_cmnd *))
 		break;
 	}
 
-	cmd->scsi_done = done;
-
 	tag = scsi_cmd_to_rq(cmd)->tag;
 
 	if (unlikely(tag >= host->can_queue))
@@ -769,7 +767,7 @@ static void stex_scsi_done(struct st_ccb *ccb)
 	}
 
 	cmd->result = result;
-	cmd->scsi_done(cmd);
+	scsi_done(cmd);
 }
 
 static void stex_copy_data(struct st_ccb *ccb,
@@ -1478,7 +1476,7 @@ static int stex_biosparam(struct scsi_device *sdev,
 	return 0;
 }
 
-static struct scsi_host_template driver_template = {
+static const struct scsi_host_template driver_template = {
 	.module				= THIS_MODULE,
 	.name				= DRV_NAME,
 	.proc_name			= DRV_NAME,

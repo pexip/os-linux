@@ -7,6 +7,7 @@ hibmc-drm
 
 # For panel/backlight on some chromeos devices
 panel-simple
+panel-edp
 pwm_bl
 pwm-cros-ec
 
@@ -18,3 +19,22 @@ sun8i-mixer
 
 # For panel/backlight on Pinebook Pro
 pwm-rockchip
+
+# For HDMI on some rockchip platforms (e.g. rock64-rk3328)
+nvmem-rockchip-efuse
+phy-rockchip-inno-hdmi
+
+# For panel/backlight on MNT Reform 2
+pwm-imx27
+nwl-dsi
+ti-sn65dsi86
+imx-dcss
+mxsfb
+mux-mmio
+imx8mq-interconnect
+
+# For panel/backlight on Thinkpad X13s
+msm
+gpu-sched
+dispcc-sc8280xp
+gpucc-sc8280xp

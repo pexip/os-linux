@@ -6,17 +6,17 @@
 CONFIG_ARCH_ALPINE=y
 # CONFIG_ARCH_BCM2835 is not set
 # CONFIG_ARCH_BCM_IPROC is not set
+# CONFIG_ARCH_BRCMSTB is not set
 # CONFIG_ARCH_BERLIN is not set
 # CONFIG_ARCH_BITMAIN is not set
-# CONFIG_ARCH_BRCMSTB is not set
 # CONFIG_ARCH_EXYNOS is not set
 # CONFIG_ARCH_K3 is not set
-# CONFIG_ARCH_LAYERSCAPE is not set
 # CONFIG_ARCH_LG1K is not set
 CONFIG_ARCH_HISI=y
 # CONFIG_ARCH_MEDIATEK is not set
 # CONFIG_ARCH_MESON is not set
 # CONFIG_ARCH_MVEBU is not set
+# CONFIG_ARCH_LAYERSCAPE is not set
 # CONFIG_ARCH_MXC is not set
 CONFIG_ARCH_QCOM=y
 # CONFIG_ARCH_REALTEK is not set
@@ -86,9 +86,20 @@ CONFIG_VEXPRESS_CONFIG=y
 CONFIG_ACPI_CPPC_CPUFREQ=m
 
 ##
+## file: drivers/firmware/google/Kconfig
+##
+CONFIG_GOOGLE_COREBOOT_TABLE=m
+CONFIG_GOOGLE_FRAMEBUFFER_COREBOOT=m
+
+##
 ## file: drivers/i2c/Kconfig
 ##
 CONFIG_ACPI_I2C_OPREGION=y
+
+##
+## file: drivers/input/keyboard/Kconfig
+##
+# CONFIG_KEYBOARD_GPIO_POLLED is not set
 
 ##
 ## file: drivers/power/reset/Kconfig

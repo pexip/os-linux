@@ -324,7 +324,8 @@ static int nft_extension_dump_info(struct sk_buff *skb, int attr,
 	return 0;
 }
 
-static int nft_target_dump(struct sk_buff *skb, const struct nft_expr *expr)
+static int nft_target_dump(struct sk_buff *skb,
+			   const struct nft_expr *expr, bool reset)
 {
 	const struct xt_target *target = expr->ops->data;
 	void *info = nft_expr_priv(expr);
@@ -348,6 +349,12 @@ static int nft_target_validate(const struct nft_ctx *ctx,
 	struct xt_target *target = expr->ops->data;
 	unsigned int hook_mask = 0;
 	int ret;
+
+	if (ctx->family != NFPROTO_IPV4 &&
+	    ctx->family != NFPROTO_IPV6 &&
+	    ctx->family != NFPROTO_BRIDGE &&
+	    ctx->family != NFPROTO_ARP)
+		return -EOPNOTSUPP;
 
 	if (nft_is_base_chain(ctx->chain)) {
 		const struct nft_base_chain *basechain =
@@ -572,12 +579,14 @@ nla_put_failure:
 	return -1;
 }
 
-static int nft_match_dump(struct sk_buff *skb, const struct nft_expr *expr)
+static int nft_match_dump(struct sk_buff *skb,
+			  const struct nft_expr *expr, bool reset)
 {
 	return __nft_match_dump(skb, expr, nft_expr_priv(expr));
 }
 
-static int nft_match_large_dump(struct sk_buff *skb, const struct nft_expr *e)
+static int nft_match_large_dump(struct sk_buff *skb,
+				const struct nft_expr *e, bool reset)
 {
 	struct nft_xt_match_priv *priv = nft_expr_priv(e);
 
@@ -591,6 +600,12 @@ static int nft_match_validate(const struct nft_ctx *ctx,
 	struct xt_match *match = expr->ops->data;
 	unsigned int hook_mask = 0;
 	int ret;
+
+	if (ctx->family != NFPROTO_IPV4 &&
+	    ctx->family != NFPROTO_IPV6 &&
+	    ctx->family != NFPROTO_BRIDGE &&
+	    ctx->family != NFPROTO_ARP)
+		return -EOPNOTSUPP;
 
 	if (nft_is_base_chain(ctx->chain)) {
 		const struct nft_base_chain *basechain =
@@ -731,6 +746,14 @@ static const struct nfnetlink_subsystem nfnl_compat_subsys = {
 
 static struct nft_expr_type nft_match_type;
 
+static bool nft_match_reduce(struct nft_regs_track *track,
+			     const struct nft_expr *expr)
+{
+	const struct xt_match *match = expr->ops->data;
+
+	return strcmp(match->name, "comment") == 0;
+}
+
 static const struct nft_expr_ops *
 nft_match_select_ops(const struct nft_ctx *ctx,
 		     const struct nlattr * const tb[])
@@ -773,6 +796,7 @@ nft_match_select_ops(const struct nft_ctx *ctx,
 	ops->dump = nft_match_dump;
 	ops->validate = nft_match_validate;
 	ops->data = match;
+	ops->reduce = nft_match_reduce;
 
 	matchsize = NFT_EXPR_SIZE(XT_ALIGN(match->matchsize));
 	if (matchsize > NFT_MATCH_LARGE_THRESH) {
@@ -862,6 +886,7 @@ nft_target_select_ops(const struct nft_ctx *ctx,
 	ops->dump = nft_target_dump;
 	ops->validate = nft_target_validate;
 	ops->data = target;
+	ops->reduce = NFT_REDUCE_READONLY;
 
 	if (family == NFPROTO_BRIDGE)
 		ops->eval = nft_target_eval_bridge;

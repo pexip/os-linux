@@ -13,6 +13,7 @@
 
 #include <linux/completion.h>
 #include <linux/device.h>
+#include <linux/ethtool.h>
 #include <linux/gfp.h>
 #include <linux/if.h>
 #include <linux/kernel.h>
@@ -30,66 +31,66 @@
 #include "kvaser_usb.h"
 
 /* Kvaser USB vendor id. */
-#define KVASER_VENDOR_ID			0x0bfd
+#define KVASER_VENDOR_ID 0x0bfd
 
 /* Kvaser Leaf USB devices product ids */
-#define USB_LEAF_DEVEL_PRODUCT_ID		10
-#define USB_LEAF_LITE_PRODUCT_ID		11
-#define USB_LEAF_PRO_PRODUCT_ID			12
-#define USB_LEAF_SPRO_PRODUCT_ID		14
-#define USB_LEAF_PRO_LS_PRODUCT_ID		15
-#define USB_LEAF_PRO_SWC_PRODUCT_ID		16
-#define USB_LEAF_PRO_LIN_PRODUCT_ID		17
-#define USB_LEAF_SPRO_LS_PRODUCT_ID		18
-#define USB_LEAF_SPRO_SWC_PRODUCT_ID		19
-#define USB_MEMO2_DEVEL_PRODUCT_ID		22
-#define USB_MEMO2_HSHS_PRODUCT_ID		23
-#define USB_UPRO_HSHS_PRODUCT_ID		24
-#define USB_LEAF_LITE_GI_PRODUCT_ID		25
-#define USB_LEAF_PRO_OBDII_PRODUCT_ID		26
-#define USB_MEMO2_HSLS_PRODUCT_ID		27
-#define USB_LEAF_LITE_CH_PRODUCT_ID		28
-#define USB_BLACKBIRD_SPRO_PRODUCT_ID		29
-#define USB_OEM_MERCURY_PRODUCT_ID		34
-#define USB_OEM_LEAF_PRODUCT_ID			35
-#define USB_CAN_R_PRODUCT_ID			39
-#define USB_LEAF_LITE_V2_PRODUCT_ID		288
-#define USB_MINI_PCIE_HS_PRODUCT_ID		289
-#define USB_LEAF_LIGHT_HS_V2_OEM_PRODUCT_ID	290
-#define USB_USBCAN_LIGHT_2HS_PRODUCT_ID		291
-#define USB_MINI_PCIE_2HS_PRODUCT_ID		292
-#define USB_USBCAN_R_V2_PRODUCT_ID		294
-#define USB_LEAF_LIGHT_R_V2_PRODUCT_ID		295
-#define USB_LEAF_LIGHT_HS_V2_OEM2_PRODUCT_ID	296
+#define USB_LEAF_DEVEL_PRODUCT_ID 0x000a
+#define USB_LEAF_LITE_PRODUCT_ID 0x000b
+#define USB_LEAF_PRO_PRODUCT_ID 0x000c
+#define USB_LEAF_SPRO_PRODUCT_ID 0x000e
+#define USB_LEAF_PRO_LS_PRODUCT_ID 0x000f
+#define USB_LEAF_PRO_SWC_PRODUCT_ID 0x0010
+#define USB_LEAF_PRO_LIN_PRODUCT_ID 0x0011
+#define USB_LEAF_SPRO_LS_PRODUCT_ID 0x0012
+#define USB_LEAF_SPRO_SWC_PRODUCT_ID 0x0013
+#define USB_MEMO2_DEVEL_PRODUCT_ID 0x0016
+#define USB_MEMO2_HSHS_PRODUCT_ID 0x0017
+#define USB_UPRO_HSHS_PRODUCT_ID 0x0018
+#define USB_LEAF_LITE_GI_PRODUCT_ID 0x0019
+#define USB_LEAF_PRO_OBDII_PRODUCT_ID 0x001a
+#define USB_MEMO2_HSLS_PRODUCT_ID 0x001b
+#define USB_LEAF_LITE_CH_PRODUCT_ID 0x001c
+#define USB_BLACKBIRD_SPRO_PRODUCT_ID 0x001d
+#define USB_OEM_MERCURY_PRODUCT_ID 0x0022
+#define USB_OEM_LEAF_PRODUCT_ID 0x0023
+#define USB_CAN_R_PRODUCT_ID 0x0027
+#define USB_LEAF_LITE_V2_PRODUCT_ID 0x0120
+#define USB_MINI_PCIE_HS_PRODUCT_ID 0x0121
+#define USB_LEAF_LIGHT_HS_V2_OEM_PRODUCT_ID 0x0122
+#define USB_USBCAN_LIGHT_2HS_PRODUCT_ID 0x0123
+#define USB_MINI_PCIE_2HS_PRODUCT_ID 0x0124
+#define USB_USBCAN_R_V2_PRODUCT_ID 0x0126
+#define USB_LEAF_LIGHT_R_V2_PRODUCT_ID 0x0127
+#define USB_LEAF_LIGHT_HS_V2_OEM2_PRODUCT_ID 0x0128
 
 /* Kvaser USBCan-II devices product ids */
-#define USB_USBCAN_REVB_PRODUCT_ID		2
-#define USB_VCI2_PRODUCT_ID			3
-#define USB_USBCAN2_PRODUCT_ID			4
-#define USB_MEMORATOR_PRODUCT_ID		5
+#define USB_USBCAN_REVB_PRODUCT_ID 0x0002
+#define USB_VCI2_PRODUCT_ID 0x0003
+#define USB_USBCAN2_PRODUCT_ID 0x0004
+#define USB_MEMORATOR_PRODUCT_ID 0x0005
 
 /* Kvaser Minihydra USB devices product ids */
-#define USB_BLACKBIRD_V2_PRODUCT_ID		258
-#define USB_MEMO_PRO_5HS_PRODUCT_ID		260
-#define USB_USBCAN_PRO_5HS_PRODUCT_ID		261
-#define USB_USBCAN_LIGHT_4HS_PRODUCT_ID		262
-#define USB_LEAF_PRO_HS_V2_PRODUCT_ID		263
-#define USB_USBCAN_PRO_2HS_V2_PRODUCT_ID	264
-#define USB_MEMO_2HS_PRODUCT_ID			265
-#define USB_MEMO_PRO_2HS_V2_PRODUCT_ID		266
-#define USB_HYBRID_2CANLIN_PRODUCT_ID		267
-#define USB_ATI_USBCAN_PRO_2HS_V2_PRODUCT_ID	268
-#define USB_ATI_MEMO_PRO_2HS_V2_PRODUCT_ID	269
-#define USB_HYBRID_PRO_2CANLIN_PRODUCT_ID	270
-#define USB_U100_PRODUCT_ID			273
-#define USB_U100P_PRODUCT_ID			274
-#define USB_U100S_PRODUCT_ID			275
-#define USB_USBCAN_PRO_4HS_PRODUCT_ID		276
-#define USB_HYBRID_CANLIN_PRODUCT_ID		277
-#define USB_HYBRID_PRO_CANLIN_PRODUCT_ID	278
+#define USB_BLACKBIRD_V2_PRODUCT_ID 0x0102
+#define USB_MEMO_PRO_5HS_PRODUCT_ID 0x0104
+#define USB_USBCAN_PRO_5HS_PRODUCT_ID 0x0105
+#define USB_USBCAN_LIGHT_4HS_PRODUCT_ID 0x0106
+#define USB_LEAF_PRO_HS_V2_PRODUCT_ID 0x0107
+#define USB_USBCAN_PRO_2HS_V2_PRODUCT_ID 0x0108
+#define USB_MEMO_2HS_PRODUCT_ID 0x0109
+#define USB_MEMO_PRO_2HS_V2_PRODUCT_ID 0x010a
+#define USB_HYBRID_2CANLIN_PRODUCT_ID 0x010b
+#define USB_ATI_USBCAN_PRO_2HS_V2_PRODUCT_ID 0x010c
+#define USB_ATI_MEMO_PRO_2HS_V2_PRODUCT_ID 0x010d
+#define USB_HYBRID_PRO_2CANLIN_PRODUCT_ID 0x010e
+#define USB_U100_PRODUCT_ID 0x0111
+#define USB_U100P_PRODUCT_ID 0x0112
+#define USB_U100S_PRODUCT_ID 0x0113
+#define USB_USBCAN_PRO_4HS_PRODUCT_ID 0x0114
+#define USB_HYBRID_CANLIN_PRODUCT_ID 0x0115
+#define USB_HYBRID_PRO_CANLIN_PRODUCT_ID 0x0116
 
 static const struct kvaser_usb_driver_info kvaser_usb_driver_info_hydra = {
-	.quirks = 0,
+	.quirks = KVASER_USB_QUIRK_HAS_HARDWARE_TIMESTAMP,
 	.ops = &kvaser_usb_hydra_dev_ops,
 };
 
@@ -240,12 +241,10 @@ MODULE_DEVICE_TABLE(usb, kvaser_usb_table);
 
 int kvaser_usb_send_cmd(const struct kvaser_usb *dev, void *cmd, int len)
 {
-	int actual_len; /* Not used */
-
 	return usb_bulk_msg(dev->udev,
 			    usb_sndbulkpipe(dev->udev,
 					    dev->bulk_out->bEndpointAddress),
-			    cmd, len, &actual_len, KVASER_USB_TIMEOUT);
+			    cmd, len, NULL, KVASER_USB_TIMEOUT);
 }
 
 int kvaser_usb_recv_cmd(const struct kvaser_usb *dev, void *cmd, int len,
@@ -314,8 +313,6 @@ int kvaser_usb_can_rx_over_error(struct net_device *netdev)
 	cf->can_id |= CAN_ERR_CRTL;
 	cf->data[1] = CAN_ERR_CRTL_RX_OVERFLOW;
 
-	stats->rx_packets++;
-	stats->rx_bytes += cf->len;
 	netif_rx(skb);
 
 	return 0;
@@ -539,12 +536,11 @@ static int kvaser_usb_set_bittiming(struct net_device *netdev)
 	struct kvaser_usb *dev = priv->dev;
 	const struct kvaser_usb_dev_ops *ops = dev->driver_info->ops;
 	struct can_bittiming *bt = &priv->can.bittiming;
-
 	struct kvaser_usb_busparams busparams;
 	int tseg1 = bt->prop_seg + bt->phase_seg1;
 	int tseg2 = bt->phase_seg2;
 	int sjw = bt->sjw;
-	int err = -EOPNOTSUPP;
+	int err;
 
 	busparams.bitrate = cpu_to_le32(bt->bitrate);
 	busparams.sjw = (u8)sjw;
@@ -584,7 +580,6 @@ static int kvaser_usb_set_data_bittiming(struct net_device *netdev)
 	struct kvaser_usb *dev = priv->dev;
 	const struct kvaser_usb_dev_ops *ops = dev->driver_info->ops;
 	struct can_bittiming *dbt = &priv->can.data_bittiming;
-
 	struct kvaser_usb_busparams busparams;
 	int tseg1 = dbt->prop_seg + dbt->phase_seg1;
 	int tseg2 = dbt->phase_seg2;
@@ -656,7 +651,7 @@ static netdev_tx_t kvaser_usb_start_xmit(struct sk_buff *skb,
 	unsigned int i;
 	unsigned long flags;
 
-	if (can_dropped_invalid_skb(netdev, skb))
+	if (can_dev_dropped_skb(netdev, skb))
 		return NETDEV_TX_OK;
 
 	urb = usb_alloc_urb(0, GFP_ATOMIC);
@@ -689,8 +684,7 @@ static netdev_tx_t kvaser_usb_start_xmit(struct sk_buff *skb,
 		goto freeurb;
 	}
 
-	buf = ops->dev_frame_to_cmd(priv, skb, &context->dlc, &cmd_len,
-				    context->echo_index);
+	buf = ops->dev_frame_to_cmd(priv, skb, &cmd_len, context->echo_index);
 	if (!buf) {
 		stats->tx_dropped++;
 		dev_kfree_skb(skb);
@@ -753,6 +747,22 @@ static const struct net_device_ops kvaser_usb_netdev_ops = {
 	.ndo_change_mtu = can_change_mtu,
 };
 
+static const struct net_device_ops kvaser_usb_netdev_ops_hwts = {
+	.ndo_open = kvaser_usb_open,
+	.ndo_stop = kvaser_usb_close,
+	.ndo_eth_ioctl = can_eth_ioctl_hwts,
+	.ndo_start_xmit = kvaser_usb_start_xmit,
+	.ndo_change_mtu = can_change_mtu,
+};
+
+static const struct ethtool_ops kvaser_usb_ethtool_ops = {
+	.get_ts_info = ethtool_op_get_ts_info,
+};
+
+static const struct ethtool_ops kvaser_usb_ethtool_ops_hwts = {
+	.get_ts_info = can_ethtool_op_get_ts_info_hwts,
+};
+
 static void kvaser_usb_remove_interfaces(struct kvaser_usb *dev)
 {
 	const struct kvaser_usb_dev_ops *ops = dev->driver_info->ops;
@@ -806,7 +816,7 @@ static int kvaser_usb_init_one(struct kvaser_usb *dev, int channel)
 	init_completion(&priv->stop_comp);
 	init_completion(&priv->flush_comp);
 	init_completion(&priv->get_busparams_comp);
-	priv->can.ctrlmode_supported = 0;
+	priv->can.ctrlmode_supported = CAN_CTRLMODE_CC_LEN8_DLC;
 
 	priv->dev = dev;
 	priv->netdev = netdev;
@@ -836,7 +846,13 @@ static int kvaser_usb_init_one(struct kvaser_usb *dev, int channel)
 	netdev->flags |= IFF_ECHO;
 
 	netdev->netdev_ops = &kvaser_usb_netdev_ops;
-
+	if (driver_info->quirks & KVASER_USB_QUIRK_HAS_HARDWARE_TIMESTAMP) {
+		netdev->netdev_ops = &kvaser_usb_netdev_ops_hwts;
+		netdev->ethtool_ops = &kvaser_usb_ethtool_ops_hwts;
+	} else {
+		netdev->netdev_ops = &kvaser_usb_netdev_ops;
+		netdev->ethtool_ops = &kvaser_usb_ethtool_ops;
+	}
 	SET_NETDEV_DEV(netdev, &dev->intf->dev);
 	netdev->dev_id = channel;
 
@@ -972,7 +988,7 @@ static void kvaser_usb_disconnect(struct usb_interface *intf)
 }
 
 static struct usb_driver kvaser_usb_driver = {
-	.name = "kvaser_usb",
+	.name = KBUILD_MODNAME,
 	.probe = kvaser_usb_probe,
 	.disconnect = kvaser_usb_disconnect,
 	.id_table = kvaser_usb_table,

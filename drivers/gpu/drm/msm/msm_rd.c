@@ -62,6 +62,7 @@ enum rd_sect_type {
 	RD_FRAG_SHADER,
 	RD_BUFFER_CONTENTS,
 	RD_GPU_ID,
+	RD_CHIP_ID,
 };
 
 #define BUF_SZ 512  /* should be power of 2 */
@@ -82,15 +83,10 @@ struct msm_rd_state {
 
 	bool open;
 
-	/* current submit to read out: */
-	struct msm_gem_submit *submit;
-
 	/* fifo access is synchronized on the producer side by
-	 * gpu->lock held by submit code (otherwise we could
-	 * end up w/ cmds logged in different order than they
-	 * were executed).  And read_lock synchronizes the reads
+	 * write_lock.  And read_lock synchronizes the reads
 	 */
-	struct mutex read_lock;
+	struct mutex read_lock, write_lock;
 
 	wait_queue_head_t fifo_event;
 	struct circ_buf fifo;
@@ -179,6 +175,7 @@ static int rd_open(struct inode *inode, struct file *file)
 	struct msm_gpu *gpu = priv->gpu;
 	uint64_t val;
 	uint32_t gpu_id;
+	uint32_t zero = 0;
 	int ret = 0;
 
 	if (!gpu)
@@ -199,11 +196,16 @@ static int rd_open(struct inode *inode, struct file *file)
 
 	/* the parsing tools need to know gpu-id to know which
 	 * register database to load.
+	 *
+	 * Note: These particular params do not require a context
 	 */
-	gpu->funcs->get_param(gpu, MSM_PARAM_GPU_ID, &val);
+	gpu->funcs->get_param(gpu, NULL, MSM_PARAM_GPU_ID, &val, &zero);
 	gpu_id = val;
 
 	rd_write_section(rd, RD_GPU_ID, &gpu_id, sizeof(gpu_id));
+
+	gpu->funcs->get_param(gpu, NULL, MSM_PARAM_CHIP_ID, &val, &zero);
+	rd_write_section(rd, RD_CHIP_ID, &val, sizeof(val));
 
 out:
 	mutex_unlock(&gpu->lock);
@@ -236,6 +238,7 @@ static void rd_cleanup(struct msm_rd_state *rd)
 		return;
 
 	mutex_destroy(&rd->read_lock);
+	mutex_destroy(&rd->write_lock);
 	kfree(rd);
 }
 
@@ -251,6 +254,7 @@ static struct msm_rd_state *rd_init(struct drm_minor *minor, const char *name)
 	rd->fifo.buf = rd->buf;
 
 	mutex_init(&rd->read_lock);
+	mutex_init(&rd->write_lock);
 
 	init_waitqueue_head(&rd->fifo_event);
 
@@ -306,7 +310,7 @@ static void snapshot_buf(struct msm_rd_state *rd,
 		struct msm_gem_submit *submit, int idx,
 		uint64_t iova, uint32_t size, bool full)
 {
-	struct msm_gem_object *obj = submit->bos[idx].obj;
+	struct drm_gem_object *obj = submit->bos[idx].obj;
 	unsigned offset = 0;
 	const char *buf;
 
@@ -314,7 +318,7 @@ static void snapshot_buf(struct msm_rd_state *rd,
 		offset = iova - submit->bos[idx].iova;
 	} else {
 		iova = submit->bos[idx].iova;
-		size = obj->base.size;
+		size = obj->size;
 	}
 
 	/*
@@ -331,19 +335,15 @@ static void snapshot_buf(struct msm_rd_state *rd,
 	if (!(submit->bos[idx].flags & MSM_SUBMIT_BO_READ))
 		return;
 
-	msm_gem_lock(&obj->base);
-	buf = msm_gem_get_vaddr_active(&obj->base);
+	buf = msm_gem_get_vaddr_active(obj);
 	if (IS_ERR(buf))
-		goto out_unlock;
+		return;
 
 	buf += offset;
 
 	rd_write_section(rd, RD_BUFFER_CONTENTS, buf, size);
 
-	msm_gem_put_vaddr_locked(&obj->base);
-
-out_unlock:
-	msm_gem_unlock(&obj->base);
+	msm_gem_put_vaddr_locked(obj);
 }
 
 /* called under gpu->lock */
@@ -357,10 +357,7 @@ void msm_rd_dump_submit(struct msm_rd_state *rd, struct msm_gem_submit *submit,
 	if (!rd->open)
 		return;
 
-	/* writing into fifo is serialized by caller, and
-	 * rd->read_lock is used to serialize the reads
-	 */
-	WARN_ON(!mutex_is_locked(&submit->gpu->lock));
+	mutex_lock(&rd->write_lock);
 
 	if (fmt) {
 		va_list args;
@@ -417,5 +414,7 @@ void msm_rd_dump_submit(struct msm_rd_state *rd, struct msm_gem_submit *submit,
 			break;
 		}
 	}
+
+	mutex_unlock(&rd->write_lock);
 }
 #endif

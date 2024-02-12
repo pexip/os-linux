@@ -23,8 +23,8 @@
 #include <net/tc_act/tc_pedit.h>
 #include <uapi/linux/tc_act/tc_pedit.h>
 #include <net/pkt_cls.h>
+#include <net/tc_wrapper.h>
 
-static unsigned int pedit_net_id;
 static struct tc_action_ops act_pedit_ops;
 
 static const struct nla_policy pedit_policy[TCA_PEDIT_MAX + 1] = {
@@ -34,12 +34,13 @@ static const struct nla_policy pedit_policy[TCA_PEDIT_MAX + 1] = {
 };
 
 static const struct nla_policy pedit_key_ex_policy[TCA_PEDIT_KEY_EX_MAX + 1] = {
-	[TCA_PEDIT_KEY_EX_HTYPE]  = { .type = NLA_U16 },
-	[TCA_PEDIT_KEY_EX_CMD]	  = { .type = NLA_U16 },
+	[TCA_PEDIT_KEY_EX_HTYPE] =
+		NLA_POLICY_MAX(NLA_U16, TCA_PEDIT_HDR_TYPE_MAX),
+	[TCA_PEDIT_KEY_EX_CMD] = NLA_POLICY_MAX(NLA_U16, TCA_PEDIT_CMD_MAX),
 };
 
 static struct tcf_pedit_key_ex *tcf_pedit_keys_ex_parse(struct nlattr *nla,
-							u8 n)
+							u8 n, struct netlink_ext_ack *extack)
 {
 	struct tcf_pedit_key_ex *keys_ex;
 	struct tcf_pedit_key_ex *k;
@@ -60,12 +61,14 @@ static struct tcf_pedit_key_ex *tcf_pedit_keys_ex_parse(struct nlattr *nla,
 		struct nlattr *tb[TCA_PEDIT_KEY_EX_MAX + 1];
 
 		if (!n) {
+			NL_SET_ERR_MSG_MOD(extack, "Can't parse more extended keys than requested");
 			err = -EINVAL;
 			goto err_out;
 		}
 		n--;
 
 		if (nla_type(ka) != TCA_PEDIT_KEY_EX) {
+			NL_SET_ERR_MSG_ATTR(extack, ka, "Unknown attribute, expected extended key");
 			err = -EINVAL;
 			goto err_out;
 		}
@@ -76,8 +79,14 @@ static struct tcf_pedit_key_ex *tcf_pedit_keys_ex_parse(struct nlattr *nla,
 		if (err)
 			goto err_out;
 
-		if (!tb[TCA_PEDIT_KEY_EX_HTYPE] ||
-		    !tb[TCA_PEDIT_KEY_EX_CMD]) {
+		if (NL_REQ_ATTR_CHECK(extack, nla, tb, TCA_PEDIT_KEY_EX_HTYPE)) {
+			NL_SET_ERR_MSG(extack, "Missing required attribute");
+			err = -EINVAL;
+			goto err_out;
+		}
+
+		if (NL_REQ_ATTR_CHECK(extack, nla, tb, TCA_PEDIT_KEY_EX_CMD)) {
+			NL_SET_ERR_MSG(extack, "Missing required attribute");
 			err = -EINVAL;
 			goto err_out;
 		}
@@ -85,16 +94,11 @@ static struct tcf_pedit_key_ex *tcf_pedit_keys_ex_parse(struct nlattr *nla,
 		k->htype = nla_get_u16(tb[TCA_PEDIT_KEY_EX_HTYPE]);
 		k->cmd = nla_get_u16(tb[TCA_PEDIT_KEY_EX_CMD]);
 
-		if (k->htype > TCA_PEDIT_HDR_TYPE_MAX ||
-		    k->cmd > TCA_PEDIT_CMD_MAX) {
-			err = -EINVAL;
-			goto err_out;
-		}
-
 		k++;
 	}
 
 	if (n) {
+		NL_SET_ERR_MSG_MOD(extack, "Not enough extended keys to parse");
 		err = -EINVAL;
 		goto err_out;
 	}
@@ -154,7 +158,7 @@ static int tcf_pedit_init(struct net *net, struct nlattr *nla,
 			  struct tcf_proto *tp, u32 flags,
 			  struct netlink_ext_ack *extack)
 {
-	struct tc_action_net *tn = net_generic(net, pedit_net_id);
+	struct tc_action_net *tn = net_generic(net, act_pedit_ops.net_id);
 	bool bind = flags & TCA_ACT_FLAGS_BIND;
 	struct tcf_chain *goto_ch = NULL;
 	struct tcf_pedit_parms *oparms, *nparms;
@@ -226,7 +230,7 @@ static int tcf_pedit_init(struct net *net, struct nlattr *nla,
 	}
 
 	nparms->tcfp_keys_ex =
-		tcf_pedit_keys_ex_parse(tb[TCA_PEDIT_KEYS_EX], parm->nkeys);
+		tcf_pedit_keys_ex_parse(tb[TCA_PEDIT_KEYS_EX], parm->nkeys, extack);
 	if (IS_ERR(nparms->tcfp_keys_ex)) {
 		ret = PTR_ERR(nparms->tcfp_keys_ex);
 		goto out_free;
@@ -242,16 +246,22 @@ static int tcf_pedit_init(struct net *net, struct nlattr *nla,
 	nparms->tcfp_flags = parm->flags;
 	nparms->tcfp_nkeys = parm->nkeys;
 
-	nparms->tcfp_keys = kmalloc(ksize, GFP_KERNEL);
+	nparms->tcfp_keys = kmemdup(parm->keys, ksize, GFP_KERNEL);
 	if (!nparms->tcfp_keys) {
 		ret = -ENOMEM;
 		goto put_chain;
 	}
 
-	memcpy(nparms->tcfp_keys, parm->keys, ksize);
-
 	for (i = 0; i < nparms->tcfp_nkeys; ++i) {
+		u32 offmask = nparms->tcfp_keys[i].offmask;
 		u32 cur = nparms->tcfp_keys[i].off;
+
+		/* The AT option can be added to static offsets in the datapath */
+		if (!offmask && cur % 4) {
+			NL_SET_ERR_MSG_MOD(extack, "Offsets must be on 32bit boundaries");
+			ret = -EINVAL;
+			goto out_free_keys;
+		}
 
 		/* sanitize the shift value for any later use */
 		nparms->tcfp_keys[i].shift = min_t(size_t,
@@ -261,7 +271,7 @@ static int tcf_pedit_init(struct net *net, struct nlattr *nla,
 		/* The AT option can read a single byte, we can bound the actual
 		 * value with uchar max.
 		 */
-		cur += (0xff & nparms->tcfp_keys[i].offmask) >> nparms->tcfp_keys[i].shift;
+		cur += (0xff & offmask) >> nparms->tcfp_keys[i].shift;
 
 		/* Each key touches 4 bytes starting from the computed offset */
 		nparms->tcfp_off_max_hint =
@@ -283,6 +293,8 @@ static int tcf_pedit_init(struct net *net, struct nlattr *nla,
 
 	return ret;
 
+out_free_keys:
+	kfree(nparms->tcfp_keys);
 put_chain:
 	if (goto_ch)
 		tcf_chain_put_by_act(goto_ch);
@@ -371,8 +383,9 @@ static int pedit_skb_hdr_offset(struct sk_buff *skb,
 	return ret;
 }
 
-static int tcf_pedit_act(struct sk_buff *skb, const struct tc_action *a,
-			 struct tcf_result *res)
+TC_INDIRECT_SCOPE int tcf_pedit_act(struct sk_buff *skb,
+				    const struct tc_action *a,
+				    struct tcf_result *res)
 {
 	enum pedit_header_type htype = TCA_PEDIT_KEY_EX_HDR_TYPE_NETWORK;
 	enum pedit_cmd cmd = TCA_PEDIT_KEY_EX_CMD_SET;
@@ -422,25 +435,24 @@ static int tcf_pedit_act(struct sk_buff *skb, const struct tc_action *a,
 			u8 *d, _d;
 
 			if (!offset_valid(skb, hoffset + tkey->at)) {
-				pr_info("tc action pedit 'at' offset %d out of bounds\n",
-					hoffset + tkey->at);
+				pr_info_ratelimited("tc action pedit 'at' offset %d out of bounds\n",
+						    hoffset + tkey->at);
 				goto bad;
 			}
 			d = skb_header_pointer(skb, hoffset + tkey->at,
 					       sizeof(_d), &_d);
 			if (!d)
 				goto bad;
-			offset += (*d & tkey->offmask) >> tkey->shift;
-		}
 
-		if (offset % 4) {
-			pr_info("tc action pedit offset must be on 32 bit boundaries\n");
-			goto bad;
+			offset += (*d & tkey->offmask) >> tkey->shift;
+			if (offset % 4) {
+				pr_info_ratelimited("tc action pedit offset must be on 32 bit boundaries\n");
+				goto bad;
+			}
 		}
 
 		if (!offset_valid(skb, hoffset + offset)) {
-			pr_info("tc action pedit offset %d out of bounds\n",
-				hoffset + offset);
+			pr_info_ratelimited("tc action pedit offset %d out of bounds\n", hoffset + offset);
 			goto bad;
 		}
 
@@ -457,8 +469,7 @@ static int tcf_pedit_act(struct sk_buff *skb, const struct tc_action *a,
 			val = (*ptr + tkey->val) & ~tkey->mask;
 			break;
 		default:
-			pr_info("tc action pedit bad command (%d)\n",
-				cmd);
+			pr_info_ratelimited("tc action pedit bad command (%d)\n", cmd);
 			goto bad;
 		}
 
@@ -470,9 +481,7 @@ static int tcf_pedit_act(struct sk_buff *skb, const struct tc_action *a,
 	goto done;
 
 bad:
-	spin_lock(&p->tcf_lock);
-	p->tcf_qstats.overlimits++;
-	spin_unlock(&p->tcf_lock);
+	tcf_action_inc_overlimit_qstats(&p->common);
 done:
 	return p->tcf_action;
 }
@@ -543,21 +552,60 @@ nla_put_failure:
 	return -1;
 }
 
-static int tcf_pedit_walker(struct net *net, struct sk_buff *skb,
-			    struct netlink_callback *cb, int type,
-			    const struct tc_action_ops *ops,
-			    struct netlink_ext_ack *extack)
+static int tcf_pedit_offload_act_setup(struct tc_action *act, void *entry_data,
+				       u32 *index_inc, bool bind,
+				       struct netlink_ext_ack *extack)
 {
-	struct tc_action_net *tn = net_generic(net, pedit_net_id);
+	if (bind) {
+		struct flow_action_entry *entry = entry_data;
+		int k;
 
-	return tcf_generic_walker(tn, skb, cb, type, ops, extack);
-}
+		for (k = 0; k < tcf_pedit_nkeys(act); k++) {
+			switch (tcf_pedit_cmd(act, k)) {
+			case TCA_PEDIT_KEY_EX_CMD_SET:
+				entry->id = FLOW_ACTION_MANGLE;
+				break;
+			case TCA_PEDIT_KEY_EX_CMD_ADD:
+				entry->id = FLOW_ACTION_ADD;
+				break;
+			default:
+				NL_SET_ERR_MSG_MOD(extack, "Unsupported pedit command offload");
+				return -EOPNOTSUPP;
+			}
+			entry->mangle.htype = tcf_pedit_htype(act, k);
+			entry->mangle.mask = tcf_pedit_mask(act, k);
+			entry->mangle.val = tcf_pedit_val(act, k);
+			entry->mangle.offset = tcf_pedit_offset(act, k);
+			entry->hw_stats = tc_act_hw_stats(act->hw_stats);
+			entry++;
+		}
+		*index_inc = k;
+	} else {
+		struct flow_offload_action *fl_action = entry_data;
+		u32 cmd = tcf_pedit_cmd(act, 0);
+		int k;
 
-static int tcf_pedit_search(struct net *net, struct tc_action **a, u32 index)
-{
-	struct tc_action_net *tn = net_generic(net, pedit_net_id);
+		switch (cmd) {
+		case TCA_PEDIT_KEY_EX_CMD_SET:
+			fl_action->id = FLOW_ACTION_MANGLE;
+			break;
+		case TCA_PEDIT_KEY_EX_CMD_ADD:
+			fl_action->id = FLOW_ACTION_ADD;
+			break;
+		default:
+			NL_SET_ERR_MSG_MOD(extack, "Unsupported pedit command offload");
+			return -EOPNOTSUPP;
+		}
 
-	return tcf_idr_search(tn, a, index);
+		for (k = 1; k < tcf_pedit_nkeys(act); k++) {
+			if (cmd != tcf_pedit_cmd(act, k)) {
+				NL_SET_ERR_MSG_MOD(extack, "Unsupported pedit command offload");
+				return -EOPNOTSUPP;
+			}
+		}
+	}
+
+	return 0;
 }
 
 static struct tc_action_ops act_pedit_ops = {
@@ -569,27 +617,26 @@ static struct tc_action_ops act_pedit_ops = {
 	.dump		=	tcf_pedit_dump,
 	.cleanup	=	tcf_pedit_cleanup,
 	.init		=	tcf_pedit_init,
-	.walk		=	tcf_pedit_walker,
-	.lookup		=	tcf_pedit_search,
+	.offload_act_setup =	tcf_pedit_offload_act_setup,
 	.size		=	sizeof(struct tcf_pedit),
 };
 
 static __net_init int pedit_init_net(struct net *net)
 {
-	struct tc_action_net *tn = net_generic(net, pedit_net_id);
+	struct tc_action_net *tn = net_generic(net, act_pedit_ops.net_id);
 
 	return tc_action_net_init(net, tn, &act_pedit_ops);
 }
 
 static void __net_exit pedit_exit_net(struct list_head *net_list)
 {
-	tc_action_net_exit(net_list, pedit_net_id);
+	tc_action_net_exit(net_list, act_pedit_ops.net_id);
 }
 
 static struct pernet_operations pedit_net_ops = {
 	.init = pedit_init_net,
 	.exit_batch = pedit_exit_net,
-	.id   = &pedit_net_id,
+	.id   = &act_pedit_ops.net_id,
 	.size = sizeof(struct tc_action_net),
 };
 

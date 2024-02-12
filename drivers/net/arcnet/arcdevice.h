@@ -186,6 +186,8 @@ do {									\
 #define ARC_IS_5MBIT    1   /* card default speed is 5MBit */
 #define ARC_CAN_10MBIT  2   /* card uses COM20022, supporting 10MBit,
 				 but default is 2.5MBit. */
+#define ARC_HAS_LED     4   /* card has software controlled LEDs */
+#define ARC_HAS_ROTARY  8   /* card has rotary encoder */
 
 /* information needed to define an encapsulation driver */
 struct ArcProto {
@@ -363,6 +365,11 @@ int arcnet_close(struct net_device *dev);
 netdev_tx_t arcnet_send_packet(struct sk_buff *skb,
 			       struct net_device *dev);
 void arcnet_timeout(struct net_device *dev, unsigned int txqueue);
+
+static inline void arcnet_set_addr(struct net_device *dev, u8 addr)
+{
+	dev_addr_set(dev, &addr);
+}
 
 /* I/O equivalents */
 

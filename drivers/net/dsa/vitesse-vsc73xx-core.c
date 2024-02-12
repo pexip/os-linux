@@ -18,7 +18,6 @@
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/of.h>
-#include <linux/of_device.h>
 #include <linux/of_mdio.h>
 #include <linux/bitops.h>
 #include <linux/if_bridge.h>
@@ -1119,12 +1118,11 @@ static int vsc73xx_gpio_probe(struct vsc73xx *vsc)
 
 	vsc->gc.label = devm_kasprintf(vsc->dev, GFP_KERNEL, "VSC%04x",
 				       vsc->chipid);
+	if (!vsc->gc.label)
+		return -ENOMEM;
 	vsc->gc.ngpio = 4;
 	vsc->gc.owner = THIS_MODULE;
 	vsc->gc.parent = vsc->dev;
-#if IS_ENABLED(CONFIG_OF_GPIO)
-	vsc->gc.of_node = vsc->dev->of_node;
-#endif
 	vsc->gc.base = -1;
 	vsc->gc.get = vsc73xx_gpio_get;
 	vsc->gc.set = vsc73xx_gpio_set;
@@ -1216,12 +1214,10 @@ int vsc73xx_probe(struct vsc73xx *vsc)
 }
 EXPORT_SYMBOL(vsc73xx_probe);
 
-int vsc73xx_remove(struct vsc73xx *vsc)
+void vsc73xx_remove(struct vsc73xx *vsc)
 {
 	dsa_unregister_switch(vsc->ds);
 	gpiod_set_value(vsc->reset, 1);
-
-	return 0;
 }
 EXPORT_SYMBOL(vsc73xx_remove);
 

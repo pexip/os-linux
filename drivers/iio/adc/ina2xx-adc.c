@@ -28,7 +28,7 @@
 #include <linux/iio/sysfs.h>
 #include <linux/kthread.h>
 #include <linux/module.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
 #include <linux/regmap.h>
 #include <linux/sched/task.h>
 #include <linux/util_macros.h>
@@ -542,7 +542,7 @@ static ssize_t ina2xx_allow_async_readout_show(struct device *dev,
 {
 	struct ina2xx_chip_info *chip = iio_priv(dev_to_iio_dev(dev));
 
-	return sprintf(buf, "%d\n", chip->allow_async_readout);
+	return sysfs_emit(buf, "%d\n", chip->allow_async_readout);
 }
 
 static ssize_t ina2xx_allow_async_readout_store(struct device *dev,
@@ -553,7 +553,7 @@ static ssize_t ina2xx_allow_async_readout_store(struct device *dev,
 	bool val;
 	int ret;
 
-	ret = strtobool((const char *) buf, &val);
+	ret = kstrtobool(buf, &val);
 	if (ret)
 		return ret;
 
@@ -845,15 +845,13 @@ static int ina2xx_buffer_enable(struct iio_dev *indio_dev)
 	dev_dbg(&indio_dev->dev, "Async readout mode: %d\n",
 		chip->allow_async_readout);
 
-	task = kthread_create(ina2xx_capture_thread, (void *)indio_dev,
-			      "%s:%d-%uus", indio_dev->name,
-			      iio_device_id(indio_dev),
-			      sampling_us);
+	task = kthread_run(ina2xx_capture_thread, (void *)indio_dev,
+			   "%s:%d-%uus", indio_dev->name,
+			   iio_device_id(indio_dev),
+			   sampling_us);
 	if (IS_ERR(task))
 		return PTR_ERR(task);
 
-	get_task_struct(task);
-	wake_up_process(task);
 	chip->task = task;
 
 	return 0;
@@ -865,7 +863,6 @@ static int ina2xx_buffer_disable(struct iio_dev *indio_dev)
 
 	if (chip->task) {
 		kthread_stop(chip->task);
-		put_task_struct(chip->task);
 		chip->task = NULL;
 	}
 
@@ -952,9 +949,9 @@ static int ina2xx_init(struct ina2xx_chip_info *chip, unsigned int config)
 	return ina2xx_set_calibration(chip);
 }
 
-static int ina2xx_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+static int ina2xx_probe(struct i2c_client *client)
 {
+	const struct i2c_device_id *id = i2c_client_get_device_id(client);
 	struct ina2xx_chip_info *chip;
 	struct iio_dev *indio_dev;
 	unsigned int val;
@@ -977,7 +974,7 @@ static int ina2xx_probe(struct i2c_client *client,
 	}
 
 	if (client->dev.of_node)
-		type = (enum ina2xx_ids)of_device_get_match_data(&client->dev);
+		type = (uintptr_t)of_device_get_match_data(&client->dev);
 	else
 		type = id->driver_data;
 	chip->config = &ina2xx_config[type];
@@ -1033,7 +1030,6 @@ static int ina2xx_probe(struct i2c_client *client,
 	indio_dev->name = id ? id->name : chip->config->name;
 
 	ret = devm_iio_kfifo_buffer_setup(&client->dev, indio_dev,
-					  INDIO_BUFFER_SOFTWARE,
 					  &ina2xx_setup_ops);
 	if (ret)
 		return ret;
@@ -1041,16 +1037,20 @@ static int ina2xx_probe(struct i2c_client *client,
 	return iio_device_register(indio_dev);
 }
 
-static int ina2xx_remove(struct i2c_client *client)
+static void ina2xx_remove(struct i2c_client *client)
 {
 	struct iio_dev *indio_dev = i2c_get_clientdata(client);
 	struct ina2xx_chip_info *chip = iio_priv(indio_dev);
+	int ret;
 
 	iio_device_unregister(indio_dev);
 
 	/* Powerdown */
-	return regmap_update_bits(chip->regmap, INA2XX_CONFIG,
-				  INA2XX_MODE_MASK, 0);
+	ret = regmap_update_bits(chip->regmap, INA2XX_CONFIG,
+				 INA2XX_MODE_MASK, 0);
+	if (ret)
+		dev_warn(&client->dev, "Failed to power down device (%pe)\n",
+			 ERR_PTR(ret));
 }
 
 static const struct i2c_device_id ina2xx_id[] = {

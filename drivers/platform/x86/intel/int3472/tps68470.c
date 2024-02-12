@@ -1,26 +1,27 @@
 // SPDX-License-Identifier: GPL-2.0
 /* Author: Dan Scally <djrscally@gmail.com> */
 
+#include <linux/acpi.h>
 #include <linux/i2c.h>
+#include <linux/kernel.h>
 #include <linux/mfd/core.h>
 #include <linux/mfd/tps68470.h>
 #include <linux/platform_device.h>
+#include <linux/platform_data/tps68470.h>
 #include <linux/regmap.h>
+#include <linux/string.h>
 
 #include "common.h"
+#include "tps68470.h"
 
 #define DESIGNED_FOR_CHROMEOS		1
 #define DESIGNED_FOR_WINDOWS		2
 
+#define TPS68470_WIN_MFD_CELL_COUNT	3
+
 static const struct mfd_cell tps68470_cros[] = {
 	{ .name = "tps68470-gpio" },
 	{ .name = "tps68470_pmic_opregion" },
-};
-
-static const struct mfd_cell tps68470_win[] = {
-	{ .name = "tps68470-gpio" },
-	{ .name = "tps68470-clk" },
-	{ .name = "tps68470-regulator" },
 };
 
 static const struct regmap_config tps68470_regmap_config = {
@@ -95,12 +96,65 @@ static int skl_int3472_tps68470_calc_type(struct acpi_device *adev)
 	return DESIGNED_FOR_WINDOWS;
 }
 
+/*
+ * Return the size of the flexible array member, because we'll need that later
+ * on to pass .pdata_size to cells.
+ */
+static int
+skl_int3472_fill_clk_pdata(struct device *dev, struct tps68470_clk_platform_data **clk_pdata)
+{
+	struct acpi_device *adev = ACPI_COMPANION(dev);
+	struct acpi_device *consumer;
+	unsigned int n_consumers = 0;
+	const char *sensor_name;
+	unsigned int i = 0;
+
+	for_each_acpi_consumer_dev(adev, consumer)
+		n_consumers++;
+
+	if (!n_consumers) {
+		dev_err(dev, "INT3472 seems to have no dependents\n");
+		return -ENODEV;
+	}
+
+	*clk_pdata = devm_kzalloc(dev, struct_size(*clk_pdata, consumers, n_consumers),
+				  GFP_KERNEL);
+	if (!*clk_pdata)
+		return -ENOMEM;
+
+	(*clk_pdata)->n_consumers = n_consumers;
+	i = 0;
+
+	for_each_acpi_consumer_dev(adev, consumer) {
+		sensor_name = devm_kasprintf(dev, GFP_KERNEL, I2C_DEV_NAME_FORMAT,
+					     acpi_dev_name(consumer));
+		if (!sensor_name) {
+			acpi_dev_put(consumer);
+			return -ENOMEM;
+		}
+
+		(*clk_pdata)->consumers[i].consumer_dev_name = sensor_name;
+		i++;
+	}
+
+	return n_consumers;
+}
+
 static int skl_int3472_tps68470_probe(struct i2c_client *client)
 {
 	struct acpi_device *adev = ACPI_COMPANION(&client->dev);
+	const struct int3472_tps68470_board_data *board_data;
+	struct tps68470_clk_platform_data *clk_pdata;
+	struct mfd_cell *cells;
 	struct regmap *regmap;
+	int n_consumers;
 	int device_type;
 	int ret;
+	int i;
+
+	n_consumers = skl_int3472_fill_clk_pdata(&client->dev, &clk_pdata);
+	if (n_consumers < 0)
+		return n_consumers;
 
 	regmap = devm_regmap_init_i2c(client, &tps68470_regmap_config);
 	if (IS_ERR(regmap)) {
@@ -119,9 +173,41 @@ static int skl_int3472_tps68470_probe(struct i2c_client *client)
 	device_type = skl_int3472_tps68470_calc_type(adev);
 	switch (device_type) {
 	case DESIGNED_FOR_WINDOWS:
+		board_data = int3472_tps68470_get_board_data(dev_name(&client->dev));
+		if (!board_data)
+			return dev_err_probe(&client->dev, -ENODEV, "No board-data found for this model\n");
+
+		cells = kcalloc(TPS68470_WIN_MFD_CELL_COUNT, sizeof(*cells), GFP_KERNEL);
+		if (!cells)
+			return -ENOMEM;
+
+		/*
+		 * The order of the cells matters here! The clk must be first
+		 * because the regulator depends on it. The gpios must be last,
+		 * acpi_gpiochip_add() calls acpi_dev_clear_dependencies() and
+		 * the clk + regulators must be ready when this happens.
+		 */
+		cells[0].name = "tps68470-clk";
+		cells[0].platform_data = clk_pdata;
+		cells[0].pdata_size = struct_size(clk_pdata, consumers, n_consumers);
+		cells[1].name = "tps68470-regulator";
+		cells[1].platform_data = (void *)board_data->tps68470_regulator_pdata;
+		cells[1].pdata_size = sizeof(struct tps68470_regulator_platform_data);
+		cells[2].name = "tps68470-gpio";
+
+		for (i = 0; i < board_data->n_gpiod_lookups; i++)
+			gpiod_add_lookup_table(board_data->tps68470_gpio_lookup_tables[i]);
+
 		ret = devm_mfd_add_devices(&client->dev, PLATFORM_DEVID_NONE,
-					   tps68470_win, ARRAY_SIZE(tps68470_win),
+					   cells, TPS68470_WIN_MFD_CELL_COUNT,
 					   NULL, 0, NULL);
+		kfree(cells);
+
+		if (ret) {
+			for (i = 0; i < board_data->n_gpiod_lookups; i++)
+				gpiod_remove_lookup_table(board_data->tps68470_gpio_lookup_tables[i]);
+		}
+
 		break;
 	case DESIGNED_FOR_CHROMEOS:
 		ret = devm_mfd_add_devices(&client->dev, PLATFORM_DEVID_NONE,
@@ -133,7 +219,24 @@ static int skl_int3472_tps68470_probe(struct i2c_client *client)
 		return device_type;
 	}
 
+	/*
+	 * No acpi_dev_clear_dependencies() here, since the acpi_gpiochip_add()
+	 * for the GPIO cell already does this.
+	 */
+
 	return ret;
+}
+
+static void skl_int3472_tps68470_remove(struct i2c_client *client)
+{
+	const struct int3472_tps68470_board_data *board_data;
+	int i;
+
+	board_data = int3472_tps68470_get_board_data(dev_name(&client->dev));
+	if (board_data) {
+		for (i = 0; i < board_data->n_gpiod_lookups; i++)
+			gpiod_remove_lookup_table(board_data->tps68470_gpio_lookup_tables[i]);
+	}
 }
 
 static const struct acpi_device_id int3472_device_id[] = {
@@ -147,10 +250,12 @@ static struct i2c_driver int3472_tps68470 = {
 		.name = "int3472-tps68470",
 		.acpi_match_table = int3472_device_id,
 	},
-	.probe_new = skl_int3472_tps68470_probe,
+	.probe = skl_int3472_tps68470_probe,
+	.remove = skl_int3472_tps68470_remove,
 };
 module_i2c_driver(int3472_tps68470);
 
 MODULE_DESCRIPTION("Intel SkyLake INT3472 ACPI TPS68470 Device Driver");
 MODULE_AUTHOR("Daniel Scally <djrscally@gmail.com>");
 MODULE_LICENSE("GPL v2");
+MODULE_SOFTDEP("pre: clk-tps68470 tps68470-regulator");

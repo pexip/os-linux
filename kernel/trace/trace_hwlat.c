@@ -79,8 +79,8 @@ struct hwlat_kthread_data {
 	int			nmi_cpu;
 };
 
-struct hwlat_kthread_data hwlat_single_cpu_data;
-DEFINE_PER_CPU(struct hwlat_kthread_data, hwlat_per_cpu_data);
+static struct hwlat_kthread_data hwlat_single_cpu_data;
+static DEFINE_PER_CPU(struct hwlat_kthread_data, hwlat_per_cpu_data);
 
 /* Tells NMIs to call back to the hwlat tracer to record timestamps */
 bool trace_hwlat_callback_enabled;
@@ -635,7 +635,7 @@ static int s_mode_show(struct seq_file *s, void *v)
 	else
 		seq_printf(s, "%s", thread_mode_str[mode]);
 
-	if (mode != MODE_MAX)
+	if (mode < MODE_MAX - 1) /* if mode is any but last */
 		seq_puts(s, " ");
 
 	return 0;

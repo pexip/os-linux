@@ -4,17 +4,21 @@ flavours:
  mckinley
 default-flavour: itanium
 kernel-arch: ia64
+compiler: gcc-12
 
 [build]
 image-file: vmlinux.gz
 
 [image]
-bootloaders: grub-efi-ia64
+suggests: grub-efi-ia64
 install-stem: vmlinuz
 
 [itanium_description]
 hardware: Itanium (Merced)
 hardware-long: systems with original Itanium (Merced) processors
+
+[itanium_packages]
+installer: true
 
 [mckinley_description]
 hardware: Itanium 2+

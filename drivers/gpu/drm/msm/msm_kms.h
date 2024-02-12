@@ -60,14 +60,6 @@ struct msm_kms_funcs {
 	void (*disable_commit)(struct msm_kms *kms);
 
 	/**
-	 * If the kms backend supports async commit, it should implement
-	 * this method to return the time of the next vsync.  This is
-	 * used to determine a time slightly before vsync, for the async
-	 * commit timer to run and complete an async commit.
-	 */
-	ktime_t (*vsync_time)(struct msm_kms *kms, struct drm_crtc *crtc);
-
-	/**
 	 * Prepare for atomic commit.  This is called after any previous
 	 * (async or otherwise) commit has completed.
 	 */
@@ -136,8 +128,7 @@ struct msm_kms;
  * shortly before vblank to flush pending async updates.
  */
 struct msm_pending_timer {
-	struct hrtimer timer;
-	struct kthread_work work;
+	struct msm_hrtimer_work work;
 	struct kthread_worker *worker;
 	struct msm_kms *kms;
 	unsigned crtc_idx;
@@ -195,24 +186,6 @@ static inline void msm_kms_destroy(struct msm_kms *kms)
 	for (i = 0; i < ARRAY_SIZE(kms->pending_timers); i++)
 		msm_atomic_destroy_pending_timer(&kms->pending_timers[i]);
 }
-
-struct msm_kms *mdp4_kms_init(struct drm_device *dev);
-struct msm_kms *mdp5_kms_init(struct drm_device *dev);
-struct msm_kms *dpu_kms_init(struct drm_device *dev);
-
-struct msm_mdss_funcs {
-	int (*enable)(struct msm_mdss *mdss);
-	int (*disable)(struct msm_mdss *mdss);
-	void (*destroy)(struct drm_device *dev);
-};
-
-struct msm_mdss {
-	struct drm_device *dev;
-	const struct msm_mdss_funcs *funcs;
-};
-
-int mdp5_mdss_init(struct drm_device *dev);
-int dpu_mdss_init(struct drm_device *dev);
 
 #define for_each_crtc_mask(dev, crtc, crtc_mask) \
 	drm_for_each_crtc(crtc, dev) \

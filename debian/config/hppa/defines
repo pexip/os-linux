@@ -5,8 +5,6 @@ kernel-arch: parisc
 
 [build]
 image-file: arch/parisc/boot/bzImage
-# temporarily disable debug info: Required disk size exceeds our hppa buildd machines.
-debug-info: false
 
 [image]
 suggests: palo
@@ -16,14 +14,20 @@ install-stem: vmlinuz
 hardware: 32-bit PA-RISC
 hardware-long: HP PA-RISC 32-bit systems with max 4 GB RAM
 
+[parisc_packages]
+installer: true
+
 [parisc64_base]
 cflags: -fno-cse-follow-jumps
-override-host-type: hppa64-linux-gnu
+# no Debian architecture defined; force cross-build
+kernel-deb-arch: undefined
+kernel-gnu-type: hppa64-linux-gnu
+compat-deb-arch: hppa
+compat-gnu-type: hppa-linux-gnu
 
 [parisc64_description]
 hardware: 64-bit PA-RISC
 hardware-long: HP PA-RISC 64-bit systems with support for more than 4 GB RAM
 
-[relations]
-gcc-11: gcc-11 <!stage1 !cross !pkg.linux.nokernel>, gcc-11-hppa-linux-gnu <!stage1 cross !pkg.linux.nokernel>, binutils-hppa64-linux-gnu <!stage1 !pkg.linux.nokernel>, gcc-11-hppa64-linux-gnu <!stage1 !pkg.linux.nokernel>
-
+[parisc64_packages]
+installer: true

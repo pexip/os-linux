@@ -1,30 +1,35 @@
 #!/usr/bin/python3
 
 import sys
+import json
 import locale
-import io
 import os
 import os.path
+import pathlib
 import subprocess
 import re
+import tempfile
+from typing import Any
 
 from debian_linux import config
-from debian_linux.debian import PackageDescription, PackageRelation, \
-    PackageRelationEntry, PackageRelationGroup, VersionLinux
-from debian_linux.gencontrol import Gencontrol as Base, merge_packages, \
+from debian_linux.debian import \
+    PackageRelationEntry, PackageRelationGroup, \
+    VersionLinux, BinaryPackage, TestsControl
+from debian_linux.gencontrol import Gencontrol as Base, PackagesBundle, \
     iter_featuresets, iter_flavours
-from debian_linux.utils import Templates, read_control
+from debian_linux.utils import Templates
 
 locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
 
 
 class Gencontrol(Base):
+    disable_installer: bool
+    disable_signed: bool
+
+    tests_control_headers: TestsControl | None
+
     config_schema = {
-        'abi': {
-            'ignore-changes': config.SchemaItemList(),
-        },
         'build': {
-            'debug-info': config.SchemaItemBoolean(),
             'signed-code': config.SchemaItemBoolean(),
             'vdso': config.SchemaItemBoolean(),
         },
@@ -32,9 +37,7 @@ class Gencontrol(Base):
             'parts': config.SchemaItemList(),
         },
         'image': {
-            'bootloaders': config.SchemaItemList(),
             'configs': config.SchemaItemList(),
-            'initramfs-generators': config.SchemaItemList(),
             'check-size': config.SchemaItemInteger(),
             'check-size-with-dtb': config.SchemaItemBoolean(),
             'check-uncompressed-size': config.SchemaItemInteger(),
@@ -44,8 +47,6 @@ class Gencontrol(Base):
             'recommends': config.SchemaItemList(','),
             'conflicts': config.SchemaItemList(','),
             'breaks': config.SchemaItemList(','),
-        },
-        'relations': {
         },
         'packages': {
             'docs': config.SchemaItemBoolean(),
@@ -59,13 +60,12 @@ class Gencontrol(Base):
     }
 
     env_flags = [
-        ('DEBIAN_KERNEL_DISABLE_DEBUG', 'disable_debug', 'debug infos'),
         ('DEBIAN_KERNEL_DISABLE_INSTALLER', 'disable_installer', 'installer modules'),
         ('DEBIAN_KERNEL_DISABLE_SIGNED', 'disable_signed', 'signed code'),
     ]
 
-    def __init__(self, config_dirs=["debian/config"],
-                 template_dirs=["debian/templates"]):
+    def __init__(self, config_dirs=["debian/config", "debian/config.local"],
+                 template_dirs=["debian/templates"]) -> None:
         super(Gencontrol, self).__init__(
             config.ConfigCoreHierarchy(self.config_schema, config_dirs),
             Templates(template_dirs),
@@ -84,101 +84,42 @@ class Gencontrol(Base):
                     raise RuntimeError(
                         f'Unable to disable {desc} in release build ({env} set)')
 
-    def _setup_makeflags(self, names, makeflags, data):
+    def _setup_makeflags(self, names, makeflags, data) -> None:
         for src, dst, optional in names:
             if src in data or not optional:
                 makeflags[dst] = data[src]
 
-    def do_main_setup(self, vars, makeflags, extra):
-        super(Gencontrol, self).do_main_setup(vars, makeflags, extra)
+    def do_main_setup(self, vars, makeflags) -> None:
+        super(Gencontrol, self).do_main_setup(vars, makeflags)
         makeflags.update({
             'VERSION': self.version.linux_version,
             'UPSTREAMVERSION': self.version.linux_upstream,
-            'ABINAME': self.abiname_version + self.abiname_part,
+            'ABINAME': self.abiname,
             'SOURCEVERSION': self.version.complete,
         })
         makeflags['SOURCE_BASENAME'] = vars['source_basename']
         makeflags['SOURCE_SUFFIX'] = vars['source_suffix']
 
         # Prepare to generate debian/tests/control
-        self.tests_control = self.process_packages(
-            self.templates['tests-control.main'], vars)
+        self.tests_control = self.templates.get_tests_control('main.tests-control', vars)
         self.tests_control_image = None
+        self.tests_control_headers = None
 
-        self.installer_packages = {}
-
-        if not self.disable_installer and self.config.merge('packages').get('installer', True):
-            # Add udebs using kernel-wedge
-            kw_env = os.environ.copy()
-            kw_env['KW_DEFCONFIG_DIR'] = 'debian/installer'
-            kw_env['KW_CONFIG_DIR'] = 'debian/installer'
-            kw_proc = subprocess.Popen(
-                ['kernel-wedge', 'gen-control', vars['abiname']],
-                stdout=subprocess.PIPE,
-                env=kw_env)
-            if not isinstance(kw_proc.stdout, io.IOBase):
-                udeb_packages = read_control(io.open(kw_proc.stdout.fileno(),
-                                                     closefd=False))
-            else:
-                udeb_packages = read_control(io.TextIOWrapper(kw_proc.stdout))
-            kw_proc.wait()
-            if kw_proc.returncode != 0:
-                raise RuntimeError('kernel-wedge exited with code %d' %
-                                   kw_proc.returncode)
-
-            # All architectures that have some installer udebs
-            arches = set()
-            for package in udeb_packages:
-                arches.update(package['Architecture'])
-
-            # Code-signing status for those architectures
-            # If we're going to build signed udebs later, don't actually
-            # generate udebs.  Just test that we *can* build, so we find
-            # configuration errors before building linux-signed.
-            build_signed = {}
-            for arch in arches:
-                if not self.disable_signed:
-                    build_signed[arch] = self.config.merge('build', arch) \
-                                                    .get('signed-code', False)
-                else:
-                    build_signed[arch] = False
-
-            for package in udeb_packages:
-                # kernel-wedge currently chokes on Build-Profiles so add it now
-                if any(build_signed[arch] for arch in package['Architecture']):
-                    assert all(build_signed[arch]
-                               for arch in package['Architecture'])
-                    # XXX This is a hack to exclude the udebs from
-                    # the package list while still being able to
-                    # convince debhelper and kernel-wedge to go
-                    # part way to building them.
-                    package['Build-Profiles'] = (
-                        '<pkg.linux.udeb-unsigned-test-build>')
-                else:
-                    package['Build-Profiles'] = '<!stage1 !pkg.linux.nokernel>'
-
-                for arch in package['Architecture']:
-                    self.installer_packages.setdefault(arch, []) \
-                                           .append(package)
-
-    def do_main_makefile(self, makefile, makeflags, extra):
+    def do_main_makefile(self, makeflags) -> None:
         for featureset in iter_featuresets(self.config):
             makeflags_featureset = makeflags.copy()
             makeflags_featureset['FEATURESET'] = featureset
-            cmds_source = ["$(MAKE) -f debian/rules.real source-featureset %s"
-                           % makeflags_featureset]
-            makefile.add('source_%s_real' % featureset, cmds=cmds_source)
-            makefile.add('source_%s' % featureset,
-                         ['source_%s_real' % featureset])
-            makefile.add('source', ['source_%s' % featureset])
+
+            self.bundle.makefile.add_rules(f'source_{featureset}',
+                                           'source', makeflags_featureset)
+            self.bundle.makefile.add_deps('source', [f'source_{featureset}'])
 
         makeflags = makeflags.copy()
         makeflags['ALL_FEATURESETS'] = ' '.join(iter_featuresets(self.config))
-        super(Gencontrol, self).do_main_makefile(makefile, makeflags, extra)
+        super().do_main_makefile(makeflags)
 
-    def do_main_packages(self, packages, vars, makeflags, extra):
-        packages.extend(self.process_packages(
-            self.templates["control.main"], vars))
+    def do_main_packages(self, vars, makeflags) -> None:
+        self.bundle.add('main', (), makeflags, vars)
 
         # Only build the metapackages if their names won't exactly match
         # the packages they depend on
@@ -186,38 +127,34 @@ class Gencontrol(Base):
             and vars['source_suffix'] != '-' + vars['version']
 
         if self.config.merge('packages').get('docs', True):
-            packages.extend(self.process_packages(
-                self.templates["control.docs"], vars))
+            self.bundle.add('docs', (), makeflags, vars)
             if do_meta:
-                packages.extend(self.process_packages(
-                    self.templates["control.docs.meta"], vars))
-                self.substitute_debhelper_config(
-                    'docs.meta', vars,
-                    '%(source_basename)s-doc%(source_suffix)s' % vars)
-        if self.config.merge('packages').get('tools-unversioned', True):
-            packages.extend(self.process_packages(
-                self.templates["control.tools-unversioned"], vars))
-        if self.config.merge('packages').get('tools-versioned', True):
-            packages.extend(self.process_packages(
-                self.templates["control.tools-versioned"], vars))
-            self.substitute_debhelper_config('perf', vars,
-                                              'linux-perf-%(version)s' % vars)
-            if do_meta:
-                packages.extend(self.process_packages(
-                    self.templates["control.tools-versioned.meta"], vars))
-                self.substitute_debhelper_config('perf.meta', vars,
-                                                  'linux-perf')
+                self.bundle.add('docs.meta', (), makeflags, vars)
         if self.config.merge('packages').get('source', True):
-            packages.extend(self.process_packages(
-                self.templates["control.sourcebin"], vars))
+            self.bundle.add('sourcebin', (), makeflags, vars)
             if do_meta:
-                packages.extend(self.process_packages(
-                    self.templates["control.sourcebin.meta"], vars))
-                self.substitute_debhelper_config(
-                    'sourcebin.meta', vars,
-                    '%(source_basename)s-source%(source_suffix)s' % vars)
+                self.bundle.add('sourcebin.meta', (), makeflags, vars)
 
-    def do_indep_featureset_setup(self, vars, makeflags, featureset, extra):
+        if self.config.merge('packages').get('libc-dev', True):
+            libcdev_kernelarches = set()
+            libcdev_multiarches = set()
+            for arch in iter(self.config['base', ]['arches']):
+                libcdev_kernelarch = self.config['base', arch]['kernel-arch']
+                libcdev_multiarch = subprocess.check_output(
+                    ['dpkg-architecture', '-f', '-a', arch,
+                     '-q', 'DEB_HOST_MULTIARCH'],
+                    stderr=subprocess.DEVNULL,
+                    encoding='utf-8').strip()
+                libcdev_kernelarches.add(libcdev_kernelarch)
+                libcdev_multiarches.add(f'{libcdev_multiarch}:{libcdev_kernelarch}')
+
+            libcdev_makeflags = makeflags.copy()
+            libcdev_makeflags['ALL_LIBCDEV_KERNELARCHES'] = ' '.join(sorted(libcdev_kernelarches))
+            libcdev_makeflags['ALL_LIBCDEV_MULTIARCHES'] = ' '.join(sorted(libcdev_multiarches))
+
+            self.bundle.add('libc-dev', (), libcdev_makeflags, vars)
+
+    def do_indep_featureset_setup(self, vars, makeflags, featureset) -> None:
         makeflags['LOCALVERSION'] = vars['localversion']
         kernel_arches = set()
         for arch in iter(self.config['base', ]['arches']):
@@ -233,104 +170,73 @@ class Gencontrol(Base):
             vars['featureset_desc'] = (' with the %s featureset' %
                                        desc['part-short-%s' % desc_parts[0]])
 
-    def do_indep_featureset_packages(self, packages, makefile, featureset,
-                                     vars, makeflags, extra):
-        headers_featureset = self.templates["control.headers.featureset"]
-        packages.extend(self.process_packages(headers_featureset, vars))
-
-        cmds_binary_arch = ["$(MAKE) -f debian/rules.real "
-                            "binary-indep-featureset %s" %
-                            makeflags]
-        makefile.add('binary-indep_%s_real' % featureset,
-                     cmds=cmds_binary_arch)
+    def do_indep_featureset_packages(self, featureset, vars, makeflags) -> None:
+        self.bundle.add('headers.featureset', (featureset, ), makeflags, vars)
 
     arch_makeflags = (
         ('kernel-arch', 'KERNEL_ARCH', False),
     )
 
-    def do_arch_setup(self, vars, makeflags, arch, extra):
+    def do_arch_setup(self, vars, makeflags, arch) -> None:
         config_base = self.config.merge('base', arch)
 
         self._setup_makeflags(self.arch_makeflags, makeflags, config_base)
 
         try:
-            gnu_type_bytes = subprocess.check_output(
+            gnu_type = subprocess.check_output(
                 ['dpkg-architecture', '-f', '-a', arch,
                  '-q', 'DEB_HOST_GNU_TYPE'],
-                stderr=subprocess.DEVNULL)
+                stderr=subprocess.DEVNULL,
+                encoding='utf-8')
         except subprocess.CalledProcessError:
             # This sometimes happens for the newest ports :-/
             print('W: Unable to get GNU type for %s' % arch, file=sys.stderr)
         else:
-            vars['gnu-type-package'] = (
-                gnu_type_bytes.decode('utf-8').strip().replace('_', '-'))
+            vars['gnu-type-package'] = gnu_type.strip().replace('_', '-')
 
-    def do_arch_packages(self, packages, makefile, arch, vars, makeflags,
-                         extra):
-        if self.version.linux_modifier is None:
-            try:
-                abiname_part = '-%s' % self.config['abi', arch]['abiname']
-            except KeyError:
-                abiname_part = self.abiname_part
-            makeflags['ABINAME'] = vars['abiname'] = \
-                self.abiname_version + abiname_part
-
+    def do_arch_packages(self, arch, vars, makeflags) -> None:
         if not self.disable_signed:
             build_signed = self.config.merge('build', arch) \
                                       .get('signed-code', False)
         else:
             build_signed = False
 
-        if self.config.merge('packages').get('libc-dev', True):
-            libc_dev = self.templates["control.libc-dev"]
-            merge_packages(packages, self.process_packages(libc_dev, {}), arch)
+        if build_signed:
+            # Make sure variables remain
+            vars['signedtemplate_binaryversion'] = '@signedtemplate_binaryversion@'
+            vars['signedtemplate_sourceversion'] = '@signedtemplate_sourceversion@'
+
+            self.bundle.add('signed-template', (arch,), makeflags, vars, arch=arch)
+
+            bundle_signed = self.bundles[f'signed-{arch}'] = \
+                PackagesBundle(f'signed-{arch}', self.templates)
+            bundle_signed.packages['source'] = \
+                self.templates.get_source_control('signed.source.control', vars)[0]
+
+            with bundle_signed.open('source/lintian-overrides', 'w') as f:
+                f.write(self.substitute(
+                    self.templates.get('signed.source.lintian-overrides'), vars))
+
+            with bundle_signed.open('changelog.head', 'w') as f:
+                dist = self.changelog[0].distribution
+                urgency = self.changelog[0].urgency
+                f.write(f'''\
+linux-signed-{vars['arch']} (@signedtemplate_sourceversion@) {dist}; urgency={urgency}
+
+  * Sign kernel from {self.changelog[0].source} @signedtemplate_binaryversion@
+''')
 
         if self.config['base', arch].get('featuresets') and \
            self.config.merge('packages').get('source', True):
-            merge_packages(packages,
-                           self.process_packages(
-                               self.templates["control.config"], vars),
-                           arch)
+            self.bundle.add('config', (arch, ), makeflags, vars)
 
-        cmds_build_arch = ["$(MAKE) -f debian/rules.real build-arch-arch %s" %
-                           makeflags]
-        makefile.add('build-arch_%s_real' % arch, cmds=cmds_build_arch)
+        if self.config.merge('packages').get('tools-unversioned', True):
+            self.bundle.add('tools-unversioned', (arch, ), makeflags, vars)
 
-        cmds_binary_arch = ["$(MAKE) -f debian/rules.real binary-arch-arch %s"
-                            % makeflags]
-        makefile.add('binary-arch_%s_real' % arch, cmds=cmds_binary_arch,
-                     deps=['setup_%s' % arch])
+        if self.config.merge('packages').get('tools-versioned', True):
+            self.bundle.add('tools-versioned', (arch, ), makeflags, vars)
 
-        udeb_packages = self.installer_packages.get(arch, [])
-        if udeb_packages:
-            merge_packages(packages, udeb_packages, arch)
-
-            # These packages must be built after the per-flavour/
-            # per-featureset packages.  Also, this won't work
-            # correctly with an empty package list.
-            makefile.add(
-                'binary-arch_%s' % arch,
-                cmds=["$(MAKE) -f debian/rules.real install-udeb_%s %s "
-                      "PACKAGE_NAMES='%s' UDEB_UNSIGNED_TEST_BUILD=%s" %
-                      (arch, makeflags,
-                       ' '.join(p['Package'] for p in udeb_packages),
-                       build_signed)])
-
-        # This also needs to be built after the per-flavour/per-featureset
-        # packages.
-        if build_signed:
-            merge_packages(packages,
-                           self.process_packages(
-                               self.templates['control.signed-template'],
-                               vars),
-                           arch)
-            makefile.add(
-                'binary-arch_%s' % arch,
-                cmds=["$(MAKE) -f debian/rules.real "
-                      "install-signed-template_%s %s" %
-                      (arch, makeflags)])
-
-    def do_featureset_setup(self, vars, makeflags, arch, featureset, extra):
+    def do_featureset_setup(self, vars, makeflags, arch, featureset) -> None:
         vars['localversion_headers'] = vars['localversion']
         makeflags['LOCALVERSION_HEADERS'] = vars['localversion_headers']
 
@@ -346,13 +252,18 @@ class Gencontrol(Base):
                 raise RuntimeError("default-flavour %s for %s %s does not exist"
                                    % (self.default_flavour, arch, featureset))
 
+        self.quick_flavour = self.config.merge('base', arch, featureset) \
+                                        .get('quick-flavour')
+
     flavour_makeflags_base = (
         ('compiler', 'COMPILER', False),
         ('compiler-filename', 'COMPILER', True),
         ('kernel-arch', 'KERNEL_ARCH', False),
         ('cflags', 'KCFLAGS', True),
-        ('override-host-type', 'OVERRIDE_HOST_TYPE', True),
-        ('cross-compile-compat', 'CROSS_COMPILE_COMPAT', True),
+        ('kernel-deb-arch', 'KERNEL_DEB_ARCH', True),
+        ('kernel-gnu-type', 'KERNEL_GNU_TYPE', True),
+        ('compat-deb-arch', 'COMPAT_DEB_ARCH', True),
+        ('compat-gnu-type', 'COMPAT_GNU_TYPE', True),
     )
 
     flavour_makeflags_build = (
@@ -368,8 +279,7 @@ class Gencontrol(Base):
         ('localversion-image', 'LOCALVERSION_IMAGE', True),
     )
 
-    def do_flavour_setup(self, vars, makeflags, arch, featureset, flavour,
-                         extra):
+    def do_flavour_setup(self, vars, makeflags, arch, featureset, flavour) -> None:
         config_base = self.config.merge('base', arch, featureset, flavour)
         config_build = self.config.merge('build', arch, featureset, flavour)
         config_description = self.config.merge('description', arch, featureset,
@@ -396,10 +306,14 @@ class Gencontrol(Base):
                               config_image)
         self._setup_makeflags(self.flavour_makeflags_other, makeflags, vars)
 
-    def do_flavour_packages(self, packages, makefile, arch, featureset,
-                            flavour, vars, makeflags, extra):
-        headers = self.templates["control.headers"]
-        assert len(headers) == 1
+    def do_flavour_packages(self, arch, featureset,
+                            flavour, vars, makeflags) -> None:
+        ruleid = (arch, featureset, flavour)
+
+        packages_headers = (
+            self.bundle.add('headers', ruleid, makeflags, vars, arch=arch)
+        )
+        assert len(packages_headers) == 1
 
         do_meta = self.config.merge('packages').get('meta', True)
         config_entry_base = self.config.merge('base', arch, featureset,
@@ -408,83 +322,63 @@ class Gencontrol(Base):
                                                flavour)
         config_entry_description = self.config.merge('description', arch,
                                                      featureset, flavour)
-        config_entry_relations = self.config.merge('relations', arch,
-                                                   featureset, flavour)
+        config_entry_packages = self.config.merge('packages', arch, featureset,
+                                                  flavour)
 
-        def config_entry_image(key, *args, **kwargs):
+        def config_entry_image(key, *args, **kwargs) -> Any:
             return self.config.get_merge(
                 'image', arch, featureset, flavour, key, *args, **kwargs)
 
         compiler = config_entry_base.get('compiler', 'gcc')
 
-        # Work out dependency from linux-headers to compiler.  Drop
-        # dependencies for cross-builds.  Strip any remaining
-        # restrictions, as they don't apply to binary Depends.
-        relations_compiler_headers = PackageRelation(
-            self.substitute(config_entry_relations.get('headers%' + compiler)
-                            or config_entry_relations.get(compiler), vars))
-        relations_compiler_headers = PackageRelation(
-            PackageRelationGroup(entry for entry in group
-                                 if 'cross' not in entry.restrictions)
-            for group in relations_compiler_headers)
-        for group in relations_compiler_headers:
-            for entry in group:
-                entry.restrictions = []
+        relation_compiler = PackageRelationEntry(compiler)
 
-        relations_compiler_build_dep = PackageRelation(
-            self.substitute(config_entry_relations[compiler], vars))
-        for group in relations_compiler_build_dep:
-            for item in group:
-                item.arches = [arch]
-        packages['source']['Build-Depends-Arch'].extend(
-            relations_compiler_build_dep)
+        relation_compiler_header = PackageRelationGroup([relation_compiler])
 
-        image_fields = {'Description': PackageDescription()}
-        for field in ('Depends', 'Provides', 'Suggests', 'Recommends',
-                      'Conflicts', 'Breaks'):
-            image_fields[field] = PackageRelation(
-                config_entry_image(field.lower(), None),
-                override_arches=(arch,))
+        # Generate compiler build-depends for native:
+        # gcc-13 [arm64] <!cross !pkg.linux.nokernel>
+        self.bundle.packages['source']['Build-Depends-Arch'].merge([
+            PackageRelationEntry(
+                relation_compiler,
+                arches={arch},
+                restrictions='<!cross !pkg.linux.nokernel>',
+            )
+        ])
 
-        generators = config_entry_image('initramfs-generators')
-        group = PackageRelationGroup()
-        for i in generators:
-            i = config_entry_relations.get(i, i)
-            group.append(i)
-            a = PackageRelationEntry(i)
-            if a.operator is not None:
-                a.operator = -a.operator
-                image_fields['Breaks'].append(PackageRelationGroup([a]))
-        for item in group:
-            item.arches = [arch]
-        image_fields['Depends'].append(group)
+        # Generate compiler build-depends for cross:
+        # gcc-13-aarch64-linux-gnu [arm64] <cross !pkg.linux.nokernel>
+        self.bundle.packages['source']['Build-Depends-Arch'].merge([
+            PackageRelationEntry(
+                relation_compiler,
+                name=f'{relation_compiler.name}-{vars["gnu-type-package"]}',
+                arches={arch},
+                restrictions='<cross !pkg.linux.nokernel>',
+            )
+        ])
 
-        bootloaders = config_entry_image('bootloaders', None)
-        if bootloaders:
-            group = PackageRelationGroup()
-            for i in bootloaders:
-                i = config_entry_relations.get(i, i)
-                group.append(i)
-                a = PackageRelationEntry(i)
-                if a.operator is not None:
-                    a.operator = -a.operator
-                    image_fields['Breaks'].append(PackageRelationGroup([a]))
-            for item in group:
-                item.arches = [arch]
-            image_fields['Suggests'].append(group)
+        # Generate compiler build-depends for kernel:
+        # gcc-13-hppa64-linux-gnu [hppa] <!pkg.linux.nokernel>
+        if gnutype := config_entry_base.get('kernel-gnu-type'):
+            self.bundle.packages['source']['Build-Depends-Arch'].merge([
+                PackageRelationEntry(
+                    relation_compiler,
+                    name=f'{relation_compiler.name}-{gnutype}',
+                    arches={arch},
+                    restrictions='<!pkg.linux.nokernel>',
+                )
+            ])
 
-        desc_parts = self.config.get_merge('description', arch, featureset,
-                                           flavour, 'parts')
-        if desc_parts:
-            # XXX: Workaround, we need to support multiple entries of the same
-            # name
-            parts = list(set(desc_parts))
-            parts.sort()
-            desc = image_fields['Description']
-            for part in parts:
-                desc.append(config_entry_description['part-long-' + part])
-                desc.append_short(config_entry_description
-                                  .get('part-short-' + part, ''))
+        # Generate compiler build-depends for compat:
+        # gcc-arm-linux-gnueabihf [arm64] <!pkg.linux.nokernel>
+        # XXX: Linux uses various definitions for this, all ending with "gcc", not $CC
+        if gnutype := config_entry_base.get('compat-gnu-type'):
+            self.bundle.packages['source']['Build-Depends-Arch'].merge([
+                PackageRelationEntry(
+                    f'gcc-{gnutype}',
+                    arches={arch},
+                    restrictions='<!pkg.linux.nokernel>',
+                )
+            ])
 
         packages_own = []
 
@@ -493,22 +387,58 @@ class Gencontrol(Base):
         else:
             build_signed = False
 
-        image = self.templates[build_signed and "control.image-unsigned"
-                               or "control.image"]
-        assert len(image) == 1
+        if build_signed:
+            bundle_signed = self.bundles[f'signed-{arch}']
+        else:
+            bundle_signed = self.bundle
 
         vars.setdefault('desc', None)
 
-        image_main = self.process_real_image(image[0], image_fields, vars)
-        packages_own.append(image_main)
-        makeflags['IMAGE_PACKAGE_NAME'] = image_main['Package']
+        packages_image = []
 
-        package_headers = self.process_package(headers[0], vars)
-        package_headers['Depends'].extend(relations_compiler_headers)
-        packages_own.append(package_headers)
-        if extra.get('headers_arch_depends'):
-            extra['headers_arch_depends'].append('%s (= ${binary:Version})' %
-                                                 packages_own[-1]['Package'])
+        if build_signed:
+            packages_image.extend(
+                bundle_signed.add('signed.image', ruleid, makeflags, vars, arch=arch))
+            packages_image.extend(
+                self.bundle.add('image-unsigned', ruleid, makeflags, vars, arch=arch))
+
+        else:
+            packages_image.extend(bundle_signed.add('image', ruleid, makeflags, vars, arch=arch))
+
+        for field in ('Depends', 'Provides', 'Suggests', 'Recommends',
+                      'Conflicts', 'Breaks'):
+            for i in config_entry_image(field.lower(), ()):
+                for package_image in packages_image:
+                    package_image.setdefault(field).merge(
+                        PackageRelationGroup(i, arches={arch})
+                    )
+
+        for field in ('Depends', 'Suggests', 'Recommends'):
+            for i in config_entry_image(field.lower(), ()):
+                group = PackageRelationGroup(i, arches={arch})
+                for entry in group:
+                    if entry.operator is not None:
+                        entry.operator = -entry.operator
+                        for package_image in packages_image:
+                            package_image.setdefault('Breaks').append(PackageRelationGroup([entry]))
+
+        desc_parts = self.config.get_merge('description', arch, featureset,
+                                           flavour, 'parts')
+        if desc_parts:
+            # XXX: Workaround, we need to support multiple entries of the same
+            # name
+            parts = list(set(desc_parts))
+            parts.sort()
+            for package_image in packages_image:
+                desc = package_image['Description']
+                for part in parts:
+                    desc.append(config_entry_description['part-long-' + part])
+                    desc.append_short(config_entry_description
+                                      .get('part-short-' + part, ''))
+
+        packages_headers[0]['Depends'].merge(relation_compiler_header)
+        packages_own.extend(packages_image)
+        packages_own.extend(packages_headers)
 
         # The image meta-packages will depend on signed linux-image
         # packages where applicable, so should be built from the
@@ -516,71 +446,72 @@ class Gencontrol(Base):
         # built along with the signed packages, to create a dependency
         # relationship that ensures src:linux and src:linux-signed-*
         # transition to testing together.
-        if do_meta and not build_signed:
-            packages_meta = self.process_packages(
-                self.templates['control.image.meta'], vars)
+        if do_meta:
+            packages_meta = (
+                bundle_signed.add('image.meta', ruleid, makeflags, vars, arch=arch)
+            )
             assert len(packages_meta) == 1
-            packages_meta += self.process_packages(
-                self.templates['control.headers.meta'], vars)
+            packages_meta += (
+                bundle_signed.add(build_signed and 'signed.headers.meta' or 'headers.meta',
+                                  ruleid, makeflags, vars, arch=arch)
+            )
             assert len(packages_meta) == 2
 
             if flavour == self.default_flavour \
                and not self.vars['source_suffix']:
-                packages_meta[0].setdefault('Provides', PackageRelation()) \
+                packages_meta[0].setdefault('Provides') \
                                 .append('linux-image-generic')
-                packages_meta[1].setdefault('Provides', PackageRelation()) \
+                packages_meta[1].setdefault('Provides') \
                                 .append('linux-headers-generic')
 
             packages_own.extend(packages_meta)
 
-            self.substitute_debhelper_config(
-                "image.meta", vars,
-                "linux-image%(localversion)s" % vars)
-            self.substitute_debhelper_config(
-                'headers.meta', vars,
-                'linux-headers%(localversion)s' % vars)
-
         if config_entry_build.get('vdso', False):
             makeflags['VDSO'] = True
 
-        if not self.disable_debug:
-            build_debug = config_entry_build.get('debug-info')
-        else:
-            build_debug = False
+        packages_own.extend(
+            self.bundle.add('image-dbg', ruleid, makeflags, vars, arch=arch)
+        )
+        if do_meta:
+            packages_own.extend(
+                self.bundle.add('image-dbg.meta', ruleid, makeflags, vars, arch=arch)
+            )
 
-        if build_debug:
-            makeflags['DEBUG'] = True
-            packages_own.extend(self.process_packages(
-                self.templates['control.image-dbg'], vars))
-            if do_meta:
-                packages_own.extend(self.process_packages(
-                    self.templates["control.image-dbg.meta"], vars))
-                self.substitute_debhelper_config(
-                    'image-dbg.meta', vars,
-                    'linux-image%(localversion)s-dbg' % vars)
+        # In a quick build, only build the quick flavour (if any).
+        if flavour != self.quick_flavour:
+            for package in packages_own:
+                package['Build-Profiles'][0].neg.add('pkg.linux.quick')
 
-        merge_packages(packages, packages_own, arch)
-
-        tests_control = self.process_package(
-            self.templates['tests-control.image'][0], vars)
-        tests_control['Depends'].append(
-            PackageRelationGroup(image_main['Package'],
-                                 override_arches=(arch,)))
+        tests_control = self.templates.get_tests_control('image.tests-control', vars)[0]
+        tests_control['Depends'].merge(
+            PackageRelationGroup(package_image['Package'],
+                                 arches={arch}))
         if self.tests_control_image:
-            self.tests_control_image['Depends'].extend(
-                tests_control['Depends'])
+            for i in tests_control['Depends']:
+                self.tests_control_image['Depends'].merge(i)
         else:
             self.tests_control_image = tests_control
             self.tests_control.append(tests_control)
 
-        def get_config(*entry_name):
+        if flavour == (self.quick_flavour or self.default_flavour):
+            if not self.tests_control_headers:
+                self.tests_control_headers = \
+                        self.templates.get_tests_control('headers.tests-control', vars)[0]
+                self.tests_control.append(self.tests_control_headers)
+            assert self.tests_control_headers is not None
+            self.tests_control_headers['Architecture'].add(arch)
+            self.tests_control_headers['Depends'].merge(
+                PackageRelationGroup(packages_headers[0]['Package'],
+                                     arches={arch}))
+
+        def get_config(*entry_name) -> Any:
             entry_real = ('image',) + entry_name
             entry = self.config.get(entry_real, None)
             if entry is None:
                 return None
             return entry.get('configs', None)
 
-        def check_config_default(fail, f):
+        def check_config_default(fail, f) -> list[str]:
             for d in self.config_dirs[::-1]:
                 f1 = d + '/' + f
                 if os.path.exists(f1):
@@ -589,7 +520,7 @@ class Gencontrol(Base):
                 raise RuntimeError("%s unavailable" % f)
             return []
 
-        def check_config_files(files):
+        def check_config_files(files) -> list[str]:
             ret = []
             for f in files:
                 for d in self.config_dirs[::-1]:
@@ -601,7 +532,7 @@ class Gencontrol(Base):
                     raise RuntimeError("%s unavailable" % f)
             return ret
 
-        def check_config(default, fail, *entry_name):
+        def check_config(default, fail, *entry_name) -> list[str]:
             configs = get_config(*entry_name)
             if configs is None:
                 return check_config_default(fail, default)
@@ -623,72 +554,108 @@ class Gencontrol(Base):
                                     arch, featureset, flavour))
         makeflags['KCONFIG'] = ' '.join(kconfig)
         makeflags['KCONFIG_OPTIONS'] = ''
-        if build_debug:
-            makeflags['KCONFIG_OPTIONS'] += ' -o DEBUG_INFO=y'
-        if build_signed:
-            makeflags['KCONFIG_OPTIONS'] += ' -o MODULE_SIG=y'
         # Add "salt" to fix #872263
         makeflags['KCONFIG_OPTIONS'] += \
             ' -o "BUILD_SALT=\\"%(abiname)s%(localversion)s\\""' % vars
-        if config_entry_build.get('trusted-certs'):
-            makeflags['KCONFIG_OPTIONS'] += \
-                f' -o "SYSTEM_TRUSTED_KEYS=\\"${{CURDIR}}/{config_entry_build["trusted-certs"]}\\""'
-
-        cmds_binary_arch = ["$(MAKE) -f debian/rules.real binary-arch-flavour "
-                            "%s" %
-                            makeflags]
-        cmds_build = ["$(MAKE) -f debian/rules.real build-arch-flavour %s" %
-                      makeflags]
-        cmds_setup = ["$(MAKE) -f debian/rules.real setup-arch-flavour %s" %
-                      makeflags]
-        makefile.add('binary-arch_%s_%s_%s_real' % (arch, featureset, flavour),
-                     cmds=cmds_binary_arch)
-        makefile.add('build-arch_%s_%s_%s_real' % (arch, featureset, flavour),
-                     cmds=cmds_build)
-        makefile.add('setup_%s_%s_%s_real' % (arch, featureset, flavour),
-                     cmds=cmds_setup)
 
         merged_config = ('debian/build/config.%s_%s_%s' %
                          (arch, featureset, flavour))
-        makefile.add(merged_config,
-                     cmds=["$(MAKE) -f debian/rules.real %s %s" %
-                           (merged_config, makeflags)])
+        self.bundle.makefile.add_cmds(merged_config,
+                                      ["$(MAKE) -f debian/rules.real %s %s" %
+                                       (merged_config, makeflags)])
 
-        self.substitute_debhelper_config(
-            'headers', vars,
-            'linux-headers-%(abiname)s%(localversion)s' % vars)
-        self.substitute_debhelper_config('image', vars, image_main['Package'])
-        if build_debug:
-            self.substitute_debhelper_config(
-                'image-dbg', vars,
-                'linux-image-%(abiname)s%(localversion)s-dbg' % vars)
+        if not self.disable_installer and config_entry_packages.get('installer'):
+            with tempfile.TemporaryDirectory(prefix='linux-gencontrol') as config_dir:
+                base_path = pathlib.Path('debian/installer').absolute()
+                config_path = pathlib.Path(config_dir)
+                (config_path / 'modules').symlink_to(base_path / 'modules')
+                (config_path / 'package-list').symlink_to(base_path / 'package-list')
 
-    def process_changelog(self):
+                with (config_path / 'kernel-versions').open('w') as versions:
+                    versions.write(f'{arch} - {vars["flavour"]} - - -\n')
+
+                # Add udebs using kernel-wedge
+                kw_env = os.environ.copy()
+                kw_env['KW_DEFCONFIG_DIR'] = config_dir
+                kw_env['KW_CONFIG_DIR'] = config_dir
+                kw_proc = subprocess.Popen(
+                    ['kernel-wedge', 'gen-control', vars['abiname']],
+                    stdout=subprocess.PIPE,
+                    text=True,
+                    env=kw_env)
+                udeb_packages_base = BinaryPackage.read_rfc822(kw_proc.stdout)
+                kw_proc.wait()
+                if kw_proc.returncode != 0:
+                    raise RuntimeError('kernel-wedge exited with code %d' %
+                                       kw_proc.returncode)
+
+            udeb_packages = []
+            for package_base in udeb_packages_base:
+                package = package_base.copy()
+                # kernel-wedge currently chokes on Build-Profiles so add it now
+                package['Build-Profiles'] = (
+                    '<!noudeb !pkg.linux.nokernel !pkg.linux.quick>')
+                package.meta['rules-target'] = 'installer'
+                udeb_packages.append(package)
+
+            makeflags_local = makeflags.copy()
+            makeflags_local['IMAGE_PACKAGE_NAME'] = udeb_packages[0]['Package']
+
+            bundle_signed.add_packages(
+                udeb_packages,
+                (arch, featureset, flavour),
+                makeflags_local, arch=arch,
+            )
+
+            if build_signed:
+                udeb_packages = []
+                # XXX This is a hack to exclude the udebs from
+                # the package list while still being able to
+                # convince debhelper and kernel-wedge to go
+                # part way to building them.
+                for package_base in udeb_packages_base:
+                    package = package_base.copy()
+                    # kernel-wedge currently chokes on Build-Profiles so add it now
+                    package['Build-Profiles'] = (
+                        '<pkg.linux.udeb-unsigned-test-build !noudeb'
+                        ' !pkg.linux.nokernel !pkg.linux.quick>')
+                    package.meta['rules-target'] = 'installer-test'
+                    udeb_packages.append(package)
+
+                self.bundle.add_packages(
+                    udeb_packages,
+                    (arch, featureset, flavour),
+                    makeflags, arch=arch, check_packages=False,
+                )
+
+    def process_changelog(self) -> None:
         version = self.version = self.changelog[0].version
-        if self.version.linux_modifier is not None:
-            self.abiname_part = ''
+
+        if self.changelog[0].distribution == 'UNRELEASED':
+            self.abiname = f'{version.linux_upstream}+unreleased'
+        elif self.changelog[0].distribution == 'experimental':
+            self.abiname = f'{version.linux_upstream}'
+        elif version.linux_revision_backports:
+            self.abiname = f'{version.linux_upstream_full}+bpo'
         else:
-            self.abiname_part = '-%s' % self.config['abi', ]['abiname']
-        # We need to keep at least three version components to avoid
-        # userland breakage (e.g. #742226, #745984).
-        self.abiname_version = re.sub(r'^(\d+\.\d+)(?=-|$)', r'\1.0',
-                                      self.version.linux_upstream)
+            self.abiname = f'{version.linux_upstream_full}+pexip'
+
         self.vars = {
             'upstreamversion': self.version.linux_upstream,
             'version': self.version.linux_version,
+            'version_complete': self.version.complete,
             'source_basename': re.sub(r'-[\d.]+$', '',
                                       self.changelog[0].source),
             'source_upstream': self.version.upstream,
             'source_package': self.changelog[0].source,
-            'abiname': self.abiname_version + self.abiname_part,
+            'abiname': self.abiname,
         }
         self.vars['source_suffix'] = \
             self.changelog[0].source[len(self.vars['source_basename']):]
         self.config['version', ] = {'source': self.version.complete,
                                     'upstream': self.version.linux_upstream,
-                                    'abiname_base': self.abiname_version,
-                                    'abiname': (self.abiname_version
-                                                + self.abiname_part)}
+                                    'abiname_base': self.abiname,
+                                    'abiname': self.abiname}
 
         distribution = self.changelog[0].distribution
         if distribution in ('unstable', ):
@@ -711,29 +678,41 @@ class Gencontrol(Base):
                 raise RuntimeError("Can't upload to %s with a version of %s" %
                                    (distribution, version))
 
-    def process_real_image(self, entry, fields, vars):
-        entry = self.process_package(entry, vars)
-        for key, value in fields.items():
-            if key in entry:
-                real = entry[key]
-                real.extend(value)
-            elif value:
-                entry[key] = value
-        return entry
-
-    def write(self, packages, makefile):
+    def write(self) -> None:
         self.write_config()
-        super(Gencontrol, self).write(packages, makefile)
+        super().write()
         self.write_tests_control()
+        self.write_signed()
 
-    def write_config(self):
+    def write_config(self) -> None:
         f = open("debian/config.defines.dump", 'wb')
         self.config.dump(f)
         f.close()
 
-    def write_tests_control(self):
-        self.write_rfc822(open("debian/tests/control", 'w'),
-                          self.tests_control)
+    def write_signed(self) -> None:
+        for bundle in self.bundles.values():
+            pkg_sign_entries = {}
+
+            for p in bundle.packages.values():
+                if pkg_sign_pkg := p.meta.get('sign-package'):
+                    pkg_sign_entries[pkg_sign_pkg] = {
+                        'trusted_certs': [],
+                        'files': [
+                            {
+                                'sig_type': e.split(':', 1)[-1],
+                                'file': e.split(':', 1)[0],
+                            }
+                            for e in p.meta['sign-files'].split()
+                        ],
+                    }
+
+            if pkg_sign_entries:
+                with bundle.path('files.json').open('w') as f:
+                    json.dump({'packages': pkg_sign_entries}, f, indent=2)
+
+    def write_tests_control(self) -> None:
+        self.bundle.write_rfc822(open("debian/tests/control", 'w'),
+                                 self.tests_control)
 
 
 if __name__ == '__main__':

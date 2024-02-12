@@ -480,13 +480,11 @@ s32 igc_init_nvm_params_i225(struct igc_hw *hw)
 
 	/* NVM Function Pointers */
 	if (igc_get_flash_presence_i225(hw)) {
-		hw->nvm.type = igc_nvm_flash_hw;
 		nvm->ops.read = igc_read_nvm_srrd_i225;
 		nvm->ops.write = igc_write_nvm_srwr_i225;
 		nvm->ops.validate = igc_validate_nvm_checksum_i225;
 		nvm->ops.update = igc_update_nvm_checksum_i225;
 	} else {
-		hw->nvm.type = igc_nvm_invm;
 		nvm->ops.read = igc_read_nvm_eerd;
 		nvm->ops.write = NULL;
 		nvm->ops.validate = NULL;
@@ -595,20 +593,11 @@ s32 igc_set_ltr_i225(struct igc_hw *hw, bool link)
 		size = rd32(IGC_RXPBS) &
 		       IGC_RXPBS_SIZE_I225_MASK;
 
-		/* Calculations vary based on DMAC settings. */
-		if (rd32(IGC_DMACR) & IGC_DMACR_DMAC_EN) {
-			size -= (rd32(IGC_DMACR) &
-				 IGC_DMACR_DMACTHR_MASK) >>
-				 IGC_DMACR_DMACTHR_SHIFT;
-			/* Convert size to bits. */
-			size *= 1024 * 8;
-		} else {
-			/* Convert size to bytes, subtract the MTU, and then
-			 * convert the size to bits.
-			 */
-			size *= 1024;
-			size *= 8;
-		}
+		/* Convert size to bytes, subtract the MTU, and then
+		 * convert the size to bits.
+		 */
+		size *= 1024;
+		size *= 8;
 
 		if (size < 0) {
 			hw_dbg("Invalid effective Rx buffer size %d\n",

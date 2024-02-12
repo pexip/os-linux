@@ -27,7 +27,7 @@ MODULE_DEVICE_TABLE(sdio, wilc_sdio_ids);
 struct wilc_sdio {
 	bool irq_gpio;
 	u32 block_size;
-	int has_thrpt_enh3;
+	bool isinit;
 	u8 *cmd53_buf;
 };
 
@@ -215,6 +215,13 @@ static int wilc_sdio_reset(struct wilc *wilc)
 		return ret;
 	}
 	return 0;
+}
+
+static bool wilc_sdio_is_init(struct wilc *wilc)
+{
+	struct wilc_sdio *sdio_priv = wilc->bus_data;
+
+	return sdio_priv->isinit;
 }
 
 static int wilc_sdio_suspend(struct device *dev)
@@ -609,6 +616,9 @@ static int wilc_sdio_read(struct wilc *wilc, u32 addr, u8 *buf, u32 size)
 
 static int wilc_sdio_deinit(struct wilc *wilc)
 {
+	struct wilc_sdio *sdio_priv = wilc->bus_data;
+
+	sdio_priv->isinit = false;
 	return 0;
 }
 
@@ -626,7 +636,7 @@ static int wilc_sdio_init(struct wilc *wilc, bool resume)
 	cmd.read_write = 1;
 	cmd.function = 0;
 	cmd.raw = 1;
-	cmd.address = SDIO_FBR_BASE(func->num);
+	cmd.address = SDIO_FBR_BASE(1);
 	cmd.data = SDIO_FBR_ENABLE_CSA;
 	ret = wilc_sdio_cmd52(wilc, &cmd);
 	if (ret) {
@@ -711,23 +721,15 @@ static int wilc_sdio_init(struct wilc *wilc, bool resume)
 	 *      make sure can read back chip id correctly
 	 **/
 	if (!resume) {
-		int rev;
-
 		ret = wilc_sdio_read_reg(wilc, WILC_CHIPID, &chipid);
 		if (ret) {
 			dev_err(&func->dev, "Fail cmd read chip id...\n");
 			return ret;
 		}
 		dev_err(&func->dev, "chipid (%08x)\n", chipid);
-		rev = FIELD_GET(WILC_CHIP_REV_FIELD, chipid);
-		if (rev > FIELD_GET(WILC_CHIP_REV_FIELD, WILC_1000_BASE_ID_2A))
-			sdio_priv->has_thrpt_enh3 = 1;
-		else
-			sdio_priv->has_thrpt_enh3 = 0;
-		dev_info(&func->dev, "has_thrpt_enh3 = %d...\n",
-			 sdio_priv->has_thrpt_enh3);
 	}
 
+	sdio_priv->isinit = true;
 	return 0;
 }
 
@@ -797,102 +799,29 @@ static int wilc_sdio_clear_int_ext(struct wilc *wilc, u32 val)
 	struct sdio_func *func = dev_to_sdio_func(wilc->dev);
 	struct wilc_sdio *sdio_priv = wilc->bus_data;
 	int ret;
-	int vmm_ctl;
+	u32 reg = 0;
 
-	if (sdio_priv->has_thrpt_enh3) {
-		u32 reg = 0;
+	if (sdio_priv->irq_gpio)
+		reg = val & (BIT(MAX_NUM_INT) - 1);
 
-		if (sdio_priv->irq_gpio)
-			reg = val & (BIT(MAX_NUM_INT) - 1);
-
-		/* select VMM table 0 */
-		if (val & SEL_VMM_TBL0)
-			reg |= BIT(5);
-		/* select VMM table 1 */
-		if (val & SEL_VMM_TBL1)
-			reg |= BIT(6);
-		/* enable VMM */
-		if (val & EN_VMM)
-			reg |= BIT(7);
-		if (reg) {
-			struct sdio_cmd52 cmd;
-
-			cmd.read_write = 1;
-			cmd.function = 0;
-			cmd.raw = 0;
-			cmd.address = WILC_SDIO_IRQ_CLEAR_FLAG_REG;
-			cmd.data = reg;
-
-			ret = wilc_sdio_cmd52(wilc, &cmd);
-			if (ret) {
-				dev_err(&func->dev,
-					"Failed cmd52, set (%02x) data (%d) ...\n",
-					cmd.address, __LINE__);
-				return ret;
-			}
-		}
-		return 0;
-	}
-	if (sdio_priv->irq_gpio) {
-		/* has_thrpt_enh2 uses register 0xf8 to clear interrupts. */
-		/*
-		 * Cannot clear multiple interrupts.
-		 * Must clear each interrupt individually.
-		 */
-		u32 flags;
-		int i;
-
-		flags = val & (BIT(MAX_NUM_INT) - 1);
-		for (i = 0; i < NUM_INT_EXT && flags; i++) {
-			if (flags & BIT(i)) {
-				struct sdio_cmd52 cmd;
-
-				cmd.read_write = 1;
-				cmd.function = 0;
-				cmd.raw = 0;
-				cmd.address = WILC_SDIO_IRQ_CLEAR_FLAG_REG;
-				cmd.data = BIT(i);
-
-				ret = wilc_sdio_cmd52(wilc, &cmd);
-				if (ret) {
-					dev_err(&func->dev,
-						"Failed cmd52, set (%02x) data (%d) ...\n",
-						cmd.address, __LINE__);
-					return ret;
-				}
-				flags &= ~BIT(i);
-			}
-		}
-
-		for (i = NUM_INT_EXT; i < MAX_NUM_INT && flags; i++) {
-			if (flags & BIT(i)) {
-				dev_err(&func->dev,
-					"Unexpected interrupt cleared %d...\n",
-					i);
-				flags &= ~BIT(i);
-			}
-		}
-	}
-
-	vmm_ctl = 0;
 	/* select VMM table 0 */
 	if (val & SEL_VMM_TBL0)
-		vmm_ctl |= BIT(0);
+		reg |= BIT(5);
 	/* select VMM table 1 */
 	if (val & SEL_VMM_TBL1)
-		vmm_ctl |= BIT(1);
+		reg |= BIT(6);
 	/* enable VMM */
 	if (val & EN_VMM)
-		vmm_ctl |= BIT(2);
-
-	if (vmm_ctl) {
+		reg |= BIT(7);
+	if (reg) {
 		struct sdio_cmd52 cmd;
 
 		cmd.read_write = 1;
 		cmd.function = 0;
 		cmd.raw = 0;
-		cmd.address = WILC_SDIO_VMM_TBL_CTRL_REG;
-		cmd.data = vmm_ctl;
+		cmd.address = WILC_SDIO_IRQ_CLEAR_FLAG_REG;
+		cmd.data = reg;
+
 		ret = wilc_sdio_cmd52(wilc, &cmd);
 		if (ret) {
 			dev_err(&func->dev,
@@ -1008,6 +937,8 @@ static const struct wilc_hif_func wilc_hif_sdio = {
 	.hif_sync_ext = wilc_sdio_sync_ext,
 	.enable_interrupt = wilc_sdio_enable_interrupt,
 	.disable_interrupt = wilc_sdio_disable_interrupt,
+	.hif_reset = wilc_sdio_reset,
+	.hif_is_init = wilc_sdio_is_init,
 };
 
 static int wilc_sdio_resume(struct device *dev)

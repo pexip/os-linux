@@ -30,6 +30,9 @@ config IIO_CONFIGFS
 	  (e.g. software triggers). For more info see
 	  Documentation/iio/iio_configfs.rst.
 
+config IIO_GTS_HELPER
+	tristate
+
 config IIO_TRIGGER
 	bool "Enable triggered sampling support"
 	help
@@ -78,6 +81,7 @@ source "drivers/iio/chemical/Kconfig"
 source "drivers/iio/common/Kconfig"
 source "drivers/iio/dac/Kconfig"
 source "drivers/iio/dummy/Kconfig"
+source "drivers/iio/filter/Kconfig"
 source "drivers/iio/frequency/Kconfig"
 source "drivers/iio/gyro/Kconfig"
 source "drivers/iio/health/Kconfig"

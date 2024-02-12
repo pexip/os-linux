@@ -125,6 +125,22 @@ struct pipe_buf_operations {
 };
 
 /**
+ * pipe_has_watch_queue - Check whether the pipe is a watch_queue,
+ * i.e. it was created with O_NOTIFICATION_PIPE
+ * @pipe: The pipe to check
+ *
+ * Return: true if pipe is a watch queue, false otherwise.
+ */
+static inline bool pipe_has_watch_queue(const struct pipe_inode_info *pipe)
+{
+#ifdef CONFIG_WATCH_QUEUE
+	return pipe->watch_queue != NULL;
+#else
+	return false;
+#endif
+}
+
+/**
  * pipe_empty - Return true if the pipe is empty
  * @head: The pipe ring head pointer
  * @tail: The pipe ring tail pointer
@@ -157,23 +173,23 @@ static inline bool pipe_full(unsigned int head, unsigned int tail,
 }
 
 /**
- * pipe_space_for_user - Return number of slots available to userspace
- * @head: The pipe ring head pointer
- * @tail: The pipe ring tail pointer
- * @pipe: The pipe info structure
+ * pipe_buf - Return the pipe buffer for the specified slot in the pipe ring
+ * @pipe: The pipe to access
+ * @slot: The slot of interest
  */
-static inline unsigned int pipe_space_for_user(unsigned int head, unsigned int tail,
-					       struct pipe_inode_info *pipe)
+static inline struct pipe_buffer *pipe_buf(const struct pipe_inode_info *pipe,
+					   unsigned int slot)
 {
-	unsigned int p_occupancy, p_space;
+	return &pipe->bufs[slot & (pipe->ring_size - 1)];
+}
 
-	p_occupancy = pipe_occupancy(head, tail);
-	if (p_occupancy >= pipe->max_usage)
-		return 0;
-	p_space = pipe->ring_size - p_occupancy;
-	if (p_space > pipe->max_usage)
-		p_space = pipe->max_usage;
-	return p_space;
+/**
+ * pipe_head_buf - Return the pipe buffer at the head of the pipe ring
+ * @pipe: The pipe to access
+ */
+static inline struct pipe_buffer *pipe_head_buf(const struct pipe_inode_info *pipe)
+{
+	return pipe_buf(pipe, pipe->head);
 }
 
 /**
@@ -247,10 +263,6 @@ void pipe_lock(struct pipe_inode_info *);
 void pipe_unlock(struct pipe_inode_info *);
 void pipe_double_lock(struct pipe_inode_info *, struct pipe_inode_info *);
 
-extern unsigned int pipe_max_size;
-extern unsigned long pipe_user_pages_hard;
-extern unsigned long pipe_user_pages_soft;
-
 /* Wait for a pipe to be readable/writable while dropping the pipe lock */
 void pipe_wait_readable(struct pipe_inode_info *);
 void pipe_wait_writable(struct pipe_inode_info *);
@@ -273,10 +285,10 @@ bool pipe_is_unprivileged_user(void);
 
 /* for F_SETPIPE_SZ and F_GETPIPE_SZ */
 int pipe_resize_ring(struct pipe_inode_info *pipe, unsigned int nr_slots);
-long pipe_fcntl(struct file *, unsigned int, unsigned long arg);
+long pipe_fcntl(struct file *, unsigned int, unsigned int arg);
 struct pipe_inode_info *get_pipe_info(struct file *file, bool for_splice);
 
 int create_pipe_files(struct file **, int);
-unsigned int round_pipe_size(unsigned long size);
+unsigned int round_pipe_size(unsigned int size);
 
 #endif

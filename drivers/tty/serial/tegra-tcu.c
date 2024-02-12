@@ -7,7 +7,6 @@
 #include <linux/mailbox_client.h>
 #include <linux/module.h>
 #include <linux/of.h>
-#include <linux/of_device.h>
 #include <linux/platform_device.h>
 #include <linux/serial.h>
 #include <linux/serial_core.h>
@@ -126,7 +125,7 @@ static void tegra_tcu_uart_shutdown(struct uart_port *port)
 
 static void tegra_tcu_uart_set_termios(struct uart_port *port,
 				       struct ktermios *new,
-				       struct ktermios *old)
+				       const struct ktermios *old)
 {
 }
 

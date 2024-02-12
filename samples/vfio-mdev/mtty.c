@@ -12,7 +12,6 @@
 
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/device.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
 #include <linux/poll.h>
@@ -20,7 +19,6 @@
 #include <linux/cdev.h>
 #include <linux/sched.h>
 #include <linux/wait.h>
-#include <linux/uuid.h>
 #include <linux/vfio.h>
 #include <linux/iommu.h>
 #include <linux/sysfs.h>
@@ -74,6 +72,7 @@ static struct mtty_dev {
 	struct cdev	vd_cdev;
 	struct idr	vd_idr;
 	struct device	dev;
+	struct mdev_parent parent;
 } mtty_dev;
 
 struct mdev_region_info {
@@ -128,7 +127,6 @@ struct serial_port {
 /* State of each mdev device */
 struct mdev_state {
 	struct vfio_device vdev;
-	int irq_fd;
 	struct eventfd_ctx *intx_evtfd;
 	struct eventfd_ctx *msi_evtfd;
 	int irq_index;
@@ -142,6 +140,22 @@ struct mdev_state {
 	struct mutex rxtx_lock;
 	struct vfio_device_info dev_info;
 	int nr_ports;
+	u8 intx_mask:1;
+};
+
+static struct mtty_type {
+	struct mdev_type type;
+	int nr_ports;
+} mtty_types[2] = {
+	{ .nr_ports = 1, .type.sysfs_name = "1",
+	  .type.pretty_name = "Single port serial" },
+	{ .nr_ports = 2, .type.sysfs_name = "2",
+	  .type.pretty_name = "Dual port serial" },
+};
+
+static struct mdev_type *mtty_mdev_types[] = {
+	&mtty_types[0].type,
+	&mtty_types[1].type,
 };
 
 static atomic_t mdev_avail_ports = ATOMIC_INIT(MAX_MTTYS);
@@ -151,10 +165,6 @@ static const struct file_operations vd_fops = {
 };
 
 static const struct vfio_device_ops mtty_dev_ops;
-
-/* function prototypes */
-
-static int mtty_trigger_interrupt(struct mdev_state *mdev_state);
 
 /* Helper functions */
 
@@ -170,6 +180,36 @@ static void dump_buffer(u8 *buf, uint32_t count)
 			pr_info("\n");
 	}
 #endif
+}
+
+static bool is_intx(struct mdev_state *mdev_state)
+{
+	return mdev_state->irq_index == VFIO_PCI_INTX_IRQ_INDEX;
+}
+
+static bool is_msi(struct mdev_state *mdev_state)
+{
+	return mdev_state->irq_index == VFIO_PCI_MSI_IRQ_INDEX;
+}
+
+static bool is_noirq(struct mdev_state *mdev_state)
+{
+	return !is_intx(mdev_state) && !is_msi(mdev_state);
+}
+
+static void mtty_trigger_interrupt(struct mdev_state *mdev_state)
+{
+	lockdep_assert_held(&mdev_state->ops_lock);
+
+	if (is_msi(mdev_state)) {
+		if (mdev_state->msi_evtfd)
+			eventfd_signal(mdev_state->msi_evtfd, 1);
+	} else if (is_intx(mdev_state)) {
+		if (mdev_state->intx_evtfd && !mdev_state->intx_mask) {
+			eventfd_signal(mdev_state->intx_evtfd, 1);
+			mdev_state->intx_mask = true;
+		}
+	}
 }
 
 static void mtty_create_config_space(struct mdev_state *mdev_state)
@@ -703,71 +743,81 @@ accessfailed:
 	return ret;
 }
 
-static int mtty_probe(struct mdev_device *mdev)
+static int mtty_init_dev(struct vfio_device *vdev)
 {
-	struct mdev_state *mdev_state;
-	int nr_ports = mdev_get_type_group_id(mdev) + 1;
+	struct mdev_state *mdev_state =
+		container_of(vdev, struct mdev_state, vdev);
+	struct mdev_device *mdev = to_mdev_device(vdev->dev);
+	struct mtty_type *type =
+		container_of(mdev->type, struct mtty_type, type);
 	int avail_ports = atomic_read(&mdev_avail_ports);
 	int ret;
 
 	do {
-		if (avail_ports < nr_ports)
+		if (avail_ports < type->nr_ports)
 			return -ENOSPC;
 	} while (!atomic_try_cmpxchg(&mdev_avail_ports,
-				     &avail_ports, avail_ports - nr_ports));
+				     &avail_ports,
+				     avail_ports - type->nr_ports));
 
-	mdev_state = kzalloc(sizeof(struct mdev_state), GFP_KERNEL);
-	if (mdev_state == NULL) {
-		ret = -ENOMEM;
-		goto err_nr_ports;
-	}
-
-	vfio_init_group_dev(&mdev_state->vdev, &mdev->dev, &mtty_dev_ops);
-
-	mdev_state->nr_ports = nr_ports;
+	mdev_state->nr_ports = type->nr_ports;
 	mdev_state->irq_index = -1;
 	mdev_state->s[0].max_fifo_size = MAX_FIFO_SIZE;
 	mdev_state->s[1].max_fifo_size = MAX_FIFO_SIZE;
 	mutex_init(&mdev_state->rxtx_lock);
-	mdev_state->vconfig = kzalloc(MTTY_CONFIG_SPACE_SIZE, GFP_KERNEL);
 
-	if (mdev_state->vconfig == NULL) {
+	mdev_state->vconfig = kzalloc(MTTY_CONFIG_SPACE_SIZE, GFP_KERNEL);
+	if (!mdev_state->vconfig) {
 		ret = -ENOMEM;
-		goto err_state;
+		goto err_nr_ports;
 	}
 
 	mutex_init(&mdev_state->ops_lock);
 	mdev_state->mdev = mdev;
-
 	mtty_create_config_space(mdev_state);
+	return 0;
 
-	ret = vfio_register_group_dev(&mdev_state->vdev);
+err_nr_ports:
+	atomic_add(type->nr_ports, &mdev_avail_ports);
+	return ret;
+}
+
+static int mtty_probe(struct mdev_device *mdev)
+{
+	struct mdev_state *mdev_state;
+	int ret;
+
+	mdev_state = vfio_alloc_device(mdev_state, vdev, &mdev->dev,
+				       &mtty_dev_ops);
+	if (IS_ERR(mdev_state))
+		return PTR_ERR(mdev_state);
+
+	ret = vfio_register_emulated_iommu_dev(&mdev_state->vdev);
 	if (ret)
-		goto err_vconfig;
+		goto err_put_vdev;
 	dev_set_drvdata(&mdev->dev, mdev_state);
 	return 0;
 
-err_vconfig:
-	kfree(mdev_state->vconfig);
-err_state:
-	vfio_uninit_group_dev(&mdev_state->vdev);
-	kfree(mdev_state);
-err_nr_ports:
-	atomic_add(nr_ports, &mdev_avail_ports);
+err_put_vdev:
+	vfio_put_device(&mdev_state->vdev);
 	return ret;
+}
+
+static void mtty_release_dev(struct vfio_device *vdev)
+{
+	struct mdev_state *mdev_state =
+		container_of(vdev, struct mdev_state, vdev);
+
+	atomic_add(mdev_state->nr_ports, &mdev_avail_ports);
+	kfree(mdev_state->vconfig);
 }
 
 static void mtty_remove(struct mdev_device *mdev)
 {
 	struct mdev_state *mdev_state = dev_get_drvdata(&mdev->dev);
-	int nr_ports = mdev_state->nr_ports;
 
 	vfio_unregister_group_dev(&mdev_state->vdev);
-
-	kfree(mdev_state->vconfig);
-	vfio_uninit_group_dev(&mdev_state->vdev);
-	kfree(mdev_state);
-	atomic_add(nr_ports, &mdev_avail_ports);
+	vfio_put_device(&mdev_state->vdev);
 }
 
 static int mtty_reset(struct mdev_state *mdev_state)
@@ -897,6 +947,25 @@ write_err:
 	return -EFAULT;
 }
 
+static void mtty_disable_intx(struct mdev_state *mdev_state)
+{
+	if (mdev_state->intx_evtfd) {
+		eventfd_ctx_put(mdev_state->intx_evtfd);
+		mdev_state->intx_evtfd = NULL;
+		mdev_state->intx_mask = false;
+		mdev_state->irq_index = -1;
+	}
+}
+
+static void mtty_disable_msi(struct mdev_state *mdev_state)
+{
+	if (mdev_state->msi_evtfd) {
+		eventfd_ctx_put(mdev_state->msi_evtfd);
+		mdev_state->msi_evtfd = NULL;
+		mdev_state->irq_index = -1;
+	}
+}
+
 static int mtty_set_irqs(struct mdev_state *mdev_state, uint32_t flags,
 			 unsigned int index, unsigned int start,
 			 unsigned int count, void *data)
@@ -908,59 +977,113 @@ static int mtty_set_irqs(struct mdev_state *mdev_state, uint32_t flags,
 	case VFIO_PCI_INTX_IRQ_INDEX:
 		switch (flags & VFIO_IRQ_SET_ACTION_TYPE_MASK) {
 		case VFIO_IRQ_SET_ACTION_MASK:
+			if (!is_intx(mdev_state) || start != 0 || count != 1) {
+				ret = -EINVAL;
+				break;
+			}
+
+			if (flags & VFIO_IRQ_SET_DATA_NONE) {
+				mdev_state->intx_mask = true;
+			} else if (flags & VFIO_IRQ_SET_DATA_BOOL) {
+				uint8_t mask = *(uint8_t *)data;
+
+				if (mask)
+					mdev_state->intx_mask = true;
+			} else if (flags &  VFIO_IRQ_SET_DATA_EVENTFD) {
+				ret = -ENOTTY; /* No support for mask fd */
+			}
+			break;
 		case VFIO_IRQ_SET_ACTION_UNMASK:
+			if (!is_intx(mdev_state) || start != 0 || count != 1) {
+				ret = -EINVAL;
+				break;
+			}
+
+			if (flags & VFIO_IRQ_SET_DATA_NONE) {
+				mdev_state->intx_mask = false;
+			} else if (flags & VFIO_IRQ_SET_DATA_BOOL) {
+				uint8_t mask = *(uint8_t *)data;
+
+				if (mask)
+					mdev_state->intx_mask = false;
+			} else if (flags &  VFIO_IRQ_SET_DATA_EVENTFD) {
+				ret = -ENOTTY; /* No support for unmask fd */
+			}
 			break;
 		case VFIO_IRQ_SET_ACTION_TRIGGER:
-		{
-			if (flags & VFIO_IRQ_SET_DATA_NONE) {
-				pr_info("%s: disable INTx\n", __func__);
-				if (mdev_state->intx_evtfd)
-					eventfd_ctx_put(mdev_state->intx_evtfd);
+			if (is_intx(mdev_state) && !count &&
+			    (flags & VFIO_IRQ_SET_DATA_NONE)) {
+				mtty_disable_intx(mdev_state);
+				break;
+			}
+
+			if (!(is_intx(mdev_state) || is_noirq(mdev_state)) ||
+			    start != 0 || count != 1) {
+				ret = -EINVAL;
 				break;
 			}
 
 			if (flags & VFIO_IRQ_SET_DATA_EVENTFD) {
 				int fd = *(int *)data;
+				struct eventfd_ctx *evt;
 
-				if (fd > 0) {
-					struct eventfd_ctx *evt;
+				mtty_disable_intx(mdev_state);
 
-					evt = eventfd_ctx_fdget(fd);
-					if (IS_ERR(evt)) {
-						ret = PTR_ERR(evt);
-						break;
-					}
-					mdev_state->intx_evtfd = evt;
-					mdev_state->irq_fd = fd;
-					mdev_state->irq_index = index;
+				if (fd < 0)
+					break;
+
+				evt = eventfd_ctx_fdget(fd);
+				if (IS_ERR(evt)) {
+					ret = PTR_ERR(evt);
 					break;
 				}
+				mdev_state->intx_evtfd = evt;
+				mdev_state->irq_index = index;
+				break;
+			}
+
+			if (!is_intx(mdev_state)) {
+				ret = -EINVAL;
+				break;
+			}
+
+			if (flags & VFIO_IRQ_SET_DATA_NONE) {
+				mtty_trigger_interrupt(mdev_state);
+			} else if (flags & VFIO_IRQ_SET_DATA_BOOL) {
+				uint8_t trigger = *(uint8_t *)data;
+
+				if (trigger)
+					mtty_trigger_interrupt(mdev_state);
 			}
 			break;
-		}
 		}
 		break;
 	case VFIO_PCI_MSI_IRQ_INDEX:
 		switch (flags & VFIO_IRQ_SET_ACTION_TYPE_MASK) {
 		case VFIO_IRQ_SET_ACTION_MASK:
 		case VFIO_IRQ_SET_ACTION_UNMASK:
+			ret = -ENOTTY;
 			break;
 		case VFIO_IRQ_SET_ACTION_TRIGGER:
-			if (flags & VFIO_IRQ_SET_DATA_NONE) {
-				if (mdev_state->msi_evtfd)
-					eventfd_ctx_put(mdev_state->msi_evtfd);
-				pr_info("%s: disable MSI\n", __func__);
-				mdev_state->irq_index = VFIO_PCI_INTX_IRQ_INDEX;
+			if (is_msi(mdev_state) && !count &&
+			    (flags & VFIO_IRQ_SET_DATA_NONE)) {
+				mtty_disable_msi(mdev_state);
 				break;
 			}
+
+			if (!(is_msi(mdev_state) || is_noirq(mdev_state)) ||
+			    start != 0 || count != 1) {
+				ret = -EINVAL;
+				break;
+			}
+
 			if (flags & VFIO_IRQ_SET_DATA_EVENTFD) {
 				int fd = *(int *)data;
 				struct eventfd_ctx *evt;
 
-				if (fd <= 0)
-					break;
+				mtty_disable_msi(mdev_state);
 
-				if (mdev_state->msi_evtfd)
+				if (fd < 0)
 					break;
 
 				evt = eventfd_ctx_fdget(fd);
@@ -969,51 +1092,41 @@ static int mtty_set_irqs(struct mdev_state *mdev_state, uint32_t flags,
 					break;
 				}
 				mdev_state->msi_evtfd = evt;
-				mdev_state->irq_fd = fd;
 				mdev_state->irq_index = index;
+				break;
+			}
+
+			if (!is_msi(mdev_state)) {
+				ret = -EINVAL;
+				break;
+			}
+
+			if (flags & VFIO_IRQ_SET_DATA_NONE) {
+				mtty_trigger_interrupt(mdev_state);
+			} else if (flags & VFIO_IRQ_SET_DATA_BOOL) {
+				uint8_t trigger = *(uint8_t *)data;
+
+				if (trigger)
+					mtty_trigger_interrupt(mdev_state);
 			}
 			break;
-	}
-	break;
+		}
+		break;
 	case VFIO_PCI_MSIX_IRQ_INDEX:
-		pr_info("%s: MSIX_IRQ\n", __func__);
+		dev_dbg(mdev_state->vdev.dev, "%s: MSIX_IRQ\n", __func__);
+		ret = -ENOTTY;
 		break;
 	case VFIO_PCI_ERR_IRQ_INDEX:
-		pr_info("%s: ERR_IRQ\n", __func__);
+		dev_dbg(mdev_state->vdev.dev, "%s: ERR_IRQ\n", __func__);
+		ret = -ENOTTY;
 		break;
 	case VFIO_PCI_REQ_IRQ_INDEX:
-		pr_info("%s: REQ_IRQ\n", __func__);
+		dev_dbg(mdev_state->vdev.dev, "%s: REQ_IRQ\n", __func__);
+		ret = -ENOTTY;
 		break;
 	}
 
 	mutex_unlock(&mdev_state->ops_lock);
-	return ret;
-}
-
-static int mtty_trigger_interrupt(struct mdev_state *mdev_state)
-{
-	int ret = -1;
-
-	if ((mdev_state->irq_index == VFIO_PCI_MSI_IRQ_INDEX) &&
-	    (!mdev_state->msi_evtfd))
-		return -EINVAL;
-	else if ((mdev_state->irq_index == VFIO_PCI_INTX_IRQ_INDEX) &&
-		 (!mdev_state->intx_evtfd)) {
-		pr_info("%s: Intr eventfd not found\n", __func__);
-		return -EINVAL;
-	}
-
-	if (mdev_state->irq_index == VFIO_PCI_MSI_IRQ_INDEX)
-		ret = eventfd_signal(mdev_state->msi_evtfd, 1);
-	else
-		ret = eventfd_signal(mdev_state->intx_evtfd, 1);
-
-#if defined(DEBUG_INTR)
-	pr_info("Intx triggered\n");
-#endif
-	if (ret != 1)
-		pr_err("%s: eventfd signal failed (%d)\n", __func__, ret);
-
 	return ret;
 }
 
@@ -1060,22 +1173,16 @@ static int mtty_get_region_info(struct mdev_state *mdev_state,
 
 static int mtty_get_irq_info(struct vfio_irq_info *irq_info)
 {
-	switch (irq_info->index) {
-	case VFIO_PCI_INTX_IRQ_INDEX:
-	case VFIO_PCI_MSI_IRQ_INDEX:
-	case VFIO_PCI_REQ_IRQ_INDEX:
-		break;
-
-	default:
+	if (irq_info->index != VFIO_PCI_INTX_IRQ_INDEX &&
+	    irq_info->index != VFIO_PCI_MSI_IRQ_INDEX)
 		return -EINVAL;
-	}
 
 	irq_info->flags = VFIO_IRQ_INFO_EVENTFD;
 	irq_info->count = 1;
 
 	if (irq_info->index == VFIO_PCI_INTX_IRQ_INDEX)
-		irq_info->flags |= (VFIO_IRQ_INFO_MASKABLE |
-				VFIO_IRQ_INFO_AUTOMASKED);
+		irq_info->flags |= VFIO_IRQ_INFO_MASKABLE |
+				   VFIO_IRQ_INFO_AUTOMASKED;
 	else
 		irq_info->flags |= VFIO_IRQ_INFO_NORESIZE;
 
@@ -1208,37 +1315,10 @@ static long mtty_ioctl(struct vfio_device *vdev, unsigned int cmd,
 }
 
 static ssize_t
-sample_mtty_dev_show(struct device *dev, struct device_attribute *attr,
-		     char *buf)
-{
-	return sprintf(buf, "This is phy device\n");
-}
-
-static DEVICE_ATTR_RO(sample_mtty_dev);
-
-static struct attribute *mtty_dev_attrs[] = {
-	&dev_attr_sample_mtty_dev.attr,
-	NULL,
-};
-
-static const struct attribute_group mtty_dev_group = {
-	.name  = "mtty_dev",
-	.attrs = mtty_dev_attrs,
-};
-
-static const struct attribute_group *mtty_dev_groups[] = {
-	&mtty_dev_group,
-	NULL,
-};
-
-static ssize_t
 sample_mdev_dev_show(struct device *dev, struct device_attribute *attr,
 		     char *buf)
 {
-	if (mdev_from_dev(dev))
-		return sprintf(buf, "This is MDEV %s\n", dev_name(dev));
-
-	return sprintf(buf, "\n");
+	return sprintf(buf, "This is MDEV %s\n", dev_name(dev));
 }
 
 static DEVICE_ATTR_RO(sample_mdev_dev);
@@ -1258,68 +1338,38 @@ static const struct attribute_group *mdev_dev_groups[] = {
 	NULL,
 };
 
-static ssize_t name_show(struct mdev_type *mtype,
-			 struct mdev_type_attribute *attr, char *buf)
+static unsigned int mtty_get_available(struct mdev_type *mtype)
 {
-	static const char *name_str[2] = { "Single port serial",
-					   "Dual port serial" };
+	struct mtty_type *type = container_of(mtype, struct mtty_type, type);
 
-	return sysfs_emit(buf, "%s\n",
-			  name_str[mtype_get_type_group_id(mtype)]);
+	return atomic_read(&mdev_avail_ports) / type->nr_ports;
 }
 
-static MDEV_TYPE_ATTR_RO(name);
-
-static ssize_t available_instances_show(struct mdev_type *mtype,
-					struct mdev_type_attribute *attr,
-					char *buf)
+static void mtty_close(struct vfio_device *vdev)
 {
-	unsigned int ports = mtype_get_type_group_id(mtype) + 1;
+	struct mdev_state *mdev_state =
+				container_of(vdev, struct mdev_state, vdev);
 
-	return sprintf(buf, "%d\n", atomic_read(&mdev_avail_ports) / ports);
+	mtty_disable_intx(mdev_state);
+	mtty_disable_msi(mdev_state);
 }
-
-static MDEV_TYPE_ATTR_RO(available_instances);
-
-static ssize_t device_api_show(struct mdev_type *mtype,
-			       struct mdev_type_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%s\n", VFIO_DEVICE_API_PCI_STRING);
-}
-
-static MDEV_TYPE_ATTR_RO(device_api);
-
-static struct attribute *mdev_types_attrs[] = {
-	&mdev_type_attr_name.attr,
-	&mdev_type_attr_device_api.attr,
-	&mdev_type_attr_available_instances.attr,
-	NULL,
-};
-
-static struct attribute_group mdev_type_group1 = {
-	.name  = "1",
-	.attrs = mdev_types_attrs,
-};
-
-static struct attribute_group mdev_type_group2 = {
-	.name  = "2",
-	.attrs = mdev_types_attrs,
-};
-
-static struct attribute_group *mdev_type_groups[] = {
-	&mdev_type_group1,
-	&mdev_type_group2,
-	NULL,
-};
 
 static const struct vfio_device_ops mtty_dev_ops = {
 	.name = "vfio-mtty",
+	.init = mtty_init_dev,
+	.release = mtty_release_dev,
 	.read = mtty_read,
 	.write = mtty_write,
 	.ioctl = mtty_ioctl,
+	.bind_iommufd	= vfio_iommufd_emulated_bind,
+	.unbind_iommufd	= vfio_iommufd_emulated_unbind,
+	.attach_ioas	= vfio_iommufd_emulated_attach_ioas,
+	.detach_ioas	= vfio_iommufd_emulated_detach_ioas,
+	.close_device	= mtty_close,
 };
 
 static struct mdev_driver mtty_driver = {
+	.device_api = VFIO_DEVICE_API_PCI_STRING,
 	.driver = {
 		.name = "mtty",
 		.owner = THIS_MODULE,
@@ -1328,13 +1378,7 @@ static struct mdev_driver mtty_driver = {
 	},
 	.probe = mtty_probe,
 	.remove	= mtty_remove,
-};
-
-static const struct mdev_parent_ops mdev_fops = {
-	.owner                  = THIS_MODULE,
-	.device_driver		= &mtty_driver,
-	.dev_attr_groups        = mtty_dev_groups,
-	.supported_type_groups  = mdev_type_groups,
+	.get_available = mtty_get_available,
 };
 
 static void mtty_device_release(struct device *dev)
@@ -1369,7 +1413,7 @@ static int __init mtty_dev_init(void)
 	if (ret)
 		goto err_cdev;
 
-	mtty_dev.vd_class = class_create(THIS_MODULE, MTTY_CLASS_NAME);
+	mtty_dev.vd_class = class_create(MTTY_CLASS_NAME);
 
 	if (IS_ERR(mtty_dev.vd_class)) {
 		pr_err("Error: failed to register mtty_dev class\n");
@@ -1383,16 +1427,19 @@ static int __init mtty_dev_init(void)
 
 	ret = device_register(&mtty_dev.dev);
 	if (ret)
-		goto err_class;
+		goto err_put;
 
-	ret = mdev_register_device(&mtty_dev.dev, &mdev_fops);
+	ret = mdev_register_parent(&mtty_dev.parent, &mtty_dev.dev,
+				   &mtty_driver, mtty_mdev_types,
+				   ARRAY_SIZE(mtty_mdev_types));
 	if (ret)
 		goto err_device;
 	return 0;
 
 err_device:
-	device_unregister(&mtty_dev.dev);
-err_class:
+	device_del(&mtty_dev.dev);
+err_put:
+	put_device(&mtty_dev.dev);
 	class_destroy(mtty_dev.vd_class);
 err_driver:
 	mdev_unregister_driver(&mtty_driver);
@@ -1405,7 +1452,7 @@ err_cdev:
 static void __exit mtty_dev_exit(void)
 {
 	mtty_dev.dev.bus = NULL;
-	mdev_unregister_device(&mtty_dev.dev);
+	mdev_unregister_parent(&mtty_dev.parent);
 
 	device_unregister(&mtty_dev.dev);
 	idr_destroy(&mtty_dev.vd_idr);

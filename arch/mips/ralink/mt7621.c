@@ -10,6 +10,8 @@
 #include <linux/slab.h>
 #include <linux/sys_soc.h>
 #include <linux/memblock.h>
+#include <linux/pci.h>
+#include <linux/bug.h>
 
 #include <asm/bootinfo.h>
 #include <asm/mipsregs.h>
@@ -24,6 +26,35 @@
 
 static u32 detect_magic __initdata;
 static struct ralink_soc_info *soc_info_ptr;
+
+int pcibios_root_bridge_prepare(struct pci_host_bridge *bridge)
+{
+	struct resource_entry *entry;
+	resource_size_t mask;
+
+	entry = resource_list_first_type(&bridge->windows, IORESOURCE_MEM);
+	if (!entry) {
+		pr_err("Cannot get memory resource\n");
+		return -EINVAL;
+	}
+
+	if (mips_cps_numiocu(0)) {
+		/*
+		 * Hardware doesn't accept mask values with 1s after
+		 * 0s (e.g. 0xffef), so warn if that's happen
+		 */
+		mask = ~(entry->res->end - entry->res->start) & CM_GCR_REGn_MASK_ADDRMASK;
+		WARN_ON(mask && BIT(ffz(~mask)) - 1 != ~mask);
+
+		write_gcr_reg1_base(entry->res->start);
+		write_gcr_reg1_mask(mask | CM_GCR_REGn_MASK_CMTGT_IOCU0);
+		pr_info("PCI coherence region base: 0x%08llx, mask/settings: 0x%08llx\n",
+			(unsigned long long)read_gcr_reg1_base(),
+			(unsigned long long)read_gcr_reg1_mask());
+	}
+
+	return 0;
+}
 
 phys_addr_t mips_cpc_default_phys_base(void)
 {
@@ -56,15 +87,6 @@ static void __init mt7621_memory_detect(void)
 
 	memblock_add(MT7621_LOWMEM_BASE, MT7621_LOWMEM_MAX_SIZE);
 	memblock_add(MT7621_HIGHMEM_BASE, MT7621_HIGHMEM_SIZE);
-}
-
-void __init ralink_of_remap(void)
-{
-	rt_sysc_membase = plat_of_remap_node("mediatek,mt7621-sysc");
-	rt_memc_membase = plat_of_remap_node("mediatek,mt7621-memc");
-
-	if (!rt_sysc_membase || !rt_memc_membase)
-		panic("Failed to remap core resources");
 }
 
 static unsigned int __init mt7621_get_soc_name0(void)
@@ -185,8 +207,6 @@ void __init prom_soc_init(struct ralink_soc_info *soc_info)
 	soc_info_ptr = soc_info;
 
 	if (!register_cps_smp_ops())
-		return;
-	if (!register_cmp_smp_ops())
 		return;
 	if (!register_vsmp_smp_ops())
 		return;

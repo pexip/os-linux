@@ -29,6 +29,7 @@
 
 #include <drm/drm_atomic_uapi.h>
 #include <drm/drm_atomic.h>
+#include <drm/drm_framebuffer.h>
 #include <drm/drm_print.h>
 #include <drm/drm_drv.h>
 #include <drm/drm_writeback.h>
@@ -255,43 +256,6 @@ drm_atomic_set_fb_for_plane(struct drm_plane_state *plane_state,
 EXPORT_SYMBOL(drm_atomic_set_fb_for_plane);
 
 /**
- * drm_atomic_set_fence_for_plane - set fence for plane
- * @plane_state: atomic state object for the plane
- * @fence: dma_fence to use for the plane
- *
- * Helper to setup the plane_state fence in case it is not set yet.
- * By using this drivers doesn't need to worry if the user choose
- * implicit or explicit fencing.
- *
- * This function will not set the fence to the state if it was set
- * via explicit fencing interfaces on the atomic ioctl. In that case it will
- * drop the reference to the fence as we are not storing it anywhere.
- * Otherwise, if &drm_plane_state.fence is not set this function we just set it
- * with the received implicit fence. In both cases this function consumes a
- * reference for @fence.
- *
- * This way explicit fencing can be used to overrule implicit fencing, which is
- * important to make explicit fencing use-cases work: One example is using one
- * buffer for 2 screens with different refresh rates. Implicit fencing will
- * clamp rendering to the refresh rate of the slower screen, whereas explicit
- * fence allows 2 independent render and display loops on a single buffer. If a
- * driver allows obeys both implicit and explicit fences for plane updates, then
- * it will break all the benefits of explicit fencing.
- */
-void
-drm_atomic_set_fence_for_plane(struct drm_plane_state *plane_state,
-			       struct dma_fence *fence)
-{
-	if (plane_state->fence) {
-		dma_fence_put(fence);
-		return;
-	}
-
-	plane_state->fence = fence;
-}
-EXPORT_SYMBOL(drm_atomic_set_fence_for_plane);
-
-/**
  * drm_atomic_set_crtc_for_connector - set CRTC for connector
  * @conn_state: atomic state object for the connector
  * @crtc: CRTC to use for the connector
@@ -410,16 +374,25 @@ drm_atomic_replace_property_blob_from_id(struct drm_device *dev,
 
 	if (blob_id != 0) {
 		new_blob = drm_property_lookup_blob(dev, blob_id);
-		if (new_blob == NULL)
+		if (new_blob == NULL) {
+			drm_dbg_atomic(dev,
+				       "cannot find blob ID %llu\n", blob_id);
 			return -EINVAL;
+		}
 
 		if (expected_size > 0 &&
 		    new_blob->length != expected_size) {
+			drm_dbg_atomic(dev,
+				       "[BLOB:%d] length %zu different from expected %zu\n",
+				       new_blob->base.id, new_blob->length, expected_size);
 			drm_property_blob_put(new_blob);
 			return -EINVAL;
 		}
 		if (expected_elem_size > 0 &&
 		    new_blob->length % expected_elem_size != 0) {
+			drm_dbg_atomic(dev,
+				       "[BLOB:%d] length %zu not divisible by element size %zu\n",
+				       new_blob->base.id, new_blob->length, expected_elem_size);
 			drm_property_blob_put(new_blob);
 			return -EINVAL;
 		}
@@ -490,7 +463,7 @@ static int drm_atomic_crtc_set_property(struct drm_crtc *crtc,
 		return crtc->funcs->atomic_set_property(crtc, state, property, val);
 	} else {
 		drm_dbg_atomic(crtc->dev,
-			       "[CRTC:%d:%s] unknown property [PROP:%d:%s]]\n",
+			       "[CRTC:%d:%s] unknown property [PROP:%d:%s]\n",
 			       crtc->base.id, crtc->name,
 			       property->base.id, property->name);
 		return -EINVAL;
@@ -525,8 +498,13 @@ drm_atomic_crtc_get_property(struct drm_crtc *crtc,
 		*val = state->scaling_filter;
 	else if (crtc->funcs->atomic_get_property)
 		return crtc->funcs->atomic_get_property(crtc, state, property, val);
-	else
+	else {
+		drm_dbg_atomic(dev,
+			       "[CRTC:%d:%s] unknown property [PROP:%d:%s]\n",
+			       crtc->base.id, crtc->name,
+			       property->base.id, property->name);
 		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -561,8 +539,12 @@ static int drm_atomic_plane_set_property(struct drm_plane *plane,
 	} else if (property == config->prop_crtc_id) {
 		struct drm_crtc *crtc = drm_crtc_find(dev, file_priv, val);
 
-		if (val && !crtc)
+		if (val && !crtc) {
+			drm_dbg_atomic(dev,
+				       "[PROP:%d:%s] cannot find CRTC with ID %llu\n",
+				       property->base.id, property->name, val);
 			return -EACCES;
+		}
 		return drm_atomic_set_crtc_for_plane(state, crtc);
 	} else if (property == config->prop_crtc_x) {
 		state->crtc_x = U642I64(val);
@@ -613,7 +595,7 @@ static int drm_atomic_plane_set_property(struct drm_plane *plane,
 				property, val);
 	} else {
 		drm_dbg_atomic(plane->dev,
-			       "[PLANE:%d:%s] unknown property [PROP:%d:%s]]\n",
+			       "[PLANE:%d:%s] unknown property [PROP:%d:%s]\n",
 			       plane->base.id, plane->name,
 			       property->base.id, property->name);
 		return -EINVAL;
@@ -672,6 +654,10 @@ drm_atomic_plane_get_property(struct drm_plane *plane,
 	} else if (plane->funcs->atomic_get_property) {
 		return plane->funcs->atomic_get_property(plane, state, property, val);
 	} else {
+		drm_dbg_atomic(dev,
+			       "[PLANE:%d:%s] unknown property [PROP:%d:%s]\n",
+			       plane->base.id, plane->name,
+			       property->base.id, property->name);
 		return -EINVAL;
 	}
 
@@ -713,16 +699,25 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
 	if (property == config->prop_crtc_id) {
 		struct drm_crtc *crtc = drm_crtc_find(dev, file_priv, val);
 
-		if (val && !crtc)
+		if (val && !crtc) {
+			drm_dbg_atomic(dev,
+				       "[PROP:%d:%s] cannot find CRTC with ID %llu\n",
+				       property->base.id, property->name, val);
 			return -EACCES;
+		}
 		return drm_atomic_set_crtc_for_connector(state, crtc);
 	} else if (property == config->dpms_property) {
 		/* setting DPMS property requires special handling, which
 		 * is done in legacy setprop path for us.  Disallow (for
 		 * now?) atomic writes to DPMS property:
 		 */
+		drm_dbg_atomic(dev,
+			       "legacy [PROP:%d:%s] can only be set via legacy uAPI\n",
+			       property->base.id, property->name);
 		return -EINVAL;
 	} else if (property == config->tv_select_subconnector_property) {
+		state->tv.select_subconnector = val;
+	} else if (property == config->tv_subconnector_property) {
 		state->tv.subconnector = val;
 	} else if (property == config->tv_left_margin_property) {
 		state->tv.margins.left = val;
@@ -732,6 +727,8 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
 		state->tv.margins.top = val;
 	} else if (property == config->tv_bottom_margin_property) {
 		state->tv.margins.bottom = val;
+	} else if (property == config->legacy_tv_mode_property) {
+		state->tv.legacy_mode = val;
 	} else if (property == config->tv_mode_property) {
 		state->tv.mode = val;
 	} else if (property == config->tv_brightness_property) {
@@ -775,7 +772,7 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
 		state->scaling_mode = val;
 	} else if (property == config->content_protection_property) {
 		if (val == DRM_MODE_CONTENT_PROTECTION_ENABLED) {
-			DRM_DEBUG_KMS("only drivers can set CP Enabled\n");
+			drm_dbg_kms(dev, "only drivers can set CP Enabled\n");
 			return -EINVAL;
 		}
 		state->content_protection = val;
@@ -799,12 +796,14 @@ static int drm_atomic_connector_set_property(struct drm_connector *connector,
 						   fence_ptr);
 	} else if (property == connector->max_bpc_property) {
 		state->max_requested_bpc = val;
+	} else if (property == connector->privacy_screen_sw_state_property) {
+		state->privacy_screen_sw_state = val;
 	} else if (connector->funcs->atomic_set_property) {
 		return connector->funcs->atomic_set_property(connector,
 				state, property, val);
 	} else {
 		drm_dbg_atomic(connector->dev,
-			       "[CONNECTOR:%d:%s] unknown property [PROP:%d:%s]]\n",
+			       "[CONNECTOR:%d:%s] unknown property [PROP:%d:%s]\n",
 			       connector->base.id, connector->name,
 			       property->base.id, property->name);
 		return -EINVAL;
@@ -829,6 +828,8 @@ drm_atomic_connector_get_property(struct drm_connector *connector,
 		else
 			*val = connector->dpms;
 	} else if (property == config->tv_select_subconnector_property) {
+		*val = state->tv.select_subconnector;
+	} else if (property == config->tv_subconnector_property) {
 		*val = state->tv.subconnector;
 	} else if (property == config->tv_left_margin_property) {
 		*val = state->tv.margins.left;
@@ -838,6 +839,8 @@ drm_atomic_connector_get_property(struct drm_connector *connector,
 		*val = state->tv.margins.top;
 	} else if (property == config->tv_bottom_margin_property) {
 		*val = state->tv.margins.bottom;
+	} else if (property == config->legacy_tv_mode_property) {
+		*val = state->tv.legacy_mode;
 	} else if (property == config->tv_mode_property) {
 		*val = state->tv.mode;
 	} else if (property == config->tv_brightness_property) {
@@ -876,10 +879,16 @@ drm_atomic_connector_get_property(struct drm_connector *connector,
 		*val = 0;
 	} else if (property == connector->max_bpc_property) {
 		*val = state->max_requested_bpc;
+	} else if (property == connector->privacy_screen_sw_state_property) {
+		*val = state->privacy_screen_sw_state;
 	} else if (connector->funcs->atomic_get_property) {
 		return connector->funcs->atomic_get_property(connector,
 				state, property, val);
 	} else {
+		drm_dbg_atomic(dev,
+			       "[CONNECTOR:%d:%s] unknown property [PROP:%d:%s]\n",
+			       connector->base.id, connector->name,
+			       property->base.id, property->name);
 		return -EINVAL;
 	}
 
@@ -918,6 +927,7 @@ int drm_atomic_get_property(struct drm_mode_object *obj,
 		break;
 	}
 	default:
+		drm_dbg_atomic(dev, "[OBJECT:%d] has no properties\n", obj->id);
 		ret = -EINVAL;
 		break;
 	}
@@ -1054,6 +1064,7 @@ int drm_atomic_set_property(struct drm_atomic_state *state,
 		break;
 	}
 	default:
+		drm_dbg_atomic(prop->dev, "[OBJECT:%d] has no properties\n", obj->id);
 		ret = -EINVAL;
 		break;
 	}
@@ -1073,10 +1084,10 @@ int drm_atomic_set_property(struct drm_atomic_state *state,
  *
  * As a contrast, with implicit fencing the kernel keeps track of any
  * ongoing rendering, and automatically ensures that the atomic update waits
- * for any pending rendering to complete. For shared buffers represented with
- * a &struct dma_buf this is tracked in &struct dma_resv.
- * Implicit syncing is how Linux traditionally worked (e.g. DRI2/3 on X.org),
- * whereas explicit fencing is what Android wants.
+ * for any pending rendering to complete. This is usually tracked in &struct
+ * dma_resv which can also contain mandatory kernel fences. Implicit syncing
+ * is how Linux traditionally worked (e.g. DRI2/3 on X.org), whereas explicit
+ * fencing is what Android wants.
  *
  * "IN_FENCE_FD”:
  *	Use this property to pass a fence that DRM should wait on before
@@ -1091,7 +1102,7 @@ int drm_atomic_set_property(struct drm_atomic_state *state,
  *
  *	On the driver side the fence is stored on the @fence parameter of
  *	&struct drm_plane_state. Drivers which also support implicit fencing
- *	should set the implicit fence using drm_atomic_set_fence_for_plane(),
+ *	should extract the implicit fence using drm_gem_plane_helper_prepare_fb(),
  *	to make sure there's consistent behaviour between drivers in precedence
  *	of implicit vs. explicit fencing.
  *
@@ -1254,8 +1265,10 @@ static int prepare_signaling(struct drm_device *dev,
 	 * Having this flag means user mode pends on event which will never
 	 * reach due to lack of at least one CRTC for signaling
 	 */
-	if (c == 0 && (arg->flags & DRM_MODE_PAGE_FLIP_EVENT))
+	if (c == 0 && (arg->flags & DRM_MODE_PAGE_FLIP_EVENT)) {
+		drm_dbg_atomic(dev, "need at least one CRTC for DRM_MODE_PAGE_FLIP_EVENT");
 		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -1324,7 +1337,6 @@ int drm_mode_atomic_ioctl(struct drm_device *dev,
 	struct drm_out_fence_state *fence_state;
 	int ret = 0;
 	unsigned int i, j, num_fences;
-	struct drm_printer p = drm_info_printer(dev->dev);
 
 	/* disallow for drivers not supporting atomic: */
 	if (!drm_core_check_feature(dev, DRIVER_ATOMIC))
@@ -1389,11 +1401,13 @@ retry:
 
 		obj = drm_mode_object_find(dev, file_priv, obj_id, DRM_MODE_OBJECT_ANY);
 		if (!obj) {
+			drm_dbg_atomic(dev, "cannot find object ID %d", obj_id);
 			ret = -ENOENT;
 			goto out;
 		}
 
 		if (!obj->properties) {
+			drm_dbg_atomic(dev, "[OBJECT:%d] has no properties", obj_id);
 			drm_mode_object_put(obj);
 			ret = -ENOENT;
 			goto out;
@@ -1420,6 +1434,9 @@ retry:
 
 			prop = drm_mode_obj_find_prop_id(obj, prop_id);
 			if (!prop) {
+				drm_dbg_atomic(dev,
+					       "[OBJECT:%d] cannot find property ID %d",
+					       obj_id, prop_id);
 				drm_mode_object_put(obj);
 				ret = -ENOENT;
 				goto out;
@@ -1456,9 +1473,6 @@ retry:
 	} else if (arg->flags & DRM_MODE_ATOMIC_NONBLOCK) {
 		ret = drm_atomic_nonblocking_commit(state);
 	} else {
-		if (drm_debug_enabled(DRM_UT_STATE))
-			drm_atomic_print_new_state(state, &p);
-
 		ret = drm_atomic_commit(state);
 	}
 

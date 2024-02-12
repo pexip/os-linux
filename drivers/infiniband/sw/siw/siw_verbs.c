@@ -8,6 +8,7 @@
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
 #include <linux/xarray.h>
+#include <net/addrconf.h>
 
 #include <rdma/iw_cm.h>
 #include <rdma/ib_verbs.h>
@@ -131,8 +132,8 @@ int siw_query_device(struct ib_device *base_dev, struct ib_device_attr *attr,
 
 	/* Revisit atomic caps if RFC 7306 gets supported */
 	attr->atomic_cap = 0;
-	attr->device_cap_flags =
-		IB_DEVICE_MEM_MGT_EXTENSIONS | IB_DEVICE_ALLOW_USER_UNREG;
+	attr->device_cap_flags = IB_DEVICE_MEM_MGT_EXTENSIONS;
+	attr->kernel_cap_flags = IBK_ALLOW_USER_UNREG;
 	attr->max_cq = sdev->attrs.max_cq;
 	attr->max_cqe = sdev->attrs.max_cqe;
 	attr->max_fast_reg_page_list_len = SIW_MAX_SGE_PBL;
@@ -155,7 +156,8 @@ int siw_query_device(struct ib_device *base_dev, struct ib_device_attr *attr,
 	attr->vendor_id = SIW_VENDOR_ID;
 	attr->vendor_part_id = sdev->vendor_part_id;
 
-	memcpy(&attr->sys_image_guid, sdev->netdev->dev_addr, 6);
+	addrconf_addr_eui48((u8 *)&attr->sys_image_guid,
+			    sdev->raw_gid);
 
 	return 0;
 }
@@ -216,7 +218,7 @@ int siw_query_gid(struct ib_device *base_dev, u32 port, int idx,
 
 	/* subnet_prefix == interface_id == 0; */
 	memset(gid, 0, sizeof(*gid));
-	memcpy(&gid->raw[0], sdev->netdev->dev_addr, 6);
+	memcpy(gid->raw, sdev->raw_gid, ETH_ALEN);
 
 	return 0;
 }
@@ -379,7 +381,7 @@ int siw_create_qp(struct ib_qp *ibqp, struct ib_qp_init_attr *attrs,
 	if (udata)
 		qp->sendq = vmalloc_user(num_sqe * sizeof(struct siw_sqe));
 	else
-		qp->sendq = vzalloc(num_sqe * sizeof(struct siw_sqe));
+		qp->sendq = vcalloc(num_sqe, sizeof(struct siw_sqe));
 
 	if (qp->sendq == NULL) {
 		rv = -ENOMEM;
@@ -412,7 +414,7 @@ int siw_create_qp(struct ib_qp *ibqp, struct ib_qp_init_attr *attrs,
 			qp->recvq =
 				vmalloc_user(num_rqe * sizeof(struct siw_rqe));
 		else
-			qp->recvq = vzalloc(num_rqe * sizeof(struct siw_rqe));
+			qp->recvq = vcalloc(num_rqe, sizeof(struct siw_rqe));
 
 		if (qp->recvq == NULL) {
 			rv = -ENOMEM;
@@ -658,13 +660,13 @@ static int siw_copy_inline_sgl(const struct ib_send_wr *core_wr,
 			bytes = -EINVAL;
 			break;
 		}
-		memcpy(kbuf, (void *)(uintptr_t)core_sge->addr,
+		memcpy(kbuf, ib_virt_dma_to_ptr(core_sge->addr),
 		       core_sge->length);
 
 		kbuf += core_sge->length;
 		core_sge++;
 	}
-	sqe->sge[0].length = bytes > 0 ? bytes : 0;
+	sqe->sge[0].length = max(bytes, 0);
 	sqe->num_sge = bytes > 0 ? 1 : 0;
 
 	return bytes;
@@ -1200,7 +1202,7 @@ int siw_create_cq(struct ib_cq *base_cq, const struct ib_cq_init_attr *attr,
 err_out:
 	siw_dbg(base_cq->device, "CQ creation failed: %d", rv);
 
-	if (cq && cq->queue) {
+	if (cq->queue) {
 		struct siw_ucontext *ctx =
 			rdma_udata_to_drv_context(udata, struct siw_ucontext,
 						  base_ucontext);
@@ -1492,7 +1494,7 @@ int siw_map_mr_sg(struct ib_mr *base_mr, struct scatterlist *sl, int num_sle,
 
 	if (pbl->max_buf < num_sle) {
 		siw_dbg_mem(mem, "too many SGE's: %d > %d\n",
-			    mem->pbl->max_buf, num_sle);
+			    num_sle, pbl->max_buf);
 		return -ENOMEM;
 	}
 	for_each_sg(sl, slp, num_sle, i) {
@@ -1521,7 +1523,7 @@ int siw_map_mr_sg(struct ib_mr *base_mr, struct scatterlist *sl, int num_sle,
 		}
 		siw_dbg_mem(mem,
 			"sge[%d], size %u, addr 0x%p, total %lu\n",
-			i, pble->size, (void *)(uintptr_t)pble->addr,
+			i, pble->size, ib_virt_dma_to_ptr(pble->addr),
 			pbl_size);
 	}
 	rv = ib_sg_to_pages(base_mr, sl, num_sle, sg_off, siw_set_pbl_page);
@@ -1622,7 +1624,7 @@ int siw_create_srq(struct ib_srq *base_srq,
 		srq->recvq =
 			vmalloc_user(srq->num_rqe * sizeof(struct siw_rqe));
 	else
-		srq->recvq = vzalloc(srq->num_rqe * sizeof(struct siw_rqe));
+		srq->recvq = vcalloc(srq->num_rqe, sizeof(struct siw_rqe));
 
 	if (srq->recvq == NULL) {
 		rv = -ENOMEM;

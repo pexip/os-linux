@@ -3,7 +3,6 @@
 ##
 #. This feature is broken; see #866122
 # CONFIG_PPC_TRANSACTIONAL_MEM is not set
-CONFIG_CRASH_DUMP=y
 CONFIG_IRQ_ALL_CPUS=y
 CONFIG_NUMA=y
 ## choice: Page size
@@ -11,6 +10,11 @@ CONFIG_PPC_64K_PAGES=y
 ## end choice
 CONFIG_SCHED_SMT=y
 CONFIG_KERNEL_START=0xc000000000000000
+
+##
+## file: arch/powerpc/crypto/Kconfig
+##
+CONFIG_CRYPTO_CRC32C_VPMSUM=m
 
 ##
 ## file: arch/powerpc/kvm/Kconfig
@@ -45,7 +49,6 @@ CONFIG_OPAL_PRD=m
 ##
 CONFIG_PPC_PSERIES=y
 CONFIG_PPC_SPLPAR=y
-CONFIG_SCANLOG=m
 # CONFIG_LPARCFG is not set
 
 ##
@@ -62,7 +65,12 @@ CONFIG_PATA_AMD=m
 ## file: drivers/block/Kconfig
 ##
 # CONFIG_MAC_FLOPPY is not set
-CONFIG_BLK_DEV_RSXX=m
+
+##
+## file: drivers/char/hw_random/Kconfig
+##
+CONFIG_HW_RANDOM_PSERIES=m
+CONFIG_HW_RANDOM_POWERNV=m
 
 ##
 ## file: drivers/crypto/Kconfig
@@ -84,7 +92,7 @@ CONFIG_CRYPTO_DEV_NX_COMPRESS_POWERNV=m
 CONFIG_CRYPTO_DEV_VMX_ENCRYPT=m
 
 ##
-## file: drivers/gpu/drm/Kconfig
+## file: drivers/gpu/drm/amd/amdgpu/Kconfig
 ##
 CONFIG_DRM_AMDGPU=m
 
@@ -191,6 +199,11 @@ CONFIG_WATCHDOG_RTAS=m
 # CONFIG_TICK_CPU_ACCOUNTING is not set
 CONFIG_VIRT_CPU_ACCOUNTING_NATIVE=y
 ## end choice
+
+##
+## file: kernel/Kconfig.kexec
+##
+CONFIG_CRASH_DUMP=y
 
 ##
 ## file: lib/Kconfig

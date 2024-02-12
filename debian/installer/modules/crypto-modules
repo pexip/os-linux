@@ -9,6 +9,8 @@ ccm
 ctr
 ecb
 xts
+michael_mic
 
-# For LUKS2 in cryptsetup
+# For cryptsetup
 algif_skcipher
+essiv

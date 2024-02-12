@@ -11,8 +11,7 @@
 
 static u16 enetc_get_max_gcl_len(struct enetc_hw *hw)
 {
-	return enetc_rd(hw, ENETC_QBV_PTGCAPR_OFFSET)
-		& ENETC_QBV_MAX_GCL_LEN_MASK;
+	return enetc_rd(hw, ENETC_PTGCAPR) & ENETC_PTGCAPR_MAX_GCL_LEN_MASK;
 }
 
 void enetc_sched_speed_set(struct enetc_ndev_priv *priv, int speed)
@@ -44,16 +43,14 @@ void enetc_sched_speed_set(struct enetc_ndev_priv *priv, int speed)
 	enetc_port_wr(hw, ENETC_PMR, (tmp & ~ENETC_PMR_PSPEED_MASK) | pspeed);
 }
 
-#define ENETC_QOS_ALIGN	64
-static int enetc_setup_taprio(struct net_device *ndev,
+static int enetc_setup_taprio(struct enetc_ndev_priv *priv,
 			      struct tc_taprio_qopt_offload *admin_conf)
 {
-	struct enetc_ndev_priv *priv = netdev_priv(ndev);
 	struct enetc_hw *hw = &priv->si->hw;
 	struct enetc_cbd cbd = {.cmd = 0};
 	struct tgs_gcl_conf *gcl_config;
 	struct tgs_gcl_data *gcl_data;
-	dma_addr_t dma, dma_align;
+	dma_addr_t dma;
 	struct gce *gce;
 	u16 data_size;
 	u16 gcl_len;
@@ -62,18 +59,13 @@ static int enetc_setup_taprio(struct net_device *ndev,
 	int err;
 	int i;
 
+	/* TSD and Qbv are mutually exclusive in hardware */
+	for (i = 0; i < priv->num_tx_rings; i++)
+		if (priv->tx_ring[i]->tsd_enable)
+			return -EBUSY;
+
 	if (admin_conf->num_entries > enetc_get_max_gcl_len(hw))
 		return -EINVAL;
-	gcl_len = admin_conf->num_entries;
-
-	tge = enetc_rd(hw, ENETC_QBV_PTGCR_OFFSET);
-	if (!admin_conf->enable) {
-		enetc_wr(hw, ENETC_QBV_PTGCR_OFFSET, tge & ~ENETC_QBV_TGE);
-
-		priv->active_offloads &= ~ENETC_F_QBV;
-
-		return 0;
-	}
 
 	if (admin_conf->cycle_time > U32_MAX ||
 	    admin_conf->cycle_time_extension > U32_MAX)
@@ -83,18 +75,13 @@ static int enetc_setup_taprio(struct net_device *ndev,
 	 * control BD descriptor.
 	 */
 	gcl_config = &cbd.gcl_conf;
+	gcl_len = admin_conf->num_entries;
 
 	data_size = struct_size(gcl_data, entry, gcl_len);
-	tmp = dma_alloc_coherent(&priv->si->pdev->dev,
-				 data_size + ENETC_QOS_ALIGN,
-				 &dma, GFP_KERNEL);
-	if (!tmp) {
-		dev_err(&priv->si->pdev->dev,
-			"DMA mapping of taprio gate list failed!\n");
+	tmp = enetc_cbd_alloc_data_mem(priv->si, &cbd, data_size,
+				       &dma, (void *)&gcl_data);
+	if (!tmp)
 		return -ENOMEM;
-	}
-	dma_align = ALIGN(dma, ENETC_QOS_ALIGN);
-	gcl_data = (struct tgs_gcl_data *)PTR_ALIGN(tmp, ENETC_QOS_ALIGN);
 
 	gce = (struct gce *)(gcl_data + 1);
 
@@ -117,56 +104,118 @@ static int enetc_setup_taprio(struct net_device *ndev,
 		temp_gce->period = cpu_to_le32(temp_entry->interval);
 	}
 
-	cbd.length = cpu_to_le16(data_size);
 	cbd.status_flags = 0;
 
-	cbd.addr[0] = cpu_to_le32(lower_32_bits(dma_align));
-	cbd.addr[1] = cpu_to_le32(upper_32_bits(dma_align));
 	cbd.cls = BDCR_CMD_PORT_GCL;
 	cbd.status_flags = 0;
 
-	enetc_wr(hw, ENETC_QBV_PTGCR_OFFSET, tge | ENETC_QBV_TGE);
+	tge = enetc_rd(hw, ENETC_PTGCR);
+	enetc_wr(hw, ENETC_PTGCR, tge | ENETC_PTGCR_TGE);
 
 	err = enetc_send_cmd(priv->si, &cbd);
 	if (err)
-		enetc_wr(hw, ENETC_QBV_PTGCR_OFFSET, tge & ~ENETC_QBV_TGE);
+		enetc_wr(hw, ENETC_PTGCR, tge & ~ENETC_PTGCR_TGE);
 
-	dma_free_coherent(&priv->si->pdev->dev, data_size + ENETC_QOS_ALIGN,
-			  tmp, dma);
+	enetc_cbd_free_data_mem(priv->si, data_size, tmp, &dma);
 
-	if (!err)
-		priv->active_offloads |= ENETC_F_QBV;
+	if (err)
+		return err;
+
+	enetc_set_ptcmsdur(hw, admin_conf->max_sdu);
+	priv->active_offloads |= ENETC_F_QBV;
+
+	return 0;
+}
+
+static void enetc_reset_taprio_stats(struct enetc_ndev_priv *priv)
+{
+	int i;
+
+	for (i = 0; i < priv->num_tx_rings; i++)
+		priv->tx_ring[i]->stats.win_drop = 0;
+}
+
+static void enetc_reset_taprio(struct enetc_ndev_priv *priv)
+{
+	struct enetc_hw *hw = &priv->si->hw;
+	u32 val;
+
+	val = enetc_rd(hw, ENETC_PTGCR);
+	enetc_wr(hw, ENETC_PTGCR, val & ~ENETC_PTGCR_TGE);
+	enetc_reset_ptcmsdur(hw);
+
+	priv->active_offloads &= ~ENETC_F_QBV;
+}
+
+static void enetc_taprio_destroy(struct net_device *ndev)
+{
+	struct enetc_ndev_priv *priv = netdev_priv(ndev);
+
+	enetc_reset_taprio(priv);
+	enetc_reset_tc_mqprio(ndev);
+	enetc_reset_taprio_stats(priv);
+}
+
+static void enetc_taprio_stats(struct net_device *ndev,
+			       struct tc_taprio_qopt_stats *stats)
+{
+	struct enetc_ndev_priv *priv = netdev_priv(ndev);
+	u64 window_drops = 0;
+	int i;
+
+	for (i = 0; i < priv->num_tx_rings; i++)
+		window_drops += priv->tx_ring[i]->stats.win_drop;
+
+	stats->window_drops = window_drops;
+}
+
+static void enetc_taprio_queue_stats(struct net_device *ndev,
+				     struct tc_taprio_qopt_queue_stats *queue_stats)
+{
+	struct tc_taprio_qopt_stats *stats = &queue_stats->stats;
+	struct enetc_ndev_priv *priv = netdev_priv(ndev);
+	int queue = queue_stats->queue;
+
+	stats->window_drops = priv->tx_ring[queue]->stats.win_drop;
+}
+
+static int enetc_taprio_replace(struct net_device *ndev,
+				struct tc_taprio_qopt_offload *offload)
+{
+	struct enetc_ndev_priv *priv = netdev_priv(ndev);
+	int err;
+
+	err = enetc_setup_tc_mqprio(ndev, &offload->mqprio);
+	if (err)
+		return err;
+
+	err = enetc_setup_taprio(priv, offload);
+	if (err)
+		enetc_reset_tc_mqprio(ndev);
 
 	return err;
 }
 
 int enetc_setup_tc_taprio(struct net_device *ndev, void *type_data)
 {
-	struct tc_taprio_qopt_offload *taprio = type_data;
-	struct enetc_ndev_priv *priv = netdev_priv(ndev);
-	struct enetc_hw *hw = &priv->si->hw;
-	struct enetc_bdr *tx_ring;
-	int err;
-	int i;
+	struct tc_taprio_qopt_offload *offload = type_data;
+	int err = 0;
 
-	/* TSD and Qbv are mutually exclusive in hardware */
-	for (i = 0; i < priv->num_tx_rings; i++)
-		if (priv->tx_ring[i]->tsd_enable)
-			return -EBUSY;
-
-	for (i = 0; i < priv->num_tx_rings; i++) {
-		tx_ring = priv->tx_ring[i];
-		tx_ring->prio = taprio->enable ? i : 0;
-		enetc_set_bdr_prio(hw, tx_ring->index, tx_ring->prio);
-	}
-
-	err = enetc_setup_taprio(ndev, taprio);
-	if (err) {
-		for (i = 0; i < priv->num_tx_rings; i++) {
-			tx_ring = priv->tx_ring[i];
-			tx_ring->prio = taprio->enable ? 0 : i;
-			enetc_set_bdr_prio(hw, tx_ring->index, tx_ring->prio);
-		}
+	switch (offload->cmd) {
+	case TAPRIO_CMD_REPLACE:
+		err = enetc_taprio_replace(ndev, offload);
+		break;
+	case TAPRIO_CMD_DESTROY:
+		enetc_taprio_destroy(ndev);
+		break;
+	case TAPRIO_CMD_STATS:
+		enetc_taprio_stats(ndev, &offload->stats);
+		break;
+	case TAPRIO_CMD_QUEUE_STATS:
+		enetc_taprio_queue_stats(ndev, &offload->queue_stats);
+		break;
+	default:
+		err = -EOPNOTSUPP;
 	}
 
 	return err;
@@ -314,12 +363,8 @@ int enetc_setup_tc_txtime(struct net_device *ndev, void *type_data)
 	if (tc < 0 || tc >= priv->num_tx_rings)
 		return -EINVAL;
 
-	/* Do not support TXSTART and TX CSUM offload simutaniously */
-	if (ndev->features & NETIF_F_CSUM_MASK)
-		return -EBUSY;
-
 	/* TSD and Qbv are mutually exclusive in hardware */
-	if (enetc_rd(hw, ENETC_QBV_PTGCR_OFFSET) & ENETC_QBV_TGE)
+	if (enetc_rd(hw, ENETC_PTGCR) & ENETC_PTGCR_TGE)
 		return -EBUSY;
 
 	priv->tx_ring[tc]->tsd_enable = qopt->enable;
@@ -438,13 +483,13 @@ struct enetc_psfp {
 static struct actions_fwd enetc_act_fwd[] = {
 	{
 		BIT(FLOW_ACTION_GATE),
-		BIT(FLOW_DISSECTOR_KEY_ETH_ADDRS),
+		BIT_ULL(FLOW_DISSECTOR_KEY_ETH_ADDRS),
 		FILTER_ACTION_TYPE_PSFP
 	},
 	{
 		BIT(FLOW_ACTION_POLICE) |
 		BIT(FLOW_ACTION_GATE),
-		BIT(FLOW_DISSECTOR_KEY_ETH_ADDRS),
+		BIT_ULL(FLOW_DISSECTOR_KEY_ETH_ADDRS),
 		FILTER_ACTION_TYPE_PSFP
 	},
 	/* example for ACL actions */
@@ -456,6 +501,7 @@ static struct actions_fwd enetc_act_fwd[] = {
 };
 
 static struct enetc_psfp epsfp = {
+	.dev_bitmap = 0,
 	.psfp_sfi_bitmap = NULL,
 };
 
@@ -469,7 +515,7 @@ static int enetc_streamid_hw_set(struct enetc_ndev_priv *priv,
 	struct enetc_cbd cbd = {.cmd = 0};
 	struct streamid_data *si_data;
 	struct streamid_conf *si_conf;
-	dma_addr_t dma, dma_align;
+	dma_addr_t dma;
 	u16 data_size;
 	void *tmp;
 	int port;
@@ -492,20 +538,11 @@ static int enetc_streamid_hw_set(struct enetc_ndev_priv *priv,
 	cbd.status_flags = 0;
 
 	data_size = sizeof(struct streamid_data);
-	tmp = dma_alloc_coherent(&priv->si->pdev->dev,
-				 data_size + ENETC_QOS_ALIGN,
-				 &dma, GFP_KERNEL);
-	if (!tmp) {
-		dev_err(&priv->si->pdev->dev,
-			"DMA mapping of stream identify failed!\n");
+	tmp = enetc_cbd_alloc_data_mem(priv->si, &cbd, data_size,
+				       &dma, (void *)&si_data);
+	if (!tmp)
 		return -ENOMEM;
-	}
-	dma_align = ALIGN(dma, ENETC_QOS_ALIGN);
-	si_data = (struct streamid_data *)PTR_ALIGN(tmp, ENETC_QOS_ALIGN);
 
-	cbd.length = cpu_to_le16(data_size);
-	cbd.addr[0] = cpu_to_le32(lower_32_bits(dma_align));
-	cbd.addr[1] = cpu_to_le32(upper_32_bits(dma_align));
 	eth_broadcast_addr(si_data->dmac);
 	si_data->vid_vidm_tg = (ENETC_CBDR_SID_VID_MASK
 			       + ((0x3 << 14) | ENETC_CBDR_SID_VIDM));
@@ -526,11 +563,6 @@ static int enetc_streamid_hw_set(struct enetc_ndev_priv *priv,
 		goto out;
 
 	/* Enable the entry overwrite again incase space flushed by hardware */
-	memset(&cbd, 0, sizeof(cbd));
-
-	cbd.index = cpu_to_le16((u16)sid->index);
-	cbd.cmd = 0;
-	cbd.cls = BDCR_CMD_STREAM_IDENTIFY;
 	cbd.status_flags = 0;
 
 	si_conf->en = 0x80;
@@ -542,11 +574,6 @@ static int enetc_streamid_hw_set(struct enetc_ndev_priv *priv,
 	si_conf->oui[0] = 0xC2;
 
 	memset(si_data, 0, data_size);
-
-	cbd.length = cpu_to_le16(data_size);
-
-	cbd.addr[0] = cpu_to_le32(lower_32_bits(dma_align));
-	cbd.addr[1] = cpu_to_le32(upper_32_bits(dma_align));
 
 	/* VIDM default to be 1.
 	 * VID Match. If set (b1) then the VID must match, otherwise
@@ -567,8 +594,7 @@ static int enetc_streamid_hw_set(struct enetc_ndev_priv *priv,
 
 	err = enetc_send_cmd(priv->si, &cbd);
 out:
-	dma_free_coherent(&priv->si->pdev->dev, data_size + ENETC_QOS_ALIGN,
-			  tmp, dma);
+	enetc_cbd_free_data_mem(priv->si, data_size, tmp, &dma);
 
 	return err;
 }
@@ -637,7 +663,7 @@ static int enetc_streamcounter_hw_get(struct enetc_ndev_priv *priv,
 {
 	struct enetc_cbd cbd = { .cmd = 2 };
 	struct sfi_counter_data *data_buf;
-	dma_addr_t dma, dma_align;
+	dma_addr_t dma;
 	u16 data_size;
 	void *tmp;
 	int err;
@@ -648,21 +674,11 @@ static int enetc_streamcounter_hw_get(struct enetc_ndev_priv *priv,
 	cbd.status_flags = 0;
 
 	data_size = sizeof(struct sfi_counter_data);
-	tmp = dma_alloc_coherent(&priv->si->pdev->dev,
-				 data_size + ENETC_QOS_ALIGN,
-				 &dma, GFP_KERNEL);
-	if (!tmp) {
-		dev_err(&priv->si->pdev->dev,
-			"DMA mapping of stream counter failed!\n");
+
+	tmp = enetc_cbd_alloc_data_mem(priv->si, &cbd, data_size,
+				       &dma, (void *)&data_buf);
+	if (!tmp)
 		return -ENOMEM;
-	}
-	dma_align = ALIGN(dma, ENETC_QOS_ALIGN);
-	data_buf = (struct sfi_counter_data *)PTR_ALIGN(tmp, ENETC_QOS_ALIGN);
-
-	cbd.addr[0] = cpu_to_le32(lower_32_bits(dma_align));
-	cbd.addr[1] = cpu_to_le32(upper_32_bits(dma_align));
-
-	cbd.length = cpu_to_le16(data_size);
 
 	err = enetc_send_cmd(priv->si, &cbd);
 	if (err)
@@ -689,8 +705,7 @@ static int enetc_streamcounter_hw_get(struct enetc_ndev_priv *priv,
 				data_buf->flow_meter_dropl;
 
 exit:
-	dma_free_coherent(&priv->si->pdev->dev, data_size + ENETC_QOS_ALIGN,
-			  tmp, dma);
+	enetc_cbd_free_data_mem(priv->si, data_size, tmp, &dma);
 
 	return err;
 }
@@ -730,7 +745,7 @@ static int enetc_streamgate_hw_set(struct enetc_ndev_priv *priv,
 	struct sgcl_conf *sgcl_config;
 	struct sgcl_data *sgcl_data;
 	struct sgce *sgce;
-	dma_addr_t dma, dma_align;
+	dma_addr_t dma;
 	u16 data_size;
 	int err, i;
 	void *tmp;
@@ -780,20 +795,10 @@ static int enetc_streamgate_hw_set(struct enetc_ndev_priv *priv,
 	sgcl_config->acl_len = (sgi->num_entries - 1) & 0x3;
 
 	data_size = struct_size(sgcl_data, sgcl, sgi->num_entries);
-	tmp = dma_alloc_coherent(&priv->si->pdev->dev,
-				 data_size + ENETC_QOS_ALIGN,
-				 &dma, GFP_KERNEL);
-	if (!tmp) {
-		dev_err(&priv->si->pdev->dev,
-			"DMA mapping of stream counter failed!\n");
+	tmp = enetc_cbd_alloc_data_mem(priv->si, &cbd, data_size,
+				       &dma, (void *)&sgcl_data);
+	if (!tmp)
 		return -ENOMEM;
-	}
-	dma_align = ALIGN(dma, ENETC_QOS_ALIGN);
-	sgcl_data = (struct sgcl_data *)PTR_ALIGN(tmp, ENETC_QOS_ALIGN);
-
-	cbd.length = cpu_to_le16(data_size);
-	cbd.addr[0] = cpu_to_le32(lower_32_bits(dma_align));
-	cbd.addr[1] = cpu_to_le32(upper_32_bits(dma_align));
 
 	sgce = &sgcl_data->sgcl[0];
 
@@ -848,9 +853,7 @@ static int enetc_streamgate_hw_set(struct enetc_ndev_priv *priv,
 	err = enetc_send_cmd(priv->si, &cbd);
 
 exit:
-	dma_free_coherent(&priv->si->pdev->dev, data_size + ENETC_QOS_ALIGN,
-			  tmp, dma);
-
+	enetc_cbd_free_data_mem(priv->si, data_size, tmp, &dma);
 	return err;
 }
 
@@ -1066,8 +1069,8 @@ revert_sid:
 	return err;
 }
 
-static struct actions_fwd *enetc_check_flow_actions(u64 acts,
-						    unsigned int inputkeys)
+static struct actions_fwd *
+enetc_check_flow_actions(u64 acts, unsigned long long inputkeys)
 {
 	int i;
 
@@ -1077,6 +1080,46 @@ static struct actions_fwd *enetc_check_flow_actions(u64 acts,
 			return &enetc_act_fwd[i];
 
 	return NULL;
+}
+
+static int enetc_psfp_policer_validate(const struct flow_action *action,
+				       const struct flow_action_entry *act,
+				       struct netlink_ext_ack *extack)
+{
+	if (act->police.exceed.act_id != FLOW_ACTION_DROP) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "Offload not supported when exceed action is not drop");
+		return -EOPNOTSUPP;
+	}
+
+	if (act->police.notexceed.act_id != FLOW_ACTION_PIPE &&
+	    act->police.notexceed.act_id != FLOW_ACTION_ACCEPT) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "Offload not supported when conform action is not pipe or ok");
+		return -EOPNOTSUPP;
+	}
+
+	if (act->police.notexceed.act_id == FLOW_ACTION_ACCEPT &&
+	    !flow_action_is_last_entry(action, act)) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "Offload not supported when conform action is ok, but action is not last");
+		return -EOPNOTSUPP;
+	}
+
+	if (act->police.peakrate_bytes_ps ||
+	    act->police.avrate || act->police.overhead) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "Offload not supported when peakrate/avrate/overhead is configured");
+		return -EOPNOTSUPP;
+	}
+
+	if (act->police.rate_pkt_ps) {
+		NL_SET_ERR_MSG_MOD(extack,
+				   "QoS offload not support packets per second");
+		return -EOPNOTSUPP;
+	}
+
+	return 0;
 }
 
 static int enetc_psfp_parse_clsflower(struct enetc_ndev_priv *priv,
@@ -1187,7 +1230,7 @@ static int enetc_psfp_parse_clsflower(struct enetc_ndev_priv *priv,
 	}
 
 	/* parsing gate action */
-	if (entryg->gate.index >= priv->psfp_cap.max_psfp_gate) {
+	if (entryg->hw_index >= priv->psfp_cap.max_psfp_gate) {
 		NL_SET_ERR_MSG_MOD(extack, "No Stream Gate resource!");
 		err = -ENOSPC;
 		goto free_filter;
@@ -1207,7 +1250,7 @@ static int enetc_psfp_parse_clsflower(struct enetc_ndev_priv *priv,
 	}
 
 	refcount_set(&sgi->refcount, 1);
-	sgi->index = entryg->gate.index;
+	sgi->index = entryg->hw_index;
 	sgi->init_ipv = entryg->gate.prio;
 	sgi->basetime = entryg->gate.basetime;
 	sgi->cycletime = entryg->gate.cycletime;
@@ -1235,11 +1278,10 @@ static int enetc_psfp_parse_clsflower(struct enetc_ndev_priv *priv,
 
 	/* Flow meter and max frame size */
 	if (entryp) {
-		if (entryp->police.rate_pkt_ps) {
-			NL_SET_ERR_MSG_MOD(extack, "QoS offload not support packets per second");
-			err = -EOPNOTSUPP;
+		err = enetc_psfp_policer_validate(&rule->action, entryp, extack);
+		if (err)
 			goto free_sfi;
-		}
+
 		if (entryp->police.burst) {
 			fmi = kzalloc(sizeof(*fmi), GFP_KERNEL);
 			if (!fmi) {
@@ -1249,7 +1291,7 @@ static int enetc_psfp_parse_clsflower(struct enetc_ndev_priv *priv,
 			refcount_set(&fmi->refcount, 1);
 			fmi->cir = entryp->police.rate_bytes_ps;
 			fmi->cbs = entryp->police.burst;
-			fmi->index = entryp->police.index;
+			fmi->index = entryp->hw_index;
 			filter->flags |= ENETC_PSFP_FLAGS_FMI;
 			filter->fmi_index = fmi->index;
 			sfi->meter_id = fmi->index;
@@ -1617,4 +1659,31 @@ int enetc_setup_tc_psfp(struct net_device *ndev, void *type_data)
 	}
 
 	return 0;
+}
+
+int enetc_qos_query_caps(struct net_device *ndev, void *type_data)
+{
+	struct enetc_ndev_priv *priv = netdev_priv(ndev);
+	struct tc_query_caps_base *base = type_data;
+	struct enetc_si *si = priv->si;
+
+	switch (base->type) {
+	case TC_SETUP_QDISC_MQPRIO: {
+		struct tc_mqprio_caps *caps = base->caps;
+
+		caps->validate_queue_counts = true;
+
+		return 0;
+	}
+	case TC_SETUP_QDISC_TAPRIO: {
+		struct tc_taprio_caps *caps = base->caps;
+
+		if (si->hw_features & ENETC_SI_F_QBV)
+			caps->supports_queue_max_sdu = true;
+
+		return 0;
+	}
+	default:
+		return -EOPNOTSUPP;
+	}
 }

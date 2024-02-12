@@ -1,6 +1,7 @@
 ##
 ## file: arch/powerpc/Kconfig
 ##
+CONFIG_COMPAT=y
 CONFIG_CMDLINE="console=hvsi0 console=hvc0 console=ttyS0,9600 console=tty0"
 
 ##
@@ -45,6 +46,7 @@ CONFIG_IBMEBUS=y
 ##
 ## file: drivers/char/hw_random/Kconfig
 ##
+CONFIG_HW_RANDOM_AMD=m
 CONFIG_HW_RANDOM_PASEMI=m
 
 ##

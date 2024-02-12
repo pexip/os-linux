@@ -1,6 +1,4 @@
 PROGS = \
-	bin2c \
-	extract-cert \
 	kallsyms \
 	recordmcount \
 	sign-file \
@@ -15,6 +13,7 @@ DATA = \
 
 SCRIPTS =  \
 	checkincludes.pl \
+	check-local-export \
 	checkstack.pl \
 	checkversion.pl \
 	depmod.sh \
@@ -29,6 +28,8 @@ SCRIPTS =  \
 	mkuboot.sh \
 	modules-check.sh \
 	namespace.pl \
+	pahole-flags.sh \
+	pahole-version.sh \
 	patch-kernel \
 	recordmcount.pl \
 	setlocalversion \
@@ -43,4 +44,4 @@ SUBDIRS = \
 include $(top_rulesdir)/Makefile.inc
 
 CPPFLAGS += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-extract-cert sign-file: LDLIBS += -lcrypto
+sign-file: LDLIBS += -lcrypto

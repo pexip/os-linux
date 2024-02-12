@@ -7,7 +7,6 @@ CONFIG_SECCOMP=y
 ## file: arch/powerpc/Kconfig
 ##
 # CONFIG_HOTPLUG_CPU is not set
-CONFIG_KEXEC=y
 CONFIG_CMDLINE="console=ttyS0,9600 console=tty0"
 # CONFIG_ADVANCED_OPTIONS is not set
 
@@ -23,6 +22,11 @@ CONFIG_XMON=y
 CONFIG_XMON_DISASSEMBLY=y
 # CONFIG_BDI_SWITCH is not set
 CONFIG_BOOTX_TEXT=y
+
+##
+## file: arch/powerpc/crypto/Kconfig
+##
+CONFIG_CRYPTO_SHA1_PPC=m
 
 ##
 ## file: arch/powerpc/kvm/Kconfig
@@ -76,11 +80,6 @@ CONFIG_AMIGA_PARTITION=y
 CONFIG_MAC_PARTITION=y
 
 ##
-## file: crypto/Kconfig
-##
-CONFIG_CRYPTO_SHA1_PPC=m
-
-##
 ## file: drivers/ata/Kconfig
 ##
 CONFIG_ATA=y
@@ -107,19 +106,12 @@ CONFIG_ATM_LANAI=m
 CONFIG_ATM_ENI=m
 # CONFIG_ATM_ENI_DEBUG is not set
 # CONFIG_ATM_ENI_TUNE_BURST is not set
-CONFIG_ATM_FIRESTREAM=m
-CONFIG_ATM_ZATM=m
-CONFIG_ATM_ZATM_DEBUG=y
 CONFIG_ATM_NICSTAR=m
 CONFIG_ATM_NICSTAR_USE_SUNI=y
 CONFIG_ATM_NICSTAR_USE_IDT77105=y
 CONFIG_ATM_IDT77252=m
 # CONFIG_ATM_IDT77252_DEBUG is not set
 # CONFIG_ATM_IDT77252_RCV_ALL is not set
-CONFIG_ATM_AMBASSADOR=m
-# CONFIG_ATM_AMBASSADOR_DEBUG is not set
-CONFIG_ATM_HORIZON=m
-# CONFIG_ATM_HORIZON_DEBUG is not set
 CONFIG_ATM_IA=m
 # CONFIG_ATM_IA_DEBUG is not set
 CONFIG_ATM_FORE200E_USE_TASKLET=y
@@ -132,7 +124,6 @@ CONFIG_ATM_HE=m
 ## file: drivers/block/Kconfig
 ##
 CONFIG_BLK_DEV_FD=m
-CONFIG_BLK_DEV_SX8=m
 CONFIG_CDROM_PKTCDVD=m
 CONFIG_CDROM_PKTCDVD_BUFFERS=8
 # CONFIG_CDROM_PKTCDVD_WCACHE is not set
@@ -187,7 +178,6 @@ CONFIG_CPU_FREQ_PMAC=y
 ## file: drivers/gpu/drm/Kconfig
 ##
 CONFIG_DRM=m
-CONFIG_DRM_RADEON=m
 
 ##
 ## file: drivers/gpu/drm/i2c/Kconfig
@@ -200,6 +190,11 @@ CONFIG_DRM_I2C_SIL164=m
 ##
 CONFIG_DRM_NOUVEAU=m
 CONFIG_DRM_NOUVEAU_BACKLIGHT=y
+
+##
+## file: drivers/gpu/drm/radeon/Kconfig
+##
+CONFIG_DRM_RADEON=m
 
 ##
 ## file: drivers/hid/Kconfig
@@ -288,11 +283,6 @@ CONFIG_GAMEPORT_EMU10K1=m
 CONFIG_GAMEPORT_FM801=m
 
 ##
-## file: drivers/input/joystick/Kconfig
-##
-CONFIG_INPUT_JOYSTICK=y
-
-##
 ## file: drivers/input/keyboard/Kconfig
 ##
 CONFIG_INPUT_KEYBOARD=y
@@ -364,8 +354,8 @@ CONFIG_PMAC_RACKMETER=m
 ##
 ## file: drivers/media/radio/Kconfig
 ##
-CONFIG_USB_DSBR=m
 CONFIG_RADIO_MAXIRADIO=m
+CONFIG_USB_DSBR=m
 
 ##
 ## file: drivers/misc/Kconfig
@@ -412,11 +402,6 @@ CONFIG_ARCNET_COM90xxIO=m
 CONFIG_ARCNET_COM20020=m
 CONFIG_ARCNET_COM20020_PCI=m
 CONFIG_ARCNET_COM20020_CS=m
-
-##
-## file: drivers/net/ethernet/Kconfig
-##
-CONFIG_FEALNX=m
 
 ##
 ## file: drivers/net/ethernet/3com/Kconfig
@@ -555,16 +540,9 @@ CONFIG_HIPPI=y
 ## file: drivers/net/wan/Kconfig
 ##
 CONFIG_WAN=y
-CONFIG_LANMEDIA=m
 CONFIG_PCI200SYN=m
 CONFIG_WANXL=m
 CONFIG_FARSYNC=m
-
-##
-## file: drivers/net/wireless/Kconfig
-##
-CONFIG_PCMCIA_RAYCS=m
-CONFIG_PCMCIA_WL3501=m
 
 ##
 ## file: drivers/net/wireless/atmel/Kconfig
@@ -592,6 +570,12 @@ CONFIG_PLX_HERMES=m
 CONFIG_TMD_HERMES=m
 CONFIG_PCI_HERMES=m
 CONFIG_PCMCIA_HERMES=m
+
+##
+## file: drivers/net/wireless/legacy/Kconfig
+##
+CONFIG_PCMCIA_RAYCS=m
+CONFIG_PCMCIA_WL3501=m
 
 ##
 ## file: drivers/net/wireless/marvell/mwifiex/Kconfig
@@ -645,7 +629,6 @@ CONFIG_RTC_DRV_GENERIC=y
 ##
 ## file: drivers/scsi/Kconfig
 ##
-CONFIG_SCSI_DPT_I2O=m
 CONFIG_SCSI_ARCMSR=m
 CONFIG_SCSI_BUSLOGIC=m
 CONFIG_SCSI_MYRB=m
@@ -745,8 +728,6 @@ CONFIG_VGA_CONSOLE=y
 ##
 ## file: drivers/video/fbdev/Kconfig
 ##
-CONFIG_FB_MODE_HELPERS=y
-CONFIG_FB_TILEBLITTING=y
 CONFIG_FB_CIRRUS=m
 # CONFIG_FB_PM2 is not set
 # CONFIG_FB_CYBER2000 is not set
@@ -781,6 +762,12 @@ CONFIG_FB_IBM_GXT4500=m
 # CONFIG_FB_VIRTUAL is not set
 
 ##
+## file: drivers/video/fbdev/core/Kconfig
+##
+CONFIG_FB_MODE_HELPERS=y
+CONFIG_FB_TILEBLITTING=y
+
+##
 ## file: drivers/watchdog/Kconfig
 ##
 CONFIG_WATCHDOG_RTAS=m
@@ -794,8 +781,17 @@ CONFIG_USBPCWATCHDOG=m
 CONFIG_SGETMASK_SYSCALL=y
 
 ##
+## file: kernel/Kconfig.kexec
+##
+CONFIG_KEXEC=y
+
+##
 ## file: lib/Kconfig.debug
 ##
+CONFIG_DEBUG_INFO_BTF=y
+#. Workaround module loading of different builds of on-disk modules
+#. vs booted kernel when keeping same ABI, cf. #1003210, #1022202
+CONFIG_MODULE_ALLOW_BTF_MISMATCH=y
 # CONFIG_DEBUG_STACK_USAGE is not set
 # CONFIG_DEBUG_STACKOVERFLOW is not set
 
@@ -803,17 +799,6 @@ CONFIG_SGETMASK_SYSCALL=y
 ## file: lib/xz/Kconfig
 ##
 CONFIG_XZ_DEC_POWERPC=y
-
-##
-## file: net/decnet/Kconfig
-##
-CONFIG_DECNET=m
-CONFIG_DECNET_ROUTER=y
-
-##
-## file: net/decnet/netfilter/Kconfig
-##
-CONFIG_DECNET_NF_GRABULATOR=m
 
 ##
 ## file: net/lapb/Kconfig

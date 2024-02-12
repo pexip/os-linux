@@ -10,6 +10,9 @@ OUTPUT_ARCH(riscv)
 SECTIONS
 {
 	PROVIDE(_vdso_data = . - __VVAR_PAGES * PAGE_SIZE);
+#ifdef CONFIG_TIME_NS
+	PROVIDE(_timens_data = _vdso_data + PAGE_SIZE);
+#endif
 	. = SIZEOF_HEADERS;
 
 	.hash		: { *(.hash) }			:text
@@ -36,6 +39,13 @@ SECTIONS
 	 */
 	. = 0x800;
 	.text		: { *(.text .text.*) }		:text
+
+	. = ALIGN(4);
+	.alternative : {
+		__alt_start = .;
+		*(.alternative)
+		__alt_end = .;
+	}
 
 	.data		: {
 		*(.got.plt) *(.got)
@@ -72,6 +82,9 @@ VERSION
 #endif
 		__vdso_getcpu;
 		__vdso_flush_icache;
+#ifndef COMPAT_VDSO
+		__vdso_riscv_hwprobe;
+#endif
 	local: *;
 	};
 }

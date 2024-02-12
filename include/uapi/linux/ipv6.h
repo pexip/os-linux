@@ -81,7 +81,7 @@ struct ipv6_opt_hdr {
 struct rt0_hdr {
 	struct ipv6_rt_hdr	rt_hdr;
 	__u32			reserved;
-	struct in6_addr		addr[0];
+	struct in6_addr		addr[];
 
 #define rt0_type		rt_hdr.type
 };
@@ -196,6 +196,9 @@ enum {
 	DEVCONF_IOAM6_ENABLED,
 	DEVCONF_IOAM6_ID,
 	DEVCONF_IOAM6_ID_WIDE,
+	DEVCONF_NDISC_EVICT_NOCARRIER,
+	DEVCONF_ACCEPT_UNTRACKED_NA,
+	DEVCONF_ACCEPT_RA_MIN_LFT,
 	DEVCONF_MAX
 };
 

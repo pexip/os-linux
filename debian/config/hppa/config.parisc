@@ -6,7 +6,7 @@ CONFIG_PA7000=y
 # CONFIG_PA8X00 is not set
 ## end choice
 CONFIG_SMP=y
-CONFIG_NR_CPUS=4
+CONFIG_NR_CPUS=16
 
 ##
 ## file: drivers/net/ethernet/ti/Kconfig
@@ -16,7 +16,6 @@ CONFIG_TLAN=m
 ##
 ## file: drivers/scsi/Kconfig
 ##
-# CONFIG_SCSI_DPT_I2O is not set
 # CONFIG_SCSI_NSP32 is not set
 
 ##

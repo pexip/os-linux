@@ -24,7 +24,6 @@ CONFIG_PATA_NS87410=m
 ## file: drivers/block/Kconfig
 ##
 CONFIG_BLK_DEV_FD=m
-CONFIG_BLK_DEV_SX8=m
 CONFIG_CDROM_PKTCDVD=m
 
 ##
@@ -53,12 +52,6 @@ CONFIG_IPMI_WATCHDOG=m
 CONFIG_IPMI_POWEROFF=m
 
 ##
-## file: drivers/gpu/drm/Kconfig
-##
-CONFIG_DRM=m
-CONFIG_DRM_RADEON=m
-
-##
 ## file: drivers/hwmon/Kconfig
 ##
 CONFIG_SENSORS_ADM1021=m
@@ -80,11 +73,6 @@ CONFIG_SENSORS_LM92=m
 CONFIG_SENSORS_PCF8591=m
 
 ##
-## file: drivers/i2c/Kconfig
-##
-CONFIG_I2C=m
-
-##
 ## file: drivers/i2c/busses/Kconfig
 ##
 CONFIG_I2C_PIIX4=m
@@ -98,11 +86,6 @@ CONFIG_GAMEPORT_EMU10K1=m
 CONFIG_GAMEPORT_FM801=m
 
 ##
-## file: drivers/input/joystick/Kconfig
-##
-CONFIG_INPUT_JOYSTICK=y
-
-##
 ## file: drivers/input/keyboard/Kconfig
 ##
 CONFIG_KEYBOARD_NEWTON=m
@@ -111,7 +94,6 @@ CONFIG_KEYBOARD_SUNKBD=m
 ##
 ## file: drivers/input/mouse/Kconfig
 ##
-CONFIG_MOUSE_PS2=m
 CONFIG_MOUSE_SERIAL=m
 CONFIG_MOUSE_APPLETOUCH=m
 CONFIG_MOUSE_VSXXXAA=m
@@ -137,33 +119,12 @@ CONFIG_INPUT_TOUCHSCREEN=y
 CONFIG_MFD_SM501=m
 
 ##
-## file: drivers/mmc/Kconfig
-##
-CONFIG_MMC=m
-
-##
-## file: drivers/mmc/core/Kconfig
-##
-CONFIG_MMC_BLOCK=m
-
-##
 ## file: drivers/mtd/Kconfig
 ##
 CONFIG_FTL=m
 CONFIG_NFTL=m
 CONFIG_NFTL_RW=y
 CONFIG_INFTL=m
-
-##
-## file: drivers/mtd/chips/Kconfig
-##
-CONFIG_MTD_CFI=m
-CONFIG_MTD_JEDECPROBE=m
-CONFIG_MTD_CFI_INTELEXT=m
-CONFIG_MTD_CFI_AMDSTD=m
-CONFIG_MTD_CFI_STAA=m
-CONFIG_MTD_ROM=m
-CONFIG_MTD_ABSENT=m
 
 ##
 ## file: drivers/mtd/devices/Kconfig
@@ -196,11 +157,6 @@ CONFIG_MTD_REDBOOT_PARTS=y
 ## file: drivers/net/Kconfig
 ##
 CONFIG_NET_FC=y
-
-##
-## file: drivers/net/ethernet/Kconfig
-##
-CONFIG_FEALNX=m
 
 ##
 ## file: drivers/net/ethernet/3com/Kconfig
@@ -321,7 +277,6 @@ CONFIG_RTC_DRV_PCF8563=m
 CONFIG_RTC_DRV_PCF8583=m
 CONFIG_RTC_DRV_RS5C348=m
 CONFIG_RTC_DRV_MAX6902=m
-CONFIG_RTC_DRV_CMOS=y
 CONFIG_RTC_DRV_M48T86=m
 
 ##
@@ -362,11 +317,6 @@ CONFIG_SERIAL_8250_SHARE_IRQ=y
 CONFIG_SERIAL_8250_RSA=y
 
 ##
-## file: drivers/usb/Kconfig
-##
-CONFIG_USB_USS720=m
-
-##
 ## file: drivers/usb/atm/Kconfig
 ##
 CONFIG_USB_ATM=m
@@ -380,10 +330,13 @@ CONFIG_USB_UHCI_HCD=m
 CONFIG_USB_SL811_HCD=m
 
 ##
+## file: drivers/usb/misc/Kconfig
+##
+CONFIG_USB_USS720=m
+
+##
 ## file: drivers/video/fbdev/Kconfig
 ##
-CONFIG_FB_MODE_HELPERS=y
-CONFIG_FB_TILEBLITTING=y
 CONFIG_FB_CIRRUS=y
 CONFIG_FB_PM2=m
 CONFIG_FB_PM2_FIFO_DISCONNECT=y
@@ -415,21 +368,17 @@ CONFIG_FB_TRIDENT=m
 CONFIG_FB_VIRTUAL=m
 
 ##
+## file: drivers/video/fbdev/core/Kconfig
+##
+CONFIG_FB_MODE_HELPERS=y
+CONFIG_FB_TILEBLITTING=y
+
+##
 ## file: drivers/watchdog/Kconfig
 ##
 CONFIG_PCIPCWATCHDOG=m
 CONFIG_WDTPCI=m
 CONFIG_USBPCWATCHDOG=m
-
-##
-## file: net/decnet/Kconfig
-##
-CONFIG_DECNET=m
-
-##
-## file: net/decnet/netfilter/Kconfig
-##
-CONFIG_DECNET_NF_GRABULATOR=m
 
 ##
 ## file: net/lapb/Kconfig

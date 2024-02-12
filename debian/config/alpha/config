@@ -100,16 +100,9 @@ CONFIG_ATM_LANAI=m
 CONFIG_ATM_ENI=m
 # CONFIG_ATM_ENI_DEBUG is not set
 # CONFIG_ATM_ENI_TUNE_BURST is not set
-CONFIG_ATM_FIRESTREAM=m
-CONFIG_ATM_ZATM=m
-# CONFIG_ATM_ZATM_DEBUG is not set
 CONFIG_ATM_IDT77252=m
 # CONFIG_ATM_IDT77252_DEBUG is not set
 # CONFIG_ATM_IDT77252_RCV_ALL is not set
-CONFIG_ATM_AMBASSADOR=m
-# CONFIG_ATM_AMBASSADOR_DEBUG is not set
-CONFIG_ATM_HORIZON=m
-# CONFIG_ATM_HORIZON_DEBUG is not set
 # CONFIG_ATM_FORE200E_USE_TASKLET is not set
 CONFIG_ATM_FORE200E_TX_RETRY=16
 CONFIG_ATM_FORE200E_DEBUG=0
@@ -120,7 +113,6 @@ CONFIG_ATM_HE_USE_SUNI=y
 ## file: drivers/block/Kconfig
 ##
 CONFIG_BLK_DEV_FD=m
-CONFIG_BLK_DEV_SX8=m
 CONFIG_CDROM_PKTCDVD=m
 CONFIG_CDROM_PKTCDVD_BUFFERS=8
 CONFIG_CDROM_PKTCDVD_WCACHE=y
@@ -178,7 +170,6 @@ CONFIG_EISA_NAMES=y
 ## file: drivers/gpu/drm/Kconfig
 ##
 CONFIG_DRM=m
-CONFIG_DRM_RADEON=m
 
 ##
 ## file: drivers/gpu/drm/i2c/Kconfig
@@ -191,6 +182,11 @@ CONFIG_DRM_I2C_SIL164=m
 ##
 CONFIG_DRM_NOUVEAU=m
 # CONFIG_DRM_NOUVEAU_BACKLIGHT is not set
+
+##
+## file: drivers/gpu/drm/radeon/Kconfig
+##
+CONFIG_DRM_RADEON=m
 
 ##
 ## file: drivers/hid/usbhid/Kconfig
@@ -272,11 +268,6 @@ CONFIG_GAMEPORT_EMU10K1=m
 CONFIG_GAMEPORT_FM801=m
 
 ##
-## file: drivers/input/joystick/Kconfig
-##
-CONFIG_INPUT_JOYSTICK=y
-
-##
 ## file: drivers/input/keyboard/Kconfig
 ##
 CONFIG_INPUT_KEYBOARD=y
@@ -329,14 +320,14 @@ CONFIG_ISDN=y
 ##
 ## file: drivers/media/radio/Kconfig
 ##
-CONFIG_USB_DSBR=m
 CONFIG_RADIO_MAXIRADIO=m
+CONFIG_USB_DSBR=m
 CONFIG_V4L_RADIO_ISA_DRIVERS=y
+CONFIG_RADIO_AZTECH=m
 CONFIG_RADIO_CADET=m
+CONFIG_RADIO_GEMTEK=m
 CONFIG_RADIO_RTRACK=m
 CONFIG_RADIO_RTRACK2=m
-CONFIG_RADIO_AZTECH=m
-CONFIG_RADIO_GEMTEK=m
 CONFIG_RADIO_SF16FMI=m
 CONFIG_RADIO_SF16FMR2=m
 CONFIG_RADIO_TERRATEC=m
@@ -458,11 +449,6 @@ CONFIG_ARCNET_COM20020_PCI=m
 CONFIG_ARCNET_COM20020_CS=m
 
 ##
-## file: drivers/net/ethernet/Kconfig
-##
-CONFIG_FEALNX=m
-
-##
 ## file: drivers/net/ethernet/3com/Kconfig
 ##
 CONFIG_NET_VENDOR_3COM=y
@@ -494,7 +480,6 @@ CONFIG_ADAPTEC_STARFIRE=m
 CONFIG_AMD8111_ETH=m
 CONFIG_LANCE=m
 CONFIG_PCMCIA_NMCLAN=m
-CONFIG_NI65=m
 
 ##
 ## file: drivers/net/ethernet/broadcom/Kconfig
@@ -514,7 +499,6 @@ CONFIG_DE2104X=m
 CONFIG_TULIP=m
 # CONFIG_TULIP_MWI is not set
 # CONFIG_TULIP_MMIO is not set
-CONFIG_DE4X5=m
 CONFIG_WINBOND_840=m
 CONFIG_DM9102=m
 CONFIG_PCMCIA_XIRCOM=m
@@ -602,21 +586,11 @@ CONFIG_PLIP=m
 ## file: drivers/net/wan/Kconfig
 ##
 CONFIG_WAN=y
-CONFIG_HOSTESS_SV11=m
-CONFIG_COSA=m
-CONFIG_LANMEDIA=m
-CONFIG_SEALEVEL_4021=m
 CONFIG_PCI200SYN=m
 CONFIG_WANXL=m
 CONFIG_N2=m
 CONFIG_C101=m
 CONFIG_FARSYNC=m
-
-##
-## file: drivers/net/wireless/Kconfig
-##
-CONFIG_PCMCIA_RAYCS=m
-CONFIG_PCMCIA_WL3501=m
 
 ##
 ## file: drivers/net/wireless/atmel/Kconfig
@@ -643,6 +617,12 @@ CONFIG_PLX_HERMES=m
 CONFIG_TMD_HERMES=m
 CONFIG_PCI_HERMES=m
 CONFIG_PCMCIA_HERMES=m
+
+##
+## file: drivers/net/wireless/legacy/Kconfig
+##
+CONFIG_PCMCIA_RAYCS=m
+CONFIG_PCMCIA_WL3501=m
 
 ##
 ## file: drivers/net/wireless/marvell/mwifiex/Kconfig
@@ -762,7 +742,6 @@ CONFIG_SERIAL_8250_RSA=y
 ## file: drivers/usb/Kconfig
 ##
 CONFIG_USB=m
-CONFIG_USB_USS720=m
 
 ##
 ## file: drivers/usb/atm/Kconfig
@@ -780,6 +759,11 @@ CONFIG_USB_SL811_HCD=m
 CONFIG_USB_SL811_CS=m
 
 ##
+## file: drivers/usb/misc/Kconfig
+##
+CONFIG_USB_USS720=m
+
+##
 ## file: drivers/video/backlight/Kconfig
 ##
 CONFIG_LCD_CLASS_DEVICE=m
@@ -793,8 +777,6 @@ CONFIG_MDA_CONSOLE=m
 ##
 ## file: drivers/video/fbdev/Kconfig
 ##
-CONFIG_FB_MODE_HELPERS=y
-CONFIG_FB_TILEBLITTING=y
 CONFIG_FB_CIRRUS=m
 CONFIG_FB_PM2=m
 CONFIG_FB_PM2_FIFO_DISCONNECT=y
@@ -830,6 +812,12 @@ CONFIG_FB_TRIDENT=m
 CONFIG_FB_VIRTUAL=m
 
 ##
+## file: drivers/video/fbdev/core/Kconfig
+##
+CONFIG_FB_MODE_HELPERS=y
+CONFIG_FB_TILEBLITTING=y
+
+##
 ## file: drivers/watchdog/Kconfig
 ##
 CONFIG_PCWATCHDOG=m
@@ -852,12 +840,6 @@ CONFIG_SYSFS_SYSCALL=y
 ##
 #. TODO
 CONFIG_CRC32=m
-
-##
-## file: net/decnet/Kconfig
-##
-CONFIG_DECNET=m
-# CONFIG_DECNET_ROUTER is not set
 
 ##
 ## file: net/lapb/Kconfig

@@ -899,7 +899,6 @@ static const struct snd_soc_component_driver cs53l30_driver = {
 	.num_dapm_routes	= ARRAY_SIZE(cs53l30_dapm_routes),
 	.use_pmdown_time	= 1,
 	.endianness		= 1,
-	.non_legacy_dai_naming	= 1,
 };
 
 static struct regmap_config cs53l30_regmap = {
@@ -912,14 +911,13 @@ static struct regmap_config cs53l30_regmap = {
 	.volatile_reg = cs53l30_volatile_register,
 	.writeable_reg = cs53l30_writeable_register,
 	.readable_reg = cs53l30_readable_register,
-	.cache_type = REGCACHE_RBTREE,
+	.cache_type = REGCACHE_MAPLE,
 
 	.use_single_read = true,
 	.use_single_write = true,
 };
 
-static int cs53l30_i2c_probe(struct i2c_client *client,
-			     const struct i2c_device_id *id)
+static int cs53l30_i2c_probe(struct i2c_client *client)
 {
 	const struct device_node *np = client->dev.of_node;
 	struct device *dev = &client->dev;
@@ -992,14 +990,10 @@ static int cs53l30_i2c_probe(struct i2c_client *client,
 	}
 
 	/* Check if MCLK provided */
-	cs53l30->mclk = devm_clk_get(dev, "mclk");
+	cs53l30->mclk = devm_clk_get_optional(dev, "mclk");
 	if (IS_ERR(cs53l30->mclk)) {
-		if (PTR_ERR(cs53l30->mclk) != -ENOENT) {
-			ret = PTR_ERR(cs53l30->mclk);
-			goto error;
-		}
-		/* Otherwise mark the mclk pointer to NULL */
-		cs53l30->mclk = NULL;
+		ret = PTR_ERR(cs53l30->mclk);
+		goto error;
 	}
 
 	/* Fetch the MUTE control */
@@ -1045,7 +1039,7 @@ error_supplies:
 	return ret;
 }
 
-static int cs53l30_i2c_remove(struct i2c_client *client)
+static void cs53l30_i2c_remove(struct i2c_client *client)
 {
 	struct cs53l30_private *cs53l30 = i2c_get_clientdata(client);
 
@@ -1054,8 +1048,6 @@ static int cs53l30_i2c_remove(struct i2c_client *client)
 
 	regulator_bulk_disable(ARRAY_SIZE(cs53l30->supplies),
 			       cs53l30->supplies);
-
-	return 0;
 }
 
 #ifdef CONFIG_PM

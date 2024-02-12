@@ -214,7 +214,7 @@ static int hclge_map_update(struct hclge_dev *hdev)
 	if (ret)
 		return ret;
 
-	hclge_rss_indir_init_cfg(hdev);
+	hclge_comm_rss_indir_init_cfg(hdev->ae_dev, &hdev->rss_cfg);
 
 	return hclge_rss_init_hw(hdev);
 }
@@ -227,6 +227,10 @@ static int hclge_notify_down_uinit(struct hclge_dev *hdev)
 	if (ret)
 		return ret;
 
+	ret = hclge_tm_flush_cfg(hdev, true);
+	if (ret)
+		return ret;
+
 	return hclge_notify_client(hdev, HNAE3_UNINIT_CLIENT);
 }
 
@@ -235,6 +239,10 @@ static int hclge_notify_init_up(struct hclge_dev *hdev)
 	int ret;
 
 	ret = hclge_notify_client(hdev, HNAE3_INIT_CLIENT);
+	if (ret)
+		return ret;
+
+	ret = hclge_tm_flush_cfg(hdev, false);
 	if (ret)
 		return ret;
 
@@ -251,7 +259,7 @@ static int hclge_ieee_setets(struct hnae3_handle *h, struct ieee_ets *ets)
 	int ret;
 
 	if (!(hdev->dcbx_cap & DCB_CAP_DCBX_VER_IEEE) ||
-	    hdev->flag & HCLGE_FLAG_MQPRIO_ENABLE)
+	    h->kinfo.tc_info.mqprio_active)
 		return -EINVAL;
 
 	ret = hclge_ets_validate(hdev, ets, &num_tc, &map_changed);
@@ -267,10 +275,7 @@ static int hclge_ieee_setets(struct hnae3_handle *h, struct ieee_ets *ets)
 	}
 
 	hclge_tm_schd_info_update(hdev, num_tc);
-	if (num_tc > 1)
-		hdev->flag |= HCLGE_FLAG_DCB_ENABLE;
-	else
-		hdev->flag &= ~HCLGE_FLAG_DCB_ENABLE;
+	h->kinfo.tc_info.dcb_ets_active = num_tc > 1;
 
 	ret = hclge_ieee_ets_to_tm_info(hdev, ets);
 	if (ret)
@@ -324,6 +329,7 @@ static int hclge_ieee_setpfc(struct hnae3_handle *h, struct ieee_pfc *pfc)
 	struct net_device *netdev = h->kinfo.netdev;
 	struct hclge_dev *hdev = vport->back;
 	u8 i, j, pfc_map, *prio_tc;
+	int last_bad_ret = 0;
 	int ret;
 
 	if (!(hdev->dcbx_cap & DCB_CAP_DCBX_VER_IEEE))
@@ -361,13 +367,115 @@ static int hclge_ieee_setpfc(struct hnae3_handle *h, struct ieee_pfc *pfc)
 	if (ret)
 		return ret;
 
+	ret = hclge_tm_flush_cfg(hdev, true);
+	if (ret)
+		return ret;
+
+	/* No matter whether the following operations are performed
+	 * successfully or not, disabling the tm flush and notify
+	 * the network status to up are necessary.
+	 * Do not return immediately.
+	 */
 	ret = hclge_buffer_alloc(hdev);
+	if (ret)
+		last_bad_ret = ret;
+
+	ret = hclge_tm_flush_cfg(hdev, false);
+	if (ret)
+		last_bad_ret = ret;
+
+	ret = hclge_notify_client(hdev, HNAE3_UP_CLIENT);
+	if (ret)
+		last_bad_ret = ret;
+
+	return last_bad_ret;
+}
+
+static int hclge_ieee_setapp(struct hnae3_handle *h, struct dcb_app *app)
+{
+	struct hclge_vport *vport = hclge_get_vport(h);
+	struct net_device *netdev = h->kinfo.netdev;
+	struct hclge_dev *hdev = vport->back;
+	struct dcb_app old_app;
+	int ret;
+
+	if (app->selector != IEEE_8021QAZ_APP_SEL_DSCP ||
+	    app->protocol >= HNAE3_MAX_DSCP ||
+	    app->priority >= HNAE3_MAX_USER_PRIO)
+		return -EINVAL;
+
+	dev_info(&hdev->pdev->dev, "setapp dscp=%u priority=%u\n",
+		 app->protocol, app->priority);
+
+	if (app->priority == h->kinfo.dscp_prio[app->protocol])
+		return 0;
+
+	ret = dcb_ieee_setapp(netdev, app);
+	if (ret)
+		return ret;
+
+	old_app.selector = IEEE_8021QAZ_APP_SEL_DSCP;
+	old_app.protocol = app->protocol;
+	old_app.priority = h->kinfo.dscp_prio[app->protocol];
+
+	h->kinfo.dscp_prio[app->protocol] = app->priority;
+	ret = hclge_dscp_to_tc_map(hdev);
 	if (ret) {
-		hclge_notify_client(hdev, HNAE3_UP_CLIENT);
+		dev_err(&hdev->pdev->dev,
+			"failed to set dscp to tc map, ret = %d\n", ret);
+		h->kinfo.dscp_prio[app->protocol] = old_app.priority;
+		(void)dcb_ieee_delapp(netdev, app);
 		return ret;
 	}
 
-	return hclge_notify_client(hdev, HNAE3_UP_CLIENT);
+	vport->nic.kinfo.tc_map_mode = HNAE3_TC_MAP_MODE_DSCP;
+	if (old_app.priority == HNAE3_PRIO_ID_INVALID)
+		h->kinfo.dscp_app_cnt++;
+	else
+		ret = dcb_ieee_delapp(netdev, &old_app);
+
+	return ret;
+}
+
+static int hclge_ieee_delapp(struct hnae3_handle *h, struct dcb_app *app)
+{
+	struct hclge_vport *vport = hclge_get_vport(h);
+	struct net_device *netdev = h->kinfo.netdev;
+	struct hclge_dev *hdev = vport->back;
+	int ret;
+
+	if (app->selector != IEEE_8021QAZ_APP_SEL_DSCP ||
+	    app->protocol >= HNAE3_MAX_DSCP ||
+	    app->priority >= HNAE3_MAX_USER_PRIO ||
+	    app->priority != h->kinfo.dscp_prio[app->protocol])
+		return -EINVAL;
+
+	dev_info(&hdev->pdev->dev, "delapp dscp=%u priority=%u\n",
+		 app->protocol, app->priority);
+
+	ret = dcb_ieee_delapp(netdev, app);
+	if (ret)
+		return ret;
+
+	h->kinfo.dscp_prio[app->protocol] = HNAE3_PRIO_ID_INVALID;
+	ret = hclge_dscp_to_tc_map(hdev);
+	if (ret) {
+		dev_err(&hdev->pdev->dev,
+			"failed to del dscp to tc map, ret = %d\n", ret);
+		h->kinfo.dscp_prio[app->protocol] = app->priority;
+		(void)dcb_ieee_setapp(netdev, app);
+		return ret;
+	}
+
+	if (h->kinfo.dscp_app_cnt)
+		h->kinfo.dscp_app_cnt--;
+
+	if (!h->kinfo.dscp_app_cnt) {
+		vport->nic.kinfo.tc_map_mode = HNAE3_TC_MAP_MODE_PRIO;
+		ret = hclge_up_to_tc_map(hdev);
+	}
+
+	return ret;
 }
 
 /* DCBX configuration */
@@ -376,7 +484,7 @@ static u8 hclge_getdcbx(struct hnae3_handle *h)
 	struct hclge_vport *vport = hclge_get_vport(h);
 	struct hclge_dev *hdev = vport->back;
 
-	if (hdev->flag & HCLGE_FLAG_MQPRIO_ENABLE)
+	if (h->kinfo.tc_info.mqprio_active)
 		return 0;
 
 	return hdev->dcbx_cap;
@@ -500,7 +608,8 @@ static int hclge_setup_tc(struct hnae3_handle *h,
 	if (!test_bit(HCLGE_STATE_NIC_REGISTERED, &hdev->state))
 		return -EBUSY;
 
-	if (hdev->flag & HCLGE_FLAG_DCB_ENABLE)
+	kinfo = &vport->nic.kinfo;
+	if (kinfo->tc_info.dcb_ets_active)
 		return -EINVAL;
 
 	ret = hclge_mqprio_qopt_check(hdev, mqprio_qopt);
@@ -514,7 +623,6 @@ static int hclge_setup_tc(struct hnae3_handle *h,
 	if (ret)
 		return ret;
 
-	kinfo = &vport->nic.kinfo;
 	memcpy(&old_tc_info, &kinfo->tc_info, sizeof(old_tc_info));
 	hclge_sync_mqprio_qopt(&kinfo->tc_info, mqprio_qopt);
 	kinfo->tc_info.mqprio_active = tc > 0;
@@ -522,13 +630,6 @@ static int hclge_setup_tc(struct hnae3_handle *h,
 	ret = hclge_config_tc(hdev, &kinfo->tc_info);
 	if (ret)
 		goto err_out;
-
-	hdev->flag &= ~HCLGE_FLAG_DCB_ENABLE;
-
-	if (tc > 1)
-		hdev->flag |= HCLGE_FLAG_MQPRIO_ENABLE;
-	else
-		hdev->flag &= ~HCLGE_FLAG_MQPRIO_ENABLE;
 
 	return hclge_notify_init_up(hdev);
 
@@ -554,6 +655,8 @@ static const struct hnae3_dcb_ops hns3_dcb_ops = {
 	.ieee_setets	= hclge_ieee_setets,
 	.ieee_getpfc	= hclge_ieee_getpfc,
 	.ieee_setpfc	= hclge_ieee_setpfc,
+	.ieee_setapp    = hclge_ieee_setapp,
+	.ieee_delapp    = hclge_ieee_delapp,
 	.getdcbx	= hclge_getdcbx,
 	.setdcbx	= hclge_setdcbx,
 	.setup_tc	= hclge_setup_tc,

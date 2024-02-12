@@ -1271,7 +1271,7 @@ struct bnx2x_fw_stats_data {
 	struct per_port_stats		port;
 	struct per_pf_stats		pf;
 	struct fcoe_statistics_params	fcoe;
-	struct per_queue_stats		queue_stats[1];
+	struct per_queue_stats		queue_stats[];
 };
 
 /* Public slow path states */
@@ -1486,7 +1486,6 @@ struct bnx2x {
 #define IS_VF_FLAG			(1 << 22)
 #define BC_SUPPORTS_RMMOD_CMD		(1 << 23)
 #define HAS_PHYS_PORT_ID		(1 << 24)
-#define AER_ENABLED			(1 << 25)
 #define PTP_SUPPORTED			(1 << 26)
 #define TX_TIMESTAMPING_EN		(1 << 27)
 
@@ -1508,6 +1507,8 @@ struct bnx2x {
 	bool			cnic_enabled;
 	bool			cnic_loaded;
 	struct cnic_eth_dev	*(*cnic_probe)(struct net_device *);
+
+	bool                    nic_stopped;
 
 	/* Flag that indicates that we can start looking for FCoE L2 queue
 	 * completions in the default status block.
@@ -2002,7 +2003,7 @@ int bnx2x_idle_chk(struct bnx2x *bp);
  * operation has been successfully scheduled and a negative - if a requested
  * operations has failed.
  */
-int bnx2x_set_mac_one(struct bnx2x *bp, u8 *mac,
+int bnx2x_set_mac_one(struct bnx2x *bp, const u8 *mac,
 		      struct bnx2x_vlan_mac_obj *obj, bool set,
 		      int mac_type, unsigned long *ramrod_flags);
 

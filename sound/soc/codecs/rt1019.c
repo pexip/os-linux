@@ -18,7 +18,6 @@
 #include <linux/i2c.h>
 #include <linux/platform_device.h>
 #include <linux/firmware.h>
-#include <linux/gpio.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
@@ -359,7 +358,7 @@ static int rt1019_set_dai_pll(struct snd_soc_dai *dai, int pll_id, int source,
 
 	ret = rl6231_pll_calc(freq_in, freq_out, &pll_code);
 	if (ret < 0) {
-		dev_err(component->dev, "Unsupport input clock %d\n", freq_in);
+		dev_err(component->dev, "Unsupported input clock %d\n", freq_in);
 		return ret;
 	}
 
@@ -517,14 +516,14 @@ static struct snd_soc_dai_driver rt1019_dai[] = {
 };
 
 static const struct snd_soc_component_driver soc_component_dev_rt1019 = {
-	.probe = rt1019_probe,
+	.probe			= rt1019_probe,
 	.controls		= rt1019_snd_controls,
 	.num_controls		= ARRAY_SIZE(rt1019_snd_controls),
 	.dapm_widgets		= rt1019_dapm_widgets,
 	.num_dapm_widgets	= ARRAY_SIZE(rt1019_dapm_widgets),
 	.dapm_routes		= rt1019_dapm_routes,
 	.num_dapm_routes	= ARRAY_SIZE(rt1019_dapm_routes),
-	.non_legacy_dai_naming	= 1,
+	.endianness		= 1,
 };
 
 static const struct regmap_config rt1019_regmap = {
@@ -535,7 +534,7 @@ static const struct regmap_config rt1019_regmap = {
 	.max_register = RT1019_BEEP_2,
 	.volatile_reg = rt1019_volatile_register,
 	.readable_reg = rt1019_readable_register,
-	.cache_type = REGCACHE_RBTREE,
+	.cache_type = REGCACHE_MAPLE,
 	.reg_defaults = rt1019_reg,
 	.num_reg_defaults = ARRAY_SIZE(rt1019_reg),
 };
@@ -546,7 +545,7 @@ static const struct i2c_device_id rt1019_i2c_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, rt1019_i2c_id);
 
-static const struct of_device_id rt1019_of_match[] = {
+static const struct of_device_id rt1019_of_match[] __maybe_unused = {
 	{ .compatible = "realtek,rt1019", },
 	{},
 };
@@ -560,8 +559,7 @@ static const struct acpi_device_id rt1019_acpi_match[] = {
 MODULE_DEVICE_TABLE(acpi, rt1019_acpi_match);
 #endif
 
-static int rt1019_i2c_probe(struct i2c_client *i2c,
-	const struct i2c_device_id *id)
+static int rt1019_i2c_probe(struct i2c_client *i2c)
 {
 	struct rt1019_priv *rt1019;
 	int ret;

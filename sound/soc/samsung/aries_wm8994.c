@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 #include <linux/extcon.h>
 #include <linux/iio/consumer.h>
-#include <linux/iio/iio.h>
 #include <linux/input-event-codes.h>
 #include <linux/mfd/wm8994/registers.h>
 #include <linux/module.h>
@@ -343,7 +342,7 @@ static int aries_late_probe(struct snd_soc_card *card)
 	struct aries_wm8994_data *priv = snd_soc_card_get_drvdata(card);
 	int ret, irq;
 
-	ret = snd_soc_card_jack_new(card, "Dock", SND_JACK_LINEOUT,
+	ret = snd_soc_card_jack_new_pins(card, "Dock", SND_JACK_LINEOUT,
 			&aries_dock, dock_pins, ARRAY_SIZE(dock_pins));
 	if (ret)
 		return ret;
@@ -361,7 +360,7 @@ static int aries_late_probe(struct snd_soc_card *card)
 	else
 		snd_soc_jack_report(&aries_dock, 0, SND_JACK_LINEOUT);
 
-	ret = snd_soc_card_jack_new(card, "Headset",
+	ret = snd_soc_card_jack_new_pins(card, "Headset",
 			SND_JACK_HEADSET | SND_JACK_BTN_0,
 			&aries_headset,
 			jack_pins, ARRAY_SIZE(jack_pins));
@@ -432,7 +431,6 @@ static const struct snd_soc_component_driver aries_component = {
 	.idle_bias_on		= 1,
 	.use_pmdown_time	= 1,
 	.endianness		= 1,
-	.non_legacy_dai_naming	= 1,
 };
 
 static struct snd_soc_dai_driver aries_ext_dai[] = {
@@ -485,14 +483,16 @@ static struct snd_soc_dai_link aries_dai[] = {
 		.name = "WM8994 AIF2",
 		.stream_name = "Baseband",
 		.init = &aries_baseband_init,
-		.params = &baseband_params,
+		.c2c_params = &baseband_params,
+		.num_c2c_params = 1,
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(baseband),
 	},
 	{
 		.name = "WM8994 AIF3",
 		.stream_name = "Bluetooth",
-		.params = &bluetooth_params,
+		.c2c_params = &bluetooth_params,
+		.num_c2c_params = 1,
 		.ignore_suspend = 1,
 		SND_SOC_DAILINK_REG(bluetooth),
 	},
@@ -544,6 +544,7 @@ static int aries_audio_probe(struct platform_device *pdev)
 	struct aries_wm8994_data *priv;
 	struct snd_soc_dai_link *dai_link;
 	const struct of_device_id *match;
+	enum iio_chan_type channel_type;
 	int ret, i;
 
 	if (!np)
@@ -595,7 +596,11 @@ static int aries_audio_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, PTR_ERR(priv->adc),
 				     "Failed to get ADC channel");
 
-	if (priv->adc->channel->type != IIO_VOLTAGE)
+	ret = iio_get_channel_type(priv->adc, &channel_type);
+	if (ret)
+		return dev_err_probe(dev, ret,
+				     "Failed to get ADC channel type");
+	if (channel_type != IIO_VOLTAGE)
 		return -EINVAL;
 
 	priv->gpio_headset_key = devm_gpiod_get(dev, "headset-key",
@@ -615,10 +620,14 @@ static int aries_audio_probe(struct platform_device *pdev)
 	/* Update card-name if provided through DT, else use default name */
 	snd_soc_of_parse_card_name(card, "model");
 
-	ret = snd_soc_of_parse_audio_routing(card, "samsung,audio-routing");
+	ret = snd_soc_of_parse_audio_routing(card, "audio-routing");
 	if (ret < 0) {
-		dev_err(dev, "Audio routing invalid/unspecified\n");
-		return ret;
+		/* Backwards compatible way */
+		ret = snd_soc_of_parse_audio_routing(card, "samsung,audio-routing");
+		if (ret < 0) {
+			dev_err(dev, "Audio routing invalid/unspecified\n");
+			return ret;
+		}
 	}
 
 	aries_dai[1].dai_fmt = priv->variant->modem_dai_fmt;

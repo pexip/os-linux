@@ -23,7 +23,7 @@
  */
 
 #define ATOMIC_OP(op, asm_op, constraint)				\
-static inline void							\
+static __always_inline void						\
 __ll_sc_atomic_##op(int i, atomic_t *v)					\
 {									\
 	unsigned long tmp;						\
@@ -40,7 +40,7 @@ __ll_sc_atomic_##op(int i, atomic_t *v)					\
 }
 
 #define ATOMIC_OP_RETURN(name, mb, acq, rel, cl, op, asm_op, constraint)\
-static inline int							\
+static __always_inline int						\
 __ll_sc_atomic_##op##_return##name(int i, atomic_t *v)			\
 {									\
 	unsigned long tmp;						\
@@ -61,7 +61,7 @@ __ll_sc_atomic_##op##_return##name(int i, atomic_t *v)			\
 }
 
 #define ATOMIC_FETCH_OP(name, mb, acq, rel, cl, op, asm_op, constraint) \
-static inline int							\
+static __always_inline int						\
 __ll_sc_atomic_fetch_##op##name(int i, atomic_t *v)			\
 {									\
 	unsigned long tmp;						\
@@ -119,7 +119,7 @@ ATOMIC_OPS(andnot, bic, )
 #undef ATOMIC_OP
 
 #define ATOMIC64_OP(op, asm_op, constraint)				\
-static inline void							\
+static __always_inline void						\
 __ll_sc_atomic64_##op(s64 i, atomic64_t *v)				\
 {									\
 	s64 result;							\
@@ -136,7 +136,7 @@ __ll_sc_atomic64_##op(s64 i, atomic64_t *v)				\
 }
 
 #define ATOMIC64_OP_RETURN(name, mb, acq, rel, cl, op, asm_op, constraint)\
-static inline long							\
+static __always_inline long						\
 __ll_sc_atomic64_##op##_return##name(s64 i, atomic64_t *v)		\
 {									\
 	s64 result;							\
@@ -157,7 +157,7 @@ __ll_sc_atomic64_##op##_return##name(s64 i, atomic64_t *v)		\
 }
 
 #define ATOMIC64_FETCH_OP(name, mb, acq, rel, cl, op, asm_op, constraint)\
-static inline long							\
+static __always_inline long						\
 __ll_sc_atomic64_fetch_##op##name(s64 i, atomic64_t *v)			\
 {									\
 	s64 result, val;						\
@@ -214,7 +214,7 @@ ATOMIC64_OPS(andnot, bic, )
 #undef ATOMIC64_OP_RETURN
 #undef ATOMIC64_OP
 
-static inline s64
+static __always_inline s64
 __ll_sc_atomic64_dec_if_positive(atomic64_t *v)
 {
 	s64 result;
@@ -237,7 +237,7 @@ __ll_sc_atomic64_dec_if_positive(atomic64_t *v)
 }
 
 #define __CMPXCHG_CASE(w, sfx, name, sz, mb, acq, rel, cl, constraint)	\
-static inline u##sz							\
+static __always_inline u##sz						\
 __ll_sc__cmpxchg_case_##name##sz(volatile void *ptr,			\
 					 unsigned long old,		\
 					 u##sz new)			\
@@ -294,38 +294,46 @@ __CMPXCHG_CASE( ,  ,  mb_, 64, dmb ish,  , l, "memory", L)
 
 #undef __CMPXCHG_CASE
 
-#define __CMPXCHG_DBL(name, mb, rel, cl)				\
-static inline long							\
-__ll_sc__cmpxchg_double##name(unsigned long old1,			\
-				      unsigned long old2,		\
-				      unsigned long new1,		\
-				      unsigned long new2,		\
-				      volatile void *ptr)		\
+union __u128_halves {
+	u128 full;
+	struct {
+		u64 low, high;
+	};
+};
+
+#define __CMPXCHG128(name, mb, rel, cl...)                             \
+static __always_inline u128						\
+__ll_sc__cmpxchg128##name(volatile u128 *ptr, u128 old, u128 new)	\
 {									\
-	unsigned long tmp, ret;						\
+	union __u128_halves r, o = { .full = (old) },			\
+			       n = { .full = (new) };			\
+       unsigned int tmp;                                               \
 									\
-	asm volatile("// __cmpxchg_double" #name "\n"			\
-	"	prfm	pstl1strm, %2\n"				\
-	"1:	ldxp	%0, %1, %2\n"					\
-	"	eor	%0, %0, %3\n"					\
-	"	eor	%1, %1, %4\n"					\
-	"	orr	%1, %0, %1\n"					\
-	"	cbnz	%1, 2f\n"					\
-	"	st" #rel "xp	%w0, %5, %6, %2\n"			\
-	"	cbnz	%w0, 1b\n"					\
+	asm volatile("// __cmpxchg128" #name "\n"			\
+       "       prfm    pstl1strm, %[v]\n"                              \
+       "1:     ldxp    %[rl], %[rh], %[v]\n"                           \
+       "       cmp     %[rl], %[ol]\n"                                 \
+       "       ccmp    %[rh], %[oh], 0, eq\n"                          \
+       "       b.ne    2f\n"                                           \
+       "       st" #rel "xp    %w[tmp], %[nl], %[nh], %[v]\n"          \
+       "       cbnz    %w[tmp], 1b\n"                                  \
 	"	" #mb "\n"						\
 	"2:"								\
-	: "=&r" (tmp), "=&r" (ret), "+Q" (*(__uint128_t *)ptr)		\
-	: "r" (old1), "r" (old2), "r" (new1), "r" (new2)		\
-	: cl);								\
+       : [v] "+Q" (*(u128 *)ptr),                                      \
+         [rl] "=&r" (r.low), [rh] "=&r" (r.high),                      \
+         [tmp] "=&r" (tmp)                                             \
+       : [ol] "r" (o.low), [oh] "r" (o.high),                          \
+         [nl] "r" (n.low), [nh] "r" (n.high)                           \
+       : "cc", ##cl);                                                  \
 									\
-	return ret;							\
+	return r.full;							\
 }
 
-__CMPXCHG_DBL(   ,        ,  ,         )
-__CMPXCHG_DBL(_mb, dmb ish, l, "memory")
+__CMPXCHG128(   ,        ,  )
+__CMPXCHG128(_mb, dmb ish, l, "memory")
 
-#undef __CMPXCHG_DBL
+#undef __CMPXCHG128
+
 #undef K
 
 #endif	/* __ASM_ATOMIC_LL_SC_H */

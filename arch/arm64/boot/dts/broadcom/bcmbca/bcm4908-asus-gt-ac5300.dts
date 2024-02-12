@@ -2,11 +2,12 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 #include "bcm4908.dtsi"
 
 / {
-	compatible = "asus,gt-ac5300", "brcm,bcm4908";
+	compatible = "asus,gt-ac5300", "brcm,bcm4908", "brcm,bcmbca";
 	model = "Asus GT-AC5300";
 
 	memory@0 {
@@ -18,25 +19,25 @@
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
 
-		wifi {
+		key-wifi {
 			label = "WiFi";
 			linux,code = <KEY_RFKILL>;
 			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 		};
 
-		wps {
+		key-wps {
 			label = "WPS";
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
 		};
 
-		restart {
+		key-restart {
 			label = "Reset";
 			linux,code = <KEY_RESTART>;
 			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
 		};
 
-		brightness {
+		key-brightness {
 			label = "LEDs";
 			linux,code = <KEY_BRIGHTNESS_ZERO>;
 			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
@@ -115,6 +116,53 @@
 	/* lan3 */
 	ethernet-phy@3 {
 		reg = <3>;
+	};
+};
+
+&leds {
+	led@11 {
+		reg = <0x11>;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_WHITE>;
+		default-state = "on";
+		active-low;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pins_led_17_a>;
+	};
+
+	led@12 {
+		reg = <0x12>;
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_RED>;
+		active-low;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pins_led_18_a>;
+	};
+
+	led@14 {
+		reg = <0x14>;
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_WHITE>;
+		active-low;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pins_led_20_a>;
+	};
+
+	led@15 {
+		reg = <0x15>;
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_WHITE>;
+		active-low;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pins_led_21_a>;
+	};
+
+	led@19 {
+		reg = <0x19>;
+		function = LED_FUNCTION_LAN;
+		color = <LED_COLOR_ID_WHITE>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pins_led_25_a>;
 	};
 };
 

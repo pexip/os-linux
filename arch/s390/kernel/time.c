@@ -102,6 +102,11 @@ void __init time_early_init(void)
 			((long) qui.old_leap * 4096000000L);
 }
 
+unsigned long long noinstr sched_clock_noinstr(void)
+{
+	return tod_to_ns(__get_tod_clock_monotonic());
+}
+
 /*
  * Scheduler clock - returns current time in nanosec units.
  */
@@ -554,9 +559,7 @@ static int stp_sync_clock(void *data)
 		while (atomic_read(&sync->cpus) != 0)
 			cpu_relax();
 		rc = 0;
-		if (stp_info.todoff[0] || stp_info.todoff[1] ||
-		    stp_info.todoff[2] || stp_info.todoff[3] ||
-		    stp_info.tmd != 2) {
+		if (stp_info.todoff || stp_info.tmd != 2) {
 			flags = vdso_update_begin();
 			rc = chsc_sstpc(stp_page, STP_OP_SYNC, 0,
 					&clock_delta);
@@ -699,7 +702,7 @@ static void stp_work_fn(struct work_struct *work)
 
 	if (!check_sync_clock())
 		/*
-		 * There is a usable clock but the synchonization failed.
+		 * There is a usable clock but the synchronization failed.
 		 * Retry after a second.
 		 */
 		mod_timer(&stp_timer, jiffies + msecs_to_jiffies(MSEC_PER_SEC));

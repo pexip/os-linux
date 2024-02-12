@@ -26,23 +26,20 @@ static void __dma_tx_complete(void *param)
 
 	dma->tx_running = 0;
 
-	xmit->tail += dma->tx_size;
-	xmit->tail &= UART_XMIT_SIZE - 1;
-	p->port.icount.tx += dma->tx_size;
+	uart_xmit_advance(&p->port, dma->tx_size);
 
 	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
 		uart_write_wakeup(&p->port);
 
 	ret = serial8250_tx_dma(p);
-	if (ret)
+	if (ret || !dma->tx_running)
 		serial8250_set_THRI(p);
 
 	spin_unlock_irqrestore(&p->port.lock, flags);
 }
 
-static void __dma_rx_complete(void *param)
+static void __dma_rx_complete(struct uart_8250_port *p)
 {
-	struct uart_8250_port	*p = param;
 	struct uart_8250_dma	*dma = p->dma;
 	struct tty_port		*tty_port = &p->port.state->port;
 	struct dma_tx_state	state;
@@ -76,6 +73,13 @@ static void dma_rx_complete(void *param)
 	spin_lock_irqsave(&p->port.lock, flags);
 	if (dma->rx_running)
 		__dma_rx_complete(p);
+
+	/*
+	 * Cannot be combined with the previous check because __dma_rx_complete()
+	 * changes dma->rx_running.
+	 */
+	if (!dma->rx_running && (serial_lsr_in(p) & UART_LSR_DR))
+		p->dma->rx_dma(p);
 	spin_unlock_irqrestore(&p->port.lock, flags);
 }
 
@@ -100,7 +104,6 @@ int serial8250_tx_dma(struct uart_8250_port *p)
 
 	if (uart_tx_stopped(&p->port) || uart_circ_empty(xmit)) {
 		/* We have been called from __dma_tx_complete() */
-		serial8250_rpm_put_tx(p);
 		return 0;
 	}
 
@@ -127,10 +130,9 @@ int serial8250_tx_dma(struct uart_8250_port *p)
 				   UART_XMIT_SIZE, DMA_TO_DEVICE);
 
 	dma_async_issue_pending(dma->txchan);
-	if (dma->tx_err) {
-		dma->tx_err = 0;
-		serial8250_clear_THRI(p);
-	}
+	serial8250_clear_THRI(p);
+	dma->tx_err = 0;
+
 	return 0;
 err:
 	dma->tx_err = 1;

@@ -125,14 +125,15 @@ static void svc_rdma_recv_cid_init(struct svcxprt_rdma *rdma,
 static struct svc_rdma_recv_ctxt *
 svc_rdma_recv_ctxt_alloc(struct svcxprt_rdma *rdma)
 {
+	int node = ibdev_to_node(rdma->sc_cm_id->device);
 	struct svc_rdma_recv_ctxt *ctxt;
 	dma_addr_t addr;
 	void *buffer;
 
-	ctxt = kmalloc(sizeof(*ctxt), GFP_KERNEL);
+	ctxt = kmalloc_node(sizeof(*ctxt), GFP_KERNEL, node);
 	if (!ctxt)
 		goto fail0;
-	buffer = kmalloc(rdma->sc_max_req_size, GFP_KERNEL);
+	buffer = kmalloc_node(rdma->sc_max_req_size, GFP_KERNEL, node);
 	if (!buffer)
 		goto fail1;
 	addr = ib_dma_map_single(rdma->sc_pd->device, buffer,
@@ -155,7 +156,6 @@ svc_rdma_recv_ctxt_alloc(struct svcxprt_rdma *rdma)
 	ctxt->rc_recv_sge.length = rdma->sc_max_req_size;
 	ctxt->rc_recv_sge.lkey = rdma->sc_pd->local_dma_lkey;
 	ctxt->rc_recv_buf = buffer;
-	ctxt->rc_temp = false;
 	return ctxt;
 
 fail2:
@@ -232,10 +232,7 @@ void svc_rdma_recv_ctxt_put(struct svcxprt_rdma *rdma,
 	pcl_free(&ctxt->rc_write_pcl);
 	pcl_free(&ctxt->rc_reply_pcl);
 
-	if (!ctxt->rc_temp)
-		llist_add(&ctxt->rc_node, &rdma->sc_recv_ctxts);
-	else
-		svc_rdma_recv_ctxt_destroy(rdma, ctxt);
+	llist_add(&ctxt->rc_node, &rdma->sc_recv_ctxts);
 }
 
 /**
@@ -258,7 +255,7 @@ void svc_rdma_release_ctxt(struct svc_xprt *xprt, void *vctxt)
 }
 
 static bool svc_rdma_refresh_recvs(struct svcxprt_rdma *rdma,
-				   unsigned int wanted, bool temp)
+				   unsigned int wanted)
 {
 	const struct ib_recv_wr *bad_wr = NULL;
 	struct svc_rdma_recv_ctxt *ctxt;
@@ -275,7 +272,6 @@ static bool svc_rdma_refresh_recvs(struct svcxprt_rdma *rdma,
 			break;
 
 		trace_svcrdma_post_recv(ctxt);
-		ctxt->rc_temp = temp;
 		ctxt->rc_recv_wr.next = recv_chain;
 		recv_chain = &ctxt->rc_recv_wr;
 		rdma->sc_pending_recvs++;
@@ -309,7 +305,7 @@ err_free:
  */
 bool svc_rdma_post_recvs(struct svcxprt_rdma *rdma)
 {
-	return svc_rdma_refresh_recvs(rdma, rdma->sc_max_requests, true);
+	return svc_rdma_refresh_recvs(rdma, rdma->sc_max_requests);
 }
 
 /**
@@ -329,9 +325,9 @@ static void svc_rdma_wc_receive(struct ib_cq *cq, struct ib_wc *wc)
 	/* WARNING: Only wc->wr_cqe and wc->status are reliable */
 	ctxt = container_of(cqe, struct svc_rdma_recv_ctxt, rc_cqe);
 
-	trace_svcrdma_wc_receive(wc, &ctxt->rc_cid);
 	if (wc->status != IB_WC_SUCCESS)
 		goto flushed;
+	trace_svcrdma_wc_recv(wc, &ctxt->rc_cid);
 
 	/* If receive posting fails, the connection is about to be
 	 * lost anyway. The server will not be able to send a reply
@@ -343,8 +339,8 @@ static void svc_rdma_wc_receive(struct ib_cq *cq, struct ib_wc *wc)
 	 * client reconnects.
 	 */
 	if (rdma->sc_pending_recvs < rdma->sc_max_requests)
-		if (!svc_rdma_refresh_recvs(rdma, rdma->sc_recv_batch, false))
-			goto flushed;
+		if (!svc_rdma_refresh_recvs(rdma, rdma->sc_recv_batch))
+			goto dropped;
 
 	/* All wc fields are now known to be valid */
 	ctxt->rc_byte_len = wc->byte_len;
@@ -359,6 +355,11 @@ static void svc_rdma_wc_receive(struct ib_cq *cq, struct ib_wc *wc)
 	return;
 
 flushed:
+	if (wc->status == IB_WC_WR_FLUSH_ERR)
+		trace_svcrdma_wc_recv_flush(wc, &ctxt->rc_cid);
+	else
+		trace_svcrdma_wc_recv_err(wc, &ctxt->rc_cid);
+dropped:
 	svc_rdma_recv_ctxt_put(rdma, ctxt);
 	svc_xprt_deferred_close(&rdma->sc_xprt);
 }
@@ -770,9 +771,6 @@ static bool svc_rdma_is_reverse_direction_reply(struct svc_xprt *xprt,
  *
  * The next ctxt is removed from the "receive" lists.
  *
- * - If the ctxt completes a Read, then finish assembling the Call
- *   message and return the number of bytes in the message.
- *
  * - If the ctxt completes a Receive, then construct the Call
  *   message from the contents of the Receive buffer.
  *
@@ -781,7 +779,8 @@ static bool svc_rdma_is_reverse_direction_reply(struct svc_xprt *xprt,
  *     in the message.
  *
  *   - If there are Read chunks in this message, post Read WRs to
- *     pull that payload and return 0.
+ *     pull that payload. When the Read WRs complete, build the
+ *     full message and return the number of bytes in it.
  */
 int svc_rdma_recvfrom(struct svc_rqst *rqstp)
 {
@@ -841,6 +840,7 @@ int svc_rdma_recvfrom(struct svc_rqst *rqstp)
 	rqstp->rq_xprt_ctxt = ctxt;
 	rqstp->rq_prot = IPPROTO_MAX;
 	svc_xprt_copy_addrs(rqstp, xprt);
+	set_bit(RQ_SECURE, &rqstp->rq_flags);
 	return rqstp->rq_arg.len;
 
 out_err:
@@ -852,7 +852,8 @@ out_readfail:
 	if (ret == -EINVAL)
 		svc_rdma_send_error(rdma_xprt, ctxt, ret);
 	svc_rdma_recv_ctxt_put(rdma_xprt, ctxt);
-	return ret;
+	svc_xprt_deferred_close(xprt);
+	return -ENOTCONN;
 
 out_backchannel:
 	svc_rdma_handle_bc_reply(rqstp, ctxt);

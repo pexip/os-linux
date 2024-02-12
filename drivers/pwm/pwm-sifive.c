@@ -13,6 +13,7 @@
  */
 #include <linux/clk.h>
 #include <linux/io.h>
+#include <linux/mod_devicetable.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/pwm.h>
@@ -51,9 +52,9 @@ struct pwm_sifive_ddata {
 };
 
 static inline
-struct pwm_sifive_ddata *pwm_sifive_chip_to_ddata(struct pwm_chip *c)
+struct pwm_sifive_ddata *pwm_sifive_chip_to_ddata(struct pwm_chip *chip)
 {
-	return container_of(c, struct pwm_sifive_ddata, chip);
+	return container_of(chip, struct pwm_sifive_ddata, chip);
 }
 
 static int pwm_sifive_request(struct pwm_chip *chip, struct pwm_device *pwm)
@@ -105,8 +106,8 @@ static void pwm_sifive_update_clock(struct pwm_sifive_ddata *ddata,
 		"New real_period = %u ns\n", ddata->real_period);
 }
 
-static void pwm_sifive_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
-				 struct pwm_state *state)
+static int pwm_sifive_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
+				struct pwm_state *state)
 {
 	struct pwm_sifive_ddata *ddata = pwm_sifive_chip_to_ddata(chip);
 	u32 duty, val;
@@ -123,23 +124,6 @@ static void pwm_sifive_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 	state->duty_cycle =
 		(u64)duty * ddata->real_period >> PWM_SIFIVE_CMPWIDTH;
 	state->polarity = PWM_POLARITY_INVERSED;
-}
-
-static int pwm_sifive_enable(struct pwm_chip *chip, bool enable)
-{
-	struct pwm_sifive_ddata *ddata = pwm_sifive_chip_to_ddata(chip);
-	int ret;
-
-	if (enable) {
-		ret = clk_enable(ddata->clk);
-		if (ret) {
-			dev_err(ddata->chip.dev, "Enable clk failed\n");
-			return ret;
-		}
-	}
-
-	if (!enable)
-		clk_disable(ddata->clk);
 
 	return 0;
 }
@@ -157,12 +141,6 @@ static int pwm_sifive_apply(struct pwm_chip *chip, struct pwm_device *pwm,
 
 	if (state->polarity != PWM_POLARITY_INVERSED)
 		return -EINVAL;
-
-	ret = clk_enable(ddata->clk);
-	if (ret) {
-		dev_err(ddata->chip.dev, "Enable clk failed\n");
-		return ret;
-	}
 
 	cur_state = pwm->state;
 	enabled = cur_state.enabled;
@@ -192,22 +170,32 @@ static int pwm_sifive_apply(struct pwm_chip *chip, struct pwm_device *pwm,
 		 */
 		if (ddata->user_count != 1 && ddata->approx_period) {
 			mutex_unlock(&ddata->lock);
-			ret = -EBUSY;
-			goto exit;
+			return -EBUSY;
 		}
 		ddata->approx_period = state->period;
 		pwm_sifive_update_clock(ddata, clk_get_rate(ddata->clk));
 	}
 	mutex_unlock(&ddata->lock);
 
+	/*
+	 * If the PWM is enabled the clk is already on. So only enable it
+	 * conditionally to have it on exactly once afterwards independent of
+	 * the PWM state.
+	 */
+	if (!enabled) {
+		ret = clk_enable(ddata->clk);
+		if (ret) {
+			dev_err(ddata->chip.dev, "Enable clk failed\n");
+			return ret;
+		}
+	}
+
 	writel(frac, ddata->regs + PWM_SIFIVE_PWMCMP(pwm->hwpwm));
 
-	if (state->enabled != enabled)
-		pwm_sifive_enable(chip, state->enabled);
+	if (!state->enabled)
+		clk_disable(ddata->clk);
 
-exit:
-	clk_disable(ddata->clk);
-	return ret;
+	return 0;
 }
 
 static const struct pwm_ops pwm_sifive_ops = {
@@ -257,12 +245,12 @@ static int pwm_sifive_probe(struct platform_device *pdev)
 	if (IS_ERR(ddata->regs))
 		return PTR_ERR(ddata->regs);
 
-	ddata->clk = devm_clk_get(dev, NULL);
+	ddata->clk = devm_clk_get_prepared(dev, NULL);
 	if (IS_ERR(ddata->clk))
 		return dev_err_probe(dev, PTR_ERR(ddata->clk),
 				     "Unable to find controller clock\n");
 
-	ret = clk_prepare_enable(ddata->clk);
+	ret = clk_enable(ddata->clk);
 	if (ret) {
 		dev_err(dev, "failed to enable clock for pwm: %d\n", ret);
 		return ret;
@@ -321,12 +309,11 @@ disable_clk:
 		clk_disable(ddata->clk);
 		--enabled_clks;
 	}
-	clk_unprepare(ddata->clk);
 
 	return ret;
 }
 
-static int pwm_sifive_remove(struct platform_device *dev)
+static void pwm_sifive_remove(struct platform_device *dev)
 {
 	struct pwm_sifive_ddata *ddata = platform_get_drvdata(dev);
 	struct pwm_device *pwm;
@@ -340,10 +327,6 @@ static int pwm_sifive_remove(struct platform_device *dev)
 		if (pwm->state.enabled)
 			clk_disable(ddata->clk);
 	}
-
-	clk_unprepare(ddata->clk);
-
-	return 0;
 }
 
 static const struct of_device_id pwm_sifive_of_match[] = {
@@ -354,7 +337,7 @@ MODULE_DEVICE_TABLE(of, pwm_sifive_of_match);
 
 static struct platform_driver pwm_sifive_driver = {
 	.probe = pwm_sifive_probe,
-	.remove = pwm_sifive_remove,
+	.remove_new = pwm_sifive_remove,
 	.driver = {
 		.name = "pwm-sifive",
 		.of_match_table = pwm_sifive_of_match,

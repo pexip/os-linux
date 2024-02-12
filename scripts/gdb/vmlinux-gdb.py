@@ -13,7 +13,7 @@
 
 import os
 
-sys.path.insert(0, os.path.dirname(__file__) + "/scripts/gdb")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/scripts/gdb")
 
 try:
     gdb.parse_and_eval("0")
@@ -40,3 +40,12 @@ else:
     import linux.clk
     import linux.genpd
     import linux.device
+    import linux.vfs
+    import linux.pgtable
+    import linux.radixtree
+    import linux.interrupts
+    import linux.mm
+    import linux.stackdepot
+    import linux.page_owner
+    import linux.slab
+    import linux.vmalloc

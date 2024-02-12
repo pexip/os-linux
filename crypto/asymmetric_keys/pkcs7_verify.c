@@ -220,9 +220,6 @@ static int pkcs7_verify_sig_chain(struct pkcs7_message *pkcs7,
 			return 0;
 		}
 
-		if (x509->unsupported_key)
-			goto unsupported_crypto_in_x509;
-
 		pr_debug("- issuer %s\n", x509->issuer);
 		sig = x509->sig;
 		if (sig->auth_ids[0])
@@ -239,7 +236,7 @@ static int pkcs7_verify_sig_chain(struct pkcs7_message *pkcs7,
 			 * authority.
 			 */
 			if (x509->unsupported_sig)
-				goto unsupported_crypto_in_x509;
+				goto unsupported_sig_in_x509;
 			x509->signer = x509;
 			pr_debug("- self-signed\n");
 			return 0;
@@ -303,7 +300,7 @@ static int pkcs7_verify_sig_chain(struct pkcs7_message *pkcs7,
 		might_sleep();
 	}
 
-unsupported_crypto_in_x509:
+unsupported_sig_in_x509:
 	/* Just prune the certificate chain at this point if we lack some
 	 * crypto module to go further.  Note, however, we don't want to set
 	 * sinfo->unsupported_crypto as the signed info block may still be
@@ -488,3 +485,4 @@ int pkcs7_supply_detached_data(struct pkcs7_message *pkcs7,
 	pkcs7->data_len = datalen;
 	return 0;
 }
+EXPORT_SYMBOL_GPL(pkcs7_supply_detached_data);

@@ -1,5 +1,6 @@
 [base]
-cross-compile-compat: arm-linux-gnueabihf-
+compat-deb-arch: armhf
+compat-gnu-type: arm-linux-gnueabihf
 kernel-arch: arm64
 featuresets:
  none
@@ -12,7 +13,6 @@ vdso: true
 
 [image]
 install-stem: vmlinuz
-breaks: libmozjs185-1.0, libmozjs-24-0 (<< 24.2.0-5.1~)
 
 [arm64_description]
 hardware: 64-bit ARMv8 machines
@@ -22,7 +22,3 @@ hardware: arm64 cloud
 hardware-long: cloud platforms supporting arm64 virtual machines
 
 [arm64_image]
-
-[relations]
-gcc-12: gcc-12 <!stage1 !cross !pkg.linux.nokernel>, gcc-12-aarch64-linux-gnu <!stage1 cross !pkg.linux.nokernel>, gcc-arm-linux-gnueabihf <!stage1 !pkg.linux.nokernel>
-headers%gcc-12: gcc-12

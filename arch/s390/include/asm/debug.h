@@ -222,7 +222,7 @@ static inline debug_entry_t *debug_text_event(debug_info_t *id, int level,
 
 /*
  * IMPORTANT: Use "%s" in sprintf format strings with care! Only pointers are
- * stored in the s390dbf. See Documentation/s390/s390dbf.rst for more details!
+ * stored in the s390dbf. See Documentation/arch/s390/s390dbf.rst for more details!
  */
 extern debug_entry_t *
 __debug_sprintf_event(debug_info_t *id, int level, char *string, ...)
@@ -350,7 +350,7 @@ static inline debug_entry_t *debug_text_exception(debug_info_t *id, int level,
 
 /*
  * IMPORTANT: Use "%s" in sprintf format strings with care! Only pointers are
- * stored in the s390dbf. See Documentation/s390/s390dbf.rst for more details!
+ * stored in the s390dbf. See Documentation/arch/s390/s390dbf.rst for more details!
  */
 extern debug_entry_t *
 __debug_sprintf_exception(debug_info_t *id, int level, char *string, ...)
@@ -462,7 +462,7 @@ arch_initcall(VNAME(var, reg))
  *
  * @var: Name of debug_info_t variable
  * @name: Name of debug log (e.g. used for debugfs entry)
- * @pages_per_area: Number of pages per area
+ * @pages: Number of pages per area
  * @nr_areas: Number of debug areas
  * @buf_size: Size of data area in each debug entry
  * @view: Pointer to debug view struct

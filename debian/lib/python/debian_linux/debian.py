@@ -1,10 +1,19 @@
+from __future__ import annotations
+
 import collections
 import collections.abc
+import dataclasses
+import enum
+import itertools
 import os.path
 import re
-import unittest
-
-from . import utils
+import typing
+import warnings
+from typing import (
+    Iterable,
+    Self,
+    TypeAlias,
+)
 
 
 class Changelog(list):
@@ -13,7 +22,7 @@ class Changelog(list):
 (?P<source>
     \w[-+0-9a-z.]+
 )
-\ 
+[ ]
 \(
 (?P<version>
     [^\(\)\ \t]+
@@ -32,11 +41,11 @@ class Changelog(list):
     _top_re = re.compile(_top_rules, re.X)
     _bottom_rules = r"""
 ^
-\ --\ 
+[ ]--[ ]
 (?P<maintainer>
-    \S(?:\ ?\S)*
+    \S(?:[ ]?\S)*
 )
-\ \ 
+[ ]{2}
 (?P<date>
     (.*)
 )
@@ -53,7 +62,7 @@ class Changelog(list):
             for key, value in kwargs.items():
                 setattr(self, key, value)
 
-    def __init__(self, dir='', version=None, file=None):
+    def __init__(self, dir='', version=None, file=None) -> None:
         if version is None:
             version = Version
         if file:
@@ -63,7 +72,7 @@ class Changelog(list):
                       encoding="UTF-8") as f:
                 self._parse(version, f)
 
-    def _parse(self, version, f):
+    def _parse(self, version, f) -> None:
         top_match = None
         line_no = 0
 
@@ -100,11 +109,13 @@ class Changelog(list):
 
 
 class Version(object):
+    revision: str | None
+
     _epoch_re = re.compile(r'\d+$')
     _upstream_re = re.compile(r'[0-9][A-Za-z0-9.+\-:~]*$')
     _revision_re = re.compile(r'[A-Za-z0-9+.~]+$')
 
-    def __init__(self, version):
+    def __init__(self, version) -> None:
         try:
             split = version.index(':')
         except ValueError:
@@ -125,100 +136,27 @@ class Version(object):
         self.upstream = upstream
         self.revision = revision
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.complete
 
     @property
-    def complete(self):
+    def complete(self) -> str:
         if self.epoch is not None:
             return u"%d:%s" % (self.epoch, self.complete_noepoch)
         return self.complete_noepoch
 
     @property
-    def complete_noepoch(self):
+    def complete_noepoch(self) -> str:
         if self.revision is not None:
             return u"%s-%s" % (self.upstream, self.revision)
         return self.upstream
 
     @property
-    def debian(self):
+    def debian(self) -> str | None:
         from warnings import warn
         warn(u"debian argument was replaced by revision", DeprecationWarning,
              stacklevel=2)
         return self.revision
-
-
-class _VersionTest(unittest.TestCase):
-    def test_native(self):
-        v = Version('1.2+c~4')
-        self.assertEqual(v.epoch, None)
-        self.assertEqual(v.upstream, '1.2+c~4')
-        self.assertEqual(v.revision, None)
-        self.assertEqual(v.complete, '1.2+c~4')
-        self.assertEqual(v.complete_noepoch, '1.2+c~4')
-
-    def test_nonnative(self):
-        v = Version('1-2+d~3')
-        self.assertEqual(v.epoch, None)
-        self.assertEqual(v.upstream, '1')
-        self.assertEqual(v.revision, '2+d~3')
-        self.assertEqual(v.complete, '1-2+d~3')
-        self.assertEqual(v.complete_noepoch, '1-2+d~3')
-
-    def test_native_epoch(self):
-        v = Version('5:1.2.3')
-        self.assertEqual(v.epoch, 5)
-        self.assertEqual(v.upstream, '1.2.3')
-        self.assertEqual(v.revision, None)
-        self.assertEqual(v.complete, '5:1.2.3')
-        self.assertEqual(v.complete_noepoch, '1.2.3')
-
-    def test_nonnative_epoch(self):
-        v = Version('5:1.2.3-4')
-        self.assertEqual(v.epoch, 5)
-        self.assertEqual(v.upstream, '1.2.3')
-        self.assertEqual(v.revision, '4')
-        self.assertEqual(v.complete, '5:1.2.3-4')
-        self.assertEqual(v.complete_noepoch, '1.2.3-4')
-
-    def test_multi_hyphen(self):
-        v = Version('1-2-3')
-        self.assertEqual(v.epoch, None)
-        self.assertEqual(v.upstream, '1-2')
-        self.assertEqual(v.revision, '3')
-        self.assertEqual(v.complete, '1-2-3')
-
-    def test_multi_colon(self):
-        v = Version('1:2:3')
-        self.assertEqual(v.epoch, 1)
-        self.assertEqual(v.upstream, '2:3')
-        self.assertEqual(v.revision, None)
-
-    def test_invalid_epoch(self):
-        with self.assertRaises(RuntimeError):
-            Version('a:1')
-        with self.assertRaises(RuntimeError):
-            Version('-1:1')
-        with self.assertRaises(RuntimeError):
-            Version('1a:1')
-
-    def test_invalid_upstream(self):
-        with self.assertRaises(RuntimeError):
-            Version('1_2')
-        with self.assertRaises(RuntimeError):
-            Version('1/2')
-        with self.assertRaises(RuntimeError):
-            Version('a1')
-        with self.assertRaises(RuntimeError):
-            Version('1 2')
-
-    def test_invalid_revision(self):
-        with self.assertRaises(RuntimeError):
-            Version('1-2_3')
-        with self.assertRaises(RuntimeError):
-            Version('1-2/3')
-        with self.assertRaises(RuntimeError):
-            Version('1-2:3')
 
 
 class VersionLinux(Version):
@@ -267,9 +205,10 @@ $
 $
     """, re.X)
 
-    def __init__(self, version):
+    def __init__(self, version) -> None:
         super(VersionLinux, self).__init__(version)
         up_match = self._upstream_re.match(self.upstream)
+        assert self.revision is not None
         rev_match = self._revision_re.match(self.revision)
         if up_match is None or rev_match is None:
             raise RuntimeError(u"Invalid debian linux version")
@@ -290,378 +229,421 @@ $
         self.linux_revision_other = d['revision_other'] and True
 
 
-class _VersionLinuxTest(unittest.TestCase):
-    def test_stable(self):
-        v = VersionLinux('1.2.3-4')
-        self.assertEqual(v.linux_version, '1.2')
-        self.assertEqual(v.linux_upstream, '1.2')
-        self.assertEqual(v.linux_upstream_full, '1.2.3')
-        self.assertEqual(v.linux_modifier, None)
-        self.assertEqual(v.linux_dfsg, None)
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertFalse(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
+class PackageArchitecture(set[str]):
+    def __init__(
+        self,
+        v: str | Iterable[str] | None = None,
+        /,
+    ) -> None:
+        if v:
+            if isinstance(v, str):
+                v = re.split(r'\s+', v.strip())
+            self |= frozenset(v)
 
-    def test_rc(self):
-        v = VersionLinux('1.2~rc3-4')
-        self.assertEqual(v.linux_version, '1.2')
-        self.assertEqual(v.linux_upstream, '1.2-rc3')
-        self.assertEqual(v.linux_upstream_full, '1.2-rc3')
-        self.assertEqual(v.linux_modifier, 'rc3')
-        self.assertEqual(v.linux_dfsg, None)
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertFalse(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_dfsg(self):
-        v = VersionLinux('1.2~rc3.dfsg.1-4')
-        self.assertEqual(v.linux_version, '1.2')
-        self.assertEqual(v.linux_upstream, '1.2-rc3')
-        self.assertEqual(v.linux_upstream_full, '1.2-rc3')
-        self.assertEqual(v.linux_modifier, 'rc3')
-        self.assertEqual(v.linux_dfsg, '1')
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertFalse(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_experimental(self):
-        v = VersionLinux('1.2~rc3-4~exp5')
-        self.assertEqual(v.linux_upstream_full, '1.2-rc3')
-        self.assertTrue(v.linux_revision_experimental)
-        self.assertFalse(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_security(self):
-        v = VersionLinux('1.2.3-4+deb10u1')
-        self.assertEqual(v.linux_upstream_full, '1.2.3')
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertTrue(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_backports(self):
-        v = VersionLinux('1.2.3-4~bpo9+10')
-        self.assertEqual(v.linux_upstream_full, '1.2.3')
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertFalse(v.linux_revision_security)
-        self.assertTrue(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_security_backports(self):
-        v = VersionLinux('1.2.3-4+deb10u1~bpo9+10')
-        self.assertEqual(v.linux_upstream_full, '1.2.3')
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertTrue(v.linux_revision_security)
-        self.assertTrue(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_lts_backports(self):
-        # Backport during LTS, as an extra package in the -security
-        # suite.  Since this is not part of a -backports suite it
-        # shouldn't get the linux_revision_backports flag.
-        v = VersionLinux('1.2.3-4~deb9u10')
-        self.assertEqual(v.linux_upstream_full, '1.2.3')
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertTrue(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_lts_backports_2(self):
-        # Same but with two security extensions in the revision.
-        v = VersionLinux('1.2.3-4+deb10u1~deb9u10')
-        self.assertEqual(v.linux_upstream_full, '1.2.3')
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertTrue(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_binnmu(self):
-        v = VersionLinux('1.2.3-4+b1')
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertFalse(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertFalse(v.linux_revision_other)
-
-    def test_other_revision(self):
-        v = VersionLinux('4.16.5-1+revert+crng+ready')  # from #898087
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertFalse(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertTrue(v.linux_revision_other)
-
-    def test_other_revision_binnmu(self):
-        v = VersionLinux('4.16.5-1+revert+crng+ready+b1')
-        self.assertFalse(v.linux_revision_experimental)
-        self.assertFalse(v.linux_revision_security)
-        self.assertFalse(v.linux_revision_backports)
-        self.assertTrue(v.linux_revision_other)
-
-
-class PackageArchitecture(collections.abc.MutableSet):
-    __slots__ = '_data'
-
-    def __init__(self, value=None):
-        self._data = set()
-        if value:
-            self.extend(value)
-
-    def __contains__(self, value):
-        return self._data.__contains__(value)
-
-    def __iter__(self):
-        return self._data.__iter__()
-
-    def __len__(self):
-        return self._data.__len__()
-
-    def __str__(self):
+    def __str__(self) -> str:
         return ' '.join(sorted(self))
 
-    def add(self, value):
-        self._data.add(value)
 
-    def discard(self, value):
-        self._data.discard(value)
+class PackageDescription:
+    short: list[str]
+    long: list[str]
 
-    def extend(self, value):
-        if isinstance(value, str):
-            for i in re.split(r'\s', value.strip()):
-                self.add(i)
-        else:
-            raise RuntimeError
-
-
-class PackageDescription(object):
-    __slots__ = "short", "long"
-
-    def __init__(self, value=None):
+    def __init__(
+        self,
+        v: str | Self | None = None,
+        /,
+    ) -> None:
         self.short = []
         self.long = []
-        if value is not None:
-            desc_split = value.split("\n", 1)
-            self.append_short(desc_split[0])
-            if len(desc_split) == 2:
-                self.append(desc_split[1])
 
-    def __str__(self):
-        wrap = utils.TextWrapper(width=74, fix_sentence_endings=True).wrap
+        if v:
+            if isinstance(v, str):
+                desc_split = v.split('\n', 1)
+                self.append_short(desc_split[0])
+                if len(desc_split) == 2:
+                    self.append(desc_split[1])
+            else:
+                self.short.extend(v.short)
+                self.long.extend(v.long)
+
+    def __str__(self) -> str:
+        from .utils import TextWrapper
+        wrap = TextWrapper(width=74, fix_sentence_endings=True).wrap
         short = ', '.join(self.short)
         long_pars = []
         for i in self.long:
             long_pars.append(wrap(i))
-        long = '\n .\n '.join(['\n '.join(i) for i in long_pars])
+        long = '\n .\n '.join('\n '.join(i) for i in long_pars)
         return short + '\n ' + long if long else short
 
-    def append(self, str):
-        str = str.strip()
-        if str:
-            self.long.extend(str.split(u"\n.\n"))
+    def append(self, long: str) -> None:
+        long = long.strip()
+        if long:
+            self.long.extend(long.split('\n.\n'))
 
-    def append_short(self, str):
-        for i in [i.strip() for i in str.split(u",")]:
+    def append_short(self, short: str) -> None:
+        for i in [i.strip() for i in short.split(',')]:
             if i:
                 self.short.append(i)
 
-    def extend(self, desc):
-        if isinstance(desc, PackageDescription):
-            self.short.extend(desc.short)
-            self.long.extend(desc.long)
+    def extend(self, desc: PackageDescription) -> None:
+        self.short.extend(desc.short)
+        self.long.extend(desc.long)
+
+
+class PackageRelationEntryOperator(enum.StrEnum):
+    OP_LT = '<<'
+    OP_LE = '<='
+    OP_EQ = '='
+    OP_NE = '!='
+    OP_GE = '>='
+    OP_GT = '>>'
+
+    def __neg__(self) -> PackageRelationEntryOperator:
+        return typing.cast(PackageRelationEntryOperator, {
+            self.OP_LT: self.OP_GE,
+            self.OP_LE: self.OP_GT,
+            self.OP_EQ: self.OP_NE,
+            self.OP_NE: self.OP_EQ,
+            self.OP_GE: self.OP_LT,
+            self.OP_GT: self.OP_LE,
+        }[self])
+
+
+class PackageRelationEntry:
+    name: str
+    operator: typing.Optional[PackageRelationEntryOperator]
+    version: typing.Optional[str]
+    arches: PackageArchitecture
+    restrictions: PackageBuildprofile
+
+    __re = re.compile(
+        r'^(?P<name>\S+)'
+        r'(?: \((?P<operator><<|<=|=|!=|>=|>>)\s*(?P<version>[^)]+)\))?'
+        r'(?: \[(?P<arches>[^]]+)\])?'
+        r'(?P<restrictions>(?: <[^>]+>)*)$'
+    )
+
+    def __init__(
+        self,
+        v: str | Self,
+        /, *,
+        name: str | None = None,
+        arches: set[str] | None = None,
+        restrictions: PackageBuildprofile | str | None = None,
+    ) -> None:
+        if isinstance(v, str):
+            match = self.__re.match(v)
+            if not match:
+                raise RuntimeError('Unable to parse dependency "%s"' % v)
+
+            self.name = name or match['name']
+
+            if operator := match['operator']:
+                self.operator = PackageRelationEntryOperator(operator)
+            else:
+                self.operator = None
+
+            self.version = match['version']
+            self.arches = PackageArchitecture(arches or match['arches'])
+            if isinstance(restrictions, PackageBuildprofile):
+                self.restrictions = restrictions.copy()
+            else:
+                self.restrictions = PackageBuildprofile.parse(
+                    restrictions or match['restrictions'],
+                )
+
         else:
-            raise TypeError
-
-
-class PackageRelation(list):
-    def __init__(self, value=None, override_arches=None):
-        if value:
-            self.extend(value, override_arches)
-
-    def __str__(self):
-        return ', '.join(str(i) for i in self)
-
-    def _search_value(self, value):
-        for i in self:
-            if i._search_value(value):
-                return i
-        return None
-
-    def append(self, value, override_arches=None):
-        if isinstance(value, str):
-            value = PackageRelationGroup(value, override_arches)
-        elif not isinstance(value, PackageRelationGroup):
-            raise ValueError(u"got %s" % type(value))
-        j = self._search_value(value)
-        if j:
-            j._update_arches(value)
-        else:
-            super(PackageRelation, self).append(value)
-
-    def extend(self, value, override_arches=None):
-        if isinstance(value, str):
-            value = (j.strip() for j in re.split(r',', value.strip()))
-        for i in value:
-            self.append(i, override_arches)
-
-
-class PackageRelationGroup(list):
-    def __init__(self, value=None, override_arches=None):
-        if value:
-            self.extend(value, override_arches)
-
-    def __str__(self):
-        return ' | '.join(str(i) for i in self)
-
-    def _search_value(self, value):
-        for i, j in zip(self, value):
-            if i.name != j.name or i.operator != j.operator or \
-               i.version != j.version or i.restrictions != j.restrictions:
-                return None
-        return self
-
-    def _update_arches(self, value):
-        for i, j in zip(self, value):
-            if i.arches:
-                for arch in j.arches:
-                    if arch not in i.arches:
-                        i.arches.append(arch)
-
-    def append(self, value, override_arches=None):
-        if isinstance(value, str):
-            value = PackageRelationEntry(value, override_arches)
-        elif not isinstance(value, PackageRelationEntry):
-            raise ValueError
-        super(PackageRelationGroup, self).append(value)
-
-    def extend(self, value, override_arches=None):
-        if isinstance(value, str):
-            value = (j.strip() for j in re.split(r'\|', value.strip()))
-        for i in value:
-            self.append(i, override_arches)
-
-
-class PackageRelationEntry(object):
-    __slots__ = "name", "operator", "version", "arches", "restrictions"
-
-    _re = re.compile(r'^(\S+)(?: \((<<|<=|=|!=|>=|>>)\s*([^)]+)\))?'
-                     r'(?: \[([^]]+)\])?(?: <([^>]+)>)?$')
-
-    class _operator(object):
-        OP_LT = 1
-        OP_LE = 2
-        OP_EQ = 3
-        OP_NE = 4
-        OP_GE = 5
-        OP_GT = 6
-
-        operators = {
-                '<<': OP_LT,
-                '<=': OP_LE,
-                '=': OP_EQ,
-                '!=': OP_NE,
-                '>=': OP_GE,
-                '>>': OP_GT,
-        }
-
-        operators_neg = {
-                OP_LT: OP_GE,
-                OP_LE: OP_GT,
-                OP_EQ: OP_NE,
-                OP_NE: OP_EQ,
-                OP_GE: OP_LT,
-                OP_GT: OP_LE,
-        }
-
-        operators_text = dict((b, a) for a, b in operators.items())
-
-        __slots__ = '_op',
-
-        def __init__(self, value):
-            self._op = self.operators[value]
-
-        def __neg__(self):
-            return self.__class__(
-                self.operators_text[self.operators_neg[self._op]])
-
-        def __str__(self):
-            return self.operators_text[self._op]
-
-        def __eq__(self, other):
-            return type(other) == type(self) and self._op == other._op
-
-    def __init__(self, value=None, override_arches=None):
-        if not isinstance(value, str):
-            raise ValueError
-
-        self.parse(value)
-
-        if override_arches:
-            self.arches = list(override_arches)
+            self.name = name or v.name
+            self.operator = v.operator
+            self.version = v.version
+            self.arches = PackageArchitecture(arches or v.arches)
+            if isinstance(restrictions, str):
+                self.restrictions = PackageBuildprofile.parse(restrictions)
+            else:
+                self.restrictions = (restrictions or v.restrictions).copy()
 
     def __str__(self):
         ret = [self.name]
-        if self.operator is not None and self.version is not None:
-            ret.extend((' (', str(self.operator), ' ', self.version, ')'))
+        if self.operator and self.version:
+            ret.append(f'({self.operator} {self.version})')
         if self.arches:
-            ret.extend((' [', ' '.join(self.arches), ']'))
+            ret.append(f'[{self.arches}]')
         if self.restrictions:
-            ret.extend((' <', ' '.join(self.restrictions), '>'))
-        return ''.join(ret)
-
-    def parse(self, value):
-        match = self._re.match(value)
-        if match is None:
-            raise RuntimeError(u"Can't parse dependency %s" % value)
-        match = match.groups()
-        self.name = match[0]
-        if match[1] is not None:
-            self.operator = self._operator(match[1])
-        else:
-            self.operator = None
-        self.version = match[2]
-        if match[3] is not None:
-            self.arches = re.split(r'\s+', match[3])
-        else:
-            self.arches = []
-        if match[4] is not None:
-            self.restrictions = re.split(r'\s+', match[4])
-        else:
-            self.restrictions = []
+            ret.append(str(self.restrictions))
+        return ' '.join(ret)
 
 
-class _ControlFileDict(dict):
+class PackageRelationGroup(list[PackageRelationEntry]):
+    def __init__(
+        self,
+        v: Iterable[PackageRelationEntry | str] | str | Self | None = None,
+        /, *,
+        arches: set[str] | None = None,
+    ) -> None:
+        if v:
+            if isinstance(v, str):
+                v = (i.strip() for i in re.split(r'\|', v.strip()))
+            self.extend(PackageRelationEntry(i, arches=arches) for i in v if i)
+
+    def __str__(self) -> str:
+        return ' | '.join(str(i) for i in self)
+
+    def _merge_eq(self, v: PackageRelationGroup) -> typing.Optional[PackageRelationGroup]:
+        if all(
+            (
+                i.name == j.name and i.operator == j.operator
+                and i.version == j.version
+            ) for i, j in zip(self, v)
+        ):
+            return self
+        return None
+
+
+class PackageRelation(list[PackageRelationGroup]):
+    Init: TypeAlias = PackageRelationGroup | Iterable[PackageRelationEntry] | str
+
+    def __init__(
+        self,
+        v: Iterable[Init] | str | Self | None = None,
+        /, *,
+        arches: set[str] | None = None,
+    ) -> None:
+        if v:
+            if isinstance(v, str):
+                v = (i.strip() for i in re.split(r',', v.strip()))
+            self.extend(PackageRelationGroup(i, arches=arches) for i in v if i)
+
+    def __str__(self) -> str:
+        return ', '.join(str(i) for i in self)
+
+    def _merge_eq(self, v: PackageRelationGroup) -> typing.Optional[PackageRelationGroup]:
+        for i in self:
+            if i._merge_eq(v):
+                return i
+        return None
+
+    def merge(
+        self,
+        v: Init | str,
+        /,
+    ) -> None:
+        v = PackageRelationGroup(v)
+        if g := self._merge_eq(v):
+            for i, j in zip(g, v):
+                i.arches |= j.arches
+                i.restrictions.update(j.restrictions)
+        else:
+            super().append(v)
+
+
+@dataclasses.dataclass
+class PackageBuildprofileEntry:
+    pos: set[str] = dataclasses.field(default_factory=set)
+    neg: set[str] = dataclasses.field(default_factory=set)
+
+    __re = re.compile(r'^<(?P<profiles>[a-z0-9. !-]+)>$')
+
+    def copy(self) -> Self:
+        return self.__class__(
+            pos=set(self.pos),
+            neg=set(self.neg),
+        )
+
+    @classmethod
+    def parse(cls, v: str, /) -> Self:
+        match = cls.__re.match(v)
+        if not match:
+            raise RuntimeError('Unable to parse build profile "%s"' % v)
+
+        ret = cls()
+        for i in re.split(r' ', match.group('profiles')):
+            if i:
+                if i[0] == '!':
+                    ret.neg.add(i[1:])
+                else:
+                    ret.pos.add(i)
+        return ret
+
+    def __eq__(self, other: object, /) -> bool:
+        if not isinstance(other, PackageBuildprofileEntry):
+            return NotImplemented
+        return self.pos == other.pos and self.neg == other.neg
+
+    def isdisjoint(self, other: Self, /) -> bool:
+        return not (self.issubset(other)) and not (self.issuperset(other))
+
+    def issubset(self, other: Self, /) -> bool:
+        '''
+        Test wether this build profile would select a subset of packages.
+
+        For positive profile matches: Ading profiles will select a subset.
+        For negative profile matches: Removing profiles will select a subset.
+        '''
+        return self.pos >= other.pos and self.neg <= other.neg
+    __le__ = issubset
+
+    def issuperset(self, other: Self, /) -> bool:
+        '''
+        Test wether this build profile would select a superset of packages.
+
+        For positive profile matches: Removing profiles will select a superset.
+        For negative profile matches: Adding profiles will select a superset.
+        '''
+        return self.pos <= other.pos and self.neg >= other.neg
+    __ge__ = issuperset
+
+    def update(self, other: Self, /) -> None:
+        '''
+        Update the build profiles, adding entries from other, merging if possible.
+
+        Negating entries (profile vs !profile) are completely removed.
+        All others remain if they are used on both sides.
+        '''
+        diff = (self.pos & other.neg) | (self.neg & other.pos)
+        self.pos &= other.pos - diff
+        self.neg &= other.neg - diff
+    __ior__ = update
+
+    def __str__(self) -> str:
+        s = ' '.join(itertools.chain(
+            sorted(self.pos),
+            (f'!{i}' for i in sorted(self.neg)),
+        ))
+        return f'<{s}>'
+
+
+class PackageBuildprofile(list[PackageBuildprofileEntry]):
+    __re = re.compile(r' *(<[^>]+>)(?: +|$)')
+
+    def copy(self) -> Self:
+        return self.__class__(i.copy() for i in self)
+
+    @classmethod
+    def parse(cls, v: str, /) -> Self:
+        ret = cls()
+        for match in cls.__re.finditer(v):
+            ret.append(PackageBuildprofileEntry.parse(match.group(1)))
+        return ret
+
+    def update(self, v: Self, /) -> None:
+        for i in v:
+            for j in self:
+                if not j.isdisjoint(i):
+                    j.update(i)
+                    break
+            else:
+                self.append(i)
+    __ior__ = update
+
+    def __str__(self) -> str:
+        return ' '.join(str(i) for i in self)
+
+
+class _ControlFileDict(collections.abc.MutableMapping):
+    def __init__(self):
+        self.__data = {}
+        self.meta = {}
+
+    def __getitem__(self, key):
+        return self.__data[key]
+
     def __setitem__(self, key, value):
+        if key.lower().startswith('meta-'):
+            self.meta[key.lower()[5:]] = value
+            return
+
         try:
             cls = self._fields[key]
             if not isinstance(value, cls):
-                value = cls(value)
+                if f := getattr(cls, 'parse', None):
+                    value = f(value)
+                else:
+                    value = cls(value)
         except KeyError:
-            pass
-        super(_ControlFileDict, self).__setitem__(key, value)
+            warnings.warn(
+                f'setting unknown field { key } in { type(self).__name__ }',
+                stacklevel=2)
+        self.__data[key] = value
 
-    def keys(self):
-        keys = set(super(_ControlFileDict, self).keys())
-        for i in self._fields.keys():
-            if i in self:
-                keys.remove(i)
-                yield i
-        for i in sorted(list(keys)):
-            yield i
+    def __delitem__(self, key):
+        del self.__data[key]
 
-    def items(self):
-        for i in self.keys():
-            yield (i, self[i])
+    def __iter__(self):
+        keys = set(self.__data.keys())
+        for key in self._fields.keys():
+            if key in self.__data:
+                keys.remove(key)
+                yield key
+        for key in sorted(keys):
+            yield key
 
-    def values(self):
-        for i in self.keys():
-            yield self[i]
+    def __len__(self):
+        return len(self.__data)
+
+    def setdefault(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            try:
+                ret = self[key] = self._fields[key]()
+            except KeyError:
+                warnings.warn(
+                    f'setting unknown field { key } in { type(self).__name__ }',
+                    stacklevel=2)
+                ret = self[key] = ''
+            return ret
+
+    def copy(self):
+        ret = self.__class__()
+        ret.__data = self.__data.copy()
+        ret.meta = self.meta.copy()
+        return ret
+
+    @classmethod
+    def read_rfc822(cls, f):
+        entries = []
+        eof = False
+
+        while not eof:
+            e = cls()
+            last = None
+            lines = []
+            while True:
+                line = f.readline()
+                if not line:
+                    eof = True
+                    break
+                # Strip comments rather than trying to preserve them
+                if line[0] == '#':
+                    continue
+                line = line.strip('\n')
+                if not line:
+                    break
+                if line[0] in ' \t':
+                    if not last:
+                        raise ValueError(
+                            'Continuation line seen before first header')
+                    lines.append(line.lstrip())
+                    continue
+                if last:
+                    e[last] = '\n'.join(lines)
+                i = line.find(':')
+                if i < 0:
+                    raise ValueError(u"Not a header, not a continuation: ``%s''" %
+                                     line)
+                last = line[:i]
+                lines = [line[i + 1:].lstrip()]
+            if last:
+                e[last] = '\n'.join(lines)
+            if e:
+                entries.append(e)
+
+        return entries
 
 
-class Package(_ControlFileDict):
+class SourcePackage(_ControlFileDict):
     _fields = collections.OrderedDict((
-        ('Package', str),
         ('Source', str),
         ('Architecture', PackageArchitecture),
         ('Section', str),
@@ -672,6 +654,29 @@ class Package(_ControlFileDict):
         ('Build-Depends', PackageRelation),
         ('Build-Depends-Arch', PackageRelation),
         ('Build-Depends-Indep', PackageRelation),
+        ('Rules-Requires-Root', str),
+        ('Homepage', str),
+        ('Vcs-Browser', str),
+        ('Vcs-Git', str),
+        ('XS-Autobuild', str),
+    ))
+
+
+class BinaryPackage(_ControlFileDict):
+    _fields = collections.OrderedDict((
+        ('Package', str),
+        ('Package-Type', str),  # for udeb only
+        ('Architecture', PackageArchitecture),
+        ('Section', str),
+        ('Priority', str),
+        # Build-Depends* fields aren't allowed for binary packages in
+        # the real control file, but we move them to the source
+        # package
+        ('Build-Depends', PackageRelation),
+        ('Build-Depends-Arch', PackageRelation),
+        ('Build-Depends-Indep', PackageRelation),
+        ('Build-Profiles', PackageBuildprofile),
+        ('Built-Using', PackageRelation),
         ('Provides', PackageRelation),
         ('Pre-Depends', PackageRelation),
         ('Depends', PackageRelation),
@@ -680,7 +685,10 @@ class Package(_ControlFileDict):
         ('Replaces', PackageRelation),
         ('Breaks', PackageRelation),
         ('Conflicts', PackageRelation),
+        ('Multi-Arch', str),
+        ('Kernel-Version', str),  # for udeb only
         ('Description', PackageDescription),
+        ('Homepage', str),
     ))
 
 
@@ -688,13 +696,10 @@ class TestsControl(_ControlFileDict):
     _fields = collections.OrderedDict((
         ('Tests', str),
         ('Test-Command', str),
+        ('Architecture', PackageArchitecture),
         ('Restrictions', str),
         ('Features', str),
         ('Depends', PackageRelation),
         ('Tests-Directory', str),
         ('Classes', str),
     ))
-
-
-if __name__ == '__main__':
-    unittest.main()

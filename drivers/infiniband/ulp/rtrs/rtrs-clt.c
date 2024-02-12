@@ -16,6 +16,7 @@
 
 #include "rtrs-clt.h"
 #include "rtrs-log.h"
+#include "rtrs-clt-trace.h"
 
 #define RTRS_CONNECT_TIMEOUT_MS 30000
 /*
@@ -44,23 +45,28 @@ static struct rtrs_rdma_dev_pd dev_pd = {
 };
 
 static struct workqueue_struct *rtrs_wq;
-static struct class *rtrs_clt_dev_class;
+static const struct class rtrs_clt_dev_class = {
+	.name = "rtrs-client",
+};
 
-static inline bool rtrs_clt_is_connected(const struct rtrs_clt *clt)
+static inline bool rtrs_clt_is_connected(const struct rtrs_clt_sess *clt)
 {
 	struct rtrs_clt_path *clt_path;
 	bool connected = false;
 
 	rcu_read_lock();
 	list_for_each_entry_rcu(clt_path, &clt->paths_list, s.entry)
-		connected |= READ_ONCE(clt_path->state) == RTRS_CLT_CONNECTED;
+		if (READ_ONCE(clt_path->state) == RTRS_CLT_CONNECTED) {
+			connected = true;
+			break;
+		}
 	rcu_read_unlock();
 
 	return connected;
 }
 
 static struct rtrs_permit *
-__rtrs_get_permit(struct rtrs_clt *clt, enum rtrs_clt_con_type con_type)
+__rtrs_get_permit(struct rtrs_clt_sess *clt, enum rtrs_clt_con_type con_type)
 {
 	size_t max_depth = clt->queue_depth;
 	struct rtrs_permit *permit;
@@ -87,7 +93,7 @@ __rtrs_get_permit(struct rtrs_clt *clt, enum rtrs_clt_con_type con_type)
 	return permit;
 }
 
-static inline void __rtrs_put_permit(struct rtrs_clt *clt,
+static inline void __rtrs_put_permit(struct rtrs_clt_sess *clt,
 				      struct rtrs_permit *permit)
 {
 	clear_bit_unlock(permit->mem_id, clt->permits_map);
@@ -107,7 +113,7 @@ static inline void __rtrs_put_permit(struct rtrs_clt *clt,
  * Context:
  *    Can sleep if @wait == RTRS_PERMIT_WAIT
  */
-struct rtrs_permit *rtrs_clt_get_permit(struct rtrs_clt *clt,
+struct rtrs_permit *rtrs_clt_get_permit(struct rtrs_clt_sess *clt,
 					  enum rtrs_clt_con_type con_type,
 					  enum wait_type can_wait)
 {
@@ -142,7 +148,8 @@ EXPORT_SYMBOL(rtrs_clt_get_permit);
  * Context:
  *    Does not matter
  */
-void rtrs_clt_put_permit(struct rtrs_clt *clt, struct rtrs_permit *permit)
+void rtrs_clt_put_permit(struct rtrs_clt_sess *clt,
+			 struct rtrs_permit *permit)
 {
 	if (WARN_ON(!test_bit(permit->mem_id, clt->permits_map)))
 		return;
@@ -296,23 +303,17 @@ static bool rtrs_clt_change_state_from_to(struct rtrs_clt_path *clt_path,
 	return changed;
 }
 
+static void rtrs_clt_stop_and_destroy_conns(struct rtrs_clt_path *clt_path);
 static void rtrs_rdma_error_recovery(struct rtrs_clt_con *con)
 {
 	struct rtrs_clt_path *clt_path = to_clt_path(con->c.path);
 
+	trace_rtrs_rdma_error_recovery(clt_path);
+
 	if (rtrs_clt_change_state_from_to(clt_path,
 					   RTRS_CLT_CONNECTED,
 					   RTRS_CLT_RECONNECTING)) {
-		struct rtrs_clt *clt = clt_path->clt;
-		unsigned int delay_ms;
-
-		/*
-		 * Normal scenario, reconnect if we were successfully connected
-		 */
-		delay_ms = clt->reconnect_delay_sec * 1000;
-		queue_delayed_work(rtrs_wq, &clt_path->reconnect_dwork,
-				   msecs_to_jiffies(delay_ms +
-						    prandom_u32() % RTRS_RECONNECT_SEED));
+		queue_work(rtrs_wq, &clt_path->err_recovery_work);
 	} else {
 		/*
 		 * Error can happen just on establishing new connection,
@@ -383,7 +384,7 @@ static void complete_rdma_req(struct rtrs_clt_io_req *req, int errno,
 	struct rtrs_clt_path *clt_path;
 	int err;
 
-	if (WARN_ON(!req->in_use))
+	if (!req->in_use)
 		return;
 	if (WARN_ON(!req->con))
 		return;
@@ -743,7 +744,7 @@ static int post_recv_path(struct rtrs_clt_path *clt_path)
 struct path_it {
 	int i;
 	struct list_head skip_list;
-	struct rtrs_clt *clt;
+	struct rtrs_clt_sess *clt;
 	struct rtrs_clt_path *(*next_path)(struct path_it *it);
 };
 
@@ -780,7 +781,7 @@ static struct rtrs_clt_path *get_next_path_rr(struct path_it *it)
 {
 	struct rtrs_clt_path __rcu **ppcpu_path;
 	struct rtrs_clt_path *path;
-	struct rtrs_clt *clt;
+	struct rtrs_clt_sess *clt;
 
 	clt = it->clt;
 
@@ -815,7 +816,7 @@ static struct rtrs_clt_path *get_next_path_rr(struct path_it *it)
 static struct rtrs_clt_path *get_next_path_min_inflight(struct path_it *it)
 {
 	struct rtrs_clt_path *min_path = NULL;
-	struct rtrs_clt *clt = it->clt;
+	struct rtrs_clt_sess *clt = it->clt;
 	struct rtrs_clt_path *clt_path;
 	int min_inflight = INT_MAX;
 	int inflight;
@@ -866,7 +867,7 @@ static struct rtrs_clt_path *get_next_path_min_inflight(struct path_it *it)
 static struct rtrs_clt_path *get_next_path_min_latency(struct path_it *it)
 {
 	struct rtrs_clt_path *min_path = NULL;
-	struct rtrs_clt *clt = it->clt;
+	struct rtrs_clt_sess *clt = it->clt;
 	struct rtrs_clt_path *clt_path;
 	ktime_t min_latency = KTIME_MAX;
 	ktime_t latency;
@@ -896,7 +897,7 @@ static struct rtrs_clt_path *get_next_path_min_latency(struct path_it *it)
 	return min_path;
 }
 
-static inline void path_it_init(struct path_it *it, struct rtrs_clt *clt)
+static inline void path_it_init(struct path_it *it, struct rtrs_clt_sess *clt)
 {
 	INIT_LIST_HEAD(&it->skip_list);
 	it->clt = clt;
@@ -914,7 +915,7 @@ static inline void path_it_deinit(struct path_it *it)
 {
 	struct list_head *skip, *tmp;
 	/*
-	 * The skip_list is used only for the MIN_INFLIGHT policy.
+	 * The skip_list is used only for the MIN_INFLIGHT and MIN_LATENCY policies.
 	 * We need to remove paths from it, so that next IO can insert
 	 * paths (->mp_skip_entry) into a skip_list again.
 	 */
@@ -967,7 +968,7 @@ static void rtrs_clt_init_req(struct rtrs_clt_io_req *req,
 	refcount_set(&req->ref, 1);
 	req->mp_policy = clt_path->clt->mp_policy;
 
-	iov_iter_kvec(&iter, WRITE, vec, 1, usr_len);
+	iov_iter_kvec(&iter, ITER_SOURCE, vec, 1, usr_len);
 	len = _copy_from_iter(req->iu->buf, usr_len, &iter);
 	WARN_ON(len != usr_len);
 
@@ -1065,10 +1066,8 @@ static int rtrs_map_sg_fr(struct rtrs_clt_io_req *req, size_t count)
 
 	/* Align the MR to a 4K page size to match the block virt boundary */
 	nr = ib_map_mr_sg(req->mr, req->sglist, count, NULL, SZ_4K);
-	if (nr < 0)
-		return nr;
-	if (nr < req->sg_cnt)
-		return -EINVAL;
+	if (nr != count)
+		return nr < 0 ? nr : -EINVAL;
 	ib_update_fast_reg_key(req->mr, ib_inc_rkey(req->mr->rkey));
 
 	return nr;
@@ -1280,7 +1279,7 @@ static int rtrs_clt_read_req(struct rtrs_clt_io_req *req)
  * @clt: clt context
  * @fail_req: a failed io request.
  */
-static int rtrs_clt_failover_req(struct rtrs_clt *clt,
+static int rtrs_clt_failover_req(struct rtrs_clt_sess *clt,
 				 struct rtrs_clt_io_req *fail_req)
 {
 	struct rtrs_clt_path *alive_path;
@@ -1315,7 +1314,7 @@ static int rtrs_clt_failover_req(struct rtrs_clt *clt,
 
 static void fail_all_outstanding_reqs(struct rtrs_clt_path *clt_path)
 {
-	struct rtrs_clt *clt = clt_path->clt;
+	struct rtrs_clt_sess *clt = clt_path->clt;
 	struct rtrs_clt_io_req *req;
 	int i, err;
 
@@ -1404,13 +1403,12 @@ out:
 	return err;
 }
 
-static int alloc_permits(struct rtrs_clt *clt)
+static int alloc_permits(struct rtrs_clt_sess *clt)
 {
 	unsigned int chunk_bits;
 	int err, i;
 
-	clt->permits_map = kcalloc(BITS_TO_LONGS(clt->queue_depth),
-				   sizeof(long), GFP_KERNEL);
+	clt->permits_map = bitmap_zalloc(clt->queue_depth, GFP_KERNEL);
 	if (!clt->permits_map) {
 		err = -ENOMEM;
 		goto out_err;
@@ -1432,21 +1430,19 @@ static int alloc_permits(struct rtrs_clt *clt)
 	return 0;
 
 err_map:
-	kfree(clt->permits_map);
+	bitmap_free(clt->permits_map);
 	clt->permits_map = NULL;
 out_err:
 	return err;
 }
 
-static void free_permits(struct rtrs_clt *clt)
+static void free_permits(struct rtrs_clt_sess *clt)
 {
-	if (clt->permits_map) {
-		size_t sz = clt->queue_depth;
-
+	if (clt->permits_map)
 		wait_event(clt->permits_wait,
-			   find_first_bit(clt->permits_map, sz) >= sz);
-	}
-	kfree(clt->permits_map);
+			   bitmap_empty(clt->permits_map, clt->queue_depth));
+
+	bitmap_free(clt->permits_map);
 	clt->permits_map = NULL;
 	kfree(clt->permits);
 	clt->permits = NULL;
@@ -1509,7 +1505,22 @@ static void rtrs_clt_init_hb(struct rtrs_clt_path *clt_path)
 static void rtrs_clt_reconnect_work(struct work_struct *work);
 static void rtrs_clt_close_work(struct work_struct *work);
 
-static struct rtrs_clt_path *alloc_path(struct rtrs_clt *clt,
+static void rtrs_clt_err_recovery_work(struct work_struct *work)
+{
+	struct rtrs_clt_path *clt_path;
+	struct rtrs_clt_sess *clt;
+	int delay_ms;
+
+	clt_path = container_of(work, struct rtrs_clt_path, err_recovery_work);
+	clt = clt_path->clt;
+	delay_ms = clt->reconnect_delay_sec * 1000;
+	rtrs_clt_stop_and_destroy_conns(clt_path);
+	queue_delayed_work(rtrs_wq, &clt_path->reconnect_dwork,
+			   msecs_to_jiffies(delay_ms +
+					    get_random_u32_below(RTRS_RECONNECT_SEED)));
+}
+
+static struct rtrs_clt_path *alloc_path(struct rtrs_clt_sess *clt,
 					const struct rtrs_addr *path,
 					size_t con_num, u32 nr_poll_queues)
 {
@@ -1560,6 +1571,7 @@ static struct rtrs_clt_path *alloc_path(struct rtrs_clt *clt,
 	clt_path->state = RTRS_CLT_CONNECTING;
 	atomic_set(&clt_path->connected_cnt, 0);
 	INIT_WORK(&clt_path->close_work, rtrs_clt_close_work);
+	INIT_WORK(&clt_path->err_recovery_work, rtrs_clt_err_recovery_work);
 	INIT_DELAYED_WORK(&clt_path->reconnect_dwork, rtrs_clt_reconnect_work);
 	rtrs_clt_init_hb(clt_path);
 
@@ -1682,7 +1694,7 @@ static int create_con_cq_qp(struct rtrs_clt_con *con)
 		clt_path->s.dev_ref++;
 		max_send_wr = min_t(int, wr_limit,
 			      /* QD * (REQ + RSP + FR REGS or INVS) + drain */
-			      clt_path->queue_depth * 3 + 1);
+			      clt_path->queue_depth * 4 + 1);
 		max_recv_wr = min_t(int, wr_limit,
 			      clt_path->queue_depth * 3 + 1);
 		max_send_sge = 2;
@@ -1700,7 +1712,6 @@ static int create_con_cq_qp(struct rtrs_clt_con *con)
 			return -ENOMEM;
 		con->queue_num = cq_num;
 	}
-	cq_num = max_send_wr + max_recv_wr;
 	cq_vector = con->cpu % clt_path->s.dev->ib_dev->num_comp_vectors;
 	if (con->c.cid >= clt_path->s.irq_con_num)
 		err = rtrs_cq_qp_create(&clt_path->s, &con->c, max_send_sge,
@@ -1774,7 +1785,7 @@ static int rtrs_rdma_addr_resolved(struct rtrs_clt_con *con)
 static int rtrs_rdma_route_resolved(struct rtrs_clt_con *con)
 {
 	struct rtrs_clt_path *clt_path = to_clt_path(con->c.path);
-	struct rtrs_clt *clt = clt_path->clt;
+	struct rtrs_clt_sess *clt = clt_path->clt;
 	struct rtrs_msg_conn_req msg;
 	struct rdma_conn_param param;
 
@@ -1809,7 +1820,7 @@ static int rtrs_rdma_conn_established(struct rtrs_clt_con *con,
 				       struct rdma_cm_event *ev)
 {
 	struct rtrs_clt_path *clt_path = to_clt_path(con->c.path);
-	struct rtrs_clt *clt = clt_path->clt;
+	struct rtrs_clt_sess *clt = clt_path->clt;
 	const struct rtrs_msg_conn_rsp *msg;
 	u16 version, queue_depth;
 	int errno;
@@ -1936,6 +1947,8 @@ static int rtrs_rdma_conn_rejected(struct rtrs_clt_con *con,
 
 void rtrs_clt_close_conns(struct rtrs_clt_path *clt_path, bool wait)
 {
+	trace_rtrs_clt_close_conns(clt_path);
+
 	if (rtrs_clt_change_state_get_old(clt_path, RTRS_CLT_CLOSING, NULL))
 		queue_work(rtrs_wq, &clt_path->close_work);
 	if (wait)
@@ -2086,7 +2099,7 @@ static int create_cm(struct rtrs_clt_con *con)
 
 static void rtrs_clt_path_up(struct rtrs_clt_path *clt_path)
 {
-	struct rtrs_clt *clt = clt_path->clt;
+	struct rtrs_clt_sess *clt = clt_path->clt;
 	int up;
 
 	/*
@@ -2117,7 +2130,7 @@ static void rtrs_clt_path_up(struct rtrs_clt_path *clt_path)
 
 static void rtrs_clt_path_down(struct rtrs_clt_path *clt_path)
 {
-	struct rtrs_clt *clt = clt_path->clt;
+	struct rtrs_clt_sess *clt = clt_path->clt;
 
 	if (!clt_path->established)
 		return;
@@ -2193,20 +2206,9 @@ static void rtrs_clt_stop_and_destroy_conns(struct rtrs_clt_path *clt_path)
 	}
 }
 
-static inline bool xchg_paths(struct rtrs_clt_path __rcu **rcu_ppcpu_path,
-			      struct rtrs_clt_path *clt_path,
-			      struct rtrs_clt_path *next)
-{
-	struct rtrs_clt_path **ppcpu_path;
-
-	/* Call cmpxchg() without sparse warnings */
-	ppcpu_path = (typeof(ppcpu_path))rcu_ppcpu_path;
-	return clt_path == cmpxchg(ppcpu_path, clt_path, next);
-}
-
 static void rtrs_clt_remove_path_from_arr(struct rtrs_clt_path *clt_path)
 {
-	struct rtrs_clt *clt = clt_path->clt;
+	struct rtrs_clt_sess *clt = clt_path->clt;
 	struct rtrs_clt_path *next;
 	bool wait_for_grace = false;
 	int cpu;
@@ -2278,7 +2280,8 @@ static void rtrs_clt_remove_path_from_arr(struct rtrs_clt_path *clt_path)
 		 * We race with IO code path, which also changes pointer,
 		 * thus we have to be careful not to overwrite it.
 		 */
-		if (xchg_paths(ppcpu_path, clt_path, next))
+		if (try_cmpxchg((struct rtrs_clt_path **)ppcpu_path, &clt_path,
+				next))
 			/*
 			 * @ppcpu_path was successfully replaced with @next,
 			 * that means that someone could also pick up the
@@ -2295,7 +2298,7 @@ static void rtrs_clt_remove_path_from_arr(struct rtrs_clt_path *clt_path)
 
 static void rtrs_clt_add_path_to_arr(struct rtrs_clt_path *clt_path)
 {
-	struct rtrs_clt *clt = clt_path->clt;
+	struct rtrs_clt_sess *clt = clt_path->clt;
 
 	mutex_lock(&clt->paths_mutex);
 	clt->paths_num++;
@@ -2310,6 +2313,7 @@ static void rtrs_clt_close_work(struct work_struct *work)
 
 	clt_path = container_of(work, struct rtrs_clt_path, close_work);
 
+	cancel_work_sync(&clt_path->err_recovery_work);
 	cancel_delayed_work_sync(&clt_path->reconnect_dwork);
 	rtrs_clt_stop_and_destroy_conns(clt_path);
 	rtrs_clt_change_state_get_old(clt_path, RTRS_CLT_CLOSED, NULL);
@@ -2340,8 +2344,6 @@ static int init_conns(struct rtrs_clt_path *clt_path)
 	err = alloc_path_reqs(clt_path);
 	if (err)
 		goto destroy;
-
-	rtrs_start_hb(&clt_path->s);
 
 	return 0;
 
@@ -2616,6 +2618,7 @@ static int init_path(struct rtrs_clt_path *clt_path)
 		goto out;
 	}
 	rtrs_clt_path_up(clt_path);
+	rtrs_start_hb(&clt_path->s);
 out:
 	mutex_unlock(&clt_path->init_mutex);
 
@@ -2625,13 +2628,14 @@ out:
 static void rtrs_clt_reconnect_work(struct work_struct *work)
 {
 	struct rtrs_clt_path *clt_path;
-	struct rtrs_clt *clt;
-	unsigned int delay_ms;
+	struct rtrs_clt_sess *clt;
 	int err;
 
 	clt_path = container_of(to_delayed_work(work), struct rtrs_clt_path,
 				reconnect_dwork);
 	clt = clt_path->clt;
+
+	trace_rtrs_clt_reconnect_work(clt_path);
 
 	if (READ_ONCE(clt_path->state) != RTRS_CLT_RECONNECTING)
 		return;
@@ -2643,8 +2647,6 @@ static void rtrs_clt_reconnect_work(struct work_struct *work)
 	}
 	clt_path->reconnect_attempts++;
 
-	/* Stop everything */
-	rtrs_clt_stop_and_destroy_conns(clt_path);
 	msleep(RTRS_RECONNECT_BACKOFF);
 	if (rtrs_clt_change_state_get_old(clt_path, RTRS_CLT_CONNECTING, NULL)) {
 		err = init_path(clt_path);
@@ -2657,31 +2659,28 @@ static void rtrs_clt_reconnect_work(struct work_struct *work)
 reconnect_again:
 	if (rtrs_clt_change_state_get_old(clt_path, RTRS_CLT_RECONNECTING, NULL)) {
 		clt_path->stats->reconnects.fail_cnt++;
-		delay_ms = clt->reconnect_delay_sec * 1000;
-		queue_delayed_work(rtrs_wq, &clt_path->reconnect_dwork,
-				   msecs_to_jiffies(delay_ms +
-						    prandom_u32() %
-						    RTRS_RECONNECT_SEED));
+		queue_work(rtrs_wq, &clt_path->err_recovery_work);
 	}
 }
 
 static void rtrs_clt_dev_release(struct device *dev)
 {
-	struct rtrs_clt *clt = container_of(dev, struct rtrs_clt, dev);
+	struct rtrs_clt_sess *clt = container_of(dev, struct rtrs_clt_sess,
+						 dev);
 
 	mutex_destroy(&clt->paths_ev_mutex);
 	mutex_destroy(&clt->paths_mutex);
 	kfree(clt);
 }
 
-static struct rtrs_clt *alloc_clt(const char *sessname, size_t paths_num,
+static struct rtrs_clt_sess *alloc_clt(const char *sessname, size_t paths_num,
 				  u16 port, size_t pdu_sz, void *priv,
 				  void	(*link_ev)(void *priv,
 						   enum rtrs_clt_link_ev ev),
 				  unsigned int reconnect_delay_sec,
 				  unsigned int max_reconnect_attempts)
 {
-	struct rtrs_clt *clt;
+	struct rtrs_clt_sess *clt;
 	int err;
 
 	if (!paths_num || paths_num > MAX_PATHS_NUM)
@@ -2700,7 +2699,7 @@ static struct rtrs_clt *alloc_clt(const char *sessname, size_t paths_num,
 		return ERR_PTR(-ENOMEM);
 	}
 
-	clt->dev.class = rtrs_clt_dev_class;
+	clt->dev.class = &rtrs_clt_dev_class;
 	clt->dev.release = rtrs_clt_dev_release;
 	uuid_gen(&clt->paths_uuid);
 	INIT_LIST_HEAD_RCU(&clt->paths_list);
@@ -2756,7 +2755,7 @@ err_put:
 	return ERR_PTR(err);
 }
 
-static void free_clt(struct rtrs_clt *clt)
+static void free_clt(struct rtrs_clt_sess *clt)
 {
 	free_percpu(clt->pcpu_path);
 
@@ -2769,7 +2768,7 @@ static void free_clt(struct rtrs_clt *clt)
 /**
  * rtrs_clt_open() - Open a path to an RTRS server
  * @ops: holds the link event callback and the private pointer.
- * @sessname: name of the session
+ * @pathname: name of the path to an RTRS server
  * @paths: Paths to be established defined by their src and dst addresses
  * @paths_num: Number of elements in the @paths array
  * @port: port to be used by the RTRS session
@@ -2784,7 +2783,7 @@ static void free_clt(struct rtrs_clt *clt)
  *
  * Return a valid pointer on success otherwise PTR_ERR.
  */
-struct rtrs_clt *rtrs_clt_open(struct rtrs_clt_ops *ops,
+struct rtrs_clt_sess *rtrs_clt_open(struct rtrs_clt_ops *ops,
 				 const char *pathname,
 				 const struct rtrs_addr *paths,
 				 size_t paths_num, u16 port,
@@ -2792,7 +2791,7 @@ struct rtrs_clt *rtrs_clt_open(struct rtrs_clt_ops *ops,
 				 s16 max_reconnect_attempts, u32 nr_poll_queues)
 {
 	struct rtrs_clt_path *clt_path, *tmp;
-	struct rtrs_clt *clt;
+	struct rtrs_clt_sess *clt;
 	int err, i;
 
 	if (strchr(pathname, '/') || strchr(pathname, '.')) {
@@ -2866,7 +2865,7 @@ EXPORT_SYMBOL(rtrs_clt_open);
  * rtrs_clt_close() - Close a path
  * @clt: Session handle. Session is freed upon return.
  */
-void rtrs_clt_close(struct rtrs_clt *clt)
+void rtrs_clt_close(struct rtrs_clt_sess *clt)
 {
 	struct rtrs_clt_path *clt_path, *tmp;
 
@@ -2895,6 +2894,7 @@ int rtrs_clt_reconnect_from_sysfs(struct rtrs_clt_path *clt_path)
 						 &old_state);
 	if (changed) {
 		clt_path->reconnect_attempts = 0;
+		rtrs_clt_stop_and_destroy_conns(clt_path);
 		queue_delayed_work(rtrs_wq, &clt_path->reconnect_dwork, 0);
 	}
 	if (changed || old_state == RTRS_CLT_RECONNECTING) {
@@ -2942,12 +2942,12 @@ int rtrs_clt_remove_path_from_sysfs(struct rtrs_clt_path *clt_path,
 	return 0;
 }
 
-void rtrs_clt_set_max_reconnect_attempts(struct rtrs_clt *clt, int value)
+void rtrs_clt_set_max_reconnect_attempts(struct rtrs_clt_sess *clt, int value)
 {
 	clt->max_reconnect_attempts = (unsigned int)value;
 }
 
-int rtrs_clt_get_max_reconnect_attempts(const struct rtrs_clt *clt)
+int rtrs_clt_get_max_reconnect_attempts(const struct rtrs_clt_sess *clt)
 {
 	return (int)clt->max_reconnect_attempts;
 }
@@ -2977,9 +2977,9 @@ int rtrs_clt_get_max_reconnect_attempts(const struct rtrs_clt *clt)
  * On dir=WRITE rtrs client will rdma write data in sg to server side.
  */
 int rtrs_clt_request(int dir, struct rtrs_clt_req_ops *ops,
-		     struct rtrs_clt *clt, struct rtrs_permit *permit,
-		      const struct kvec *vec, size_t nr, size_t data_len,
-		      struct scatterlist *sg, unsigned int sg_cnt)
+		     struct rtrs_clt_sess *clt, struct rtrs_permit *permit,
+		     const struct kvec *vec, size_t nr, size_t data_len,
+		     struct scatterlist *sg, unsigned int sg_cnt)
 {
 	struct rtrs_clt_io_req *req;
 	struct rtrs_clt_path *clt_path;
@@ -3037,7 +3037,7 @@ int rtrs_clt_request(int dir, struct rtrs_clt_req_ops *ops,
 }
 EXPORT_SYMBOL(rtrs_clt_request);
 
-int rtrs_clt_rdma_cq_direct(struct rtrs_clt *clt, unsigned int index)
+int rtrs_clt_rdma_cq_direct(struct rtrs_clt_sess *clt, unsigned int index)
 {
 	/* If no path, return -1 for block layer not to try again */
 	int cnt = -1;
@@ -3071,7 +3071,7 @@ EXPORT_SYMBOL(rtrs_clt_rdma_cq_direct);
  *    0 on success
  *    -ECOMM		no connection to the server
  */
-int rtrs_clt_query(struct rtrs_clt *clt, struct rtrs_attrs *attr)
+int rtrs_clt_query(struct rtrs_clt_sess *clt, struct rtrs_attrs *attr)
 {
 	if (!rtrs_clt_is_connected(clt))
 		return -ECOMM;
@@ -3086,7 +3086,7 @@ int rtrs_clt_query(struct rtrs_clt *clt, struct rtrs_attrs *attr)
 }
 EXPORT_SYMBOL(rtrs_clt_query);
 
-int rtrs_clt_create_path_from_sysfs(struct rtrs_clt *clt,
+int rtrs_clt_create_path_from_sysfs(struct rtrs_clt_sess *clt,
 				     struct rtrs_addr *addr)
 {
 	struct rtrs_clt_path *clt_path;
@@ -3152,16 +3152,17 @@ static const struct rtrs_rdma_dev_pd_ops dev_pd_ops = {
 
 static int __init rtrs_client_init(void)
 {
-	rtrs_rdma_dev_pd_init(0, &dev_pd);
+	int ret = 0;
 
-	rtrs_clt_dev_class = class_create(THIS_MODULE, "rtrs-client");
-	if (IS_ERR(rtrs_clt_dev_class)) {
+	rtrs_rdma_dev_pd_init(0, &dev_pd);
+	ret = class_register(&rtrs_clt_dev_class);
+	if (ret) {
 		pr_err("Failed to create rtrs-client dev class\n");
-		return PTR_ERR(rtrs_clt_dev_class);
+		return ret;
 	}
 	rtrs_wq = alloc_workqueue("rtrs_client_wq", 0, 0);
 	if (!rtrs_wq) {
-		class_destroy(rtrs_clt_dev_class);
+		class_unregister(&rtrs_clt_dev_class);
 		return -ENOMEM;
 	}
 
@@ -3171,7 +3172,7 @@ static int __init rtrs_client_init(void)
 static void __exit rtrs_client_exit(void)
 {
 	destroy_workqueue(rtrs_wq);
-	class_destroy(rtrs_clt_dev_class);
+	class_unregister(&rtrs_clt_dev_class);
 	rtrs_rdma_dev_pd_deinit(&dev_pd);
 }
 

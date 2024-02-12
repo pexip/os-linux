@@ -128,6 +128,10 @@ static int dw2102_i2c_transfer(struct i2c_adapter *adap, struct i2c_msg msg[],
 
 	switch (num) {
 	case 2:
+		if (msg[0].len < 1) {
+			num = -EOPNOTSUPP;
+			break;
+		}
 		/* read stv0299 register */
 		value = msg[0].buf[0];/* register */
 		for (i = 0; i < msg[1].len; i++) {
@@ -139,6 +143,10 @@ static int dw2102_i2c_transfer(struct i2c_adapter *adap, struct i2c_msg msg[],
 	case 1:
 		switch (msg[0].addr) {
 		case 0x68:
+			if (msg[0].len < 2) {
+				num = -EOPNOTSUPP;
+				break;
+			}
 			/* write to stv0299 register */
 			buf6[0] = 0x2a;
 			buf6[1] = msg[0].buf[0];
@@ -148,6 +156,10 @@ static int dw2102_i2c_transfer(struct i2c_adapter *adap, struct i2c_msg msg[],
 			break;
 		case 0x60:
 			if (msg[0].flags == 0) {
+				if (msg[0].len < 4) {
+					num = -EOPNOTSUPP;
+					break;
+				}
 			/* write to tuner pll */
 				buf6[0] = 0x2c;
 				buf6[1] = 5;
@@ -159,6 +171,10 @@ static int dw2102_i2c_transfer(struct i2c_adapter *adap, struct i2c_msg msg[],
 				dw210x_op_rw(d->udev, 0xb2, 0, 0,
 						buf6, 7, DW210X_WRITE_MSG);
 			} else {
+				if (msg[0].len < 1) {
+					num = -EOPNOTSUPP;
+					break;
+				}
 			/* read from tuner */
 				dw210x_op_rw(d->udev, 0xb5, 0, 0,
 						buf6, 1, DW210X_READ_MSG);
@@ -166,12 +182,20 @@ static int dw2102_i2c_transfer(struct i2c_adapter *adap, struct i2c_msg msg[],
 			}
 			break;
 		case (DW2102_RC_QUERY):
+			if (msg[0].len < 2) {
+				num = -EOPNOTSUPP;
+				break;
+			}
 			dw210x_op_rw(d->udev, 0xb8, 0, 0,
 					buf6, 2, DW210X_READ_MSG);
 			msg[0].buf[0] = buf6[0];
 			msg[0].buf[1] = buf6[1];
 			break;
 		case (DW2102_VOLTAGE_CTRL):
+			if (msg[0].len < 1) {
+				num = -EOPNOTSUPP;
+				break;
+			}
 			buf6[0] = 0x30;
 			buf6[1] = msg[0].buf[0];
 			dw210x_op_rw(d->udev, 0xb2, 0, 0,
@@ -830,7 +854,7 @@ static int dw210x_read_mac_address(struct dvb_usb_device *d, u8 mac[6])
 	for (i = 0; i < 256; i++) {
 		if (dw210x_op_rw(d->udev, 0xb6, 0xa0 , i, ibuf, 2, DW210X_READ_MSG) < 0) {
 			err("read eeprom failed.");
-			return -1;
+			return -EIO;
 		} else {
 			eepromline[i%16] = ibuf[0];
 			eeprom[i] = ibuf[0];
@@ -869,7 +893,7 @@ static int s6x0_read_mac_address(struct dvb_usb_device *d, u8 mac[6])
 		ret = s6x0_i2c_transfer(&d->i2c_adap, msg, 2);
 		if (ret != 2) {
 			err("read eeprom failed.");
-			return -1;
+			return -EIO;
 		} else {
 			eepromline[i % 16] = ibuf[0];
 			eeprom[i] = ibuf[0];
@@ -903,7 +927,7 @@ static int su3000_streaming_ctrl(struct dvb_usb_adapter *adap, int onoff)
 
 static int su3000_power_ctrl(struct dvb_usb_device *d, int i)
 {
-	struct dw2102_state *state = (struct dw2102_state *)d->priv;
+	struct dw2102_state *state = d->priv;
 	int ret = 0;
 
 	info("%s: %d, initialized %d", __func__, i, state->initialized);
@@ -946,7 +970,7 @@ static int su3000_read_mac_address(struct dvb_usb_device *d, u8 mac[6])
 	for (i = 0; i < 6; i++) {
 		obuf[1] = 0xf0 + i;
 		if (i2c_transfer(&d->i2c_adap, msg, 2) != 2)
-			return -1;
+			return -EIO;
 		else
 			mac[i] = ibuf[0];
 	}
@@ -978,8 +1002,7 @@ static int dw210x_set_voltage(struct dvb_frontend *fe,
 		.len = 2,
 	};
 
-	struct dvb_usb_adapter *udev_adap =
-		(struct dvb_usb_adapter *)(fe->dvb->priv);
+	struct dvb_usb_adapter *udev_adap = fe->dvb->priv;
 	if (voltage == SEC_VOLTAGE_18)
 		msg.buf = command_18v;
 	else if (voltage == SEC_VOLTAGE_13)
@@ -993,9 +1016,8 @@ static int dw210x_set_voltage(struct dvb_frontend *fe,
 static int s660_set_voltage(struct dvb_frontend *fe,
 			    enum fe_sec_voltage voltage)
 {
-	struct dvb_usb_adapter *d =
-		(struct dvb_usb_adapter *)(fe->dvb->priv);
-	struct dw2102_state *st = (struct dw2102_state *)d->dev->priv;
+	struct dvb_usb_adapter *d = fe->dvb->priv;
+	struct dw2102_state *st = d->dev->priv;
 
 	dw210x_set_voltage(fe, voltage);
 	if (st->old_set_voltage)
@@ -1014,8 +1036,7 @@ static void dw210x_led_ctrl(struct dvb_frontend *fe, int offon)
 		.buf = led_off,
 		.len = 1
 	};
-	struct dvb_usb_adapter *udev_adap =
-		(struct dvb_usb_adapter *)(fe->dvb->priv);
+	struct dvb_usb_adapter *udev_adap = fe->dvb->priv;
 
 	if (offon)
 		msg.buf = led_on;
@@ -1025,9 +1046,8 @@ static void dw210x_led_ctrl(struct dvb_frontend *fe, int offon)
 static int tt_s2_4600_read_status(struct dvb_frontend *fe,
 				  enum fe_status *status)
 {
-	struct dvb_usb_adapter *d =
-		(struct dvb_usb_adapter *)(fe->dvb->priv);
-	struct dw2102_state *st = (struct dw2102_state *)d->dev->priv;
+	struct dvb_usb_adapter *d = fe->dvb->priv;
+	struct dw2102_state *st = d->dev->priv;
 	int ret;
 
 	ret = st->fe_read_status(fe, status);
@@ -1771,10 +1791,10 @@ enum dw2102_table_entry {
 	PROF_7500,
 	GENIATECH_SU3000,
 	HAUPPAUGE_MAX_S2,
-	TERRATEC_CINERGY_S2,
+	TERRATEC_CINERGY_S2_R1,
 	TEVII_S480_1,
 	TEVII_S480_2,
-	X3M_SPC1400HD,
+	GENIATECH_X3M_SPC1400HD,
 	TEVII_S421,
 	TEVII_S632,
 	TERRATEC_CINERGY_S2_R2,
@@ -1784,7 +1804,7 @@ enum dw2102_table_entry {
 	TERRATEC_CINERGY_S2_2,
 	GOTVIEW_SAT_HD,
 	GENIATECH_T220,
-	TECHNOTREND_S2_4600,
+	TECHNOTREND_CONNECT_S2_4600,
 	TEVII_S482_1,
 	TEVII_S482_2,
 	TERRATEC_CINERGY_S2_BOX,
@@ -1792,42 +1812,36 @@ enum dw2102_table_entry {
 };
 
 static struct usb_device_id dw2102_table[] = {
-	[CYPRESS_DW2102] = {USB_DEVICE(USB_VID_CYPRESS, USB_PID_DW2102)},
-	[CYPRESS_DW2101] = {USB_DEVICE(USB_VID_CYPRESS, 0x2101)},
-	[CYPRESS_DW2104] = {USB_DEVICE(USB_VID_CYPRESS, USB_PID_DW2104)},
-	[TEVII_S650] = {USB_DEVICE(0x9022, USB_PID_TEVII_S650)},
-	[TERRATEC_CINERGY_S] = {USB_DEVICE(USB_VID_TERRATEC, USB_PID_TERRATEC_CINERGY_S)},
-	[CYPRESS_DW3101] = {USB_DEVICE(USB_VID_CYPRESS, USB_PID_DW3101)},
-	[TEVII_S630] = {USB_DEVICE(0x9022, USB_PID_TEVII_S630)},
-	[PROF_1100] = {USB_DEVICE(0x3011, USB_PID_PROF_1100)},
-	[TEVII_S660] = {USB_DEVICE(0x9022, USB_PID_TEVII_S660)},
-	[PROF_7500] = {USB_DEVICE(0x3034, 0x7500)},
-	[GENIATECH_SU3000] = {USB_DEVICE(0x1f4d, 0x3000)},
-	[HAUPPAUGE_MAX_S2] = {USB_DEVICE(0x2040, 0xd900)},
-	[TERRATEC_CINERGY_S2] = {USB_DEVICE(USB_VID_TERRATEC, USB_PID_TERRATEC_CINERGY_S2_R1)},
-	[TEVII_S480_1] = {USB_DEVICE(0x9022, USB_PID_TEVII_S480_1)},
-	[TEVII_S480_2] = {USB_DEVICE(0x9022, USB_PID_TEVII_S480_2)},
-	[X3M_SPC1400HD] = {USB_DEVICE(0x1f4d, 0x3100)},
-	[TEVII_S421] = {USB_DEVICE(0x9022, USB_PID_TEVII_S421)},
-	[TEVII_S632] = {USB_DEVICE(0x9022, USB_PID_TEVII_S632)},
-	[TERRATEC_CINERGY_S2_R2] = {USB_DEVICE(USB_VID_TERRATEC,
-				    USB_PID_TERRATEC_CINERGY_S2_R2)},
-	[TERRATEC_CINERGY_S2_R3] = {USB_DEVICE(USB_VID_TERRATEC,
-				    USB_PID_TERRATEC_CINERGY_S2_R3)},
-	[TERRATEC_CINERGY_S2_R4] = {USB_DEVICE(USB_VID_TERRATEC,
-				    USB_PID_TERRATEC_CINERGY_S2_R4)},
-	[TERRATEC_CINERGY_S2_1] = {USB_DEVICE(USB_VID_TERRATEC_2,
-				   USB_PID_TERRATEC_CINERGY_S2_1)},
-	[TERRATEC_CINERGY_S2_2] = {USB_DEVICE(USB_VID_TERRATEC_2,
-				   USB_PID_TERRATEC_CINERGY_S2_2)},
-	[GOTVIEW_SAT_HD] = {USB_DEVICE(0x1FE1, USB_PID_GOTVIEW_SAT_HD)},
-	[GENIATECH_T220] = {USB_DEVICE(0x1f4d, 0xD220)},
-	[TECHNOTREND_S2_4600] = {USB_DEVICE(USB_VID_TECHNOTREND,
-		USB_PID_TECHNOTREND_CONNECT_S2_4600)},
-	[TEVII_S482_1] = {USB_DEVICE(0x9022, 0xd483)},
-	[TEVII_S482_2] = {USB_DEVICE(0x9022, 0xd484)},
-	[TERRATEC_CINERGY_S2_BOX] = {USB_DEVICE(USB_VID_TERRATEC, 0x0105)},
-	[TEVII_S662] = {USB_DEVICE(0x9022, USB_PID_TEVII_S662)},
+	DVB_USB_DEV(CYPRESS, CYPRESS_DW2102),
+	DVB_USB_DEV(CYPRESS, CYPRESS_DW2101),
+	DVB_USB_DEV(CYPRESS, CYPRESS_DW2104),
+	DVB_USB_DEV(TEVII, TEVII_S650),
+	DVB_USB_DEV(TERRATEC, TERRATEC_CINERGY_S),
+	DVB_USB_DEV(CYPRESS, CYPRESS_DW3101),
+	DVB_USB_DEV(TEVII, TEVII_S630),
+	DVB_USB_DEV(PROF_1, PROF_1100),
+	DVB_USB_DEV(TEVII, TEVII_S660),
+	DVB_USB_DEV(PROF_2, PROF_7500),
+	DVB_USB_DEV(GTEK, GENIATECH_SU3000),
+	DVB_USB_DEV(HAUPPAUGE, HAUPPAUGE_MAX_S2),
+	DVB_USB_DEV(TERRATEC, TERRATEC_CINERGY_S2_R1),
+	DVB_USB_DEV(TEVII, TEVII_S480_1),
+	DVB_USB_DEV(TEVII, TEVII_S480_2),
+	DVB_USB_DEV(GTEK, GENIATECH_X3M_SPC1400HD),
+	DVB_USB_DEV(TEVII, TEVII_S421),
+	DVB_USB_DEV(TEVII, TEVII_S632),
+	DVB_USB_DEV(TERRATEC, TERRATEC_CINERGY_S2_R2),
+	DVB_USB_DEV(TERRATEC, TERRATEC_CINERGY_S2_R3),
+	DVB_USB_DEV(TERRATEC, TERRATEC_CINERGY_S2_R4),
+	DVB_USB_DEV(TERRATEC_2, TERRATEC_CINERGY_S2_1),
+	DVB_USB_DEV(TERRATEC_2, TERRATEC_CINERGY_S2_2),
+	DVB_USB_DEV(GOTVIEW, GOTVIEW_SAT_HD),
+	DVB_USB_DEV(GTEK, GENIATECH_T220),
+	DVB_USB_DEV(TECHNOTREND, TECHNOTREND_CONNECT_S2_4600),
+	DVB_USB_DEV(TEVII, TEVII_S482_1),
+	DVB_USB_DEV(TEVII, TEVII_S482_2),
+	DVB_USB_DEV(TERRATEC, TERRATEC_CINERGY_S2_BOX),
+	DVB_USB_DEV(TEVII, TEVII_S662),
 	{ }
 };
 
@@ -1889,18 +1903,18 @@ static int dw2102_load_firmware(struct usb_device *dev,
 		case USB_PID_TEVII_S650:
 			dw2104_properties.rc.core.rc_codes = RC_MAP_TEVII_NEC;
 			fallthrough;
-		case USB_PID_DW2104:
+		case USB_PID_CYPRESS_DW2104:
 			reset = 1;
 			dw210x_op_rw(dev, 0xc4, 0x0000, 0, &reset, 1,
 					DW210X_WRITE_MSG);
 			fallthrough;
-		case USB_PID_DW3101:
+		case USB_PID_CYPRESS_DW3101:
 			reset = 0;
 			dw210x_op_rw(dev, 0xbf, 0x0040, 0, &reset, 0,
 					DW210X_WRITE_MSG);
 			break;
 		case USB_PID_TERRATEC_CINERGY_S:
-		case USB_PID_DW2102:
+		case USB_PID_CYPRESS_DW2102:
 			dw210x_op_rw(dev, 0xbf, 0x0040, 0, &reset, 0,
 					DW210X_WRITE_MSG);
 			dw210x_op_rw(dev, 0xb9, 0x0000, 0, &reset16[0], 2,
@@ -2350,11 +2364,11 @@ static struct dvb_usb_device_properties su3000_properties = {
 			{ NULL },
 		},
 		{ "Terratec Cinergy S2 USB HD",
-			{ &dw2102_table[TERRATEC_CINERGY_S2], NULL },
+			{ &dw2102_table[TERRATEC_CINERGY_S2_R1], NULL },
 			{ NULL },
 		},
 		{ "X3M TV SPC1400HD PCI",
-			{ &dw2102_table[X3M_SPC1400HD], NULL },
+			{ &dw2102_table[GENIATECH_X3M_SPC1400HD], NULL },
 			{ NULL },
 		},
 		{ "Terratec Cinergy S2 USB HD Rev.2",
@@ -2525,7 +2539,7 @@ static struct dvb_usb_device_properties tt_s2_4600_properties = {
 	.num_device_descs = 5,
 	.devices = {
 		{ "TechnoTrend TT-connect S2-4600",
-			{ &dw2102_table[TECHNOTREND_S2_4600], NULL },
+			{ &dw2102_table[TECHNOTREND_CONNECT_S2_4600], NULL },
 			{ NULL },
 		},
 		{ "TeVii S482 (tuner 1)",
@@ -2582,7 +2596,7 @@ static int dw2102_probe(struct usb_interface *intf,
 static void dw2102_disconnect(struct usb_interface *intf)
 {
 	struct dvb_usb_device *d = usb_get_intfdata(intf);
-	struct dw2102_state *st = (struct dw2102_state *)d->priv;
+	struct dw2102_state *st = d->priv;
 	struct i2c_client *client;
 
 	/* remove I2C client for tuner */

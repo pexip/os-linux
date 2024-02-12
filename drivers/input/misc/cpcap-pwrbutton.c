@@ -1,16 +1,8 @@
-/**
+// SPDX-License-Identifier: GPL-2.0-only
+/*
  * CPCAP Power Button Input Driver
  *
  * Copyright (C) 2017 Sebastian Reichel <sre@kernel.org>
- *
- * This file is subject to the terms and conditions of the GNU General
- * Public License. See the file "COPYING" in the main directory of this
- * archive for more details.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
 
 #include <linux/module.h>
@@ -77,7 +69,6 @@ static int cpcap_power_button_probe(struct platform_device *pdev)
 
 	button->idev->name = "cpcap-pwrbutton";
 	button->idev->phys = "cpcap-pwrbutton/input0";
-	button->idev->dev.parent = button->dev;
 	input_set_capability(button->idev, EV_KEY, KEY_POWER);
 
 	err = devm_request_threaded_irq(&pdev->dev, irq, NULL,

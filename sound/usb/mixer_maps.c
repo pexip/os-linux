@@ -6,8 +6,9 @@
  */
 
 struct usbmix_dB_map {
-	u32 min;
-	u32 max;
+	int min;
+	int max;
+	bool min_mute;
 };
 
 struct usbmix_name_map {
@@ -336,6 +337,13 @@ static const struct usbmix_name_map bose_companion5_map[] = {
 	{ 0 }	/* terminator */
 };
 
+/* Bose Revolve+ SoundLink, correction of dB maps */
+static const struct usbmix_dB_map bose_soundlink_dB = {-8283, -0, true};
+static const struct usbmix_name_map bose_soundlink_map[] = {
+	{ 2, NULL, .dB = &bose_soundlink_dB },
+	{ 0 }	/* terminator */
+};
+
 /* Sennheiser Communications Headset [PC 8], the dB value is reported as -6 negative maximum  */
 static const struct usbmix_dB_map sennheiser_pc8_dB = {-9500, 0};
 static const struct usbmix_name_map sennheiser_pc8_map[] = {
@@ -364,6 +372,15 @@ static const struct usbmix_name_map corsair_virtuoso_map[] = {
 	{ 3, "Mic Capture" },
 	{ 6, "Sidetone Playback" },
 	{ 0 }
+};
+
+/* Microsoft USB Link headset */
+/* a guess work: raw playback volume values are from 2 to 129 */
+static const struct usbmix_dB_map ms_usb_link_dB = { -3225, 0, true };
+static const struct usbmix_name_map ms_usb_link_map[] = {
+	{ 9, NULL, .dB = &ms_usb_link_dB },
+	{ 10, NULL }, /* Headset Capture volume; seems non-working, disabled */
+	{ 0 }   /* terminator */
 };
 
 /* ASUS ROG Zenith II with Realtek ALC1220-VB */
@@ -443,6 +460,31 @@ static const struct usbmix_name_map msi_mpg_x570s_carbon_max_wifi_alc4080_map[] 
 	{ 29, "Speaker Playback" },
 	{ 30, "Front Headphone Playback" },
 	{ 32, "IEC958 Playback" },
+	{}
+};
+
+/* Gigabyte B450/550 Mobo */
+static const struct usbmix_name_map gigabyte_b450_map[] = {
+	{ 24, NULL },			/* OT, IEC958?, disabled */
+	{ 21, "Speaker" },		/* OT */
+	{ 29, "Speaker Playback" },	/* FU */
+	{ 22, "Headphone" },		/* OT */
+	{ 30, "Headphone Playback" },	/* FU */
+	{ 11, "Line" },			/* IT */
+	{ 27, "Line Capture" },		/* FU */
+	{ 12, "Mic" },			/* IT */
+	{ 28, "Mic Capture" },		/* FU */
+	{ 9, "Front Mic" },		/* IT */
+	{ 25, "Front Mic Capture" },	/* FU */
+	{}
+};
+
+static const struct usbmix_connector_map gigabyte_b450_connector_map[] = {
+	{ 13, 21 },	/* Speaker */
+	{ 14, 22 },	/* Headphone */
+	{ 19, 11 },	/* Line */
+	{ 20, 12 },	/* Mic */
+	{ 17, 9 },	/* Front Mic */
 	{}
 };
 
@@ -545,6 +587,21 @@ static const struct usbmix_ctl_map usbmix_ctl_maps[] = {
 		.map = bose_companion5_map,
 	},
 	{
+		/* Bose Revolve+ SoundLink */
+		.id = USB_ID(0x05a7, 0x40fa),
+		.map = bose_soundlink_map,
+	},
+	{
+		/* Corsair Virtuoso SE Latest (wired mode) */
+		.id = USB_ID(0x1b1c, 0x0a3f),
+		.map = corsair_virtuoso_map,
+	},
+	{
+		/* Corsair Virtuoso SE Latest (wireless mode) */
+		.id = USB_ID(0x1b1c, 0x0a40),
+		.map = corsair_virtuoso_map,
+	},
+	{
 		/* Corsair Virtuoso SE (wired mode) */
 		.id = USB_ID(0x1b1c, 0x0a3d),
 		.map = corsair_virtuoso_map,
@@ -560,16 +617,6 @@ static const struct usbmix_ctl_map usbmix_ctl_maps[] = {
 		.map = corsair_virtuoso_map,
 	},
 	{
-		/* Corsair Virtuoso SE Latest (wired mode) */
-		.id = USB_ID(0x1b1c, 0x0a3f),
-		.map = corsair_virtuoso_map,
-	},
-	{
-		/* Corsair Virtuoso SE Latest (wireless mode) */
-		.id = USB_ID(0x1b1c, 0x0a40),
-		.map = corsair_virtuoso_map,
-	},
-	{
 		/* Corsair Virtuoso (wireless mode) */
 		.id = USB_ID(0x1b1c, 0x0a42),
 		.map = corsair_virtuoso_map,
@@ -582,6 +629,11 @@ static const struct usbmix_ctl_map usbmix_ctl_maps[] = {
 		.id = USB_ID(0x0414, 0xa002),
 		.map = trx40_mobo_map,
 		.connector_map = trx40_mobo_connector_map,
+	},
+	{	/* Gigabyte B450/550 Mobo */
+		.id = USB_ID(0x0414, 0xa00d),
+		.map = gigabyte_b450_map,
+		.connector_map = gigabyte_b450_connector_map,
 	},
 	{	/* ASUS ROG Zenith II (main audio) */
 		.id = USB_ID(0x0b05, 0x1916),
@@ -624,6 +676,11 @@ static const struct usbmix_ctl_map usbmix_ctl_maps[] = {
 		/* Sennheiser Communications Headset [PC 8] */
 		.id = USB_ID(0x1395, 0x0025),
 		.map = sennheiser_pc8_map,
+	},
+	{
+		/* Microsoft USB Link headset */
+		.id = USB_ID(0x045e, 0x083c),
+		.map = ms_usb_link_map,
 	},
 	{ 0 } /* terminator */
 };
