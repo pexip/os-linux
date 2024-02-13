@@ -1,4 +1,4 @@
-965f6bc33651ba3dda631f92b0196569  debian/bin/gencontrol.py
+dd3832d9b11091542b56033f5ec093b0  debian/bin/gencontrol.py
 abbeac4ead7899d065b5d2b18946b33f  debian/build/version-info
 c06195eaf3f5d361e55133652fb46a6d  debian/templates/config.control.in
 9a7ebf882e8a82d51f23d2b9d61a8595  debian/templates/docs.control.in
@@ -11,7 +11,7 @@ d41d8cd98f00b204e9800998ecf8427e  debian/templates/extra.control.in
 39dddaa9ca4735ad2ddaf682ecf0b566  debian/templates/headers.meta.maintscript.in
 0d7f6ea42f52d0a6013535a80111ee3e  debian/templates/headers.postinst.in
 33604124ac9c80d9abd4e00bb7b971a7  debian/templates/headers.tests-control.in
-542241e2f9b248cec69505b1b130e0d7  debian/templates/image.control.in
+17fc5aaeae178b317968c1e03b90b86a  debian/templates/image.control.in
 69118afa256866998fb91c0f452246c1  debian/templates/image-dbg.control.in
 8d2c4036974e8b5c35e2c0fafba9acd3  debian/templates/image-dbg.meta.control.in
 eebbd0d671c21eba0a79f6d1226c0bc7  debian/templates/image-dbg.meta.lintian-overrides.in
@@ -25,7 +25,7 @@ a4a60fc48b3240e46bbac6a1ddcaad30  debian/templates/image.postrm.in
 38004750aa03cea41d5d3aeafff16fcc  debian/templates/image.preinst.in
 afb508873a44a1f196c2a525fec4b415  debian/templates/image.prerm.in
 814dda166c7e3ef02e6e259e805ac66a  debian/templates/image.tests-control.in
-a93ffcba01080bd2d1bcd72b7c00aab3  debian/templates/image-unsigned.control.in
+32c6444e528d1420c4eba124985bf4de  debian/templates/image-unsigned.control.in
 8e2a7bfff102c8a13ba1dc828e562080  debian/templates/image-unsigned.NEWS.in
 0327750d6696dee915a532aec73a0fd6  debian/templates/image-unsigned.postinst.in
 a4a60fc48b3240e46bbac6a1ddcaad30  debian/templates/image-unsigned.postrm.in
@@ -86,4 +86,4 @@ d3c04182d8746e4871de922a63f03f97  debian/config/arm64/rt/defines
 49880aa562e364f664d613d4eca4dbe3  debian/config/i386/none/defines
 7146ff53fc4f9fbb49948225d8589b69  debian/config/i386/rt/defines
 40a3ee1bbe0fc4d02344b5c1d2f79f00  debian/config/riscv64/none/defines
-12c309a499ac813abafe18ba8adf794e  debian/installer/package-list
+3b7a20b81c012b09128a8f86484607f0  debian/installer/package-list

@@ -598,6 +598,9 @@ linux-signed-{vars['arch']} (@signedtemplate_sourceversion@) {dist}; urgency={ur
                 package.meta['rules-target'] = 'installer'
                 udeb_packages.append(package)
 
+            if not udeb_packages:
+                return
+
             makeflags_local = makeflags.copy()
             makeflags_local['IMAGE_PACKAGE_NAME'] = udeb_packages[0]['Package']
 

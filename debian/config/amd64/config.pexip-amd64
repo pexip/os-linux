@@ -50,11 +50,6 @@ CONFIG_R8169=m
 # CONFIG_CEPH_FS is not set
 
 ##
-## file: fs/cifs/Kconfig
-##
-# CONFIG_CIFS is not set
-
-##
 ## file: fs/erofs/Kconfig
 ##
 # CONFIG_EROFS_FS is not set
@@ -78,6 +73,11 @@ CONFIG_R8169=m
 ## file: fs/romfs/Kconfig
 ##
 # CONFIG_ROMFS_FS is not set
+
+##
+## file: fs/smb/client/Kconfig
+##
+# CONFIG_CIFS is not set
 
 ##
 ## file: fs/xfs/Kconfig
