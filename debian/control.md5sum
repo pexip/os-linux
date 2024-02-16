@@ -56,7 +56,7 @@ ba14e8ecb6c405ed6cdf98286eb775e2  debian/templates/tools-unversioned.control.in
 5a1f27bb23dfc6f4355e5146cc3f1ae0  debian/config/defines
 5d7b72554039a9b088693bc1e0c1e979  debian/config/alpha/defines
 3267e3aaf2d0a131c8a7b85450b810a0  debian/config/amd64/defines
-1bb32571ff6dc226f0ab688c5b8cf8bb  debian/config/arm64/defines
+1b01b8a967ed003f1ebcc8fb528a3c59  debian/config/arm64/defines
 96a28e3ba5ab1e93a82f2d4a2d49bd14  debian/config/armel/defines
 d16a0675491ac9539c09ae2ef58cacd1  debian/config/armhf/defines
 366b94d652a66b437eabcd165bcc9610  debian/config/featureset-rt/defines
@@ -79,7 +79,7 @@ a50ff431517bddd759d53c0ad2850cb7  debian/config/riscv64/defines
 f4b2921156e7b1a038862f848fdfe48f  debian/config/x32/defines
 3da78495ec324b4a42edb647fb5c0187  debian/config/amd64/none/defines
 7dc981827930ed6844a731ed954b9b9d  debian/config/amd64/rt/defines
-d4327dff78271fcbc513a83ce372983b  debian/config/arm64/none/defines
+3be608cbeba0260ce0ac264f9ebee227  debian/config/arm64/none/defines
 d3c04182d8746e4871de922a63f03f97  debian/config/arm64/rt/defines
 7a1631547f5f6eeba908a35805adca66  debian/config/armhf/none/defines
 1cab87ca080defc647d4ae9adcf9a63a  debian/config/armhf/rt/defines
