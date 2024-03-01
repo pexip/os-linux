@@ -1,3 +1,9 @@
+linux (6.6.15-2+pexip24u2) pexip; urgency=medium
+
+  * Rebuild to move kernel to main
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Fri, 01 Mar 2024 09:36:04 +0000
+
 linux (6.6.15-2+pexip24u1) pexip; urgency=medium
 
   * Update packaging for new kernel version
