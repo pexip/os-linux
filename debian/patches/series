@@ -122,3 +122,4 @@ bugfix/powerpc/fbdev-offb-Update-expected-device-name.patch
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 openssl3-deprecations.patch
 
+pexip_types.patch
