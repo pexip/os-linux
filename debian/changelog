@@ -1,3 +1,9 @@
+linux (6.6.15-2+pexip24u6) pexip; urgency=medium
+
+  * Fix up linux-image-virtual metapackage.
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Wed, 29 May 2024 19:40:07 +0100
+
 linux (6.6.15-2+pexip24u5) pexip; urgency=medium
 
   * Re-add linux-image-virtual metapackage
