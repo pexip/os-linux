@@ -123,3 +123,4 @@ bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 openssl3-deprecations.patch
 
 pexip_types.patch
+pexip_suppress_mfd_warning.patch

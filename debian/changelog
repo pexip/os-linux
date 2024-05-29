@@ -1,3 +1,10 @@
+linux (6.6.15-2+pexip24u4) pexip; urgency=medium
+
+  * Suppress memfd_create warning message to avoid confusing users
+    whilst we still have an older systemd.
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Wed, 29 May 2024 14:23:31 +0100
+
 linux (6.6.15-2+pexip24u3) pexip; urgency=medium
 
   * Fix types.h for use with old ICC.
