@@ -1,0 +1,5 @@
+Package: linux-image-virtual
+Architecture: any
+Depends: linux-image-amd64 [amd64], linux-image-arm64 [arm64], ${misc:Depends}
+Description: Linux kernel suitable for virtual machines (meta-package)
+ This package depends on the binary Linux image.

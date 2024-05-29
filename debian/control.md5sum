@@ -1,10 +1,10 @@
 dd3832d9b11091542b56033f5ec093b0  debian/bin/gencontrol.py
-abbeac4ead7899d065b5d2b18946b33f  debian/build/version-info
+1bb7285d6f5ee7710f478dc0a0b08131  debian/build/version-info
 c06195eaf3f5d361e55133652fb46a6d  debian/templates/config.control.in
 9a7ebf882e8a82d51f23d2b9d61a8595  debian/templates/docs.control.in
 eb9813cbc043733c411342d29c7df4ca  debian/templates/docs.meta.control.in
 2f0364e925c700f09b806dd6bba7d8bf  debian/templates/docs.meta.maintscript.in
-d41d8cd98f00b204e9800998ecf8427e  debian/templates/extra.control.in
+05c70e9d4c62f3ef467bf672ab7382ad  debian/templates/extra.control.in
 4853709eb40bbe8ac9a3bd0fd1ffcb9d  debian/templates/headers.control.in
 8b68a6318eefe93abebe5a38ec061eea  debian/templates/headers.featureset.control.in
 4243a4a8135aca79414583e99f6c9482  debian/templates/headers.meta.control.in
