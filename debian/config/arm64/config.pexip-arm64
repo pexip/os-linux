@@ -1,4 +1,9 @@
 ##
+## file: drivers/ata/Kconfig
+##
+CONFIG_SATA_AHCI=m
+
+##
 ## file: fs/btrfs/Kconfig
 ##
 # CONFIG_BTRFS_FS is not set

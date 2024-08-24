@@ -1,3 +1,9 @@
+linux (6.6.15-2+pexip24u7) pexip; urgency=medium
+
+  * ARM64: build generic SATA AHCI driver as a module
+
+ -- John-Mark Bell <jmb@pexip.com>  Sat, 24 Aug 2024 20:23:48 +0100
+
 linux (6.6.15-2+pexip24u6) pexip; urgency=medium
 
   * Fix up linux-image-virtual metapackage.
