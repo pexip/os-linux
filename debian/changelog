@@ -1,3 +1,12 @@
+linux (6.6.15-2+pexip24u8) pexip; urgency=medium
+
+  * ARM64: enable additional drivers:
+    - e1000e
+    - USB HID (pulls in HID)
+    - USB XHCI
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 27 Aug 2024 12:15:55 +0100
+
 linux (6.6.15-2+pexip24u7) pexip; urgency=medium
 
   * ARM64: build generic SATA AHCI driver as a module
