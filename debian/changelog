@@ -1,3 +1,14 @@
+linux (6.6.48-1+pexip24u1) pexip; urgency=medium
+
+  * Update packaging for new kernel version
+  * bugfix/all/firmware-remove-redundant-log-messages-from-drivers.patch
+    debian/Revert-docs-kernel_feat.py-fix-potential-command-inj.patch
+    features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+    features/x86/x86-make-x32-syscall-support-conditional.patch
+    Remove Fuzz
+
+ -- Vincent Sanders <vince@pexip.com>  Mon, 2 Sep 2024 14:53:26 +0100
+
 linux (6.6.15-2+pexip24u8) pexip; urgency=medium
 
   * ARM64: enable additional drivers:

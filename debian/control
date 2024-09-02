@@ -14,7 +14,7 @@ XS-Pexip-Upstream: http://ftp.debian.org/debian/ bookworm
 XSBC-Pexip-Original-Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
 XSBC-Pexip-Original-Uploaders: Bastian Blank <waldi@debian.org>, maximilian attems <maks@debian.org>, Ben Hutchings <benh@debian.org>, Salvatore Bonaccorso <carnil@debian.org>
 
-Package: linux-support-6.6.15+pexip
+Package: linux-support-6.6.48+pexip
 Architecture: all
 Section: devel
 Build-Profiles: <!pkg.linux.notools>
@@ -58,19 +58,19 @@ Description: Linux support headers for userspace development
  files are going to be installed into /usr/include, and are used by the
  installed headers for GNU libc and other system libraries.
 
-Package: linux-headers-6.6.15+pexip-common
+Package: linux-headers-6.6.48+pexip-common
 Architecture: all
 Build-Profiles: <!pkg.linux.nokernel>
 Depends: ${misc:Depends}
 Multi-Arch: foreign
-Description: Common header files for Linux 6.6.15+pexip
+Description: Common header files for Linux 6.6.48+pexip
  This package provides the common kernel header files for Linux kernel
- version 6.6.15+pexip, generally used for building out-of-tree kernel
+ version 6.6.48+pexip, generally used for building out-of-tree kernel
  modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-common.
+ /usr/src/linux-headers-6.6.48+pexip-common.
  .
  To obtain a complete set of headers you also need to install the
- linux-headers-6.6.15+pexip-(flavour) package, matching the flavour of the
+ linux-headers-6.6.48+pexip-(flavour) package, matching the flavour of the
  kernel you intend the build for.
 
 Package: linux-config-6.6
@@ -196,28 +196,28 @@ Description: Real-Time Linux Analysis tools
  Linux.  rtla uses kernel tracing capabilities to provide precise
  information about the properties and root causes of unexpected results.
 
-Package: linux-kbuild-6.6.15+pexip
+Package: linux-kbuild-6.6.48+pexip
 Architecture: linux-any
 Build-Profiles: <!pkg.linux.notools>
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Multi-Arch: foreign
-Description: Kbuild infrastructure for Linux 6.6.15+pexip
+Description: Kbuild infrastructure for Linux 6.6.48+pexip
  This package provides the kbuild infrastructure for the headers packages
  for Linux kernel version 6.6.
 
-Package: linux-headers-6.6.15+pexip-alpha-generic
+Package: linux-headers-6.6.48+pexip-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-alpha-generic (= ${binary:Version}) | linux-image-6.6.15+pexip-alpha-generic-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-alpha-generic
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-alpha-generic (= ${binary:Version}) | linux-image-6.6.48+pexip-alpha-generic-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-alpha-generic
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-alpha-generic, generally used for building
+ Linux kernel 6.6.48+pexip-alpha-generic, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-alpha-generic, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-alpha-generic, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-alpha-generic package.
+ linux-image-6.6.48+pexip-alpha-generic package.
 
-Package: linux-image-6.6.15+pexip-alpha-generic
+Package: linux-image-6.6.48+pexip-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [alpha] | linux-initramfs-tool [alpha]
@@ -231,8 +231,8 @@ Description: Linux 6.6 for Alpha
 Package: linux-image-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-alpha-generic, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-alpha-generic (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-alpha-generic, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-alpha-generic (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Alpha (meta-package)
  This package depends on the latest Linux kernel and modules for use on DEC
  Alpha systems with extended kernel start address (Wildfire, Titan,
@@ -241,43 +241,43 @@ Description: Linux for Alpha (meta-package)
 Package: linux-headers-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-alpha-generic (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-alpha-generic (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux alpha-generic configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel alpha-generic configuration.
 
-Package: linux-image-6.6.15+pexip-alpha-generic-dbg
+Package: linux-image-6.6.48+pexip-alpha-generic-dbg
 Architecture: alpha
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-alpha-generic
+Description: Debug symbols for linux-image-6.6.48+pexip-alpha-generic
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-alpha-generic.
+ modules in linux-image-6.6.48+pexip-alpha-generic.
 
 Package: linux-image-alpha-generic-dbg
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-alpha-generic-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-alpha-generic-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux alpha-generic configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel alpha-generic configuration.
 
-Package: linux-headers-6.6.15+pexip-alpha-smp
+Package: linux-headers-6.6.48+pexip-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-alpha-smp (= ${binary:Version}) | linux-image-6.6.15+pexip-alpha-smp-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-alpha-smp
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-alpha-smp (= ${binary:Version}) | linux-image-6.6.48+pexip-alpha-smp-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-alpha-smp
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-alpha-smp, generally used for building
+ Linux kernel 6.6.48+pexip-alpha-smp, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-alpha-smp, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-alpha-smp, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-alpha-smp package.
+ linux-image-6.6.48+pexip-alpha-smp package.
 
-Package: linux-image-6.6.15+pexip-alpha-smp
+Package: linux-image-6.6.48+pexip-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [alpha] | linux-initramfs-tool [alpha]
@@ -291,8 +291,8 @@ Description: Linux 6.6 for Alpha SMP
 Package: linux-image-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-alpha-smp, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-alpha-smp (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-alpha-smp, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-alpha-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Alpha SMP (meta-package)
  This package depends on the latest Linux kernel and modules for use on DEC
  Alpha SMP systems with extended kernel start address (Wildfire, Titan,
@@ -302,43 +302,43 @@ Package: linux-headers-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-alpha-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-alpha-smp (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux alpha-smp configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel alpha-smp configuration.
 
-Package: linux-image-6.6.15+pexip-alpha-smp-dbg
+Package: linux-image-6.6.48+pexip-alpha-smp-dbg
 Architecture: alpha
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-alpha-smp
+Description: Debug symbols for linux-image-6.6.48+pexip-alpha-smp
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-alpha-smp.
+ modules in linux-image-6.6.48+pexip-alpha-smp.
 
 Package: linux-image-alpha-smp-dbg
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-alpha-smp-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-alpha-smp-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux alpha-smp configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel alpha-smp configuration.
 
-Package: linux-headers-6.6.15+pexip-amd64
+Package: linux-headers-6.6.48+pexip-amd64
 Architecture: amd64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-amd64 (= ${binary:Version}) | linux-image-6.6.15+pexip-amd64-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-amd64
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-amd64 (= ${binary:Version}) | linux-image-6.6.48+pexip-amd64-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-amd64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-amd64, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-amd64, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-amd64, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-amd64, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-amd64 package.
+ linux-image-6.6.48+pexip-amd64 package.
 
-Package: linux-image-6.6.15+pexip-amd64
+Package: linux-image-6.6.48+pexip-amd64
 Architecture: amd64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [amd64] | linux-initramfs-tool [amd64]
@@ -352,8 +352,8 @@ Description: Linux 6.6 for 64-bit PCs
 Package: linux-image-amd64
 Architecture: amd64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-amd64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-amd64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-amd64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-amd64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PCs (meta-package)
  This package depends on the latest Linux kernel and modules for use on PCs
  with AMD64, Intel 64 or VIA Nano processors.
@@ -362,43 +362,43 @@ Package: linux-headers-amd64
 Architecture: amd64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-amd64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-amd64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux amd64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel amd64 configuration.
 
-Package: linux-image-6.6.15+pexip-amd64-dbg
+Package: linux-image-6.6.48+pexip-amd64-dbg
 Architecture: amd64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-amd64
+Description: Debug symbols for linux-image-6.6.48+pexip-amd64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-amd64.
+ modules in linux-image-6.6.48+pexip-amd64.
 
 Package: linux-image-amd64-dbg
 Architecture: amd64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-amd64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-amd64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux amd64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel amd64 configuration.
 
-Package: linux-headers-6.6.15+pexip-arm64
+Package: linux-headers-6.6.48+pexip-arm64
 Architecture: arm64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-arm64 (= ${binary:Version}) | linux-image-6.6.15+pexip-arm64-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-arm64
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-arm64 (= ${binary:Version}) | linux-image-6.6.48+pexip-arm64-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-arm64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-arm64, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-arm64, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-arm64, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-arm64, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-arm64 package.
+ linux-image-6.6.48+pexip-arm64 package.
 
-Package: linux-image-6.6.15+pexip-arm64
+Package: linux-image-6.6.48+pexip-arm64
 Architecture: arm64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [arm64] | linux-initramfs-tool [arm64]
@@ -411,8 +411,8 @@ Description: Linux 6.6 for 64-bit ARMv8 machines
 Package: linux-image-arm64
 Architecture: arm64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-arm64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-arm64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-arm64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-arm64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit ARMv8 machines (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  64-bit ARMv8 machines.
@@ -421,43 +421,43 @@ Package: linux-headers-arm64
 Architecture: arm64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-arm64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-arm64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux arm64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel arm64 configuration.
 
-Package: linux-image-6.6.15+pexip-arm64-dbg
+Package: linux-image-6.6.48+pexip-arm64-dbg
 Architecture: arm64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-arm64
+Description: Debug symbols for linux-image-6.6.48+pexip-arm64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-arm64.
+ modules in linux-image-6.6.48+pexip-arm64.
 
 Package: linux-image-arm64-dbg
 Architecture: arm64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-arm64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-arm64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux arm64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel arm64 configuration.
 
-Package: linux-headers-6.6.15+pexip-rpi
+Package: linux-headers-6.6.48+pexip-rpi
 Architecture: armel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-rpi (= ${binary:Version}) | linux-image-6.6.15+pexip-rpi-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-rpi
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-rpi (= ${binary:Version}) | linux-image-6.6.48+pexip-rpi-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-rpi
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-rpi, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-rpi, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-rpi, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-rpi, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-rpi package.
+ linux-image-6.6.48+pexip-rpi package.
 
-Package: linux-image-6.6.15+pexip-rpi
+Package: linux-image-6.6.48+pexip-rpi
 Architecture: armel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [armel] | linux-initramfs-tool [armel]
@@ -471,8 +471,8 @@ Description: Linux 6.6 for Raspberry Pi Zero, Zero W and 1
 Package: linux-image-rpi
 Architecture: armel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-rpi, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-rpi (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-rpi, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-rpi (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Raspberry Pi Zero, Zero W and 1 (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Raspberry Pi Zero, Zero W and 1 based systems.
@@ -480,43 +480,43 @@ Description: Linux for Raspberry Pi Zero, Zero W and 1 (meta-package)
 Package: linux-headers-rpi
 Architecture: armel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-rpi (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-rpi (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux rpi configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel rpi configuration.
 
-Package: linux-image-6.6.15+pexip-rpi-dbg
+Package: linux-image-6.6.48+pexip-rpi-dbg
 Architecture: armel
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-rpi
+Description: Debug symbols for linux-image-6.6.48+pexip-rpi
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-rpi.
+ modules in linux-image-6.6.48+pexip-rpi.
 
 Package: linux-image-rpi-dbg
 Architecture: armel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-rpi-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-rpi-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux rpi configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel rpi configuration.
 
-Package: linux-headers-6.6.15+pexip-armmp
+Package: linux-headers-6.6.48+pexip-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-armmp (= ${binary:Version}) | linux-image-6.6.15+pexip-armmp-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-armmp
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-armmp (= ${binary:Version}) | linux-image-6.6.48+pexip-armmp-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-armmp
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-armmp, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-armmp, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-armmp, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-armmp, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-armmp package.
+ linux-image-6.6.48+pexip-armmp package.
 
-Package: linux-image-6.6.15+pexip-armmp
+Package: linux-image-6.6.48+pexip-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [armhf] | linux-initramfs-tool [armhf]
@@ -531,8 +531,8 @@ Description: Linux 6.6 for ARMv7 multiplatform compatible SoCs
 Package: linux-image-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-armmp, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-armmp (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-armmp, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-armmp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for ARMv7 multiplatform compatible SoCs (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  ARMv7 multiplatform kernel.  See
@@ -543,43 +543,43 @@ Package: linux-headers-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-armmp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-armmp (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux armmp configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel armmp configuration.
 
-Package: linux-image-6.6.15+pexip-armmp-dbg
+Package: linux-image-6.6.48+pexip-armmp-dbg
 Architecture: armhf
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-armmp
+Description: Debug symbols for linux-image-6.6.48+pexip-armmp
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-armmp.
+ modules in linux-image-6.6.48+pexip-armmp.
 
 Package: linux-image-armmp-dbg
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-armmp-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-armmp-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux armmp configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel armmp configuration.
 
-Package: linux-headers-6.6.15+pexip-armmp-lpae
+Package: linux-headers-6.6.48+pexip-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-armmp-lpae (= ${binary:Version}) | linux-image-6.6.15+pexip-armmp-lpae-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-armmp-lpae
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-armmp-lpae (= ${binary:Version}) | linux-image-6.6.48+pexip-armmp-lpae-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-armmp-lpae
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-armmp-lpae, generally used for building
+ Linux kernel 6.6.48+pexip-armmp-lpae, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-armmp-lpae, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-armmp-lpae, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-armmp-lpae package.
+ linux-image-6.6.48+pexip-armmp-lpae package.
 
-Package: linux-image-6.6.15+pexip-armmp-lpae
+Package: linux-image-6.6.48+pexip-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [armhf] | linux-initramfs-tool [armhf]
@@ -594,8 +594,8 @@ Description: Linux 6.6 for ARMv7 multiplatform compatible SoCs supporting LPAE
 Package: linux-image-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-armmp-lpae, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-armmp-lpae (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-armmp-lpae, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-armmp-lpae (= ${binary:Version}), ${misc:Depends}
 Description: Linux for ARMv7 multiplatform compatible SoCs supporting LPAE (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  ARMv7 multiplatform kernel supporting LPAE. See
@@ -605,43 +605,43 @@ Description: Linux for ARMv7 multiplatform compatible SoCs supporting LPAE (meta
 Package: linux-headers-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-armmp-lpae (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-armmp-lpae (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux armmp-lpae configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel armmp-lpae configuration.
 
-Package: linux-image-6.6.15+pexip-armmp-lpae-dbg
+Package: linux-image-6.6.48+pexip-armmp-lpae-dbg
 Architecture: armhf
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-armmp-lpae
+Description: Debug symbols for linux-image-6.6.48+pexip-armmp-lpae
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-armmp-lpae.
+ modules in linux-image-6.6.48+pexip-armmp-lpae.
 
 Package: linux-image-armmp-lpae-dbg
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-armmp-lpae-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-armmp-lpae-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux armmp-lpae configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel armmp-lpae configuration.
 
-Package: linux-headers-6.6.15+pexip-parisc
+Package: linux-headers-6.6.48+pexip-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-parisc (= ${binary:Version}) | linux-image-6.6.15+pexip-parisc-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-parisc
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-parisc (= ${binary:Version}) | linux-image-6.6.48+pexip-parisc-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-parisc
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-parisc, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-parisc, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-parisc, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-parisc, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-parisc package.
+ linux-image-6.6.48+pexip-parisc package.
 
-Package: linux-image-6.6.15+pexip-parisc
+Package: linux-image-6.6.48+pexip-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [hppa] | linux-initramfs-tool [hppa]
@@ -655,8 +655,8 @@ Description: Linux 6.6 for 32-bit PA-RISC
 Package: linux-image-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-parisc, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-parisc (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-parisc, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-parisc (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 32-bit PA-RISC (meta-package)
  This package depends on the latest Linux kernel and modules for use on HP
  PA-RISC 32-bit systems with max 4 GB RAM.
@@ -665,43 +665,43 @@ Package: linux-headers-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-parisc (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-parisc (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux parisc configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel parisc configuration.
 
-Package: linux-image-6.6.15+pexip-parisc-dbg
+Package: linux-image-6.6.48+pexip-parisc-dbg
 Architecture: hppa
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-parisc
+Description: Debug symbols for linux-image-6.6.48+pexip-parisc
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-parisc.
+ modules in linux-image-6.6.48+pexip-parisc.
 
 Package: linux-image-parisc-dbg
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-parisc-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-parisc-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux parisc configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel parisc configuration.
 
-Package: linux-headers-6.6.15+pexip-parisc64
+Package: linux-headers-6.6.48+pexip-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-parisc64 (= ${binary:Version}) | linux-image-6.6.15+pexip-parisc64-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-parisc64
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-parisc64 (= ${binary:Version}) | linux-image-6.6.48+pexip-parisc64-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-parisc64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-parisc64, generally used for building
+ Linux kernel 6.6.48+pexip-parisc64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-parisc64, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-parisc64, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-parisc64 package.
+ linux-image-6.6.48+pexip-parisc64 package.
 
-Package: linux-image-6.6.15+pexip-parisc64
+Package: linux-image-6.6.48+pexip-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [hppa] | linux-initramfs-tool [hppa]
@@ -715,8 +715,8 @@ Description: Linux 6.6 for 64-bit PA-RISC
 Package: linux-image-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-parisc64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-parisc64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-parisc64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-parisc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PA-RISC (meta-package)
  This package depends on the latest Linux kernel and modules for use on HP
  PA-RISC 64-bit systems with support for more than 4 GB RAM.
@@ -724,43 +724,43 @@ Description: Linux for 64-bit PA-RISC (meta-package)
 Package: linux-headers-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-parisc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-parisc64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux parisc64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel parisc64 configuration.
 
-Package: linux-image-6.6.15+pexip-parisc64-dbg
+Package: linux-image-6.6.48+pexip-parisc64-dbg
 Architecture: hppa
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-parisc64
+Description: Debug symbols for linux-image-6.6.48+pexip-parisc64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-parisc64.
+ modules in linux-image-6.6.48+pexip-parisc64.
 
 Package: linux-image-parisc64-dbg
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-parisc64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-parisc64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux parisc64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel parisc64 configuration.
 
-Package: linux-headers-6.6.15+pexip-686
+Package: linux-headers-6.6.48+pexip-686
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-686 (= ${binary:Version}) | linux-image-6.6.15+pexip-686-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-686
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-686 (= ${binary:Version}) | linux-image-6.6.48+pexip-686-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-686
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-686, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-686, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-686, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-686, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-686 package.
+ linux-image-6.6.48+pexip-686 package.
 
-Package: linux-image-6.6.15+pexip-686
+Package: linux-image-6.6.48+pexip-686
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [i386] | linux-initramfs-tool [i386]
@@ -774,8 +774,8 @@ Description: Linux 6.6 for older PCs
 Package: linux-image-686
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-686, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-686 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-686, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-686 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for older PCs (meta-package)
  This package depends on the latest Linux kernel and modules for use on PCs
  with one or more processors not supporting PAE.
@@ -783,43 +783,43 @@ Description: Linux for older PCs (meta-package)
 Package: linux-headers-686
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-686 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-686 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux 686 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel 686 configuration.
 
-Package: linux-image-6.6.15+pexip-686-dbg
+Package: linux-image-6.6.48+pexip-686-dbg
 Architecture: i386
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-686
+Description: Debug symbols for linux-image-6.6.48+pexip-686
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-686.
+ modules in linux-image-6.6.48+pexip-686.
 
 Package: linux-image-686-dbg
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-686-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-686-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux 686 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel 686 configuration.
 
-Package: linux-headers-6.6.15+pexip-686-pae
+Package: linux-headers-6.6.48+pexip-686-pae
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-686-pae (= ${binary:Version}) | linux-image-6.6.15+pexip-686-pae-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-686-pae
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-686-pae (= ${binary:Version}) | linux-image-6.6.48+pexip-686-pae-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-686-pae
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-686-pae, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-686-pae, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-686-pae, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-686-pae, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-686-pae package.
+ linux-image-6.6.48+pexip-686-pae package.
 
-Package: linux-image-6.6.15+pexip-686-pae
+Package: linux-image-6.6.48+pexip-686-pae
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [i386] | linux-initramfs-tool [i386]
@@ -838,8 +838,8 @@ Description: Linux 6.6 for modern PCs
 Package: linux-image-686-pae
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-686-pae, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-686-pae (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-686-pae, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-686-pae (= ${binary:Version}), ${misc:Depends}
 Description: Linux for modern PCs (meta-package)
  This package depends on the latest Linux kernel and modules for use on PCs
  with one or more processors supporting PAE.
@@ -848,43 +848,43 @@ Package: linux-headers-686-pae
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-686-pae (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-686-pae (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux 686-pae configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel 686-pae configuration.
 
-Package: linux-image-6.6.15+pexip-686-pae-dbg
+Package: linux-image-6.6.48+pexip-686-pae-dbg
 Architecture: i386
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-686-pae
+Description: Debug symbols for linux-image-6.6.48+pexip-686-pae
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-686-pae.
+ modules in linux-image-6.6.48+pexip-686-pae.
 
 Package: linux-image-686-pae-dbg
 Architecture: i386
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-686-pae-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-686-pae-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux 686-pae configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel 686-pae configuration.
 
-Package: linux-headers-6.6.15+pexip-itanium
+Package: linux-headers-6.6.48+pexip-itanium
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-itanium (= ${binary:Version}) | linux-image-6.6.15+pexip-itanium-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-itanium
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-itanium (= ${binary:Version}) | linux-image-6.6.48+pexip-itanium-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-itanium
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-itanium, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-itanium, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-itanium, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-itanium, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-itanium package.
+ linux-image-6.6.48+pexip-itanium package.
 
-Package: linux-image-6.6.15+pexip-itanium
+Package: linux-image-6.6.48+pexip-itanium
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [ia64] | linux-initramfs-tool [ia64]
@@ -898,8 +898,8 @@ Description: Linux 6.6 for Itanium (Merced)
 Package: linux-image-itanium
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-itanium, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-itanium (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-itanium, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-itanium (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Itanium (Merced) (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  systems with original Itanium (Merced) processors.
@@ -908,43 +908,43 @@ Package: linux-headers-itanium
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-itanium (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-itanium (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux itanium configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel itanium configuration.
 
-Package: linux-image-6.6.15+pexip-itanium-dbg
+Package: linux-image-6.6.48+pexip-itanium-dbg
 Architecture: ia64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-itanium
+Description: Debug symbols for linux-image-6.6.48+pexip-itanium
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-itanium.
+ modules in linux-image-6.6.48+pexip-itanium.
 
 Package: linux-image-itanium-dbg
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-itanium-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-itanium-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux itanium configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel itanium configuration.
 
-Package: linux-headers-6.6.15+pexip-mckinley
+Package: linux-headers-6.6.48+pexip-mckinley
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-mckinley (= ${binary:Version}) | linux-image-6.6.15+pexip-mckinley-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-mckinley
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-mckinley (= ${binary:Version}) | linux-image-6.6.48+pexip-mckinley-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-mckinley
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-mckinley, generally used for building
+ Linux kernel 6.6.48+pexip-mckinley, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-mckinley, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-mckinley, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-mckinley package.
+ linux-image-6.6.48+pexip-mckinley package.
 
-Package: linux-image-6.6.15+pexip-mckinley
+Package: linux-image-6.6.48+pexip-mckinley
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [ia64] | linux-initramfs-tool [ia64]
@@ -958,8 +958,8 @@ Description: Linux 6.6 for Itanium 2+
 Package: linux-image-mckinley
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-mckinley, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-mckinley (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-mckinley, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-mckinley (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Itanium 2+ (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  systems with Itanium 2 or 9300/9500/9700-series processors.
@@ -967,43 +967,43 @@ Description: Linux for Itanium 2+ (meta-package)
 Package: linux-headers-mckinley
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-mckinley (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-mckinley (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux mckinley configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel mckinley configuration.
 
-Package: linux-image-6.6.15+pexip-mckinley-dbg
+Package: linux-image-6.6.48+pexip-mckinley-dbg
 Architecture: ia64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-mckinley
+Description: Debug symbols for linux-image-6.6.48+pexip-mckinley
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-mckinley.
+ modules in linux-image-6.6.48+pexip-mckinley.
 
 Package: linux-image-mckinley-dbg
 Architecture: ia64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-mckinley-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-mckinley-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux mckinley configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel mckinley configuration.
 
-Package: linux-headers-6.6.15+pexip-m68k
+Package: linux-headers-6.6.48+pexip-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-m68k (= ${binary:Version}) | linux-image-6.6.15+pexip-m68k-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-m68k
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-m68k (= ${binary:Version}) | linux-image-6.6.48+pexip-m68k-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-m68k
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-m68k, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-m68k, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-m68k, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-m68k, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-m68k package.
+ linux-image-6.6.48+pexip-m68k package.
 
-Package: linux-image-6.6.15+pexip-m68k
+Package: linux-image-6.6.48+pexip-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [m68k] | linux-initramfs-tool [m68k]
@@ -1016,8 +1016,8 @@ Description: Linux 6.6 for Motorola MC68020+ family
 Package: linux-image-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-m68k, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-m68k (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-m68k, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-m68k (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Motorola MC68020+ family (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Motorola MC68020+ family.
@@ -1026,43 +1026,43 @@ Package: linux-headers-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-m68k (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-m68k (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux m68k configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel m68k configuration.
 
-Package: linux-image-6.6.15+pexip-m68k-dbg
+Package: linux-image-6.6.48+pexip-m68k-dbg
 Architecture: m68k
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-m68k
+Description: Debug symbols for linux-image-6.6.48+pexip-m68k
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-m68k.
+ modules in linux-image-6.6.48+pexip-m68k.
 
 Package: linux-image-m68k-dbg
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-m68k-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-m68k-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux m68k configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel m68k configuration.
 
-Package: linux-headers-6.6.15+pexip-4kc-malta
+Package: linux-headers-6.6.48+pexip-4kc-malta
 Architecture: mips mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-4kc-malta (= ${binary:Version}) | linux-image-6.6.15+pexip-4kc-malta-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-4kc-malta
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-4kc-malta (= ${binary:Version}) | linux-image-6.6.48+pexip-4kc-malta-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-4kc-malta
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-4kc-malta, generally used for building
+ Linux kernel 6.6.48+pexip-4kc-malta, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-4kc-malta, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-4kc-malta, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-4kc-malta package.
+ linux-image-6.6.48+pexip-4kc-malta package.
 
-Package: linux-image-6.6.15+pexip-4kc-malta
+Package: linux-image-6.6.48+pexip-4kc-malta
 Architecture: mips mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mips mipsel] | linux-initramfs-tool [mips mipsel]
@@ -1075,8 +1075,8 @@ Description: Linux 6.6 for MIPS Malta
 Package: linux-image-4kc-malta
 Architecture: mips mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-4kc-malta, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-4kc-malta (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-4kc-malta, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-4kc-malta (= ${binary:Version}), ${misc:Depends}
 Description: Linux for MIPS Malta (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  MIPS Malta boards.
@@ -1084,43 +1084,43 @@ Description: Linux for MIPS Malta (meta-package)
 Package: linux-headers-4kc-malta
 Architecture: mips mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-4kc-malta (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-4kc-malta (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux 4kc-malta configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel 4kc-malta configuration.
 
-Package: linux-image-6.6.15+pexip-4kc-malta-dbg
+Package: linux-image-6.6.48+pexip-4kc-malta-dbg
 Architecture: mips mipsel
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-4kc-malta
+Description: Debug symbols for linux-image-6.6.48+pexip-4kc-malta
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-4kc-malta.
+ modules in linux-image-6.6.48+pexip-4kc-malta.
 
 Package: linux-image-4kc-malta-dbg
 Architecture: mips mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-4kc-malta-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-4kc-malta-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux 4kc-malta configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel 4kc-malta configuration.
 
-Package: linux-headers-6.6.15+pexip-mips32r2eb
+Package: linux-headers-6.6.48+pexip-mips32r2eb
 Architecture: mips
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-mips32r2eb (= ${binary:Version}) | linux-image-6.6.15+pexip-mips32r2eb-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-mips32r2eb
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-mips32r2eb (= ${binary:Version}) | linux-image-6.6.48+pexip-mips32r2eb-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-mips32r2eb
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-mips32r2eb, generally used for building
+ Linux kernel 6.6.48+pexip-mips32r2eb, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-mips32r2eb, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-mips32r2eb, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-mips32r2eb package.
+ linux-image-6.6.48+pexip-mips32r2eb package.
 
-Package: linux-image-6.6.15+pexip-mips32r2eb
+Package: linux-image-6.6.48+pexip-mips32r2eb
 Architecture: mips
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mips] | linux-initramfs-tool [mips]
@@ -1134,8 +1134,8 @@ Description: Linux 6.6 for MIPS Generic (mips32r2eb)
 Package: linux-image-mips32r2eb
 Architecture: mips
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-mips32r2eb, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-mips32r2eb (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-mips32r2eb, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-mips32r2eb (= ${binary:Version}), ${misc:Depends}
 Description: Linux for MIPS Generic (mips32r2eb) (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  MIPS Generic platform (mips32r2eb).
@@ -1143,43 +1143,43 @@ Description: Linux for MIPS Generic (mips32r2eb) (meta-package)
 Package: linux-headers-mips32r2eb
 Architecture: mips
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-mips32r2eb (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-mips32r2eb (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux mips32r2eb configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel mips32r2eb configuration.
 
-Package: linux-image-6.6.15+pexip-mips32r2eb-dbg
+Package: linux-image-6.6.48+pexip-mips32r2eb-dbg
 Architecture: mips
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-mips32r2eb
+Description: Debug symbols for linux-image-6.6.48+pexip-mips32r2eb
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-mips32r2eb.
+ modules in linux-image-6.6.48+pexip-mips32r2eb.
 
 Package: linux-image-mips32r2eb-dbg
 Architecture: mips
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-mips32r2eb-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-mips32r2eb-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux mips32r2eb configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel mips32r2eb configuration.
 
-Package: linux-headers-6.6.15+pexip-octeon
+Package: linux-headers-6.6.48+pexip-octeon
 Architecture: mips mips64 mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-octeon (= ${binary:Version}) | linux-image-6.6.15+pexip-octeon-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-octeon
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-octeon (= ${binary:Version}) | linux-image-6.6.48+pexip-octeon-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-octeon
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-octeon, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-octeon, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-octeon, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-octeon, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-octeon package.
+ linux-image-6.6.48+pexip-octeon package.
 
-Package: linux-image-6.6.15+pexip-octeon
+Package: linux-image-6.6.48+pexip-octeon
 Architecture: mips mips64 mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mips mips64 mips64el mipsel] | linux-initramfs-tool [mips mips64 mips64el mipsel]
@@ -1192,8 +1192,8 @@ Description: Linux 6.6 for Octeon
 Package: linux-image-octeon
 Architecture: mips mips64 mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-octeon, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-octeon (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-octeon, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-octeon (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Octeon (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Cavium Networks Octeon.
@@ -1201,43 +1201,43 @@ Description: Linux for Octeon (meta-package)
 Package: linux-headers-octeon
 Architecture: mips mips64 mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-octeon (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-octeon (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux octeon configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel octeon configuration.
 
-Package: linux-image-6.6.15+pexip-octeon-dbg
+Package: linux-image-6.6.48+pexip-octeon-dbg
 Architecture: mips mips64 mips64el mipsel
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-octeon
+Description: Debug symbols for linux-image-6.6.48+pexip-octeon
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-octeon.
+ modules in linux-image-6.6.48+pexip-octeon.
 
 Package: linux-image-octeon-dbg
 Architecture: mips mips64 mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-octeon-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-octeon-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux octeon configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel octeon configuration.
 
-Package: linux-headers-6.6.15+pexip-5kc-malta
+Package: linux-headers-6.6.48+pexip-5kc-malta
 Architecture: mips64 mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-5kc-malta (= ${binary:Version}) | linux-image-6.6.15+pexip-5kc-malta-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-5kc-malta
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-5kc-malta (= ${binary:Version}) | linux-image-6.6.48+pexip-5kc-malta-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-5kc-malta
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-5kc-malta, generally used for building
+ Linux kernel 6.6.48+pexip-5kc-malta, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-5kc-malta, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-5kc-malta, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-5kc-malta package.
+ linux-image-6.6.48+pexip-5kc-malta package.
 
-Package: linux-image-6.6.15+pexip-5kc-malta
+Package: linux-image-6.6.48+pexip-5kc-malta
 Architecture: mips64 mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mips64 mips64el] | linux-initramfs-tool [mips64 mips64el]
@@ -1250,8 +1250,8 @@ Description: Linux 6.6 for MIPS Malta
 Package: linux-image-5kc-malta
 Architecture: mips64 mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-5kc-malta, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-5kc-malta (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-5kc-malta, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-5kc-malta (= ${binary:Version}), ${misc:Depends}
 Description: Linux for MIPS Malta (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  MIPS Malta boards.
@@ -1259,43 +1259,43 @@ Description: Linux for MIPS Malta (meta-package)
 Package: linux-headers-5kc-malta
 Architecture: mips64 mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-5kc-malta (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-5kc-malta (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux 5kc-malta configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel 5kc-malta configuration.
 
-Package: linux-image-6.6.15+pexip-5kc-malta-dbg
+Package: linux-image-6.6.48+pexip-5kc-malta-dbg
 Architecture: mips64 mips64el
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-5kc-malta
+Description: Debug symbols for linux-image-6.6.48+pexip-5kc-malta
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-5kc-malta.
+ modules in linux-image-6.6.48+pexip-5kc-malta.
 
 Package: linux-image-5kc-malta-dbg
 Architecture: mips64 mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-5kc-malta-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-5kc-malta-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux 5kc-malta configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel 5kc-malta configuration.
 
-Package: linux-headers-6.6.15+pexip-mips64r2eb
+Package: linux-headers-6.6.48+pexip-mips64r2eb
 Architecture: mips64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-mips64r2eb (= ${binary:Version}) | linux-image-6.6.15+pexip-mips64r2eb-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-mips64r2eb
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-mips64r2eb (= ${binary:Version}) | linux-image-6.6.48+pexip-mips64r2eb-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-mips64r2eb
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-mips64r2eb, generally used for building
+ Linux kernel 6.6.48+pexip-mips64r2eb, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-mips64r2eb, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-mips64r2eb, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-mips64r2eb package.
+ linux-image-6.6.48+pexip-mips64r2eb package.
 
-Package: linux-image-6.6.15+pexip-mips64r2eb
+Package: linux-image-6.6.48+pexip-mips64r2eb
 Architecture: mips64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mips64] | linux-initramfs-tool [mips64]
@@ -1309,8 +1309,8 @@ Description: Linux 6.6 for MIPS Generic (mips64r2eb)
 Package: linux-image-mips64r2eb
 Architecture: mips64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-mips64r2eb, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-mips64r2eb (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-mips64r2eb, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-mips64r2eb (= ${binary:Version}), ${misc:Depends}
 Description: Linux for MIPS Generic (mips64r2eb) (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  MIPS Generic platform (mips64r2eb).
@@ -1318,43 +1318,43 @@ Description: Linux for MIPS Generic (mips64r2eb) (meta-package)
 Package: linux-headers-mips64r2eb
 Architecture: mips64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-mips64r2eb (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-mips64r2eb (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux mips64r2eb configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel mips64r2eb configuration.
 
-Package: linux-image-6.6.15+pexip-mips64r2eb-dbg
+Package: linux-image-6.6.48+pexip-mips64r2eb-dbg
 Architecture: mips64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-mips64r2eb
+Description: Debug symbols for linux-image-6.6.48+pexip-mips64r2eb
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-mips64r2eb.
+ modules in linux-image-6.6.48+pexip-mips64r2eb.
 
 Package: linux-image-mips64r2eb-dbg
 Architecture: mips64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-mips64r2eb-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-mips64r2eb-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux mips64r2eb configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel mips64r2eb configuration.
 
-Package: linux-headers-6.6.15+pexip-mips64r2el
+Package: linux-headers-6.6.48+pexip-mips64r2el
 Architecture: mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-mips64r2el (= ${binary:Version}) | linux-image-6.6.15+pexip-mips64r2el-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-mips64r2el
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-mips64r2el (= ${binary:Version}) | linux-image-6.6.48+pexip-mips64r2el-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-mips64r2el
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-mips64r2el, generally used for building
+ Linux kernel 6.6.48+pexip-mips64r2el, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-mips64r2el, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-mips64r2el, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-mips64r2el package.
+ linux-image-6.6.48+pexip-mips64r2el package.
 
-Package: linux-image-6.6.15+pexip-mips64r2el
+Package: linux-image-6.6.48+pexip-mips64r2el
 Architecture: mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mips64el] | linux-initramfs-tool [mips64el]
@@ -1368,8 +1368,8 @@ Description: Linux 6.6 for MIPS Generic (mips64r2el)
 Package: linux-image-mips64r2el
 Architecture: mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-mips64r2el, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-mips64r2el (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-mips64r2el, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-mips64r2el (= ${binary:Version}), ${misc:Depends}
 Description: Linux for MIPS Generic (mips64r2el) (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  MIPS Generic platform (mips64r2el).
@@ -1377,43 +1377,43 @@ Description: Linux for MIPS Generic (mips64r2el) (meta-package)
 Package: linux-headers-mips64r2el
 Architecture: mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-mips64r2el (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-mips64r2el (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux mips64r2el configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel mips64r2el configuration.
 
-Package: linux-image-6.6.15+pexip-mips64r2el-dbg
+Package: linux-image-6.6.48+pexip-mips64r2el-dbg
 Architecture: mips64el
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-mips64r2el
+Description: Debug symbols for linux-image-6.6.48+pexip-mips64r2el
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-mips64r2el.
+ modules in linux-image-6.6.48+pexip-mips64r2el.
 
 Package: linux-image-mips64r2el-dbg
 Architecture: mips64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-mips64r2el-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-mips64r2el-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux mips64r2el configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel mips64r2el configuration.
 
-Package: linux-headers-6.6.15+pexip-loongson-3
+Package: linux-headers-6.6.48+pexip-loongson-3
 Architecture: mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-loongson-3 (= ${binary:Version}) | linux-image-6.6.15+pexip-loongson-3-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-loongson-3
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-loongson-3 (= ${binary:Version}) | linux-image-6.6.48+pexip-loongson-3-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-loongson-3
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-loongson-3, generally used for building
+ Linux kernel 6.6.48+pexip-loongson-3, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-loongson-3, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-loongson-3, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-loongson-3 package.
+ linux-image-6.6.48+pexip-loongson-3 package.
 
-Package: linux-image-6.6.15+pexip-loongson-3
+Package: linux-image-6.6.48+pexip-loongson-3
 Architecture: mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mips64el mipsel] | linux-initramfs-tool [mips64el mipsel]
@@ -1427,8 +1427,8 @@ Description: Linux 6.6 for Loongson 3A/3B
 Package: linux-image-loongson-3
 Architecture: mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-loongson-3, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-loongson-3 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-loongson-3, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-loongson-3 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Loongson 3A/3B (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Loongson 3A or 3B based systems (e.g.  from Loongson or Lemote).
@@ -1436,43 +1436,43 @@ Description: Linux for Loongson 3A/3B (meta-package)
 Package: linux-headers-loongson-3
 Architecture: mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-loongson-3 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-loongson-3 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux loongson-3 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel loongson-3 configuration.
 
-Package: linux-image-6.6.15+pexip-loongson-3-dbg
+Package: linux-image-6.6.48+pexip-loongson-3-dbg
 Architecture: mips64el mipsel
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-loongson-3
+Description: Debug symbols for linux-image-6.6.48+pexip-loongson-3
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-loongson-3.
+ modules in linux-image-6.6.48+pexip-loongson-3.
 
 Package: linux-image-loongson-3-dbg
 Architecture: mips64el mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-loongson-3-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-loongson-3-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux loongson-3 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel loongson-3 configuration.
 
-Package: linux-headers-6.6.15+pexip-mips64r6el
+Package: linux-headers-6.6.48+pexip-mips64r6el
 Architecture: mips64r6el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-mips64r6el (= ${binary:Version}) | linux-image-6.6.15+pexip-mips64r6el-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-mips64r6el
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-mips64r6el (= ${binary:Version}) | linux-image-6.6.48+pexip-mips64r6el-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-mips64r6el
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-mips64r6el, generally used for building
+ Linux kernel 6.6.48+pexip-mips64r6el, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-mips64r6el, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-mips64r6el, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-mips64r6el package.
+ linux-image-6.6.48+pexip-mips64r6el package.
 
-Package: linux-image-6.6.15+pexip-mips64r6el
+Package: linux-image-6.6.48+pexip-mips64r6el
 Architecture: mips64r6el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mips64r6el] | linux-initramfs-tool [mips64r6el]
@@ -1486,8 +1486,8 @@ Description: Linux 6.6 for MIPS Generic (mips64r6el)
 Package: linux-image-mips64r6el
 Architecture: mips64r6el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-mips64r6el, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-mips64r6el (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-mips64r6el, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-mips64r6el (= ${binary:Version}), ${misc:Depends}
 Description: Linux for MIPS Generic (mips64r6el) (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  MIPS Generic platform (mips64r6el).
@@ -1495,43 +1495,43 @@ Description: Linux for MIPS Generic (mips64r6el) (meta-package)
 Package: linux-headers-mips64r6el
 Architecture: mips64r6el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-mips64r6el (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-mips64r6el (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux mips64r6el configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel mips64r6el configuration.
 
-Package: linux-image-6.6.15+pexip-mips64r6el-dbg
+Package: linux-image-6.6.48+pexip-mips64r6el-dbg
 Architecture: mips64r6el
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-mips64r6el
+Description: Debug symbols for linux-image-6.6.48+pexip-mips64r6el
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-mips64r6el.
+ modules in linux-image-6.6.48+pexip-mips64r6el.
 
 Package: linux-image-mips64r6el-dbg
 Architecture: mips64r6el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-mips64r6el-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-mips64r6el-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux mips64r6el configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel mips64r6el configuration.
 
-Package: linux-headers-6.6.15+pexip-mips32r2el
+Package: linux-headers-6.6.48+pexip-mips32r2el
 Architecture: mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-mips32r2el (= ${binary:Version}) | linux-image-6.6.15+pexip-mips32r2el-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-mips32r2el
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-mips32r2el (= ${binary:Version}) | linux-image-6.6.48+pexip-mips32r2el-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-mips32r2el
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-mips32r2el, generally used for building
+ Linux kernel 6.6.48+pexip-mips32r2el, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-mips32r2el, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-mips32r2el, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-mips32r2el package.
+ linux-image-6.6.48+pexip-mips32r2el package.
 
-Package: linux-image-6.6.15+pexip-mips32r2el
+Package: linux-image-6.6.48+pexip-mips32r2el
 Architecture: mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [mipsel] | linux-initramfs-tool [mipsel]
@@ -1545,8 +1545,8 @@ Description: Linux 6.6 for MIPS Generic (mips32r2el)
 Package: linux-image-mips32r2el
 Architecture: mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-mips32r2el, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-mips32r2el (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-mips32r2el, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-mips32r2el (= ${binary:Version}), ${misc:Depends}
 Description: Linux for MIPS Generic (mips32r2el) (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  MIPS Generic platform (mips32r2el).
@@ -1554,43 +1554,43 @@ Description: Linux for MIPS Generic (mips32r2el) (meta-package)
 Package: linux-headers-mips32r2el
 Architecture: mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-mips32r2el (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-mips32r2el (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux mips32r2el configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel mips32r2el configuration.
 
-Package: linux-image-6.6.15+pexip-mips32r2el-dbg
+Package: linux-image-6.6.48+pexip-mips32r2el-dbg
 Architecture: mipsel
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-mips32r2el
+Description: Debug symbols for linux-image-6.6.48+pexip-mips32r2el
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-mips32r2el.
+ modules in linux-image-6.6.48+pexip-mips32r2el.
 
 Package: linux-image-mips32r2el-dbg
 Architecture: mipsel
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-mips32r2el-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-mips32r2el-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux mips32r2el configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel mips32r2el configuration.
 
-Package: linux-headers-6.6.15+pexip-powerpc
+Package: linux-headers-6.6.48+pexip-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-powerpc (= ${binary:Version}) | linux-image-6.6.15+pexip-powerpc-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-powerpc
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-powerpc (= ${binary:Version}) | linux-image-6.6.48+pexip-powerpc-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-powerpc
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-powerpc, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-powerpc, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-powerpc, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-powerpc, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-powerpc package.
+ linux-image-6.6.48+pexip-powerpc package.
 
-Package: linux-image-6.6.15+pexip-powerpc
+Package: linux-image-6.6.48+pexip-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [powerpc] | linux-initramfs-tool [powerpc]
@@ -1603,8 +1603,8 @@ Description: Linux 6.6 for uniprocessor 32-bit PowerPC
 Package: linux-image-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-powerpc, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-powerpc (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-powerpc, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-powerpc (= ${binary:Version}), ${misc:Depends}
 Description: Linux for uniprocessor 32-bit PowerPC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  uniprocessor 32-bit PowerPC.
@@ -1612,43 +1612,43 @@ Description: Linux for uniprocessor 32-bit PowerPC (meta-package)
 Package: linux-headers-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-powerpc (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-powerpc (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc configuration.
 
-Package: linux-image-6.6.15+pexip-powerpc-dbg
+Package: linux-image-6.6.48+pexip-powerpc-dbg
 Architecture: powerpc
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-powerpc
+Description: Debug symbols for linux-image-6.6.48+pexip-powerpc
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-powerpc.
+ modules in linux-image-6.6.48+pexip-powerpc.
 
 Package: linux-image-powerpc-dbg
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-powerpc-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-powerpc-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc configuration.
 
-Package: linux-headers-6.6.15+pexip-powerpc-smp
+Package: linux-headers-6.6.48+pexip-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-powerpc-smp (= ${binary:Version}) | linux-image-6.6.15+pexip-powerpc-smp-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-powerpc-smp
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-powerpc-smp (= ${binary:Version}) | linux-image-6.6.48+pexip-powerpc-smp-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-powerpc-smp
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-powerpc-smp, generally used for building
+ Linux kernel 6.6.48+pexip-powerpc-smp, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-powerpc-smp, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-powerpc-smp, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-powerpc-smp package.
+ linux-image-6.6.48+pexip-powerpc-smp package.
 
-Package: linux-image-6.6.15+pexip-powerpc-smp
+Package: linux-image-6.6.48+pexip-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [powerpc] | linux-initramfs-tool [powerpc]
@@ -1661,8 +1661,8 @@ Description: Linux 6.6 for multiprocessor 32-bit PowerPC
 Package: linux-image-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-powerpc-smp, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-powerpc-smp (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-powerpc-smp, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-powerpc-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for multiprocessor 32-bit PowerPC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  multiprocessor 32-bit PowerPC.
@@ -1670,43 +1670,43 @@ Description: Linux for multiprocessor 32-bit PowerPC (meta-package)
 Package: linux-headers-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-powerpc-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-powerpc-smp (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc-smp configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc-smp configuration.
 
-Package: linux-image-6.6.15+pexip-powerpc-smp-dbg
+Package: linux-image-6.6.48+pexip-powerpc-smp-dbg
 Architecture: powerpc
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-powerpc-smp
+Description: Debug symbols for linux-image-6.6.48+pexip-powerpc-smp
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-powerpc-smp.
+ modules in linux-image-6.6.48+pexip-powerpc-smp.
 
 Package: linux-image-powerpc-smp-dbg
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-powerpc-smp-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-powerpc-smp-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc-smp configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc-smp configuration.
 
-Package: linux-headers-6.6.15+pexip-powerpc64
+Package: linux-headers-6.6.48+pexip-powerpc64
 Architecture: powerpc ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-powerpc64 (= ${binary:Version}) | linux-image-6.6.15+pexip-powerpc64-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-powerpc64
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-powerpc64 (= ${binary:Version}) | linux-image-6.6.48+pexip-powerpc64-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-powerpc64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-powerpc64, generally used for building
+ Linux kernel 6.6.48+pexip-powerpc64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-powerpc64, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-powerpc64, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-powerpc64 package.
+ linux-image-6.6.48+pexip-powerpc64 package.
 
-Package: linux-image-6.6.15+pexip-powerpc64
+Package: linux-image-6.6.48+pexip-powerpc64
 Architecture: powerpc ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [powerpc ppc64] | linux-initramfs-tool [powerpc ppc64]
@@ -1719,8 +1719,8 @@ Description: Linux 6.6 for 64-bit PowerPC
 Package: linux-image-powerpc64
 Architecture: powerpc ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-powerpc64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-powerpc64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-powerpc64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-powerpc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PowerPC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  64-bit PowerPC.
@@ -1729,43 +1729,43 @@ Package: linux-headers-powerpc64
 Architecture: powerpc ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-powerpc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-powerpc64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc64 configuration.
 
-Package: linux-image-6.6.15+pexip-powerpc64-dbg
+Package: linux-image-6.6.48+pexip-powerpc64-dbg
 Architecture: powerpc ppc64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-powerpc64
+Description: Debug symbols for linux-image-6.6.48+pexip-powerpc64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-powerpc64.
+ modules in linux-image-6.6.48+pexip-powerpc64.
 
 Package: linux-image-powerpc64-dbg
 Architecture: powerpc ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-powerpc64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-powerpc64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc64 configuration.
 
-Package: linux-headers-6.6.15+pexip-powerpc64le
+Package: linux-headers-6.6.48+pexip-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-powerpc64le (= ${binary:Version}) | linux-image-6.6.15+pexip-powerpc64le-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-powerpc64le
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-powerpc64le (= ${binary:Version}) | linux-image-6.6.48+pexip-powerpc64le-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-powerpc64le
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-powerpc64le, generally used for building
+ Linux kernel 6.6.48+pexip-powerpc64le, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-powerpc64le, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-powerpc64le, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-powerpc64le package.
+ linux-image-6.6.48+pexip-powerpc64le package.
 
-Package: linux-image-6.6.15+pexip-powerpc64le
+Package: linux-image-6.6.48+pexip-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [ppc64el] | linux-initramfs-tool [ppc64el]
@@ -1778,8 +1778,8 @@ Description: Linux 6.6 for Little-endian 64-bit PowerPC
 Package: linux-image-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-powerpc64le, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-powerpc64le (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-powerpc64le, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-powerpc64le (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Little-endian 64-bit PowerPC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Little-endian 64-bit PowerPC.
@@ -1788,43 +1788,43 @@ Package: linux-headers-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-powerpc64le (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-powerpc64le (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc64le configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc64le configuration.
 
-Package: linux-image-6.6.15+pexip-powerpc64le-dbg
+Package: linux-image-6.6.48+pexip-powerpc64le-dbg
 Architecture: ppc64el
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-powerpc64le
+Description: Debug symbols for linux-image-6.6.48+pexip-powerpc64le
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-powerpc64le.
+ modules in linux-image-6.6.48+pexip-powerpc64le.
 
 Package: linux-image-powerpc64le-dbg
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-powerpc64le-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-powerpc64le-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc64le configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc64le configuration.
 
-Package: linux-headers-6.6.15+pexip-riscv64
+Package: linux-headers-6.6.48+pexip-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-riscv64 (= ${binary:Version}) | linux-image-6.6.15+pexip-riscv64-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-riscv64
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-riscv64 (= ${binary:Version}) | linux-image-6.6.48+pexip-riscv64-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-riscv64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-riscv64, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-riscv64, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-riscv64, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-riscv64, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-riscv64 package.
+ linux-image-6.6.48+pexip-riscv64 package.
 
-Package: linux-image-6.6.15+pexip-riscv64
+Package: linux-image-6.6.48+pexip-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [riscv64] | linux-initramfs-tool [riscv64]
@@ -1837,8 +1837,8 @@ Description: Linux 6.6 for 64-bit RISC-V platforms
 Package: linux-image-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-riscv64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-riscv64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-riscv64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-riscv64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit RISC-V platforms (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  64-bit RISC-V platforms.
@@ -1847,43 +1847,43 @@ Package: linux-headers-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-riscv64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-riscv64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux riscv64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel riscv64 configuration.
 
-Package: linux-image-6.6.15+pexip-riscv64-dbg
+Package: linux-image-6.6.48+pexip-riscv64-dbg
 Architecture: riscv64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-riscv64
+Description: Debug symbols for linux-image-6.6.48+pexip-riscv64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-riscv64.
+ modules in linux-image-6.6.48+pexip-riscv64.
 
 Package: linux-image-riscv64-dbg
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-riscv64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-riscv64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux riscv64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel riscv64 configuration.
 
-Package: linux-headers-6.6.15+pexip-s390x
+Package: linux-headers-6.6.48+pexip-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-s390x (= ${binary:Version}) | linux-image-6.6.15+pexip-s390x-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-s390x
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-s390x (= ${binary:Version}) | linux-image-6.6.48+pexip-s390x-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-s390x
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-s390x, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-s390x, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-s390x, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-s390x, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-s390x package.
+ linux-image-6.6.48+pexip-s390x package.
 
-Package: linux-image-6.6.15+pexip-s390x
+Package: linux-image-6.6.48+pexip-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [s390x] | linux-initramfs-tool [s390x]
@@ -1896,8 +1896,8 @@ Description: Linux 6.6 for IBM zSeries
 Package: linux-image-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-s390x, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-s390x (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-s390x, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-s390x (= ${binary:Version}), ${misc:Depends}
 Description: Linux for IBM zSeries (meta-package)
  This package depends on the latest Linux kernel and modules for use on IBM
  zSeries.
@@ -1906,43 +1906,43 @@ Package: linux-headers-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-s390x (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-s390x (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux s390x configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel s390x configuration.
 
-Package: linux-image-6.6.15+pexip-s390x-dbg
+Package: linux-image-6.6.48+pexip-s390x-dbg
 Architecture: s390x
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-s390x
+Description: Debug symbols for linux-image-6.6.48+pexip-s390x
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-s390x.
+ modules in linux-image-6.6.48+pexip-s390x.
 
 Package: linux-image-s390x-dbg
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-s390x-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-s390x-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux s390x configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel s390x configuration.
 
-Package: linux-headers-6.6.15+pexip-sh7751r
+Package: linux-headers-6.6.48+pexip-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-sh7751r (= ${binary:Version}) | linux-image-6.6.15+pexip-sh7751r-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-sh7751r
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-sh7751r (= ${binary:Version}) | linux-image-6.6.48+pexip-sh7751r-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-sh7751r
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-sh7751r, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-sh7751r, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-sh7751r, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-sh7751r, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-sh7751r package.
+ linux-image-6.6.48+pexip-sh7751r package.
 
-Package: linux-image-6.6.15+pexip-sh7751r
+Package: linux-image-6.6.48+pexip-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [sh4] | linux-initramfs-tool [sh4]
@@ -1956,8 +1956,8 @@ Description: Linux 6.6 for sh7751r
 Package: linux-image-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-sh7751r, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-sh7751r (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-sh7751r, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-sh7751r (= ${binary:Version}), ${misc:Depends}
 Description: Linux for sh7751r (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Renesas SH7751R R2D plus board.
@@ -1965,43 +1965,43 @@ Description: Linux for sh7751r (meta-package)
 Package: linux-headers-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-sh7751r (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-sh7751r (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux sh7751r configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel sh7751r configuration.
 
-Package: linux-image-6.6.15+pexip-sh7751r-dbg
+Package: linux-image-6.6.48+pexip-sh7751r-dbg
 Architecture: sh4
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-sh7751r
+Description: Debug symbols for linux-image-6.6.48+pexip-sh7751r
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-sh7751r.
+ modules in linux-image-6.6.48+pexip-sh7751r.
 
 Package: linux-image-sh7751r-dbg
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-sh7751r-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-sh7751r-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux sh7751r configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel sh7751r configuration.
 
-Package: linux-headers-6.6.15+pexip-sh7785lcr
+Package: linux-headers-6.6.48+pexip-sh7785lcr
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-sh7785lcr (= ${binary:Version}) | linux-image-6.6.15+pexip-sh7785lcr-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-sh7785lcr
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-sh7785lcr (= ${binary:Version}) | linux-image-6.6.48+pexip-sh7785lcr-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-sh7785lcr
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-sh7785lcr, generally used for building
+ Linux kernel 6.6.48+pexip-sh7785lcr, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-sh7785lcr, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-sh7785lcr, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-sh7785lcr package.
+ linux-image-6.6.48+pexip-sh7785lcr package.
 
-Package: linux-image-6.6.15+pexip-sh7785lcr
+Package: linux-image-6.6.48+pexip-sh7785lcr
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [sh4] | linux-initramfs-tool [sh4]
@@ -2015,8 +2015,8 @@ Description: Linux 6.6 for sh7785lcr
 Package: linux-image-sh7785lcr
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-sh7785lcr, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-sh7785lcr (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-sh7785lcr, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-sh7785lcr (= ${binary:Version}), ${misc:Depends}
 Description: Linux for sh7785lcr (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Renesas SH7785 reference board.
@@ -2024,43 +2024,43 @@ Description: Linux for sh7785lcr (meta-package)
 Package: linux-headers-sh7785lcr
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-sh7785lcr (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-sh7785lcr (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux sh7785lcr configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel sh7785lcr configuration.
 
-Package: linux-image-6.6.15+pexip-sh7785lcr-dbg
+Package: linux-image-6.6.48+pexip-sh7785lcr-dbg
 Architecture: sh4
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-sh7785lcr
+Description: Debug symbols for linux-image-6.6.48+pexip-sh7785lcr
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-sh7785lcr.
+ modules in linux-image-6.6.48+pexip-sh7785lcr.
 
 Package: linux-image-sh7785lcr-dbg
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-sh7785lcr-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-sh7785lcr-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux sh7785lcr configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel sh7785lcr configuration.
 
-Package: linux-headers-6.6.15+pexip-sparc64
+Package: linux-headers-6.6.48+pexip-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-sparc64 (= ${binary:Version}) | linux-image-6.6.15+pexip-sparc64-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-sparc64
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-sparc64 (= ${binary:Version}) | linux-image-6.6.48+pexip-sparc64-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-sparc64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-sparc64, generally used for building out-of-tree
+ Linux kernel 6.6.48+pexip-sparc64, generally used for building out-of-tree
  kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-sparc64, and can be used for building
+ /usr/src/linux-headers-6.6.48+pexip-sparc64, and can be used for building
  modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-sparc64 package.
+ linux-image-6.6.48+pexip-sparc64 package.
 
-Package: linux-image-6.6.15+pexip-sparc64
+Package: linux-image-6.6.48+pexip-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [sparc64] | linux-initramfs-tool [sparc64]
@@ -2074,8 +2074,8 @@ Description: Linux 6.6 for uniprocessor 64-bit UltraSPARC
 Package: linux-image-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-sparc64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
-Depends: linux-image-6.6.15+pexip-sparc64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-sparc64, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386]
+Depends: linux-image-6.6.48+pexip-sparc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for uniprocessor 64-bit UltraSPARC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  uniprocessor 64-bit UltraSPARC.
@@ -2083,43 +2083,43 @@ Description: Linux for uniprocessor 64-bit UltraSPARC (meta-package)
 Package: linux-headers-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-sparc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-sparc64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux sparc64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel sparc64 configuration.
 
-Package: linux-image-6.6.15+pexip-sparc64-dbg
+Package: linux-image-6.6.48+pexip-sparc64-dbg
 Architecture: sparc64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-sparc64
+Description: Debug symbols for linux-image-6.6.48+pexip-sparc64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-sparc64.
+ modules in linux-image-6.6.48+pexip-sparc64.
 
 Package: linux-image-sparc64-dbg
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-sparc64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-sparc64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux sparc64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel sparc64 configuration.
 
-Package: linux-headers-6.6.15+pexip-sparc64-smp
+Package: linux-headers-6.6.48+pexip-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: linux-headers-6.6.15+pexip-common (= ${source:Version}), linux-image-6.6.15+pexip-sparc64-smp (= ${binary:Version}) | linux-image-6.6.15+pexip-sparc64-smp-unsigned (= ${binary:Version}), linux-kbuild-6.6.15+pexip, ${misc:Depends}, gcc-12
-Description: Header files for Linux 6.6.15+pexip-sparc64-smp
+Depends: linux-headers-6.6.48+pexip-common (= ${source:Version}), linux-image-6.6.48+pexip-sparc64-smp (= ${binary:Version}) | linux-image-6.6.48+pexip-sparc64-smp-unsigned (= ${binary:Version}), linux-kbuild-6.6.48+pexip, ${misc:Depends}, gcc-12
+Description: Header files for Linux 6.6.48+pexip-sparc64-smp
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.6.15+pexip-sparc64-smp, generally used for building
+ Linux kernel 6.6.48+pexip-sparc64-smp, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.6.15+pexip-sparc64-smp, and can be used for
+ /usr/src/linux-headers-6.6.48+pexip-sparc64-smp, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.6.15+pexip-sparc64-smp package.
+ linux-image-6.6.48+pexip-sparc64-smp package.
 
-Package: linux-image-6.6.15+pexip-sparc64-smp
+Package: linux-image-6.6.48+pexip-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}, initramfs-tools (>= 0.120+deb8u2) [sparc64] | linux-initramfs-tool [sparc64]
@@ -2133,8 +2133,8 @@ Description: Linux 6.6 for multiprocessor 64-bit UltraSPARC
 Package: linux-image-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.6.15+pexip-sparc64-smp, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
-Depends: linux-image-6.6.15+pexip-sparc64-smp (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.6.48+pexip-sparc64-smp, wireguard-modules (= 1.0.0), virtualbox-guest-modules [amd64 i386], linux-image-generic
+Depends: linux-image-6.6.48+pexip-sparc64-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for multiprocessor 64-bit UltraSPARC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  multiprocessor 64-bit UltraSPARC.
@@ -2143,26 +2143,26 @@ Package: linux-headers-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-headers-6.6.15+pexip-sparc64-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-headers-6.6.48+pexip-sparc64-smp (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux sparc64-smp configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel sparc64-smp configuration.
 
-Package: linux-image-6.6.15+pexip-sparc64-smp-dbg
+Package: linux-image-6.6.48+pexip-sparc64-smp-dbg
 Architecture: sparc64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
 Depends: ${misc:Depends}
-Description: Debug symbols for linux-image-6.6.15+pexip-sparc64-smp
+Description: Debug symbols for linux-image-6.6.48+pexip-sparc64-smp
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.6.15+pexip-sparc64-smp.
+ modules in linux-image-6.6.48+pexip-sparc64-smp.
 
 Package: linux-image-sparc64-smp-dbg
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-image-6.6.15+pexip-sparc64-smp-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-image-6.6.48+pexip-sparc64-smp-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux sparc64-smp configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel sparc64-smp configuration.

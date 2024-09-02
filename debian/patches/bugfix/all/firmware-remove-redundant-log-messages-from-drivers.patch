@@ -40,7 +40,7 @@ upstream submission.
      fw_size = firmware->size / sizeof(u32);
 --- a/drivers/bluetooth/ath3k.c
 +++ b/drivers/bluetooth/ath3k.c
-@@ -381,10 +381,8 @@ static int ath3k_load_patch(struct usb_d
+@@ -379,10 +379,8 @@ static int ath3k_load_patch(struct usb_d
  		 le32_to_cpu(fw_version.rom_version));
  
  	ret = request_firmware(&firmware, filename, &udev->dev);
@@ -52,8 +52,8 @@ upstream submission.
  
  	pt_rom_version = get_unaligned_le32(firmware->data +
  					    firmware->size - 8);
-@@ -444,10 +442,8 @@ static int ath3k_load_syscfg(struct usb_
- 		le32_to_cpu(fw_version.rom_version), clk_value, ".dfu");
+@@ -441,10 +439,8 @@ static int ath3k_load_syscfg(struct usb_
+ 		 le32_to_cpu(fw_version.rom_version), clk_value, ".dfu");
  
  	ret = request_firmware(&firmware, filename, &udev->dev);
 -	if (ret < 0) {
@@ -436,7 +436,7 @@ upstream submission.
  		release_firmware(fw);
 --- a/drivers/media/dvb-frontends/tda10048.c
 +++ b/drivers/media/dvb-frontends/tda10048.c
-@@ -483,8 +483,6 @@ static int tda10048_firmware_upload(stru
+@@ -486,8 +486,6 @@ static int tda10048_firmware_upload(stru
  	ret = request_firmware(&fw, TDA10048_DEFAULT_FIRMWARE,
  		state->i2c->dev.parent);
  	if (ret) {
@@ -702,7 +702,7 @@ upstream submission.
  	fw_data = (void *)fw_entry->data;
 --- a/drivers/media/tuners/xc2028.c
 +++ b/drivers/media/tuners/xc2028.c
-@@ -1366,7 +1366,6 @@ static void load_firmware_cb(const struc
+@@ -1373,7 +1373,6 @@ static void load_firmware_cb(const struc
  
  	tuner_dbg("request_firmware_nowait(): %s\n", fw ? "OK" : "error");
  	if (!fw) {
@@ -741,7 +741,7 @@ upstream submission.
  	stk9090m_config.microcode_B_fe_size = state->frontend_firmware->size;
  	stk9090m_config.microcode_B_fe_buffer = state->frontend_firmware->data;
  
-@@ -2471,12 +2468,9 @@ static int nim9090md_frontend_attach(str
+@@ -2476,12 +2473,9 @@ static int nim9090md_frontend_attach(str
  	msleep(20);
  	dib0700_set_gpio(adap->dev, GPIO0, GPIO_OUT, 1);
  
@@ -1090,7 +1090,7 @@ upstream submission.
  	if (bp->mips_firmware->size < sizeof(*mips_fw) ||
 --- a/drivers/net/ethernet/broadcom/tg3.c
 +++ b/drivers/net/ethernet/broadcom/tg3.c
-@@ -11394,11 +11394,8 @@ static int tg3_request_firmware(struct t
+@@ -11412,11 +11412,8 @@ static int tg3_request_firmware(struct t
  {
  	const struct tg3_firmware_hdr *fw_hdr;
  
@@ -1399,7 +1399,7 @@ upstream submission.
  			else
 --- a/drivers/net/wireless/intel/iwlwifi/iwl-drv.c
 +++ b/drivers/net/wireless/intel/iwlwifi/iwl-drv.c
-@@ -241,8 +241,6 @@ static int iwl_request_firmware(struct i
+@@ -242,8 +242,6 @@ static int iwl_request_firmware(struct i
  		drv->fw_index--;
  
  	if (drv->fw_index < cfg->ucode_api_min) {
@@ -1781,7 +1781,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/qla2xxx/qla_init.c
 +++ b/drivers/scsi/qla2xxx/qla_init.c
-@@ -8560,10 +8560,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
+@@ -8610,10 +8610,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
  	/* Load firmware blob. */
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1792,7 +1792,7 @@ upstream submission.
  		return QLA_FUNCTION_FAILED;
  	}
  
-@@ -8666,9 +8662,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
+@@ -8716,9 +8712,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
  
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -2266,7 +2266,7 @@ upstream submission.
  	return err;
 --- a/sound/pci/emu10k1/emu10k1_main.c
 +++ b/sound/pci/emu10k1/emu10k1_main.c
-@@ -864,10 +864,8 @@ static int snd_emu10k1_emu1010_init(stru
+@@ -881,10 +881,8 @@ static int snd_emu10k1_emu1010_init(stru
  	dev_info(emu->card->dev, "emu1010: EMU_HANA_ID = 0x%x\n", reg);
  
  	err = snd_emu1010_load_firmware(emu, 0, &emu->firmware);
@@ -2280,7 +2280,7 @@ upstream submission.
  	snd_emu1010_fpga_read(emu, EMU_HANA_ID, &reg);
 --- a/sound/pci/hda/hda_intel.c
 +++ b/sound/pci/hda/hda_intel.c
-@@ -2040,8 +2040,6 @@ static void azx_firmware_cb(const struct
+@@ -2050,8 +2050,6 @@ static void azx_firmware_cb(const struct
  
  	if (fw)
  		chip->fw = fw;
