@@ -183,7 +183,7 @@ CONFIG_CACHE_TAUROS2=y
 ##
 ## file: drivers/android/Kconfig
 ##
-CONFIG_ANDROID_BINDER_IPC=m
+CONFIG_ANDROID_BINDER_IPC=y
 
 ##
 ## file: drivers/ata/Kconfig

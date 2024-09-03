@@ -1,7 +1,105 @@
 ##
+## file: drivers/android/Kconfig
+##
+# CONFIG_ANDROID_BINDER_IPC is not set
+
+##
 ## file: drivers/ata/Kconfig
 ##
 CONFIG_SATA_AHCI=m
+
+##
+## file: drivers/comedi/Kconfig
+##
+# CONFIG_COMEDI is not set
+
+##
+## file: drivers/hid/Kconfig
+##
+# CONFIG_HID_A4TECH is not set
+# CONFIG_HID_ACRUX is not set
+# CONFIG_HID_ACRUX_FF is not set
+# CONFIG_HID_APPLE is not set
+# CONFIG_HID_AUREAL is not set
+# CONFIG_HID_BELKIN is not set
+# CONFIG_HID_CHERRY is not set
+# CONFIG_HID_COUGAR is not set
+# CONFIG_HID_MACALLY is not set
+# CONFIG_HID_CMEDIA is not set
+# CONFIG_HID_CYPRESS is not set
+# CONFIG_HID_DRAGONRISE is not set
+# CONFIG_DRAGONRISE_FF is not set
+# CONFIG_HID_EMS_FF is not set
+# CONFIG_HID_ELECOM is not set
+# CONFIG_HID_EVISION is not set
+# CONFIG_HID_EZKEY is not set
+# CONFIG_HID_GEMBIRD is not set
+# CONFIG_HID_GFRM is not set
+# CONFIG_HID_GLORIOUS is not set
+# CONFIG_HID_GOOGLE_STADIA_FF is not set
+# CONFIG_HID_VIVALDI is not set
+# CONFIG_HID_KEYTOUCH is not set
+# CONFIG_HID_KYE is not set
+# CONFIG_HID_WALTOP is not set
+# CONFIG_HID_VIEWSONIC is not set
+# CONFIG_HID_VRC2 is not set
+# CONFIG_HID_XIAOMI is not set
+# CONFIG_HID_GYRATION is not set
+# CONFIG_HID_ICADE is not set
+# CONFIG_HID_ITE is not set
+# CONFIG_HID_JABRA is not set
+# CONFIG_HID_TWINHAN is not set
+# CONFIG_HID_KENSINGTON is not set
+# CONFIG_HID_LCPOWER is not set
+# CONFIG_HID_LENOVO is not set
+# CONFIG_HID_MAGICMOUSE is not set
+# CONFIG_HID_MALTRON is not set
+# CONFIG_HID_MAYFLASH is not set
+# CONFIG_HID_REDRAGON is not set
+# CONFIG_HID_MICROSOFT is not set
+# CONFIG_HID_MONTEREY is not set
+# CONFIG_HID_MULTITOUCH is not set
+# CONFIG_HID_NINTENDO is not set
+# CONFIG_NINTENDO_FF is not set
+# CONFIG_HID_NTI is not set
+# CONFIG_HID_ORTEK is not set
+# CONFIG_HID_PANTHERLORD is not set
+# CONFIG_PANTHERLORD_FF is not set
+# CONFIG_HID_PETALYNX is not set
+# CONFIG_HID_PICOLCD is not set
+# CONFIG_HID_PICOLCD_FB is not set
+# CONFIG_HID_PICOLCD_LEDS is not set
+# CONFIG_HID_PLANTRONICS is not set
+# CONFIG_HID_PLAYSTATION is not set
+# CONFIG_PLAYSTATION_FF is not set
+# CONFIG_HID_PXRC is not set
+# CONFIG_HID_RAZER is not set
+# CONFIG_HID_PRIMAX is not set
+# CONFIG_HID_SAITEK is not set
+# CONFIG_HID_SEMITEK is not set
+# CONFIG_HID_SPEEDLINK is not set
+# CONFIG_HID_STEAM is not set
+# CONFIG_STEAM_FF is not set
+# CONFIG_HID_SUNPLUS is not set
+# CONFIG_HID_RMI is not set
+# CONFIG_HID_GREENASIA is not set
+# CONFIG_GREENASIA_FF is not set
+# CONFIG_HID_HYPERV_MOUSE is not set
+# CONFIG_HID_SMARTJOYPLUS is not set
+# CONFIG_SMARTJOYPLUS_FF is not set
+# CONFIG_HID_TIVO is not set
+# CONFIG_HID_TOPSEED is not set
+# CONFIG_HID_TOPRE is not set
+# CONFIG_HID_THINGM is not set
+# CONFIG_HID_UDRAW_PS3 is not set
+# CONFIG_HID_WIIMOTE is not set
+# CONFIG_HID_XINMO is not set
+# CONFIG_HID_ZEROPLUS is not set
+# CONFIG_ZEROPLUS_FF is not set
+# CONFIG_HID_ZYDACRON is not set
+# CONFIG_HID_SENSOR_HUB is not set
+# CONFIG_HID_SENSOR_CUSTOM_SENSOR is not set
+# CONFIG_HID_ALPS is not set
 
 ##
 ## file: drivers/hid/usbhid/Kconfig
@@ -14,14 +112,14 @@ CONFIG_USB_HID=m
 CONFIG_E1000=m
 
 ##
+## file: drivers/net/wwan/Kconfig
+##
+# CONFIG_WWAN is not set
+
+##
 ## file: drivers/usb/Kconfig
 ##
 CONFIG_USB_SUPPORT=y
-
-##
-## file: drivers/usb/host/Kconfig
-##
-CONFIG_USB_XHCI_PCI=m
 
 ##
 ## file: fs/btrfs/Kconfig
@@ -64,6 +162,11 @@ CONFIG_USB_XHCI_PCI=m
 # CONFIG_CIFS is not set
 
 ##
+## file: fs/smb/server/Kconfig
+##
+# CONFIG_SMB_SERVER is not set
+
+##
 ## file: fs/xfs/Kconfig
 ##
 # CONFIG_XFS_FS is not set
@@ -97,3 +200,8 @@ CONFIG_SUSPEND=y
 ## file: security/selinux/Kconfig
 ##
 CONFIG_SECURITY_SELINUX_BOOTPARAM=y
+
+##
+## file: unknown
+##
+CONFIG_USB_XHCI_PCI=m

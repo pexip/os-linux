@@ -28,8 +28,7 @@ CONFIG_LEGACY_VSYSCALL_NONE=y
 CONFIG_SLS=y
 CONFIG_PCI_MMCONFIG=y
 CONFIG_ISA_DMA_API=y
-CONFIG_X86_X32_ABI=y
-CONFIG_X86_X32_DISABLED=y
+# CONFIG_X86_X32_ABI is not set
 
 ##
 ## file: arch/x86/Kconfig.cpu
@@ -92,7 +91,7 @@ CONFIG_ACPI_BGRT=y
 ##
 ## file: drivers/android/Kconfig
 ##
-CONFIG_ANDROID_BINDER_IPC=m
+CONFIG_ANDROID_BINDER_IPC=y
 
 ##
 ## file: drivers/char/agp/Kconfig
