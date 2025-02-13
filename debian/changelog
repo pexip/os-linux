@@ -1,3 +1,12 @@
+linux (6.6.77-1+pexip24u1) pexip; urgency=medium
+
+  * Update packaging for new kernel version
+  * bugfix/all/firmware-remove-redundant-log-messages-from-drivers.patch
+    features/all/security-perf-allow-further-restriction-of-perf_event_open.patch
+    Remove Fuzz
+
+ -- Vincent Sanders <vince@pexip.com>  Tue, 11 Feb 2025 10:14:06 +0100
+
 linux (6.6.48-1+pexip24u1) pexip; urgency=medium
 
   * Update packaging for new kernel version

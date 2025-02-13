@@ -112,7 +112,7 @@ upstream submission.
  
 --- a/drivers/bluetooth/btmrvl_sdio.c
 +++ b/drivers/bluetooth/btmrvl_sdio.c
-@@ -470,8 +470,6 @@ static int btmrvl_sdio_download_helper(s
+@@ -469,8 +469,6 @@ static int btmrvl_sdio_download_helper(s
  	ret = request_firmware(&fw_helper, card->helper,
  						&card->func->dev);
  	if ((ret < 0) || !fw_helper) {
@@ -121,7 +121,7 @@ upstream submission.
  		ret = -ENOENT;
  		goto done;
  	}
-@@ -570,8 +568,6 @@ static int btmrvl_sdio_download_fw_w_hel
+@@ -569,8 +567,6 @@ static int btmrvl_sdio_download_fw_w_hel
  	ret = request_firmware(&fw_firmware, card->firmware,
  							&card->func->dev);
  	if ((ret < 0) || !fw_firmware) {
@@ -162,7 +162,7 @@ upstream submission.
  		goto err_firmware;
 --- a/drivers/gpu/drm/nouveau/nvkm/engine/gr/gf100.c
 +++ b/drivers/gpu/drm/nouveau/nvkm/engine/gr/gf100.c
-@@ -2579,10 +2579,8 @@ gf100_gr_load_fw(struct gf100_gr *gr, co
+@@ -2580,10 +2580,8 @@ gf100_gr_load_fw(struct gf100_gr *gr, co
  	if (ret) {
  		snprintf(f, sizeof(f), "nouveau/%s", name);
  		ret = request_firmware(&fw, f, device->dev);
@@ -188,7 +188,7 @@ upstream submission.
  		release_firmware(rdev->me_fw);
 --- a/drivers/gpu/drm/radeon/r100.c
 +++ b/drivers/gpu/drm/radeon/r100.c
-@@ -1057,9 +1057,7 @@ static int r100_cp_init_microcode(struct
+@@ -1077,9 +1077,7 @@ static int r100_cp_init_microcode(struct
  	}
  
  	err = request_firmware(&rdev->me_fw, fw_name, rdev->dev);
@@ -688,7 +688,7 @@ upstream submission.
  	packet_num = ptr[0];
 --- a/drivers/media/radio/wl128x/fmdrv_common.c
 +++ b/drivers/media/radio/wl128x/fmdrv_common.c
-@@ -1240,10 +1240,8 @@ static int fm_download_firmware(struct f
+@@ -1241,10 +1241,8 @@ static int fm_download_firmware(struct f
  
  	ret = request_firmware(&fw_entry, fw_name,
  				&fmdev->radio_dev->dev);
@@ -1242,7 +1242,7 @@ upstream submission.
  		dev_err(&kaweth->intf->dev, "Firmware too big: %zu\n",
 --- a/drivers/net/wireless/ath/ath9k/hif_usb.c
 +++ b/drivers/net/wireless/ath/ath9k/hif_usb.c
-@@ -1250,9 +1250,6 @@ static void ath9k_hif_usb_firmware_cb(co
+@@ -1248,9 +1248,6 @@ static void ath9k_hif_usb_firmware_cb(co
  		if (!ret)
  			return;
  
@@ -1583,7 +1583,7 @@ upstream submission.
  	}
 --- a/drivers/net/wireless/realtek/rtlwifi/rtl8192se/sw.c
 +++ b/drivers/net/wireless/realtek/rtlwifi/rtl8192se/sw.c
-@@ -63,13 +63,11 @@ static void rtl92se_fw_cb(const struct f
+@@ -63,12 +63,10 @@ static void rtl92se_fw_cb(const struct f
  	struct ieee80211_hw *hw = context;
  	struct rtl_priv *rtlpriv = rtl_priv(hw);
  	struct rt_firmware *pfirmware = NULL;
@@ -1591,11 +1591,10 @@ upstream submission.
  
  	rtl_dbg(rtlpriv, COMP_ERR, DBG_LOUD,
  		"Firmware callback routine entered!\n");
- 	complete(&rtlpriv->firmware_loading_complete);
  	if (!firmware) {
 -		pr_err("Firmware %s not available\n", fw_name);
  		rtlpriv->max_fw_size = 0;
- 		return;
+ 		goto exit;
  	}
 --- a/drivers/net/wireless/ti/wl1251/main.c
 +++ b/drivers/net/wireless/ti/wl1251/main.c
@@ -1734,7 +1733,7 @@ upstream submission.
  	if (err) {
 --- a/drivers/scsi/bfa/bfad.c
 +++ b/drivers/scsi/bfa/bfad.c
-@@ -1737,7 +1737,6 @@ bfad_read_firmware(struct pci_dev *pdev,
+@@ -1736,7 +1736,6 @@ bfad_read_firmware(struct pci_dev *pdev,
  	const struct firmware *fw;
  
  	if (request_firmware(&fw, fw_name, &pdev->dev)) {
@@ -1819,7 +1818,7 @@ upstream submission.
  	if (qla82xx_validate_firmware_blob(vha,
 --- a/drivers/scsi/qla2xxx/qla_os.c
 +++ b/drivers/scsi/qla2xxx/qla_os.c
-@@ -7696,8 +7696,6 @@ qla2x00_request_firmware(scsi_qla_host_t
+@@ -7697,8 +7697,6 @@ qla2x00_request_firmware(scsi_qla_host_t
  		goto out;
  
  	if (request_firmware(&blob->fw, blob->name, &ha->pdev->dev)) {
@@ -2280,7 +2279,7 @@ upstream submission.
  	snd_emu1010_fpga_read(emu, EMU_HANA_ID, &reg);
 --- a/sound/pci/hda/hda_intel.c
 +++ b/sound/pci/hda/hda_intel.c
-@@ -2050,8 +2050,6 @@ static void azx_firmware_cb(const struct
+@@ -2042,8 +2042,6 @@ static void azx_firmware_cb(const struct
  
  	if (fw)
  		chip->fw = fw;
@@ -2347,7 +2346,7 @@ upstream submission.
  	if (err) {
 --- a/sound/pci/rme9652/hdsp.c
 +++ b/sound/pci/rme9652/hdsp.c
-@@ -5171,11 +5171,8 @@ static int hdsp_request_fw_loader(struct
+@@ -5173,11 +5173,8 @@ static int hdsp_request_fw_loader(struct
  		return -EINVAL;
  	}
  
