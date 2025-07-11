@@ -1,3 +1,9 @@
+linux (6.6.77-1+pexip24u3) pexip; urgency=medium
+
+  * tools/hv: disable fcopy daemon
+
+ -- Huw Jones <huw@pexip.com>  Fri, 11 Jul 2025 12:01:32 +0100
+
 linux (6.6.77-1+pexip24u2) pexip; urgency=medium
 
   * AMD64: build generic SATA AHCI driver as a module
