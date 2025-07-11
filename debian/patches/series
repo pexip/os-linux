@@ -124,3 +124,6 @@ openssl3-deprecations.patch
 
 pexip_types.patch
 pexip_suppress_mfd_warning.patch
+
+# Pexip Hyper-V Daemons patches
+pexip_hv-vss-freeze-flag.patch

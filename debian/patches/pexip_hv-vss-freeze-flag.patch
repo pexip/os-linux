@@ -1,0 +1,21 @@
+diff --git a/tools/hv/hv_vss_daemon.c b/tools/hv/hv_vss_daemon.c
+index dd111870be..1f5c988a42 100644
+--- a/tools/hv/hv_vss_daemon.c
++++ b/tools/hv/hv_vss_daemon.c
+@@ -136,6 +136,16 @@ static int vss_operate(int operation)
+ 	if (mounts == NULL)
+ 		return -1;
+ 
++	if (operation == VSS_OP_FREEZE) {
++		const char* flag_path = "/run/pexip/vm_frozen";
++		int flag_fd;
++		flag_fd = open(flag_path, O_WRONLY | O_CREAT, 0644);
++		if (flag_fd != -1) {
++			(void)futimens(flag_fd, NULL);
++			(void)close(flag_fd);
++		}
++	}
++
+ 	while ((ent = getmntent(mounts))) {
+ 		if (strncmp(ent->mnt_fsname, match, strlen(match)))
+ 			continue;

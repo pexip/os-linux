@@ -1,6 +1,7 @@
 linux (6.6.77-1+pexip24u3) pexip; urgency=medium
 
   * tools/hv: disable fcopy daemon
+  * tools/hv/vss: touch flag before filesystem freeze
 
  -- Huw Jones <huw@pexip.com>  Fri, 11 Jul 2025 12:01:32 +0100
 
