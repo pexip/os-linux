@@ -128,3 +128,4 @@ pexip_suppress_mfd_warning.patch
 # Pexip Hyper-V Daemons patches
 pexip_hv-vss-freeze-flag.patch
 pexip_hv-kvp-read-only.patch
+pexip_hv-kvp-net-scripts.patch
