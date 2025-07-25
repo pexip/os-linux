@@ -9,6 +9,11 @@
 # CONFIG_ANDROID_BINDER_IPC is not set
 
 ##
+## file: drivers/ata/Kconfig
+##
+CONFIG_SATA_AHCI=m
+
+##
 ## file: drivers/comedi/Kconfig
 ##
 # CONFIG_COMEDI is not set

@@ -1,0 +1,52 @@
+diff --git a/tools/hv/hv_get_dhcp_info.sh b/tools/hv/hv_get_dhcp_info.sh
+index 2f2a3c7df3..0a234f8a47 100755
+--- a/tools/hv/hv_get_dhcp_info.sh
++++ b/tools/hv/hv_get_dhcp_info.sh
+@@ -1,27 +1,15 @@
+ #!/bin/bash
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-# This example script retrieves the DHCP state of a given interface.
+-# In the interest of keeping the KVP daemon code free of distro specific
+-# information; the kvp daemon code invokes this external script to gather
+-# DHCP setting for the specific interface.
+-#
+ # Input: Name of the interface
+ #
+ # Output: The script prints the string "Enabled" to stdout to indicate
+ #	that DHCP is enabled on the interface. If DHCP is not enabled,
+ #	the script prints the string "Disabled" to stdout.
+-#
+-# Each Distro is expected to implement this script in a distro specific
+-# fashion. For instance, on Distros that ship with Network Manager enabled,
+-# this script can be based on the Network Manager APIs for retrieving DHCP
+-# information.
+ 
+-if_file="/etc/sysconfig/network-scripts/ifcfg-"$1
++dhcp_flag=/run/pexip-net-info
+ 
+-dhcp=$(grep "dhcp" $if_file 2>/dev/null)
+-
+-if [ "$dhcp" != "" ];
++if [ -f "${dhcp_flag}" ];
+ then
+ echo "Enabled"
+ else
+diff --git a/tools/hv/hv_get_dns_info.sh b/tools/hv/hv_get_dns_info.sh
+index 058c17b46f..673425651f 100755
+--- a/tools/hv/hv_get_dns_info.sh
++++ b/tools/hv/hv_get_dns_info.sh
+@@ -1,13 +1,3 @@
+ #!/bin/bash
+ 
+-# This example script parses /etc/resolv.conf to retrive DNS information.
+-# In the interest of keeping the KVP daemon code free of distro specific
+-# information; the kvp daemon code invokes this external script to gather
+-# DNS information.
+-# This script is expected to print the nameserver values to stdout.
+-# Each Distro is expected to implement this script in a distro specific
+-# fashion. For instance on Distros that ship with Network Manager enabled,
+-# this script can be based on the Network Manager APIs for retrieving DNS
+-# entries.
+-
+ cat /etc/resolv.conf 2>/dev/null | awk '/^nameserver/ { print $2 }'

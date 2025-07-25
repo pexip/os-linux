@@ -656,7 +656,7 @@ build_hyperv-daemons: $(STAMPS_DIR)/build-tools-headers
 binary_hyperv-daemons: build_hyperv-daemons
 	$(dh_binary_pre)
 	$(call make-tools,tools/hv) install
-	for service in fcopy kvp vss; do \
+	for service in kvp vss; do \
 		dh_installsystemd --name hv-$$service-daemon --no-enable --no-start \
 			|| break; \
 		dh_installinit --name hv-$$service-daemon \

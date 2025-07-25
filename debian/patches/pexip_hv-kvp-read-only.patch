@@ -1,0 +1,35 @@
+diff --git a/tools/hv/hv_kvp_daemon.c b/tools/hv/hv_kvp_daemon.c
+index 318e2dad27..02a737beef 100644
+--- a/tools/hv/hv_kvp_daemon.c
++++ b/tools/hv/hv_kvp_daemon.c
+@@ -1676,6 +1676,7 @@ int main(int argc, char *argv[])
+ 
+ 			break;
+ 
++#ifdef KVP_ENABLE_WRITE
+ 		case KVP_OP_SET_IP_INFO:
+ 			kvp_ip_val = &hv_msg->body.kvp_ip_val;
+ 			if_name = kvp_get_if_name(
+@@ -1703,6 +1704,7 @@ int main(int argc, char *argv[])
+ 					hv_msg->body.kvp_set.data.value_size))
+ 					hv_msg->error = HV_S_CONT;
+ 			break;
++#endif
+ 
+ 		case KVP_OP_GET:
+ 			if (kvp_get_value(pool,
+@@ -1713,12 +1715,14 @@ int main(int argc, char *argv[])
+ 					hv_msg->error = HV_S_CONT;
+ 			break;
+ 
++#ifdef KVP_ENABLE_WRITE
+ 		case KVP_OP_DELETE:
+ 			if (kvp_key_delete(pool,
+ 					hv_msg->body.kvp_delete.key,
+ 					hv_msg->body.kvp_delete.key_size))
+ 					hv_msg->error = HV_S_CONT;
+ 			break;
++#endif
+ 
+ 		default:
+ 			break;
