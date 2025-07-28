@@ -1,3 +1,9 @@
+linux (6.6.77-1+pexip24u4) pexip; urgency=medium
+
+  * Add source map to linux-config-*
+
+ -- John-Mark Bell <jmb@pexip.com>  Wed, 27 Nov 2024 19:58:03 +0000
+
 linux (6.6.77-1+pexip24u3) pexip; urgency=medium
 
   * tools/hv: disable fcopy daemon
