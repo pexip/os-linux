@@ -1,47 +1,6 @@
 --- a/scripts/sign-file.c
 +++ b/scripts/sign-file.c
-@@ -93,12 +93,13 @@
- 		return;
- 	fprintf(stderr, "At main.c:%d:\n", l);
- 
--	while ((e = ERR_get_error_line(&file, &line))) {
-+	while ((e = ERR_get_error_all(&file, &line, NULL, NULL, NULL))) {
- 		ERR_error_string(e, buf);
- 		fprintf(stderr, "- SSL %s: %s:%d\n", buf, file, line);
- 	}
- }
- 
-+#if OPENSSL_VERSION_NUMBER < 0x30000000L
- static void drain_openssl_errors(void)
- {
- 	const char *file;
-@@ -108,6 +109,7 @@
- 		return;
- 	while (ERR_get_error_line(&file, &line)) {}
- }
-+#endif
- 
- #define ERR(cond, fmt, ...)				\
- 	do {						\
-@@ -144,6 +146,7 @@
- 	EVP_PKEY *private_key;
- 
- 	if (!strncmp(private_key_name, "pkcs11:", 7)) {
-+#if OPENSSL_VERSION_NUMBER < 0x30000000L
- 		ENGINE *e;
- 
- 		ENGINE_load_builtin_engines();
-@@ -160,6 +163,9 @@
- 		private_key = ENGINE_load_private_key(e, private_key_name,
- 						      NULL, NULL);
- 		ERR(!private_key, "%s", private_key_name);
-+#else
-+		ERR(1, "OpenSSL ENGINEs not supported");
-+#endif
- 	} else {
- 		BIO *b;
- 
-@@ -236,8 +242,10 @@
+@@ -240,8 +240,10 @@ int main(int argc, char **argv)
  	X509 *x509;
  	BIO *bd, *bm;
  	int opt, n;
@@ -52,19 +11,19 @@
  	ERR_clear_error();
  
  	key_pass = getenv("KBUILD_SIGN_PIN");
-@@ -305,7 +313,9 @@
+@@ -309,7 +311,9 @@ int main(int argc, char **argv)
  		x509 = read_x509(x509_name);
  
  		/* Digest the module data. */
 +#if OPENSSL_VERSION_NUMBER < 0x10100000L
  		OpenSSL_add_all_digests();
 +#endif
- 		display_openssl_errors(__LINE__);
+ 		drain_openssl_errors(__LINE__, 0);
  		digest_algo = EVP_get_digestbyname(hash_algo);
  		ERR(!digest_algo, "EVP_get_digestbyname");
 --- a/tools/build/feature/test-libcrypto.c
 +++ b/tools/build/feature/test-libcrypto.c
-@@ -19,7 +19,14 @@
+@@ -19,7 +19,14 @@ int main(void)
  	EVP_DigestFinal_ex(mdctx, &md[0], &digest_len);
  	EVP_MD_CTX_free(mdctx);
  
@@ -96,7 +55,7 @@
  #endif
  #endif
  
-@@ -128,10 +127,20 @@
+@@ -128,10 +127,20 @@ gen_build_id(struct buildid_note *note,
  	     const void *code,
  	     size_t csize)
  {
@@ -120,7 +79,7 @@
  
 --- a/tools/testing/selftests/sgx/sigstruct.c
 +++ b/tools/testing/selftests/sgx/sigstruct.c
-@@ -150,19 +150,25 @@
+@@ -150,19 +150,25 @@ static bool check_crypto_errors(void)
  	return had_errors;
  }
  
@@ -151,7 +110,7 @@
  
  	sign_key_length = (unsigned long)&sign_key_end -
  			  (unsigned long)&sign_key;
-@@ -171,7 +177,7 @@
+@@ -171,7 +177,7 @@ static RSA *gen_sign_key(void)
  	if (!bio)
  		return NULL;
  
@@ -160,7 +119,7 @@
  	BIO_free(bio);
  
  	return key;
-@@ -318,9 +324,11 @@
+@@ -318,9 +324,11 @@ bool encl_measure(struct encl *encl)
  	struct sgx_sigstruct *sigstruct = &encl->sigstruct;
  	struct sgx_sigstruct_payload payload;
  	uint8_t digest[SHA256_DIGEST_LENGTH];
@@ -174,7 +133,7 @@
  	int i;
  
  	memset(sigstruct, 0, sizeof(*sigstruct));
-@@ -343,7 +351,12 @@
+@@ -343,7 +351,12 @@ bool encl_measure(struct encl *encl)
  		goto err;
  	}
  
@@ -188,7 +147,7 @@
  
  	ctx = EVP_MD_CTX_create();
  	if (!ctx)
-@@ -362,13 +375,26 @@
+@@ -362,13 +375,26 @@ bool encl_measure(struct encl *encl)
  	if (!mrenclave_commit(ctx, sigstruct->body.mrenclave))
  		goto err;
  
@@ -218,7 +177,7 @@
  		goto err;
  
  	if (!calc_q1q2(sigstruct->signature, sigstruct->modulus, sigstruct->q1,
-@@ -379,13 +405,19 @@
+@@ -379,13 +405,19 @@ bool encl_measure(struct encl *encl)
  	reverse_bytes(sigstruct->signature, SGX_MODULUS_SIZE);
  	reverse_bytes(sigstruct->modulus, SGX_MODULUS_SIZE);
  
@@ -242,30 +201,7 @@
  }
 --- a/certs/extract-cert.c
 +++ b/certs/extract-cert.c
-@@ -50,12 +50,13 @@
- 		return;
- 	fprintf(stderr, "At main.c:%d:\n", l);
- 
--	while ((e = ERR_get_error_line(&file, &line))) {
-+	while ((e = ERR_get_error_all(&file, &line, NULL, NULL, NULL))) {
- 		ERR_error_string(e, buf);
- 		fprintf(stderr, "- SSL %s: %s:%d\n", buf, file, line);
- 	}
- }
- 
-+#if OPENSSL_VERSION_NUMBER < 0x30000000L
- static void drain_openssl_errors(void)
- {
- 	const char *file;
-@@ -65,6 +66,7 @@
- 		return;
- 	while (ERR_get_error_line(&file, &line)) {}
- }
-+#endif
- 
- #define ERR(cond, fmt, ...)				\
- 	do {						\
-@@ -99,8 +101,10 @@
+@@ -127,8 +127,10 @@ int main(int argc, char **argv)
  	char *cert_src;
  	char *verbose_env;
  
@@ -276,21 +212,3 @@
  	ERR_clear_error();
  
  	verbose_env = getenv("KBUILD_VERBOSE");
-@@ -122,6 +126,7 @@
- 		fclose(f);
- 		exit(0);
- 	} else if (!strncmp(cert_src, "pkcs11:", 7)) {
-+#if OPENSSL_VERSION_NUMBER < 0x30000000L
- 		ENGINE *e;
- 		struct {
- 			const char *cert_id;
-@@ -144,6 +149,9 @@
- 		ENGINE_ctrl_cmd(e, "LOAD_CERT_CTRL", 0, &parms, NULL, 1);
- 		ERR(!parms.cert, "Get X.509 from PKCS#11");
- 		write_cert(parms.cert);
-+#else
-+		ERR(1, "OpenSSL ENGINEs not supported");
-+#endif
- 	} else {
- 		BIO *b;
- 		X509 *x509;

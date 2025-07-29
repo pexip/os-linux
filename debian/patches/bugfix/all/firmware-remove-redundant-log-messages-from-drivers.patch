@@ -11,7 +11,7 @@ upstream submission.
 
 --- a/arch/x86/kernel/cpu/microcode/amd.c
 +++ b/arch/x86/kernel/cpu/microcode/amd.c
-@@ -912,10 +912,8 @@ static enum ucode_state request_microcod
+@@ -1145,10 +1145,8 @@ static enum ucode_state request_microcod
  	if (c->x86 >= 0x15)
  		snprintf(fw_name, sizeof(fw_name), "amd-ucode/microcode_amd_fam%.2xh.bin", c->x86);
  
@@ -22,7 +22,7 @@ upstream submission.
 -	}
  
  	ret = UCODE_ERROR;
- 	if (!verify_container(fw->data, fw->size, false))
+ 	if (!verify_container(fw->data, fw->size))
 --- a/drivers/atm/fore200e.c
 +++ b/drivers/atm/fore200e.c
 @@ -2398,10 +2398,9 @@ static int fore200e_load_and_start_fw(st
@@ -1090,7 +1090,7 @@ upstream submission.
  	if (bp->mips_firmware->size < sizeof(*mips_fw) ||
 --- a/drivers/net/ethernet/broadcom/tg3.c
 +++ b/drivers/net/ethernet/broadcom/tg3.c
-@@ -11412,11 +11412,8 @@ static int tg3_request_firmware(struct t
+@@ -11413,11 +11413,8 @@ static int tg3_request_firmware(struct t
  {
  	const struct tg3_firmware_hdr *fw_hdr;
  
@@ -1254,7 +1254,7 @@ upstream submission.
  
 --- a/drivers/net/wireless/ath/carl9170/usb.c
 +++ b/drivers/net/wireless/ath/carl9170/usb.c
-@@ -1029,7 +1029,6 @@ static void carl9170_usb_firmware_step2(
+@@ -1036,7 +1036,6 @@ static void carl9170_usb_firmware_step2(
  		return;
  	}
  
@@ -1780,7 +1780,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/qla2xxx/qla_init.c
 +++ b/drivers/scsi/qla2xxx/qla_init.c
-@@ -8610,10 +8610,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
+@@ -8620,10 +8620,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
  	/* Load firmware blob. */
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1791,7 +1791,7 @@ upstream submission.
  		return QLA_FUNCTION_FAILED;
  	}
  
-@@ -8716,9 +8712,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
+@@ -8726,9 +8722,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
  
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -2279,7 +2279,7 @@ upstream submission.
  	snd_emu1010_fpga_read(emu, EMU_HANA_ID, &reg);
 --- a/sound/pci/hda/hda_intel.c
 +++ b/sound/pci/hda/hda_intel.c
-@@ -2042,8 +2042,6 @@ static void azx_firmware_cb(const struct
+@@ -2056,8 +2056,6 @@ static void azx_firmware_cb(const struct
  
  	if (fw)
  		chip->fw = fw;

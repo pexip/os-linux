@@ -1,1 +1,1 @@
-dir_to_symlink /usr/share/doc/linux-headers-mckinley linux-headers-6.6.77+pexip-mckinley 5.7~rc5-1~exp1 linux-headers-mckinley
+dir_to_symlink /usr/share/doc/linux-headers-mckinley linux-headers-6.6.100+pexip-mckinley 5.7~rc5-1~exp1 linux-headers-mckinley
