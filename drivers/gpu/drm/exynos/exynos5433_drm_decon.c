@@ -862,13 +862,11 @@ err_disable_pm_runtime:
 	return ret;
 }
 
-static int exynos5433_decon_remove(struct platform_device *pdev)
+static void exynos5433_decon_remove(struct platform_device *pdev)
 {
 	pm_runtime_disable(&pdev->dev);
 
 	component_del(&pdev->dev, &decon_component_ops);
-
-	return 0;
 }
 
 struct platform_driver exynos5433_decon_driver = {

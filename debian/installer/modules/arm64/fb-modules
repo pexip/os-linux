@@ -8,6 +8,9 @@ hibmc-drm
 # For panel/backlight on some chromeos devices
 panel-simple
 panel-edp
+panel-samsung-atna33xc20
+panel-himax-hx83102
+panel-ilitek-ili9882t
 pwm_bl
 pwm-cros-ec
 
@@ -19,6 +22,9 @@ sun8i-mixer
 
 # For panel/backlight on Pinebook Pro
 pwm-rockchip
+
+# For HDMI on some sunxi platforms (e.g. Orange Pi 1+)
+sun8i-drm-hdmi
 
 # For HDMI on some rockchip platforms (e.g. rock64-rk3328)
 nvmem-rockchip-efuse
@@ -33,8 +39,23 @@ mxsfb
 mux-mmio
 imx8mq-interconnect
 
-# For panel/backlight on Thinkpad X13s
+# Qualcomm devices
 msm
 gpu-sched
-dispcc-sc8280xp
-gpucc-sc8280xp
+
+# Mediatek devices
+mediatek-drm
+mtk_dp
+mtk_hdmi
+mtk_hdmi_ddc
+mtk_iommu
+mtk-smi
+phy-mtk-dp
+phy-mtk-hdmi-drv
+phy-mtk-mipi-dsi-drv
+pwm-mtk-disp
+
+# DRM bridges
+anx7625
+parade-ps8640
+ite-it6505

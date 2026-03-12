@@ -71,11 +71,12 @@ static const char *config_name(struct vcpu_reg_list *c)
 	for_each_sublist(c, s) {
 		if (!strcmp(s->name, "base"))
 			continue;
-		strcat(c->name + len, s->name);
-		len += strlen(s->name) + 1;
-		c->name[len - 1] = '+';
+		if (len)
+			c->name[len++] = '+';
+		strcpy(c->name + len, s->name);
+		len += strlen(s->name);
 	}
-	c->name[len - 1] = '\0';
+	c->name[len] = '\0';
 
 	return c->name;
 }
@@ -115,9 +116,12 @@ void __weak finalize_vcpu(struct kvm_vcpu *vcpu, struct vcpu_reg_list *c)
 }
 
 #ifdef __aarch64__
-static void prepare_vcpu_init(struct vcpu_reg_list *c, struct kvm_vcpu_init *init)
+static void prepare_vcpu_init(struct kvm_vm *vm, struct vcpu_reg_list *c,
+			      struct kvm_vcpu_init *init)
 {
 	struct vcpu_reg_sublist *s;
+
+	vm_ioctl(vm, KVM_ARM_PREFERRED_TARGET, init);
 
 	for_each_sublist(c, s)
 		if (s->capability)
@@ -126,10 +130,10 @@ static void prepare_vcpu_init(struct vcpu_reg_list *c, struct kvm_vcpu_init *ini
 
 static struct kvm_vcpu *vcpu_config_get_vcpu(struct vcpu_reg_list *c, struct kvm_vm *vm)
 {
-	struct kvm_vcpu_init init = { .target = -1, };
+	struct kvm_vcpu_init init;
 	struct kvm_vcpu *vcpu;
 
-	prepare_vcpu_init(c, &init);
+	prepare_vcpu_init(vm, c, &init);
 	vcpu = __vm_vcpu_add(vm, 0);
 	aarch64_vcpu_setup(vcpu, &init);
 
@@ -151,7 +155,7 @@ static void check_supported(struct vcpu_reg_list *c)
 			continue;
 
 		__TEST_REQUIRE(kvm_has_cap(s->capability),
-			       "%s: %s not available, skipping tests\n",
+			       "%s: %s not available, skipping tests",
 			       config_name(c), s->name);
 	}
 }

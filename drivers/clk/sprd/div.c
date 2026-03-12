@@ -9,13 +9,12 @@
 
 #include "div.h"
 
-static long sprd_div_round_rate(struct clk_hw *hw, unsigned long rate,
-				unsigned long *parent_rate)
+static int sprd_div_determine_rate(struct clk_hw *hw,
+				   struct clk_rate_request *req)
 {
 	struct sprd_div *cd = hw_to_sprd_div(hw);
 
-	return divider_round_rate(&cd->common.hw, rate, parent_rate, NULL,
-				  cd->div.width, 0);
+	return divider_determine_rate(&cd->common.hw, req, NULL, cd->div.width, 0);
 }
 
 unsigned long sprd_div_helper_recalc_rate(struct sprd_clk_common *common,
@@ -25,7 +24,7 @@ unsigned long sprd_div_helper_recalc_rate(struct sprd_clk_common *common,
 	unsigned long val;
 	unsigned int reg;
 
-	regmap_read(common->regmap, common->reg, &reg);
+	regmap_read(common->regmap, common->reg + div->offset, &reg);
 	val = reg >> div->shift;
 	val &= (1 << div->width) - 1;
 
@@ -53,10 +52,10 @@ int sprd_div_helper_set_rate(const struct sprd_clk_common *common,
 	val = divider_get_val(rate, parent_rate, NULL,
 			      div->width, 0);
 
-	regmap_read(common->regmap, common->reg, &reg);
+	regmap_read(common->regmap, common->reg + div->offset, &reg);
 	reg &= ~GENMASK(div->width + div->shift - 1, div->shift);
 
-	regmap_write(common->regmap, common->reg,
+	regmap_write(common->regmap, common->reg + div->offset,
 			  reg | (val << div->shift));
 
 	return 0;
@@ -75,7 +74,7 @@ static int sprd_div_set_rate(struct clk_hw *hw, unsigned long rate,
 
 const struct clk_ops sprd_div_ops = {
 	.recalc_rate = sprd_div_recalc_rate,
-	.round_rate = sprd_div_round_rate,
+	.determine_rate = sprd_div_determine_rate,
 	.set_rate = sprd_div_set_rate,
 };
 EXPORT_SYMBOL_GPL(sprd_div_ops);

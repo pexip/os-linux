@@ -1,8 +1,0 @@
-[base]
-flavours:
- armmp
- armmp-lpae
-default-flavour: armmp
-
-[armmp_packages]
-installer: true

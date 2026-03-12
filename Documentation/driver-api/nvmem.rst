@@ -41,7 +41,7 @@ A NVMEM provider can register with NVMEM core by supplying relevant
 nvmem configuration to nvmem_register(), on success core would return a valid
 nvmem_device pointer.
 
-nvmem_unregister(nvmem) is used to unregister a previously registered provider.
+nvmem_unregister() is used to unregister a previously registered provider.
 
 For example, a simple nvram case::
 
@@ -59,10 +59,10 @@ For example, a simple nvram case::
 	devm_nvmem_register(&config);
   }
 
-Users of board files can define and register nvmem cells using the
-nvmem_cell_table struct::
+Device drivers can define and register an nvmem cell using the nvmem_cell_info
+struct::
 
-  static struct nvmem_cell_info foo_nvmem_cells[] = {
+  static const struct nvmem_cell_info foo_nvmem_cell = {
 	{
 		.name		= "macaddr",
 		.offset		= 0x7f00,
@@ -70,13 +70,7 @@ nvmem_cell_table struct::
 	}
   };
 
-  static struct nvmem_cell_table foo_nvmem_cell_table = {
-	.nvmem_name		= "i2c-eeprom",
-	.cells			= foo_nvmem_cells,
-	.ncells			= ARRAY_SIZE(foo_nvmem_cells),
-  };
-
-  nvmem_add_cell_table(&foo_nvmem_cell_table);
+  int nvmem_add_one_cell(nvmem, &foo_nvmem_cell);
 
 Additionally it is possible to create nvmem cell lookup entries and register
 them with the nvmem framework from machine code as shown in the example below::
@@ -200,3 +194,9 @@ and let you add cells dynamically.
 Another use case for layouts is the post processing of cells. With layouts,
 it is possible to associate a custom post processing hook to a cell. It
 even possible to add this hook to cells not created by the layout itself.
+
+9. Internal kernel API
+======================
+
+.. kernel-doc:: drivers/nvmem/core.c
+   :export:

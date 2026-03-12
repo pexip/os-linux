@@ -74,6 +74,8 @@ static void gfxhub_v1_2_setup_vm_pt_regs(struct amdgpu_device *adev,
 static void gfxhub_v1_2_xcc_init_gart_aperture_regs(struct amdgpu_device *adev,
 						    uint32_t xcc_mask)
 {
+	uint64_t gart_start = amdgpu_virt_xgmi_migrate_enabled(adev) ?
+			adev->gmc.vram_start : adev->gmc.fb_start;
 	uint64_t pt_base;
 	int i;
 
@@ -91,10 +93,10 @@ static void gfxhub_v1_2_xcc_init_gart_aperture_regs(struct amdgpu_device *adev,
 		if (adev->gmc.pdb0_bo) {
 			WREG32_SOC15(GC, GET_INST(GC, i),
 				     regVM_CONTEXT0_PAGE_TABLE_START_ADDR_LO32,
-				     (u32)(adev->gmc.fb_start >> 12));
+				     (u32)(gart_start >> 12));
 			WREG32_SOC15(GC, GET_INST(GC, i),
 				     regVM_CONTEXT0_PAGE_TABLE_START_ADDR_HI32,
-				     (u32)(adev->gmc.fb_start >> 44));
+				     (u32)(gart_start >> 44));
 
 			WREG32_SOC15(GC, GET_INST(GC, i),
 				     regVM_CONTEXT0_PAGE_TABLE_END_ADDR_LO32,
@@ -139,7 +141,9 @@ gfxhub_v1_2_xcc_init_system_aperture_regs(struct amdgpu_device *adev,
 			WREG32_SOC15_RLC(GC, GET_INST(GC, i), regMC_VM_SYSTEM_APERTURE_LOW_ADDR,
 				min(adev->gmc.fb_start, adev->gmc.agp_start) >> 18);
 
-			if (adev->apu_flags & AMD_APU_IS_RAVEN2)
+			if (adev->apu_flags & (AMD_APU_IS_RAVEN2 |
+					       AMD_APU_IS_RENOIR |
+					       AMD_APU_IS_GREEN_SARDINE))
 			       /*
 				* Raven2 has a HW issue that it is unable to use the
 				* vram which is out of MC_VM_SYSTEM_APERTURE_HIGH_ADDR.
@@ -178,7 +182,7 @@ gfxhub_v1_2_xcc_init_system_aperture_regs(struct amdgpu_device *adev,
 		/* In the case squeezing vram into GART aperture, we don't use
 		 * FB aperture and AGP aperture. Disable them.
 		 */
-		if (adev->gmc.pdb0_bo) {
+		if (adev->gmc.pdb0_bo && adev->gmc.xgmi.connected_to_cpu) {
 			WREG32_SOC15(GC, GET_INST(GC, i), regMC_VM_FB_LOCATION_TOP, 0);
 			WREG32_SOC15(GC, GET_INST(GC, i), regMC_VM_FB_LOCATION_BASE, 0x00FFFFFF);
 			WREG32_SOC15(GC, GET_INST(GC, i), regMC_VM_AGP_TOP, 0);
@@ -311,6 +315,16 @@ gfxhub_v1_2_xcc_disable_identity_aperture(struct amdgpu_device *adev,
 	}
 }
 
+static inline bool
+gfxhub_v1_2_per_process_xnack_support(struct amdgpu_device *adev)
+{
+	/*
+	 * TODO: Check if this function is really needed, so far only 9.4.3
+	 * variants use GFXHUB 1.2
+	 */
+	return !!adev->aid_mask;
+}
+
 static void gfxhub_v1_2_xcc_setup_vmid_config(struct amdgpu_device *adev,
 					      uint32_t xcc_mask)
 {
@@ -329,7 +343,8 @@ static void gfxhub_v1_2_xcc_setup_vmid_config(struct amdgpu_device *adev,
 	for_each_inst(j, xcc_mask) {
 		hub = &adev->vmhub[AMDGPU_GFXHUB(j)];
 		for (i = 0; i <= 14; i++) {
-			tmp = RREG32_SOC15_OFFSET(GC, GET_INST(GC, j), regVM_CONTEXT1_CNTL, i);
+			tmp = RREG32_SOC15_OFFSET(GC, GET_INST(GC, j), regVM_CONTEXT1_CNTL,
+					i * hub->ctx_distance);
 			tmp = REG_SET_FIELD(tmp, VM_CONTEXT1_CNTL, ENABLE_CONTEXT, 1);
 			tmp = REG_SET_FIELD(tmp, VM_CONTEXT1_CNTL, PAGE_TABLE_DEPTH,
 					    num_level);
@@ -352,15 +367,16 @@ static void gfxhub_v1_2_xcc_setup_vmid_config(struct amdgpu_device *adev,
 					    PAGE_TABLE_BLOCK_SIZE,
 					    block_size);
 			/* Send no-retry XNACK on fault to suppress VM fault storm.
-			 * On 9.4.2 and 9.4.3, XNACK can be enabled in
+			 * On 9.4.3 variants, XNACK can be enabled in
 			 * the SQ per-process.
 			 * Retry faults need to be enabled for that to work.
 			 */
-			tmp = REG_SET_FIELD(tmp, VM_CONTEXT1_CNTL,
-					    RETRY_PERMISSION_OR_INVALID_PAGE_FAULT,
-					    !adev->gmc.noretry ||
-					    adev->ip_versions[GC_HWIP][0] == IP_VERSION(9, 4, 2) ||
-					    adev->ip_versions[GC_HWIP][0] == IP_VERSION(9, 4, 3));
+			tmp = REG_SET_FIELD(
+				tmp, VM_CONTEXT1_CNTL,
+				RETRY_PERMISSION_OR_INVALID_PAGE_FAULT,
+				!adev->gmc.noretry ||
+					gfxhub_v1_2_per_process_xnack_support(
+						adev));
 			WREG32_SOC15_OFFSET(GC, GET_INST(GC, j), regVM_CONTEXT1_CNTL,
 					    i * hub->ctx_distance, tmp);
 			WREG32_SOC15_OFFSET(GC, GET_INST(GC, j),
@@ -450,10 +466,12 @@ static void gfxhub_v1_2_xcc_gart_disable(struct amdgpu_device *adev,
 		WREG32_SOC15_RLC(GC, GET_INST(GC, j), regMC_VM_MX_L1_TLB_CNTL, tmp);
 
 		/* Setup L2 cache */
-		tmp = RREG32_SOC15(GC, GET_INST(GC, j), regVM_L2_CNTL);
-		tmp = REG_SET_FIELD(tmp, VM_L2_CNTL, ENABLE_L2_CACHE, 0);
-		WREG32_SOC15(GC, GET_INST(GC, j), regVM_L2_CNTL, tmp);
-		WREG32_SOC15(GC, GET_INST(GC, j), regVM_L2_CNTL3, 0);
+		if (!amdgpu_sriov_vf(adev)) {
+			tmp = RREG32_SOC15(GC, GET_INST(GC, j), regVM_L2_CNTL);
+			tmp = REG_SET_FIELD(tmp, VM_L2_CNTL, ENABLE_L2_CACHE, 0);
+			WREG32_SOC15(GC, GET_INST(GC, j), regVM_L2_CNTL, tmp);
+			WREG32_SOC15(GC, GET_INST(GC, j), regVM_L2_CNTL3, 0);
+		}
 	}
 }
 

@@ -13,8 +13,6 @@
 #include <linux/io.h>
 #include <linux/module.h>
 #include <linux/of.h>
-#include <linux/of_device.h>
-#include <linux/of_gpio.h>
 #include <linux/pm_runtime.h>
 
 #include <sound/soc.h>
@@ -939,8 +937,8 @@ static int i2s_trigger(struct snd_pcm_substream *substream,
 {
 	struct samsung_i2s_priv *priv = snd_soc_dai_get_drvdata(dai);
 	int capture = (substream->stream == SNDRV_PCM_STREAM_CAPTURE);
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
-	struct i2s_dai *i2s = to_info(asoc_rtd_to_cpu(rtd, 0));
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct i2s_dai *i2s = to_info(snd_soc_rtd_to_cpu(rtd, 0));
 	unsigned long flags;
 
 	switch (cmd) {
@@ -1218,7 +1216,6 @@ static int i2s_alloc_dais(struct samsung_i2s_priv *priv,
 	return 0;
 }
 
-#ifdef CONFIG_PM
 static int i2s_runtime_suspend(struct device *dev)
 {
 	struct samsung_i2s_priv *priv = dev_get_drvdata(dev);
@@ -1256,7 +1253,6 @@ static int i2s_runtime_resume(struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_PM */
 
 static void i2s_unregister_clocks(struct samsung_i2s_priv *priv)
 {
@@ -1580,8 +1576,8 @@ static void samsung_i2s_remove(struct platform_device *pdev)
 static void fsd_i2s_fixup_early(struct snd_pcm_substream *substream,
 		struct snd_soc_dai *dai)
 {
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
-	struct i2s_dai *i2s = to_info(asoc_rtd_to_cpu(rtd, 0));
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct i2s_dai *i2s = to_info(snd_soc_rtd_to_cpu(rtd, 0));
 	struct i2s_dai *other = get_other_dai(i2s);
 
 	if (!is_opened(other)) {
@@ -1593,9 +1589,9 @@ static void fsd_i2s_fixup_early(struct snd_pcm_substream *substream,
 static void fsd_i2s_fixup_late(struct snd_pcm_substream *substream,
 		struct snd_soc_dai *dai)
 {
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
 	struct samsung_i2s_priv *priv = snd_soc_dai_get_drvdata(dai);
-	struct i2s_dai *i2s = to_info(asoc_rtd_to_cpu(rtd, 0));
+	struct i2s_dai *i2s = to_info(snd_soc_rtd_to_cpu(rtd, 0));
 	struct i2s_dai *other = get_other_dai(i2s);
 
 	if (!is_opened(other))
@@ -1735,20 +1731,18 @@ MODULE_DEVICE_TABLE(of, exynos_i2s_match);
 #endif
 
 static const struct dev_pm_ops samsung_i2s_pm = {
-	SET_RUNTIME_PM_OPS(i2s_runtime_suspend,
-				i2s_runtime_resume, NULL)
-	SET_SYSTEM_SLEEP_PM_OPS(pm_runtime_force_suspend,
-				     pm_runtime_force_resume)
+	RUNTIME_PM_OPS(i2s_runtime_suspend, i2s_runtime_resume, NULL)
+	SYSTEM_SLEEP_PM_OPS(pm_runtime_force_suspend, pm_runtime_force_resume)
 };
 
 static struct platform_driver samsung_i2s_driver = {
 	.probe  = samsung_i2s_probe,
-	.remove_new = samsung_i2s_remove,
+	.remove = samsung_i2s_remove,
 	.id_table = samsung_i2s_driver_ids,
 	.driver = {
 		.name = "samsung-i2s",
 		.of_match_table = of_match_ptr(exynos_i2s_match),
-		.pm = &samsung_i2s_pm,
+		.pm = pm_ptr(&samsung_i2s_pm),
 	},
 };
 
@@ -1757,5 +1751,4 @@ module_platform_driver(samsung_i2s_driver);
 /* Module information */
 MODULE_AUTHOR("Jaswinder Singh, <jassisinghbrar@gmail.com>");
 MODULE_DESCRIPTION("Samsung I2S Interface");
-MODULE_ALIAS("platform:samsung-i2s");
 MODULE_LICENSE("GPL");

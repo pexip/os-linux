@@ -145,27 +145,6 @@ static void icp_native_cause_ipi(int cpu)
 	icp_native_set_qirr(cpu, IPI_PRIORITY);
 }
 
-#ifdef CONFIG_KVM_BOOK3S_HV_POSSIBLE
-void icp_native_cause_ipi_rm(int cpu)
-{
-	/*
-	 * Currently not used to send IPIs to another CPU
-	 * on the same core. Only caller is KVM real mode.
-	 * Need the physical address of the XICS to be
-	 * previously saved in kvm_hstate in the paca.
-	 */
-	void __iomem *xics_phys;
-
-	/*
-	 * Just like the cause_ipi functions, it is required to
-	 * include a full barrier before causing the IPI.
-	 */
-	xics_phys = paca_ptrs[cpu]->kvm_hstate.xics_phys;
-	mb();
-	__raw_rm_writeb(IPI_PRIORITY, xics_phys + XICS_MFRR);
-}
-#endif
-
 /*
  * Called when an interrupt is received on an off-line CPU to
  * clear the interrupt, so that the CPU can go back to nap mode.
@@ -236,6 +215,8 @@ static int __init icp_native_map_one_cpu(int hw_id, unsigned long addr,
 	rname = kasprintf(GFP_KERNEL, "CPU %d [0x%x] Interrupt Presentation",
 			  cpu, hw_id);
 
+	if (!rname)
+		return -ENOMEM;
 	if (!request_mem_region(addr, size, rname)) {
 		pr_warn("icp_native: Could not reserve ICP MMIO for CPU %d, interrupt server #0x%x\n",
 			cpu, hw_id);

@@ -25,6 +25,7 @@
 #include <linux/rhashtable.h>
 #include <linux/rtnetlink.h>
 #include <linux/rwsem.h>
+#include <net/netdev_lock.h>
 #include <net/xdp.h>
 
 /* Protects offdevs, members of bpf_offload_netdev and offload members
@@ -234,7 +235,14 @@ int bpf_prog_dev_bound_init(struct bpf_prog *prog, union bpf_attr *attr)
 	    attr->prog_type != BPF_PROG_TYPE_XDP)
 		return -EINVAL;
 
-	if (attr->prog_flags & ~BPF_F_XDP_DEV_BOUND_ONLY)
+	if (attr->prog_flags & ~(BPF_F_XDP_DEV_BOUND_ONLY | BPF_F_XDP_HAS_FRAGS))
+		return -EINVAL;
+
+	/* Frags are allowed only if program is dev-bound-only, but not
+	 * if it is requesting bpf offload.
+	 */
+	if (attr->prog_flags & BPF_F_XDP_HAS_FRAGS &&
+	    !(attr->prog_flags & BPF_F_XDP_DEV_BOUND_ONLY))
 		return -EINVAL;
 
 	if (attr->prog_type == BPF_PROG_TYPE_SCHED_CLS &&
@@ -521,13 +529,14 @@ struct bpf_map *bpf_map_offload_map_alloc(union bpf_attr *attr)
 		return ERR_PTR(-ENOMEM);
 
 	bpf_map_init_from_attr(&offmap->map, attr);
-
 	rtnl_lock();
-	down_write(&bpf_devs_lock);
 	offmap->netdev = __dev_get_by_index(net, attr->map_ifindex);
 	err = bpf_dev_offload_check(offmap->netdev);
 	if (err)
-		goto err_unlock;
+		goto err_unlock_rtnl;
+
+	netdev_lock_ops(offmap->netdev);
+	down_write(&bpf_devs_lock);
 
 	ondev = bpf_offload_find_netdev(offmap->netdev);
 	if (!ondev) {
@@ -541,12 +550,15 @@ struct bpf_map *bpf_map_offload_map_alloc(union bpf_attr *attr)
 
 	list_add_tail(&offmap->offloads, &ondev->maps);
 	up_write(&bpf_devs_lock);
+	netdev_unlock_ops(offmap->netdev);
 	rtnl_unlock();
 
 	return &offmap->map;
 
 err_unlock:
 	up_write(&bpf_devs_lock);
+	netdev_unlock_ops(offmap->netdev);
+err_unlock_rtnl:
 	rtnl_unlock();
 	bpf_map_area_free(offmap);
 	return ERR_PTR(err);
@@ -847,10 +859,11 @@ void *bpf_dev_bound_resolve_kfunc(struct bpf_prog *prog, u32 func_id)
 	if (!ops)
 		goto out;
 
-	if (func_id == bpf_xdp_metadata_kfunc_id(XDP_METADATA_KFUNC_RX_TIMESTAMP))
-		p = ops->xmo_rx_timestamp;
-	else if (func_id == bpf_xdp_metadata_kfunc_id(XDP_METADATA_KFUNC_RX_HASH))
-		p = ops->xmo_rx_hash;
+#define XDP_METADATA_KFUNC(name, _, __, xmo) \
+	if (func_id == bpf_xdp_metadata_kfunc_id(name)) p = ops->xmo;
+	XDP_METADATA_KFUNC_xxx
+#undef XDP_METADATA_KFUNC
+
 out:
 	up_read(&bpf_devs_lock);
 

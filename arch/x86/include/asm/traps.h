@@ -14,7 +14,6 @@
 asmlinkage __visible notrace struct pt_regs *sync_regs(struct pt_regs *eregs);
 asmlinkage __visible notrace
 struct pt_regs *fixup_bad_iret(struct pt_regs *bad_regs);
-void __init trap_init(void);
 asmlinkage __visible noinstr struct pt_regs *vc_switch_off_ist(struct pt_regs *eregs);
 #endif
 
@@ -35,8 +34,6 @@ static inline int get_si_code(unsigned long condition)
 	else
 		return TRAP_BRKPT;
 }
-
-extern int panic_on_unrecovered_nmi;
 
 void math_emulate(struct math_emu_info *);
 

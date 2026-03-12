@@ -10,7 +10,7 @@
 #include "test_tc_link.skel.h"
 #include "tc_helpers.h"
 
-void serial_test_tc_opts_basic(void)
+void test_ns_tc_opts_basic(void)
 {
 	LIBBPF_OPTS(bpf_prog_attach_opts, opta);
 	LIBBPF_OPTS(bpf_prog_detach_opts, optd);
@@ -254,7 +254,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_before(void)
+void test_ns_tc_opts_before(void)
 {
 	test_tc_opts_before_target(BPF_TCX_INGRESS);
 	test_tc_opts_before_target(BPF_TCX_EGRESS);
@@ -445,7 +445,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_after(void)
+void test_ns_tc_opts_after(void)
 {
 	test_tc_opts_after_target(BPF_TCX_INGRESS);
 	test_tc_opts_after_target(BPF_TCX_EGRESS);
@@ -554,7 +554,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_revision(void)
+void test_ns_tc_opts_revision(void)
 {
 	test_tc_opts_revision_target(BPF_TCX_INGRESS);
 	test_tc_opts_revision_target(BPF_TCX_EGRESS);
@@ -655,7 +655,7 @@ cleanup:
 	assert_mprog_count(target, 0);
 }
 
-void serial_test_tc_opts_chain_classic(void)
+void test_ns_tc_opts_chain_classic(void)
 {
 	test_tc_chain_classic(BPF_TCX_INGRESS, false);
 	test_tc_chain_classic(BPF_TCX_EGRESS, false);
@@ -864,7 +864,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_replace(void)
+void test_ns_tc_opts_replace(void)
 {
 	test_tc_opts_replace_target(BPF_TCX_INGRESS);
 	test_tc_opts_replace_target(BPF_TCX_EGRESS);
@@ -1017,7 +1017,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_invalid(void)
+void test_ns_tc_opts_invalid(void)
 {
 	test_tc_opts_invalid_target(BPF_TCX_INGRESS);
 	test_tc_opts_invalid_target(BPF_TCX_EGRESS);
@@ -1157,7 +1157,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_prepend(void)
+void test_ns_tc_opts_prepend(void)
 {
 	test_tc_opts_prepend_target(BPF_TCX_INGRESS);
 	test_tc_opts_prepend_target(BPF_TCX_EGRESS);
@@ -1297,7 +1297,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_append(void)
+void test_ns_tc_opts_append(void)
 {
 	test_tc_opts_append_target(BPF_TCX_INGRESS);
 	test_tc_opts_append_target(BPF_TCX_EGRESS);
@@ -1387,7 +1387,7 @@ cleanup:
 	ASSERT_EQ(if_nametoindex("tcx_opts2"), 0, "dev2_removed");
 }
 
-void serial_test_tc_opts_dev_cleanup(void)
+void test_ns_tc_opts_dev_cleanup(void)
 {
 	test_tc_opts_dev_cleanup_target(BPF_TCX_INGRESS);
 	test_tc_opts_dev_cleanup_target(BPF_TCX_EGRESS);
@@ -1563,7 +1563,7 @@ cleanup:
 	assert_mprog_count(target, 0);
 }
 
-void serial_test_tc_opts_mixed(void)
+void test_ns_tc_opts_mixed(void)
 {
 	test_tc_opts_mixed_target(BPF_TCX_INGRESS);
 	test_tc_opts_mixed_target(BPF_TCX_EGRESS);
@@ -1642,7 +1642,7 @@ cleanup:
 	assert_mprog_count(target, 0);
 }
 
-void serial_test_tc_opts_demixed(void)
+void test_ns_tc_opts_demixed(void)
 {
 	test_tc_opts_demixed_target(BPF_TCX_INGRESS);
 	test_tc_opts_demixed_target(BPF_TCX_EGRESS);
@@ -1813,7 +1813,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_detach(void)
+void test_ns_tc_opts_detach(void)
 {
 	test_tc_opts_detach_target(BPF_TCX_INGRESS);
 	test_tc_opts_detach_target(BPF_TCX_EGRESS);
@@ -2020,7 +2020,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_detach_before(void)
+void test_ns_tc_opts_detach_before(void)
 {
 	test_tc_opts_detach_before_target(BPF_TCX_INGRESS);
 	test_tc_opts_detach_before_target(BPF_TCX_EGRESS);
@@ -2236,7 +2236,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_detach_after(void)
+void test_ns_tc_opts_detach_after(void)
 {
 	test_tc_opts_detach_after_target(BPF_TCX_INGRESS);
 	test_tc_opts_detach_after_target(BPF_TCX_EGRESS);
@@ -2265,7 +2265,7 @@ static void test_tc_opts_delete_empty(int target, bool chain_tc_old)
 	assert_mprog_count(target, 0);
 }
 
-void serial_test_tc_opts_delete_empty(void)
+void test_ns_tc_opts_delete_empty(void)
 {
 	test_tc_opts_delete_empty(BPF_TCX_INGRESS, false);
 	test_tc_opts_delete_empty(BPF_TCX_EGRESS, false);
@@ -2372,7 +2372,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_chain_mixed(void)
+void test_ns_tc_opts_chain_mixed(void)
 {
 	test_tc_chain_mixed(BPF_TCX_INGRESS);
 	test_tc_chain_mixed(BPF_TCX_EGRESS);
@@ -2384,15 +2384,12 @@ static int generate_dummy_prog(void)
 		BPF_MOV64_IMM(BPF_REG_0, 0),
 		BPF_EXIT_INSN(),
 	};
-	const size_t prog_insn_cnt = sizeof(prog_insns) / sizeof(struct bpf_insn);
+	const size_t prog_insn_cnt = ARRAY_SIZE(prog_insns);
 	LIBBPF_OPTS(bpf_prog_load_opts, opts);
 	const size_t log_buf_sz = 256;
-	char *log_buf;
+	char log_buf[log_buf_sz];
 	int fd = -1;
 
-	log_buf = malloc(log_buf_sz);
-	if (!ASSERT_OK_PTR(log_buf, "log_buf_alloc"))
-		return fd;
 	opts.log_buf = log_buf;
 	opts.log_size = log_buf_sz;
 
@@ -2402,7 +2399,6 @@ static int generate_dummy_prog(void)
 			   prog_insns, prog_insn_cnt, &opts);
 	ASSERT_STREQ(log_buf, "", "log_0");
 	ASSERT_GE(fd, 0, "prog_fd");
-	free(log_buf);
 	return fd;
 }
 
@@ -2450,7 +2446,7 @@ cleanup:
 	ASSERT_EQ(if_nametoindex("tcx_opts2"), 0, "dev2_removed");
 }
 
-void serial_test_tc_opts_max(void)
+void test_ns_tc_opts_max(void)
 {
 	test_tc_opts_max_target(BPF_TCX_INGRESS, 0, false);
 	test_tc_opts_max_target(BPF_TCX_EGRESS, 0, false);
@@ -2471,7 +2467,7 @@ static void test_tc_opts_query_target(int target)
 	__u32 fd1, fd2, fd3, fd4, id1, id2, id3, id4;
 	struct test_tc_link *skel;
 	union bpf_attr attr;
-	__u32 prog_ids[5];
+	__u32 prog_ids[10];
 	int err;
 
 	skel = test_tc_link__open_and_load();
@@ -2599,6 +2595,135 @@ static void test_tc_opts_query_target(int target)
 	ASSERT_EQ(attr.query.link_ids, 0, "link_ids");
 	ASSERT_EQ(attr.query.link_attach_flags, 0, "link_attach_flags");
 
+	/* Test 3: Query with smaller prog_ids array */
+	memset(&attr, 0, attr_size);
+	attr.query.target_ifindex = loopback;
+	attr.query.attach_type = target;
+
+	memset(prog_ids, 0, sizeof(prog_ids));
+	attr.query.prog_ids = ptr_to_u64(prog_ids);
+	attr.query.count = 2;
+
+	err = syscall(__NR_bpf, BPF_PROG_QUERY, &attr, attr_size);
+	ASSERT_EQ(err, -1, "prog_query_should_fail");
+	ASSERT_EQ(errno, ENOSPC, "prog_query_should_fail");
+
+	ASSERT_EQ(attr.query.count, 4, "count");
+	ASSERT_EQ(attr.query.revision, 5, "revision");
+	ASSERT_EQ(attr.query.query_flags, 0, "query_flags");
+	ASSERT_EQ(attr.query.attach_flags, 0, "attach_flags");
+	ASSERT_EQ(attr.query.target_ifindex, loopback, "target_ifindex");
+	ASSERT_EQ(attr.query.attach_type, target, "attach_type");
+	ASSERT_EQ(attr.query.prog_ids, ptr_to_u64(prog_ids), "prog_ids");
+	ASSERT_EQ(prog_ids[0], id1, "prog_ids[0]");
+	ASSERT_EQ(prog_ids[1], id2, "prog_ids[1]");
+	ASSERT_EQ(prog_ids[2], 0, "prog_ids[2]");
+	ASSERT_EQ(prog_ids[3], 0, "prog_ids[3]");
+	ASSERT_EQ(prog_ids[4], 0, "prog_ids[4]");
+	ASSERT_EQ(attr.query.prog_attach_flags, 0, "prog_attach_flags");
+	ASSERT_EQ(attr.query.link_ids, 0, "link_ids");
+	ASSERT_EQ(attr.query.link_attach_flags, 0, "link_attach_flags");
+
+	/* Test 4: Query with larger prog_ids array */
+	memset(&attr, 0, attr_size);
+	attr.query.target_ifindex = loopback;
+	attr.query.attach_type = target;
+
+	memset(prog_ids, 0, sizeof(prog_ids));
+	attr.query.prog_ids = ptr_to_u64(prog_ids);
+	attr.query.count = 10;
+
+	err = syscall(__NR_bpf, BPF_PROG_QUERY, &attr, attr_size);
+	if (!ASSERT_OK(err, "prog_query"))
+		goto cleanup4;
+
+	ASSERT_EQ(attr.query.count, 4, "count");
+	ASSERT_EQ(attr.query.revision, 5, "revision");
+	ASSERT_EQ(attr.query.query_flags, 0, "query_flags");
+	ASSERT_EQ(attr.query.attach_flags, 0, "attach_flags");
+	ASSERT_EQ(attr.query.target_ifindex, loopback, "target_ifindex");
+	ASSERT_EQ(attr.query.attach_type, target, "attach_type");
+	ASSERT_EQ(attr.query.prog_ids, ptr_to_u64(prog_ids), "prog_ids");
+	ASSERT_EQ(prog_ids[0], id1, "prog_ids[0]");
+	ASSERT_EQ(prog_ids[1], id2, "prog_ids[1]");
+	ASSERT_EQ(prog_ids[2], id3, "prog_ids[2]");
+	ASSERT_EQ(prog_ids[3], id4, "prog_ids[3]");
+	ASSERT_EQ(prog_ids[4], 0, "prog_ids[4]");
+	ASSERT_EQ(attr.query.prog_attach_flags, 0, "prog_attach_flags");
+	ASSERT_EQ(attr.query.link_ids, 0, "link_ids");
+	ASSERT_EQ(attr.query.link_attach_flags, 0, "link_attach_flags");
+
+	/* Test 5: Query with NULL prog_ids array but with count > 0 */
+	memset(&attr, 0, attr_size);
+	attr.query.target_ifindex = loopback;
+	attr.query.attach_type = target;
+
+	memset(prog_ids, 0, sizeof(prog_ids));
+	attr.query.count = sizeof(prog_ids);
+
+	err = syscall(__NR_bpf, BPF_PROG_QUERY, &attr, attr_size);
+	if (!ASSERT_OK(err, "prog_query"))
+		goto cleanup4;
+
+	ASSERT_EQ(attr.query.count, 4, "count");
+	ASSERT_EQ(attr.query.revision, 5, "revision");
+	ASSERT_EQ(attr.query.query_flags, 0, "query_flags");
+	ASSERT_EQ(attr.query.attach_flags, 0, "attach_flags");
+	ASSERT_EQ(attr.query.target_ifindex, loopback, "target_ifindex");
+	ASSERT_EQ(attr.query.attach_type, target, "attach_type");
+	ASSERT_EQ(prog_ids[0], 0, "prog_ids[0]");
+	ASSERT_EQ(prog_ids[1], 0, "prog_ids[1]");
+	ASSERT_EQ(prog_ids[2], 0, "prog_ids[2]");
+	ASSERT_EQ(prog_ids[3], 0, "prog_ids[3]");
+	ASSERT_EQ(prog_ids[4], 0, "prog_ids[4]");
+	ASSERT_EQ(attr.query.prog_ids, 0, "prog_ids");
+	ASSERT_EQ(attr.query.prog_attach_flags, 0, "prog_attach_flags");
+	ASSERT_EQ(attr.query.link_ids, 0, "link_ids");
+	ASSERT_EQ(attr.query.link_attach_flags, 0, "link_attach_flags");
+
+	/* Test 6: Query with non-NULL prog_ids array but with count == 0 */
+	memset(&attr, 0, attr_size);
+	attr.query.target_ifindex = loopback;
+	attr.query.attach_type = target;
+
+	memset(prog_ids, 0, sizeof(prog_ids));
+	attr.query.prog_ids = ptr_to_u64(prog_ids);
+
+	err = syscall(__NR_bpf, BPF_PROG_QUERY, &attr, attr_size);
+	if (!ASSERT_OK(err, "prog_query"))
+		goto cleanup4;
+
+	ASSERT_EQ(attr.query.count, 4, "count");
+	ASSERT_EQ(attr.query.revision, 5, "revision");
+	ASSERT_EQ(attr.query.query_flags, 0, "query_flags");
+	ASSERT_EQ(attr.query.attach_flags, 0, "attach_flags");
+	ASSERT_EQ(attr.query.target_ifindex, loopback, "target_ifindex");
+	ASSERT_EQ(attr.query.attach_type, target, "attach_type");
+	ASSERT_EQ(prog_ids[0], 0, "prog_ids[0]");
+	ASSERT_EQ(prog_ids[1], 0, "prog_ids[1]");
+	ASSERT_EQ(prog_ids[2], 0, "prog_ids[2]");
+	ASSERT_EQ(prog_ids[3], 0, "prog_ids[3]");
+	ASSERT_EQ(prog_ids[4], 0, "prog_ids[4]");
+	ASSERT_EQ(attr.query.prog_ids, ptr_to_u64(prog_ids), "prog_ids");
+	ASSERT_EQ(attr.query.prog_attach_flags, 0, "prog_attach_flags");
+	ASSERT_EQ(attr.query.link_ids, 0, "link_ids");
+	ASSERT_EQ(attr.query.link_attach_flags, 0, "link_attach_flags");
+
+	/* Test 7: Query with invalid flags */
+	attr.query.attach_flags = 0;
+	attr.query.query_flags = 1;
+
+	err = syscall(__NR_bpf, BPF_PROG_QUERY, &attr, attr_size);
+	ASSERT_EQ(err, -1, "prog_query_should_fail");
+	ASSERT_EQ(errno, EINVAL, "prog_query_should_fail");
+
+	attr.query.attach_flags = 1;
+	attr.query.query_flags = 0;
+
+	err = syscall(__NR_bpf, BPF_PROG_QUERY, &attr, attr_size);
+	ASSERT_EQ(err, -1, "prog_query_should_fail");
+	ASSERT_EQ(errno, EINVAL, "prog_query_should_fail");
+
 cleanup4:
 	err = bpf_prog_detach_opts(fd4, loopback, target, &optd);
 	ASSERT_OK(err, "prog_detach");
@@ -2623,7 +2748,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_query(void)
+void test_ns_tc_opts_query(void)
 {
 	test_tc_opts_query_target(BPF_TCX_INGRESS);
 	test_tc_opts_query_target(BPF_TCX_EGRESS);
@@ -2682,7 +2807,7 @@ cleanup:
 	test_tc_link__destroy(skel);
 }
 
-void serial_test_tc_opts_query_attach(void)
+void test_ns_tc_opts_query_attach(void)
 {
 	test_tc_opts_query_attach_target(BPF_TCX_INGRESS);
 	test_tc_opts_query_attach_target(BPF_TCX_EGRESS);

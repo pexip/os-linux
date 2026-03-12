@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0 */
+
 #ifndef _SELINUX_POLICYCAP_NAMES_H_
 #define _SELINUX_POLICYCAP_NAMES_H_
 
 #include "policycap.h"
 
+/* clang-format off */
 /* Policy capability names */
 const char *const selinux_policycap_names[__POLICYDB_CAP_MAX] = {
 	"network_peer_controls",
@@ -14,6 +16,12 @@ const char *const selinux_policycap_names[__POLICYDB_CAP_MAX] = {
 	"nnp_nosuid_transition",
 	"genfs_seclabel_symlinks",
 	"ioctl_skip_cloexec",
+	"userspace_initial_context",
+	"netlink_xperm",
+	"netif_wildcard",
+	"genfs_seclabel_wildcard",
+	"functionfs_seclabel",
 };
+/* clang-format on */
 
 #endif /* _SELINUX_POLICYCAP_NAMES_H_ */

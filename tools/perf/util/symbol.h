@@ -140,7 +140,7 @@ struct symbol *dso__next_symbol(struct symbol *sym);
 
 enum dso_type dso__type_fd(int fd);
 
-int filename__read_build_id(const char *filename, struct build_id *id);
+int filename__read_build_id(const char *filename, struct build_id *id, bool block);
 int sysfs__read_build_id(const char *filename, struct build_id *bid);
 int modules__parse(const char *filename, void *arg,
 		   int (*process_module)(void *arg, const char *name,
@@ -189,7 +189,6 @@ void __symbols__insert(struct rb_root_cached *symbols, struct symbol *sym,
 void symbols__insert(struct rb_root_cached *symbols, struct symbol *sym);
 void symbols__fixup_duplicate(struct rb_root_cached *symbols);
 void symbols__fixup_end(struct rb_root_cached *symbols, bool is_kallsyms);
-void maps__fixup_end(struct maps *maps);
 
 typedef int (*mapfn_t)(u64 start, u64 len, u64 pgoff, void *data);
 int file__read_maps(int fd, bool exe, mapfn_t mapfn, void *data,
@@ -268,18 +267,6 @@ enum {
 	SDT_NOTE_IDX_BASE,
 	SDT_NOTE_IDX_REFCTR,
 };
-
-struct mem_info *mem_info__new(void);
-struct mem_info *mem_info__get(struct mem_info *mi);
-void   mem_info__put(struct mem_info *mi);
-
-static inline void __mem_info__zput(struct mem_info **mi)
-{
-	mem_info__put(*mi);
-	*mi = NULL;
-}
-
-#define mem_info__zput(mi) __mem_info__zput(&mi)
 
 int symbol__validate_sym_arguments(void);
 

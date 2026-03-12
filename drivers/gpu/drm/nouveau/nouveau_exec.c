@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-#include <drm/drm_exec.h>
-
 #include "nouveau_drv.h"
 #include "nouveau_gem.h"
 #include "nouveau_mem.h"
@@ -11,6 +9,8 @@
 #include "nouveau_chan.h"
 #include "nouveau_sched.h"
 #include "nouveau_uvmm.h"
+
+#include <nvif/class.h>
 
 /**
  * DOC: Overview
@@ -60,14 +60,14 @@
  * virtual address in the GPU's VA space there is no guarantee that the actual
  * mappings are created in the GPU's MMU. If the given memory is swapped out
  * at the time the bind operation is executed the kernel will stash the mapping
- * details into it's internal alloctor and create the actual MMU mappings once
+ * details into it's internal allocator and create the actual MMU mappings once
  * the memory is swapped back in. While this is transparent for userspace, it is
  * guaranteed that all the backing memory is swapped back in and all the memory
  * mappings, as requested by userspace previously, are actually mapped once the
  * DRM_NOUVEAU_EXEC ioctl is called to submit an exec job.
  *
  * A VM_BIND job can be executed either synchronously or asynchronously. If
- * exectued asynchronously, userspace may provide a list of syncobjs this job
+ * executed asynchronously, userspace may provide a list of syncobjs this job
  * will wait for and/or a list of syncobj the kernel will signal once the
  * VM_BIND job finished execution. If executed synchronously the ioctl will
  * block until the bind job is finished. For synchronous jobs the kernel will
@@ -82,18 +82,16 @@
  * Since VM_BIND jobs update the GPU's VA space on job submit, EXEC jobs do have
  * an up to date view of the VA space. However, the actual mappings might still
  * be pending. Hence, EXEC jobs require to have the particular fences - of
- * the corresponding VM_BIND jobs they depent on - attached to them.
+ * the corresponding VM_BIND jobs they depend on - attached to them.
  */
 
 static int
-nouveau_exec_job_submit(struct nouveau_job *job)
+nouveau_exec_job_submit(struct nouveau_job *job,
+			struct drm_gpuvm_exec *vme)
 {
 	struct nouveau_exec_job *exec_job = to_nouveau_exec_job(job);
 	struct nouveau_cli *cli = job->cli;
 	struct nouveau_uvmm *uvmm = nouveau_cli_uvmm(cli);
-	struct drm_exec *exec = &job->exec;
-	struct drm_gem_object *obj;
-	unsigned long index;
 	int ret;
 
 	/* Create a new fence, but do not emit yet. */
@@ -102,52 +100,29 @@ nouveau_exec_job_submit(struct nouveau_job *job)
 		return ret;
 
 	nouveau_uvmm_lock(uvmm);
-	drm_exec_init(exec, DRM_EXEC_INTERRUPTIBLE_WAIT |
-			    DRM_EXEC_IGNORE_DUPLICATES);
-	drm_exec_until_all_locked(exec) {
-		struct drm_gpuva *va;
-
-		drm_gpuva_for_each_va(va, &uvmm->umgr) {
-			if (unlikely(va == &uvmm->umgr.kernel_alloc_node))
-				continue;
-
-			ret = drm_exec_prepare_obj(exec, va->gem.obj, 1);
-			drm_exec_retry_on_contention(exec);
-			if (ret)
-				goto err_uvmm_unlock;
-		}
+	ret = drm_gpuvm_exec_lock(vme);
+	if (ret) {
+		nouveau_uvmm_unlock(uvmm);
+		return ret;
 	}
 	nouveau_uvmm_unlock(uvmm);
 
-	drm_exec_for_each_locked_object(exec, index, obj) {
-		struct nouveau_bo *nvbo = nouveau_gem_object(obj);
-
-		ret = nouveau_bo_validate(nvbo, true, false);
-		if (ret)
-			goto err_exec_fini;
+	ret = drm_gpuvm_exec_validate(vme);
+	if (ret) {
+		drm_gpuvm_exec_unlock(vme);
+		return ret;
 	}
 
 	return 0;
-
-err_uvmm_unlock:
-	nouveau_uvmm_unlock(uvmm);
-err_exec_fini:
-	drm_exec_fini(exec);
-	return ret;
-
 }
 
 static void
-nouveau_exec_job_armed_submit(struct nouveau_job *job)
+nouveau_exec_job_armed_submit(struct nouveau_job *job,
+			      struct drm_gpuvm_exec *vme)
 {
-	struct drm_exec *exec = &job->exec;
-	struct drm_gem_object *obj;
-	unsigned long index;
-
-	drm_exec_for_each_locked_object(exec, index, obj)
-		dma_resv_add_fence(obj->resv, job->done_fence, job->resv_usage);
-
-	drm_exec_fini(exec);
+	drm_gpuvm_exec_resv_add_fence(vme, job->done_fence,
+				      job->resv_usage, job->resv_usage);
+	drm_gpuvm_exec_unlock(vme);
 }
 
 static struct dma_fence *
@@ -158,7 +133,7 @@ nouveau_exec_job_run(struct nouveau_job *job)
 	struct nouveau_fence *fence = exec_job->fence;
 	int i, ret;
 
-	ret = nouveau_dma_wait(chan, exec_job->push.count + 1, 16);
+	ret = nvif_chan_gpfifo_wait(&chan->chan, exec_job->push.count + 1, 16);
 	if (ret) {
 		NV_PRINTK(err, job->cli, "nv50cal_space: %d\n", ret);
 		return ERR_PTR(ret);
@@ -168,8 +143,10 @@ nouveau_exec_job_run(struct nouveau_job *job)
 		struct drm_nouveau_exec_push *p = &exec_job->push.s[i];
 		bool no_prefetch = p->flags & DRM_NOUVEAU_EXEC_PUSH_NO_PREFETCH;
 
-		nv50_dma_push(chan, p->va, p->va_len, no_prefetch);
+		nvif_chan_gpfifo_push(&chan->chan, p->va, p->va_len, no_prefetch);
 	}
+
+	nvif_chan_gpfifo_post(&chan->chan);
 
 	ret = nouveau_fence_emit(fence);
 	if (ret) {
@@ -192,6 +169,7 @@ nouveau_exec_job_free(struct nouveau_job *job)
 {
 	struct nouveau_exec_job *exec_job = to_nouveau_exec_job(job);
 
+	nouveau_job_done(job);
 	nouveau_job_free(job);
 
 	kfree(exec_job->fence);
@@ -211,12 +189,10 @@ nouveau_exec_job_timeout(struct nouveau_job *job)
 	NV_PRINTK(warn, job->cli, "job timeout, channel %d killed!\n",
 		  chan->chid);
 
-	nouveau_sched_entity_fini(job->entity);
-
-	return DRM_GPU_SCHED_STAT_NOMINAL;
+	return DRM_GPU_SCHED_STAT_RESET;
 }
 
-static struct nouveau_job_ops nouveau_exec_job_ops = {
+static const struct nouveau_job_ops nouveau_exec_job_ops = {
 	.submit = nouveau_exec_job_submit,
 	.armed_submit = nouveau_exec_job_armed_submit,
 	.run = nouveau_exec_job_run,
@@ -259,10 +235,12 @@ nouveau_exec_job_init(struct nouveau_exec_job **pjob,
 		}
 	}
 
+	args.file_priv = __args->file_priv;
 	job->chan = __args->chan;
 
-	args.sched_entity = __args->sched_entity;
-	args.file_priv = __args->file_priv;
+	args.sched = __args->sched;
+	/* Plus one to account for the HW fence. */
+	args.credits = job->push.count + 1;
 
 	args.in_sync.count = __args->in_sync.count;
 	args.in_sync.s = __args->in_sync.s;
@@ -401,10 +379,10 @@ nouveau_exec_ioctl_exec(struct drm_device *dev,
 	if (unlikely(atomic_read(&chan->killed)))
 		return nouveau_abi16_put(abi16, -ENODEV);
 
-	if (!chan->dma.ib_max)
+	if (chan->user.oclass < NV50_CHANNEL_GPFIFO)
 		return nouveau_abi16_put(abi16, -ENOSYS);
 
-	push_max = nouveau_exec_push_max_from_ib_max(chan->dma.ib_max);
+	push_max = nouveau_exec_push_max_from_ib_max(chan->chan.gpfifo.max);
 	if (unlikely(req->push_count > push_max)) {
 		NV_PRINTK(err, cli, "pushbuf push count exceeds limit: %d max %d\n",
 			  req->push_count, push_max);
@@ -415,7 +393,7 @@ nouveau_exec_ioctl_exec(struct drm_device *dev,
 	if (ret)
 		goto out;
 
-	args.sched_entity = &chan16->sched_entity;
+	args.sched = chan16->sched;
 	args.file_priv = file_priv;
 	args.chan = chan;
 

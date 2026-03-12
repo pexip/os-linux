@@ -8,20 +8,47 @@
 #include <linux/of_fdt.h>
 #include <linux/start_kernel.h>
 #include <linux/dma-map-ops.h>
-#include <linux/screen_info.h>
 #include <asm/sections.h>
 #include <asm/mmu_context.h>
 #include <asm/pgalloc.h>
 
-#ifdef CONFIG_DUMMY_CONSOLE
-struct screen_info screen_info = {
-	.orig_video_lines	= 30,
-	.orig_video_cols	= 80,
-	.orig_video_mode	= 0,
-	.orig_video_ega_bx	= 0,
-	.orig_video_isVGA	= 1,
-	.orig_video_points	= 8
-};
+#ifdef CONFIG_BLK_DEV_INITRD
+static void __init setup_initrd(void)
+{
+	unsigned long size;
+
+	if (initrd_start >= initrd_end) {
+		pr_err("initrd not found or empty");
+		goto disable;
+	}
+
+	if (__pa(initrd_end) > PFN_PHYS(max_low_pfn)) {
+		pr_err("initrd extends beyond end of memory");
+		goto disable;
+	}
+
+	size = initrd_end - initrd_start;
+
+	if (memblock_is_region_reserved(__pa(initrd_start), size)) {
+		pr_err("INITRD: 0x%08lx+0x%08lx overlaps in-use memory region",
+		       __pa(initrd_start), size);
+		goto disable;
+	}
+
+	memblock_reserve(__pa(initrd_start), size);
+
+	pr_info("Initial ramdisk at: 0x%p (%lu bytes)\n",
+		(void *)(initrd_start), size);
+
+	initrd_below_start_ok = 1;
+
+	return;
+
+disable:
+	initrd_start = initrd_end = 0;
+
+	pr_err(" - disabling initrd\n");
+}
 #endif
 
 static void __init csky_memblock_init(void)
@@ -51,6 +78,10 @@ static void __init csky_memblock_init(void)
 	} else if (size > sseg_size) {
 		max_low_pfn = min_low_pfn + sseg_size;
 	}
+
+#ifdef CONFIG_BLK_DEV_INITRD
+	setup_initrd();
+#endif
 
 	max_zone_pfn[ZONE_NORMAL] = max_low_pfn;
 
@@ -124,9 +155,9 @@ asmlinkage __visible void __init csky_start(unsigned int unused,
 	pre_trap_init();
 
 	if (dtb_start == NULL)
-		early_init_dt_scan(__dtb_start);
+		early_init_dt_scan(__dtb_start, __pa(dtb_start));
 	else
-		early_init_dt_scan(dtb_start);
+		early_init_dt_scan(dtb_start, __pa(dtb_start));
 
 	start_kernel();
 

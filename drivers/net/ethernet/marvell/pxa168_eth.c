@@ -353,7 +353,7 @@ static void rxq_refill(struct net_device *dev)
 
 static inline void rxq_refill_timer_wrapper(struct timer_list *t)
 {
-	struct pxa168_eth_private *pep = from_timer(pep, t, timeout);
+	struct pxa168_eth_private *pep = timer_container_of(pep, t, timeout);
 	napi_schedule(&pep->napi);
 }
 
@@ -1175,7 +1175,7 @@ static int pxa168_eth_stop(struct net_device *dev)
 	/* Write to ICR to clear interrupts. */
 	wrl(pep, INT_W_CLEAR, 0);
 	napi_disable(&pep->napi);
-	del_timer_sync(&pep->timeout);
+	timer_delete_sync(&pep->timeout);
 	netif_carrier_off(dev);
 	free_irq(dev->irq, dev);
 	rxq_deinit(dev);
@@ -1188,7 +1188,7 @@ static int pxa168_eth_change_mtu(struct net_device *dev, int mtu)
 {
 	struct pxa168_eth_private *pep = netdev_priv(dev);
 
-	dev->mtu = mtu;
+	WRITE_ONCE(dev->mtu, mtu);
 	set_port_config_ext(pep);
 
 	if (!netif_running(dev))
@@ -1229,9 +1229,9 @@ static int pxa168_rx_poll(struct napi_struct *napi, int budget)
 	int work_done = 0;
 
 	/*
-	 * We call txq_reclaim every time since in NAPI interupts are disabled
-	 * and due to this we miss the TX_DONE interrupt,which is not updated in
-	 * interrupt status register.
+	 * We call txq_reclaim every time since in NAPI interrupts are disabled
+	 * and due to this we miss the TX_DONE interrupt, which is not updated
+	 * in interrupt status register.
 	 */
 	txq_reclaim(dev, 0);
 	if (netif_queue_stopped(dev)
@@ -1394,18 +1394,15 @@ static int pxa168_eth_probe(struct platform_device *pdev)
 
 	printk(KERN_NOTICE "PXA168 10/100 Ethernet Driver\n");
 
-	clk = devm_clk_get(&pdev->dev, NULL);
+	clk = devm_clk_get_enabled(&pdev->dev, NULL);
 	if (IS_ERR(clk)) {
-		dev_err(&pdev->dev, "Fast Ethernet failed to get clock\n");
+		dev_err(&pdev->dev, "Fast Ethernet failed to get and enable clock\n");
 		return -ENODEV;
 	}
-	clk_prepare_enable(clk);
 
 	dev = alloc_etherdev(sizeof(struct pxa168_eth_private));
-	if (!dev) {
-		err = -ENOMEM;
-		goto err_clk;
-	}
+	if (!dev)
+		return -ENOMEM;
 
 	platform_set_drvdata(pdev, dev);
 	pep = netdev_priv(dev);
@@ -1523,12 +1520,10 @@ err_free_mdio:
 	mdiobus_free(pep->smi_bus);
 err_netdev:
 	free_netdev(dev);
-err_clk:
-	clk_disable_unprepare(clk);
 	return err;
 }
 
-static int pxa168_eth_remove(struct platform_device *pdev)
+static void pxa168_eth_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct pxa168_eth_private *pep = netdev_priv(dev);
@@ -1542,12 +1537,10 @@ static int pxa168_eth_remove(struct platform_device *pdev)
 	if (dev->phydev)
 		phy_disconnect(dev->phydev);
 
-	clk_disable_unprepare(pep->clk);
 	mdiobus_unregister(pep->smi_bus);
 	mdiobus_free(pep->smi_bus);
 	unregister_netdev(dev);
 	free_netdev(dev);
-	return 0;
 }
 
 static void pxa168_eth_shutdown(struct platform_device *pdev)

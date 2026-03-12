@@ -2,7 +2,7 @@
 /*
  *  cx18 mailbox functions
  *
- *  Copyright (C) 2007  Hans Verkuil <hverkuil@xs4all.nl>
+ *  Copyright (C) 2007  Hans Verkuil <hverkuil@kernel.org>
  *  Copyright (C) 2008  Andy Walls <awalls@md.metrocast.net>
  */
 
@@ -831,7 +831,7 @@ int cx18_vapi(struct cx18 *cx, u32 cmd, int args, ...)
 	int i;
 
 	if (cx == NULL) {
-		CX18_ERR("cx == NULL (cmd=%x)\n", cmd);
+		pr_err("cx == NULL (cmd=%x)\n", cmd);
 		return 0;
 	}
 	if (args > MAX_MB_ARGUMENTS) {

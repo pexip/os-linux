@@ -1,7 +1,5 @@
-linear
 md-mod
 dm-mod
-multipath
 raid0
 raid1
 raid456
@@ -9,6 +7,7 @@ raid10
 dm-mirror
 dm-raid
 dm-snapshot
+dm-thin-pool
 bcache
 
 # RAID-related libraries, also used by btrfs

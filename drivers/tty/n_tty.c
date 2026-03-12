@@ -56,6 +56,8 @@
  */
 #define WAKEUP_CHARS 256
 
+#define N_TTY_BUF_SIZE 4096
+
 /*
  * This defines the low- and high-watermarks for throttling and
  * unthrottling the TTY driver.  These watermarks are used for
@@ -78,14 +80,6 @@
 #define ECHO_COMMIT_WATERMARK	256
 #define ECHO_BLOCK		256
 #define ECHO_DISCARD_WATERMARK	N_TTY_BUF_SIZE - (ECHO_BLOCK + 32)
-
-
-#undef N_TTY_TRACE
-#ifdef N_TTY_TRACE
-# define n_tty_trace(f, args...)	trace_printk(f, ##args)
-#else
-# define n_tty_trace(f, args...)	no_printk(f, ##args)
-#endif
 
 struct n_tty_data {
 	/* producer-published */
@@ -249,15 +243,12 @@ static void n_tty_check_throttle(struct tty_struct *tty)
 	if (ldata->icanon && ldata->canon_head == ldata->read_tail)
 		return;
 
-	while (1) {
-		int throttled;
+	do {
 		tty_set_flow_change(tty, TTY_THROTTLE_SAFE);
 		if (N_TTY_BUF_SIZE - read_cnt(ldata) >= TTY_THRESHOLD_THROTTLE)
 			break;
-		throttled = tty_throttle_safe(tty);
-		if (!throttled)
-			break;
-	}
+	} while (!tty_throttle_safe(tty));
+
 	__tty_set_flow_change(tty, 0);
 }
 
@@ -279,16 +270,14 @@ static void n_tty_check_unthrottle(struct tty_struct *tty)
 	 * we won't get any more characters.
 	 */
 
-	while (1) {
-		int unthrottled;
+	do {
 		tty_set_flow_change(tty, TTY_UNTHROTTLE_SAFE);
 		if (chars_in_buffer(tty) > TTY_THRESHOLD_UNTHROTTLE)
 			break;
+
 		n_tty_kick_worker(tty);
-		unthrottled = tty_unthrottle_safe(tty);
-		if (!unthrottled)
-			break;
-	}
+	} while (!tty_unthrottle_safe(tty));
+
 	__tty_set_flow_change(tty, 0);
 }
 
@@ -491,18 +480,13 @@ static int do_output_char(u8 c, struct tty_struct *tty, int space)
 static int process_output(u8 c, struct tty_struct *tty)
 {
 	struct n_tty_data *ldata = tty->disc_data;
-	int	space, retval;
 
-	mutex_lock(&ldata->output_lock);
+	guard(mutex)(&ldata->output_lock);
 
-	space = tty_write_room(tty);
-	retval = do_output_char(c, tty, space);
-
-	mutex_unlock(&ldata->output_lock);
-	if (retval < 0)
+	if (do_output_char(c, tty, tty_write_room(tty)) < 0)
 		return -1;
-	else
-		return 0;
+
+	return 0;
 }
 
 /**
@@ -527,17 +511,15 @@ static ssize_t process_output_block(struct tty_struct *tty,
 				    const u8 *buf, unsigned int nr)
 {
 	struct n_tty_data *ldata = tty->disc_data;
-	int	space;
-	int	i;
+	unsigned int space, i;
 	const u8 *cp;
 
-	mutex_lock(&ldata->output_lock);
+	guard(mutex)(&ldata->output_lock);
 
 	space = tty_write_room(tty);
-	if (space <= 0) {
-		mutex_unlock(&ldata->output_lock);
-		return space;
-	}
+	if (space == 0)
+		return 0;
+
 	if (nr > space)
 		nr = space;
 
@@ -549,18 +531,18 @@ static ssize_t process_output_block(struct tty_struct *tty,
 			if (O_ONLRET(tty))
 				ldata->column = 0;
 			if (O_ONLCR(tty))
-				goto break_out;
+				goto do_write;
 			ldata->canon_column = ldata->column;
 			break;
 		case '\r':
 			if (O_ONOCR(tty) && ldata->column == 0)
-				goto break_out;
+				goto do_write;
 			if (O_OCRNL(tty))
-				goto break_out;
+				goto do_write;
 			ldata->canon_column = ldata->column = 0;
 			break;
 		case '\t':
-			goto break_out;
+			goto do_write;
 		case '\b':
 			if (ldata->column > 0)
 				ldata->column--;
@@ -568,18 +550,15 @@ static ssize_t process_output_block(struct tty_struct *tty,
 		default:
 			if (!iscntrl(c)) {
 				if (O_OLCUC(tty))
-					goto break_out;
+					goto do_write;
 				if (!is_continuation(c, tty))
 					ldata->column++;
 			}
 			break;
 		}
 	}
-break_out:
-	i = tty->ops->write(tty, buf, i);
-
-	mutex_unlock(&ldata->output_lock);
-	return i;
+do_write:
+	return tty->ops->write(tty, buf, i);
 }
 
 static int n_tty_process_echo_ops(struct tty_struct *tty, size_t *tail,
@@ -701,7 +680,7 @@ static int n_tty_process_echo_ops(struct tty_struct *tty, size_t *tail,
 static size_t __process_echoes(struct tty_struct *tty)
 {
 	struct n_tty_data *ldata = tty->disc_data;
-	int	space, old_space;
+	unsigned int space, old_space;
 	size_t tail;
 	u8 c;
 
@@ -1624,15 +1603,25 @@ static void __receive_buf(struct tty_struct *tty, const u8 *cp, const u8 *fp,
 	else if (ldata->raw || (L_EXTPROC(tty) && !preops))
 		n_tty_receive_buf_raw(tty, cp, fp, count);
 	else if (tty->closing && !L_EXTPROC(tty)) {
-		if (la_count > 0)
+		if (la_count > 0) {
 			n_tty_receive_buf_closing(tty, cp, fp, la_count, true);
-		if (count > la_count)
-			n_tty_receive_buf_closing(tty, cp, fp, count - la_count, false);
+			cp += la_count;
+			if (fp)
+				fp += la_count;
+			count -= la_count;
+		}
+		if (count > 0)
+			n_tty_receive_buf_closing(tty, cp, fp, count, false);
 	} else {
-		if (la_count > 0)
+		if (la_count > 0) {
 			n_tty_receive_buf_standard(tty, cp, fp, la_count, true);
-		if (count > la_count)
-			n_tty_receive_buf_standard(tty, cp, fp, count - la_count, false);
+			cp += la_count;
+			if (fp)
+				fp += la_count;
+			count -= la_count;
+		}
+		if (count > 0)
+			n_tty_receive_buf_standard(tty, cp, fp, count, false);
 
 		flush_echoes(tty);
 		if (tty->ops->flush_chars)
@@ -1965,26 +1954,27 @@ static bool copy_from_read_buf(const struct tty_struct *tty, u8 **kbp,
 	size_t head = smp_load_acquire(&ldata->commit_head);
 	size_t tail = MASK(ldata->read_tail);
 
-	n = min(head - ldata->read_tail, N_TTY_BUF_SIZE - tail);
-	n = min(*nr, n);
-	if (n) {
-		u8 *from = read_buf_addr(ldata, tail);
-		memcpy(*kbp, from, n);
-		is_eof = n == 1 && *from == EOF_CHAR(tty);
-		tty_audit_add_data(tty, from, n);
-		zero_buffer(tty, from, n);
-		smp_store_release(&ldata->read_tail, ldata->read_tail + n);
-		/* Turn single EOF into zero-length read */
-		if (L_EXTPROC(tty) && ldata->icanon && is_eof &&
-		    (head == ldata->read_tail))
-			return false;
-		*kbp += n;
-		*nr -= n;
+	n = min3(head - ldata->read_tail, N_TTY_BUF_SIZE - tail, *nr);
+	if (!n)
+		return false;
 
-		/* If we have more to copy, let the caller know */
-		return head != ldata->read_tail;
-	}
-	return false;
+	u8 *from = read_buf_addr(ldata, tail);
+	memcpy(*kbp, from, n);
+	is_eof = n == 1 && *from == EOF_CHAR(tty);
+	tty_audit_add_data(tty, from, n);
+	zero_buffer(tty, from, n);
+	smp_store_release(&ldata->read_tail, ldata->read_tail + n);
+
+	/* Turn single EOF into zero-length read */
+	if (L_EXTPROC(tty) && ldata->icanon && is_eof &&
+	    head == ldata->read_tail)
+		return false;
+
+	*kbp += n;
+	*nr -= n;
+
+	/* If we have more to copy, let the caller know */
+	return head != ldata->read_tail;
 }
 
 /**
@@ -2028,9 +2018,6 @@ static bool canon_copy_from_read_buf(const struct tty_struct *tty, u8 **kbp,
 	tail = MASK(ldata->read_tail);
 	size = min_t(size_t, tail + n, N_TTY_BUF_SIZE);
 
-	n_tty_trace("%s: nr:%zu tail:%zu n:%zu size:%zu\n",
-		    __func__, *nr, tail, n, size);
-
 	eol = find_next_bit(ldata->read_flags, size, tail);
 	more = n - (size - tail);
 	if (eol == N_TTY_BUF_SIZE && more) {
@@ -2047,9 +2034,6 @@ static bool canon_copy_from_read_buf(const struct tty_struct *tty, u8 **kbp,
 
 	if (!found || read_buf(ldata, eol) != __DISABLED_CHAR)
 		n = c;
-
-	n_tty_trace("%s: eol:%zu found:%d n:%zu c:%zu tail:%zu more:%zu\n",
-		    __func__, eol, found, n, c, tail, more);
 
 	tty_copy(tty, *kbp, tail, n);
 	*kbp += n;
@@ -2127,6 +2111,66 @@ static int job_control(struct tty_struct *tty, struct file *file)
 	return __tty_check_change(tty, SIGTTIN);
 }
 
+/*
+ * We still hold the atomic_read_lock and the termios_rwsem, and can just
+ * continue to copy data.
+ */
+static ssize_t n_tty_continue_cookie(struct tty_struct *tty, u8 *kbuf,
+				   size_t nr, void **cookie)
+{
+	struct n_tty_data *ldata = tty->disc_data;
+	u8 *kb = kbuf;
+
+	if (ldata->icanon && !L_EXTPROC(tty)) {
+		/*
+		 * If we have filled the user buffer, see if we should skip an
+		 * EOF character before releasing the lock and returning done.
+		 */
+		if (!nr)
+			canon_skip_eof(ldata);
+		else if (canon_copy_from_read_buf(tty, &kb, &nr))
+			return kb - kbuf;
+	} else {
+		if (copy_from_read_buf(tty, &kb, &nr))
+			return kb - kbuf;
+	}
+
+	/* No more data - release locks and stop retries */
+	n_tty_kick_worker(tty);
+	n_tty_check_unthrottle(tty);
+	up_read(&tty->termios_rwsem);
+	mutex_unlock(&ldata->atomic_read_lock);
+	*cookie = NULL;
+
+	return kb - kbuf;
+}
+
+static int n_tty_wait_for_input(struct tty_struct *tty, struct file *file,
+				struct wait_queue_entry *wait, long *timeout)
+{
+	if (test_bit(TTY_OTHER_CLOSED, &tty->flags))
+		return -EIO;
+	if (tty_hung_up_p(file))
+		return 0;
+	/*
+	 * Abort readers for ttys which never actually get hung up.
+	 * See __tty_hangup().
+	 */
+	if (test_bit(TTY_HUPPING, &tty->flags))
+		return 0;
+	if (!*timeout)
+		return 0;
+	if (tty_io_nonblock(tty, file))
+		return -EAGAIN;
+	if (signal_pending(current))
+		return -ERESTARTSYS;
+
+	up_read(&tty->termios_rwsem);
+	*timeout = wait_woken(wait, TASK_INTERRUPTIBLE, *timeout);
+	down_read(&tty->termios_rwsem);
+
+	return 1;
+}
 
 /**
  * n_tty_read		-	read function for tty
@@ -2154,47 +2198,19 @@ static ssize_t n_tty_read(struct tty_struct *tty, struct file *file, u8 *kbuf,
 	struct n_tty_data *ldata = tty->disc_data;
 	u8 *kb = kbuf;
 	DEFINE_WAIT_FUNC(wait, woken_wake_function);
-	int c;
 	int minimum, time;
-	ssize_t retval = 0;
+	ssize_t retval;
 	long timeout;
 	bool packet;
 	size_t old_tail;
 
-	/*
-	 * Is this a continuation of a read started earler?
-	 *
-	 * If so, we still hold the atomic_read_lock and the
-	 * termios_rwsem, and can just continue to copy data.
-	 */
-	if (*cookie) {
-		if (ldata->icanon && !L_EXTPROC(tty)) {
-			/*
-			 * If we have filled the user buffer, see
-			 * if we should skip an EOF character before
-			 * releasing the lock and returning done.
-			 */
-			if (!nr)
-				canon_skip_eof(ldata);
-			else if (canon_copy_from_read_buf(tty, &kb, &nr))
-				return kb - kbuf;
-		} else {
-			if (copy_from_read_buf(tty, &kb, &nr))
-				return kb - kbuf;
-		}
+	/* Is this a continuation of a read started earlier? */
+	if (*cookie)
+		return n_tty_continue_cookie(tty, kbuf, nr, cookie);
 
-		/* No more data - release locks and stop retries */
-		n_tty_kick_worker(tty);
-		n_tty_check_unthrottle(tty);
-		up_read(&tty->termios_rwsem);
-		mutex_unlock(&ldata->atomic_read_lock);
-		*cookie = NULL;
-		return kb - kbuf;
-	}
-
-	c = job_control(tty, file);
-	if (c < 0)
-		return c;
+	retval = job_control(tty, file);
+	if (retval < 0)
+		return retval;
 
 	/*
 	 *	Internal serialization of reads.
@@ -2245,34 +2261,12 @@ static ssize_t n_tty_read(struct tty_struct *tty, struct file *file, u8 *kbuf,
 			tty_buffer_flush_work(tty->port);
 			down_read(&tty->termios_rwsem);
 			if (!input_available_p(tty, 0)) {
-				if (test_bit(TTY_OTHER_CLOSED, &tty->flags)) {
-					retval = -EIO;
+				int ret = n_tty_wait_for_input(tty, file, &wait,
+							       &timeout);
+				if (ret <= 0) {
+					retval = ret;
 					break;
 				}
-				if (tty_hung_up_p(file))
-					break;
-				/*
-				 * Abort readers for ttys which never actually
-				 * get hung up.  See __tty_hangup().
-				 */
-				if (test_bit(TTY_HUPPING, &tty->flags))
-					break;
-				if (!timeout)
-					break;
-				if (tty_io_nonblock(tty, file)) {
-					retval = -EAGAIN;
-					break;
-				}
-				if (signal_pending(current)) {
-					retval = -ERESTARTSYS;
-					break;
-				}
-				up_read(&tty->termios_rwsem);
-
-				timeout = wait_woken(&wait, TASK_INTERRUPTIBLE,
-						timeout);
-
-				down_read(&tty->termios_rwsem);
 				continue;
 			}
 		}
@@ -2287,21 +2281,8 @@ static ssize_t n_tty_read(struct tty_struct *tty, struct file *file, u8 *kbuf,
 				nr--;
 			}
 
-			/*
-			 * Copy data, and if there is more to be had
-			 * and we have nothing more to wait for, then
-			 * let's mark us for retries.
-			 *
-			 * NOTE! We return here with both the termios_sem
-			 * and atomic_read_lock still held, the retries
-			 * will release them when done.
-			 */
-			if (copy_from_read_buf(tty, &kb, &nr) && kb - kbuf >= minimum) {
-more_to_be_read:
-				remove_wait_queue(&tty->read_wait, &wait);
-				*cookie = cookie;
-				return kb - kbuf;
-			}
+			if (copy_from_read_buf(tty, &kb, &nr) && kb - kbuf >= minimum)
+				goto more_to_be_read;
 		}
 
 		n_tty_check_unthrottle(tty);
@@ -2328,6 +2309,18 @@ more_to_be_read:
 		retval = kb - kbuf;
 
 	return retval;
+more_to_be_read:
+	/*
+	 * There is more to be had and we have nothing more to wait for, so
+	 * let's mark us for retries.
+	 *
+	 * NOTE! We return here with both the termios_sem and atomic_read_lock
+	 * still held, the retries will release them when done.
+	 */
+	remove_wait_queue(&tty->read_wait, &wait);
+	*cookie = cookie;
+
+	return kb - kbuf;
 }
 
 /**
@@ -2499,7 +2492,7 @@ static int n_tty_ioctl(struct tty_struct *tty, unsigned int cmd,
 		       unsigned long arg)
 {
 	struct n_tty_data *ldata = tty->disc_data;
-	int retval;
+	unsigned int num;
 
 	switch (cmd) {
 	case TIOCOUTQ:
@@ -2507,11 +2500,11 @@ static int n_tty_ioctl(struct tty_struct *tty, unsigned int cmd,
 	case TIOCINQ:
 		down_write(&tty->termios_rwsem);
 		if (L_ICANON(tty) && !L_EXTPROC(tty))
-			retval = inq_canon(ldata);
+			num = inq_canon(ldata);
 		else
-			retval = read_cnt(ldata);
+			num = read_cnt(ldata);
 		up_write(&tty->termios_rwsem);
-		return put_user(retval, (unsigned int __user *) arg);
+		return put_user(num, (unsigned int __user *) arg);
 	default:
 		return n_tty_ioctl_helper(tty, cmd, arg);
 	}

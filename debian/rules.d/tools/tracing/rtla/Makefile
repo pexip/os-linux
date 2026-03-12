@@ -1,17 +1,20 @@
 include $(top_rulesdir)/Makefile.inc
 
+# Upstream enables LTO by default, but we don't want it.  We need to
+# put -fno-lto in the CFLAGS *environment* variable so it comes after
+# the -flto option but does not override other necessary options
+# appended to CFLAGS by upstream.
+MAKE_UPSTREAM_ENV = CFLAGS=-fno-lto
+
+# Use the version of libcpupower that we just built
+CPPFLAGS += -I$(top_srcdir)/tools/power/cpupower/lib
+LDFLAGS += -L$(CURDIR)/../../power/cpupower
+
 all:
-# Out-of-tree build is not supported, so copy source to the build dir
-	echo '$(UPSTREAMVERSION)' >VERSION
-	rsync -a $(top_srcdir)/tools/tracing/rtla/ .
-	rsync -a $(top_srcdir)/Documentation/tools/rtla/ Documentation/
-	$(MAKE) EXTRA_CFLAGS='$(CFLAGS) $(CPPFLAGS)' EXTRA_LDFLAGS='$(LDFLAGS)' PKG_CONFIG='$(PKG_CONFIG)'
+	$(MAKE_UPSTREAM)
 
 install:
-	$(MAKE) install
+	$(MAKE_UPSTREAM) install
 ifneq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 	rm -rf $(DESTDIR)/usr/share/man
 endif
-
-clean:
-	rm -rf *

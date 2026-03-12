@@ -9,11 +9,17 @@
 //
 // Hash part based on omap-sham.c driver.
 
+#include <crypto/aes.h>
+#include <crypto/ctr.h>
+#include <crypto/internal/hash.h>
+#include <crypto/internal/skcipher.h>
+#include <crypto/md5.h>
+#include <crypto/scatterwalk.h>
+#include <crypto/sha1.h>
+#include <crypto/sha2.h>
 #include <linux/clk.h>
-#include <linux/crypto.h>
 #include <linux/dma-mapping.h>
 #include <linux/err.h>
-#include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
@@ -22,17 +28,9 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/scatterlist.h>
-
-#include <crypto/ctr.h>
-#include <crypto/aes.h>
-#include <crypto/algapi.h>
-#include <crypto/scatterwalk.h>
-
-#include <crypto/hash.h>
-#include <crypto/md5.h>
-#include <crypto/sha1.h>
-#include <crypto/sha2.h>
-#include <crypto/internal/hash.h>
+#include <linux/slab.h>
+#include <linux/spinlock.h>
+#include <linux/string.h>
 
 #define _SBF(s, v)			((v) << (s))
 
@@ -223,9 +221,6 @@
 
 /* HASH HW constants */
 #define BUFLEN			HASH_BLOCK_SIZE
-
-#define SSS_HASH_DMA_LEN_ALIGN	8
-#define SSS_HASH_DMA_ALIGN_MASK	(SSS_HASH_DMA_LEN_ALIGN - 1)
 
 #define SSS_HASH_QUEUE_LENGTH	10
 
@@ -461,19 +456,6 @@ static void s5p_free_sg_cpy(struct s5p_aes_dev *dev, struct scatterlist **sg)
 	*sg = NULL;
 }
 
-static void s5p_sg_copy_buf(void *buf, struct scatterlist *sg,
-			    unsigned int nbytes, int out)
-{
-	struct scatter_walk walk;
-
-	if (!nbytes)
-		return;
-
-	scatterwalk_start(&walk, sg);
-	scatterwalk_copychunks(buf, &walk, nbytes, out);
-	scatterwalk_done(&walk, out, 0);
-}
-
 static void s5p_sg_done(struct s5p_aes_dev *dev)
 {
 	struct skcipher_request *req = dev->req;
@@ -483,8 +465,8 @@ static void s5p_sg_done(struct s5p_aes_dev *dev)
 		dev_dbg(dev->dev,
 			"Copying %d bytes of output data back to original place\n",
 			dev->req->cryptlen);
-		s5p_sg_copy_buf(sg_virt(dev->sg_dst_cpy), dev->req->dst,
-				dev->req->cryptlen, 1);
+		memcpy_to_sglist(dev->req->dst, 0, sg_virt(dev->sg_dst_cpy),
+				 dev->req->cryptlen);
 	}
 	s5p_free_sg_cpy(dev, &dev->sg_src_cpy);
 	s5p_free_sg_cpy(dev, &dev->sg_dst_cpy);
@@ -529,7 +511,7 @@ static int s5p_make_sg_cpy(struct s5p_aes_dev *dev, struct scatterlist *src,
 		return -ENOMEM;
 	}
 
-	s5p_sg_copy_buf(pages, src, dev->req->cryptlen, 0);
+	memcpy_from_sglist(pages, src, 0, dev->req->cryptlen);
 
 	sg_init_table(*dst, 1);
 	sg_set_buf(*dst, pages, len);
@@ -1038,8 +1020,7 @@ static int s5p_hash_copy_sgs(struct s5p_hash_reqctx *ctx,
 	if (ctx->bufcnt)
 		memcpy(buf, ctx->dd->xmit_buf, ctx->bufcnt);
 
-	scatterwalk_map_and_copy(buf + ctx->bufcnt, sg, ctx->skip,
-				 new_len, 0);
+	memcpy_from_sglist(buf + ctx->bufcnt, sg, ctx->skip, new_len);
 	sg_init_table(ctx->sgl, 1);
 	sg_set_buf(ctx->sgl, buf, len);
 	ctx->sg = ctx->sgl;
@@ -1232,8 +1213,7 @@ static int s5p_hash_prepare_request(struct ahash_request *req, bool update)
 		if (len > nbytes)
 			len = nbytes;
 
-		scatterwalk_map_and_copy(ctx->buffer + ctx->bufcnt, req->src,
-					 0, len, 0);
+		memcpy_from_sglist(ctx->buffer + ctx->bufcnt, req->src, 0, len);
 		ctx->bufcnt += len;
 		nbytes -= len;
 		ctx->skip = len;
@@ -1256,9 +1236,8 @@ static int s5p_hash_prepare_request(struct ahash_request *req, bool update)
 		hash_later = ctx->total - xmit_len;
 		/* copy hash_later bytes from end of req->src */
 		/* previous bytes are in xmit_buf, so no overwrite */
-		scatterwalk_map_and_copy(ctx->buffer, req->src,
-					 req->nbytes - hash_later,
-					 hash_later, 0);
+		memcpy_from_sglist(ctx->buffer, req->src,
+				   req->nbytes - hash_later, hash_later);
 	}
 
 	if (xmit_len > BUFLEN) {
@@ -1270,8 +1249,8 @@ static int s5p_hash_prepare_request(struct ahash_request *req, bool update)
 		/* have buffered data only */
 		if (unlikely(!ctx->bufcnt)) {
 			/* first update didn't fill up buffer */
-			scatterwalk_map_and_copy(ctx->dd->xmit_buf, req->src,
-						 0, xmit_len, 0);
+			memcpy_from_sglist(ctx->dd->xmit_buf, req->src,
+					   0, xmit_len);
 		}
 
 		sg_init_table(ctx->sgl, 1);
@@ -1509,8 +1488,8 @@ static int s5p_hash_update(struct ahash_request *req)
 		return 0;
 
 	if (ctx->bufcnt + req->nbytes <= BUFLEN) {
-		scatterwalk_map_and_copy(ctx->buffer + ctx->bufcnt, req->src,
-					 0, req->nbytes, 0);
+		memcpy_from_sglist(ctx->buffer + ctx->bufcnt, req->src,
+				   0, req->nbytes);
 		ctx->bufcnt += req->nbytes;
 		return 0;
 	}
@@ -1746,7 +1725,6 @@ static struct ahash_alg algs_sha1_md5_sha256[] = {
 					  CRYPTO_ALG_NEED_FALLBACK,
 		.cra_blocksize		= HASH_BLOCK_SIZE,
 		.cra_ctxsize		= sizeof(struct s5p_hash_ctx),
-		.cra_alignmask		= SSS_HASH_DMA_ALIGN_MASK,
 		.cra_module		= THIS_MODULE,
 		.cra_init		= s5p_hash_cra_init,
 		.cra_exit		= s5p_hash_cra_exit,
@@ -1771,7 +1749,6 @@ static struct ahash_alg algs_sha1_md5_sha256[] = {
 					  CRYPTO_ALG_NEED_FALLBACK,
 		.cra_blocksize		= HASH_BLOCK_SIZE,
 		.cra_ctxsize		= sizeof(struct s5p_hash_ctx),
-		.cra_alignmask		= SSS_HASH_DMA_ALIGN_MASK,
 		.cra_module		= THIS_MODULE,
 		.cra_init		= s5p_hash_cra_init,
 		.cra_exit		= s5p_hash_cra_exit,
@@ -1796,7 +1773,6 @@ static struct ahash_alg algs_sha1_md5_sha256[] = {
 					  CRYPTO_ALG_NEED_FALLBACK,
 		.cra_blocksize		= HASH_BLOCK_SIZE,
 		.cra_ctxsize		= sizeof(struct s5p_hash_ctx),
-		.cra_alignmask		= SSS_HASH_DMA_ALIGN_MASK,
 		.cra_module		= THIS_MODULE,
 		.cra_init		= s5p_hash_cra_init,
 		.cra_exit		= s5p_hash_cra_exit,
@@ -2315,7 +2291,7 @@ err_clk:
 	return err;
 }
 
-static int s5p_aes_remove(struct platform_device *pdev)
+static void s5p_aes_remove(struct platform_device *pdev)
 {
 	struct s5p_aes_dev *pdata = platform_get_drvdata(pdev);
 	int i;
@@ -2337,13 +2313,11 @@ static int s5p_aes_remove(struct platform_device *pdev)
 
 	clk_disable_unprepare(pdata->clk);
 	s5p_dev = NULL;
-
-	return 0;
 }
 
 static struct platform_driver s5p_aes_crypto = {
 	.probe	= s5p_aes_probe,
-	.remove	= s5p_aes_remove,
+	.remove = s5p_aes_remove,
 	.driver	= {
 		.name	= "s5p-secss",
 		.of_match_table = s5p_sss_dt_match,

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0 or Linux-OpenIB
+// SPDX-License-Identifier: GPL-2.0 OR Linux-OpenIB
 /* Copyright (c) 2015 - 2021 Intel Corporation */
 #include "osdep.h"
 #include "type.h"
@@ -85,6 +85,7 @@ static u64 i40iw_masks[IRDMA_MAX_MASKS] = {
 	I40E_CQPSQ_CQ_CEQID,
 	I40E_CQPSQ_CQ_CQID,
 	I40E_COMMIT_FPM_CQCNT,
+	I40E_CQPSQ_UPESD_HMCFNID,
 };
 
 static u64 i40iw_shifts[IRDMA_MAX_SHIFTS] = {
@@ -94,6 +95,7 @@ static u64 i40iw_shifts[IRDMA_MAX_SHIFTS] = {
 	I40E_CQPSQ_CQ_CEQID_S,
 	I40E_CQPSQ_CQ_CQID_S,
 	I40E_COMMIT_FPM_CQCNT_S,
+	I40E_CQPSQ_UPESD_HMCFNID_S,
 };
 
 /**

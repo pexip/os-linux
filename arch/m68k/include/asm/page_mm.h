@@ -2,7 +2,7 @@
 #ifndef _M68K_PAGE_MM_H
 #define _M68K_PAGE_MM_H
 
-#ifndef __ASSEMBLY__
+#ifndef __ASSEMBLER__
 
 #include <linux/compiler.h>
 #include <asm/module.h>
@@ -13,17 +13,16 @@
 #ifdef CPU_M68040_OR_M68060_ONLY
 static inline void copy_page(void *to, void *from)
 {
-  unsigned long tmp;
+	unsigned long tmp;
 
-  __asm__ __volatile__("1:\t"
-		       ".chip 68040\n\t"
-		       "move16 %1@+,%0@+\n\t"
-		       "move16 %1@+,%0@+\n\t"
-		       ".chip 68k\n\t"
-		       "dbra  %2,1b\n\t"
-		       : "=a" (to), "=a" (from), "=d" (tmp)
-		       : "0" (to), "1" (from) , "2" (PAGE_SIZE / 32 - 1)
-		       );
+	__asm__ __volatile__("1:\t"
+			     ".chip 68040\n\t"
+			     "move16 %1@+,%0@+\n\t"
+			     "move16 %1@+,%0@+\n\t"
+			     ".chip 68k\n\t"
+			     "dbra  %2,1b\n\t"
+			     : "=a" (to), "=a" (from), "=d" (tmp)
+			     : "0" (to), "1" (from), "2" (PAGE_SIZE / 32 - 1));
 }
 
 static inline void clear_page(void *page)
@@ -95,23 +94,23 @@ static inline void *__va(unsigned long paddr)
 #define __pa(x) ___pa((unsigned long)(x))
 static inline unsigned long ___pa(unsigned long x)
 {
-     if(x == 0)
-	  return 0;
-     if(x >= PAGE_OFFSET)
-        return (x-PAGE_OFFSET);
-     else
-        return (x+0x2000000);
+	if (x == 0)
+		return 0;
+	if (x >= PAGE_OFFSET)
+		return (x - PAGE_OFFSET);
+	else
+		return (x + 0x2000000);
 }
 
 static inline void *__va(unsigned long x)
 {
-     if(x == 0)
-	  return (void *)0;
+	if (x == 0)
+		return (void *)0;
 
-     if(x < 0x2000000)
-        return (void *)(x+PAGE_OFFSET);
-     else
-        return (void *)(x-0x2000000);
+	if (x < 0x2000000)
+		return (void *)(x + PAGE_OFFSET);
+	else
+		return (void *)(x - 0x2000000);
 }
 #endif	/* CONFIG_SUN3 */
 
@@ -145,6 +144,6 @@ extern int m68k_virt_to_node_shift;
 #define virt_addr_valid(kaddr)	((unsigned long)(kaddr) >= PAGE_OFFSET && (unsigned long)(kaddr) < (unsigned long)high_memory)
 #define pfn_valid(pfn)		virt_addr_valid(pfn_to_virt(pfn))
 
-#endif /* __ASSEMBLY__ */
+#endif /* __ASSEMBLER__ */
 
 #endif /* _M68K_PAGE_MM_H */

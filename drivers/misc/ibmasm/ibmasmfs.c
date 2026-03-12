@@ -94,7 +94,7 @@ static int ibmasmfs_init_fs_context(struct fs_context *fc)
 
 static const struct super_operations ibmasmfs_s_ops = {
 	.statfs		= simple_statfs,
-	.drop_inode	= generic_delete_inode,
+	.drop_inode	= inode_just_drop,
 };
 
 static const struct file_operations *ibmasmfs_dir_ops = &simple_dir_operations;
@@ -139,7 +139,7 @@ static struct inode *ibmasmfs_make_inode(struct super_block *sb, int mode)
 	if (ret) {
 		ret->i_ino = get_next_ino();
 		ret->i_mode = mode;
-		ret->i_atime = ret->i_mtime = inode_set_ctime_current(ret);
+		simple_inode_init_ts(ret);
 	}
 	return ret;
 }
@@ -525,15 +525,9 @@ static ssize_t remote_settings_file_write(struct file *file, const char __user *
 	if (*offset != 0)
 		return 0;
 
-	buff = kzalloc (count + 1, GFP_KERNEL);
-	if (!buff)
-		return -ENOMEM;
-
-
-	if (copy_from_user(buff, ubuff, count)) {
-		kfree(buff);
-		return -EFAULT;
-	}
+	buff = memdup_user_nul(ubuff, count);
+	if (IS_ERR(buff))
+		return PTR_ERR(buff);
 
 	value = simple_strtoul(buff, NULL, 10);
 	writel(value, address);

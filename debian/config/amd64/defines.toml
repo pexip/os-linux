@@ -1,0 +1,47 @@
+[[flavour]]
+name = 'amd64'
+[flavour.defs]
+is_default = true
+[flavour.description]
+hardware = '64-bit PCs'
+hardware_long = 'PCs with AMD64, Intel 64 or VIA Nano processors'
+[flavour.packages]
+installer = true
+
+[[flavour]]
+name = 'cloud-amd64'
+[flavour.build]
+config = ['config.cloud']
+[flavour.description]
+hardware = 'x86-64 cloud'
+hardware_long = 'cloud platforms including Amazon EC2, Microsoft Azure, and Google Compute Engine'
+
+[[flavour]]
+name = 'rt-amd64'
+[flavour.build]
+config = ['config.rt']
+[flavour.description]
+hardware = '64-bit PCs'
+hardware_long = 'PCs with AMD64, Intel 64 or VIA Nano processors'
+parts = ['rt']
+
+[[flavour]]
+name = 'test'
+[flavour.build]
+config = ['config.test', 'amd64/config.test']
+[flavour.defs]
+is_test = true
+[flavour.packages]
+installer = true
+
+[[featureset]]
+name = 'none'
+
+[build]
+enable_rust = true
+enable_signed = true
+kernel_file = 'arch/x86/boot/bzImage'
+kernel_stem = 'vmlinuz'
+
+[relations.image]
+suggests = ['grub-pc | grub-efi-amd64 | extlinux']

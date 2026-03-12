@@ -24,7 +24,7 @@ static const struct reg_sequence adv7533_cec_fixed_registers[] = {
 	{ 0x05, 0xc8 },
 };
 
-static void adv7511_dsi_config_timing_gen(struct adv7511 *adv)
+void adv7533_dsi_config_timing_gen(struct adv7511 *adv)
 {
 	struct mipi_dsi_device *dsi = adv->dsi;
 	struct drm_display_mode *mode = &adv->curr_mode;
@@ -67,9 +67,6 @@ void adv7533_dsi_power_on(struct adv7511 *adv)
 {
 	struct mipi_dsi_device *dsi = adv->dsi;
 
-	if (adv->use_timing_gen)
-		adv7511_dsi_config_timing_gen(adv);
-
 	/* set number of dsi lanes */
 	regmap_write(adv->regmap_cec, 0x1c, dsi->lanes << 4);
 
@@ -103,18 +100,11 @@ void adv7533_dsi_power_off(struct adv7511 *adv)
 enum drm_mode_status adv7533_mode_valid(struct adv7511 *adv,
 					const struct drm_display_mode *mode)
 {
-	unsigned long max_lane_freq;
 	struct mipi_dsi_device *dsi = adv->dsi;
 	u8 bpp = mipi_dsi_pixel_format_to_bpp(dsi->format);
 
-	/* Check max clock for either 7533 or 7535 */
-	if (mode->clock > (adv->type == ADV7533 ? 80000 : 148500))
-		return MODE_CLOCK_HIGH;
-
 	/* Check max clock for each lane */
-	max_lane_freq = (adv->type == ADV7533 ? 800000 : 891000);
-
-	if (mode->clock * bpp > max_lane_freq * adv->num_dsi_lanes)
+	if (mode->clock * bpp > adv->info->max_lane_freq_khz * adv->num_dsi_lanes)
 		return MODE_CLOCK_HIGH;
 
 	return MODE_OK;
@@ -175,7 +165,7 @@ int adv7533_parse_dt(struct device_node *np, struct adv7511 *adv)
 
 	of_property_read_u32(np, "adi,dsi-lanes", &num_lanes);
 
-	if (num_lanes < 1 || num_lanes > 4)
+	if (num_lanes < 2 || num_lanes > 4)
 		return -EINVAL;
 
 	adv->num_dsi_lanes = num_lanes;
@@ -183,8 +173,6 @@ int adv7533_parse_dt(struct device_node *np, struct adv7511 *adv)
 	adv->host_node = of_graph_get_remote_node(np, 0, 0);
 	if (!adv->host_node)
 		return -ENODEV;
-
-	of_node_put(adv->host_node);
 
 	adv->use_timing_gen = !of_property_read_bool(np,
 						"adi,disable-timing-generator");

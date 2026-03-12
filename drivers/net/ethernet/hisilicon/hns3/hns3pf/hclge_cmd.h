@@ -731,7 +731,7 @@ struct hclge_fd_tcam_config_3_cmd {
 #define HCLGE_FD_AD_QID_M		GENMASK(11, 2)
 #define HCLGE_FD_AD_USE_COUNTER_B	12
 #define HCLGE_FD_AD_COUNTER_NUM_S	13
-#define HCLGE_FD_AD_COUNTER_NUM_M	GENMASK(20, 13)
+#define HCLGE_FD_AD_COUNTER_NUM_M	GENMASK(19, 13)
 #define HCLGE_FD_AD_NXT_STEP_B		20
 #define HCLGE_FD_AD_NXT_KEY_S		21
 #define HCLGE_FD_AD_NXT_KEY_M		GENMASK(25, 21)
@@ -828,7 +828,8 @@ struct hclge_dev_specs_1_cmd {
 	__le16 mc_mac_size;
 	u8 rsv1[6];
 	u8 tnl_num;
-	u8 rsv2[5];
+	u8 hilink_version;
+	u8 rsv2[4];
 };
 
 /* mac speed type defined in firmware command */

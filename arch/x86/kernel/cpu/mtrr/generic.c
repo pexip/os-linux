@@ -9,9 +9,11 @@
 #include <linux/io.h>
 #include <linux/mm.h>
 #include <linux/cc_platform.h>
+#include <linux/string_choices.h>
 #include <asm/processor-flags.h>
 #include <asm/cacheinfo.h>
 #include <asm/cpufeature.h>
+#include <asm/cpu_device_id.h>
 #include <asm/hypervisor.h>
 #include <asm/mshyperv.h>
 #include <asm/tlbflush.h>
@@ -106,6 +108,9 @@ static inline void k8_check_syscfg_dram_mod_en(void)
 
 	if (!((boot_cpu_data.x86_vendor == X86_VENDOR_AMD) &&
 	      (boot_cpu_data.x86 >= 0x0f)))
+		return;
+
+	if (cc_platform_has(CC_ATTR_HOST_SEV_SNP))
 		return;
 
 	rdmsr(MSR_AMD64_SYSCFG, lo, hi);
@@ -420,7 +425,7 @@ void __init mtrr_copy_map(void)
 }
 
 /**
- * mtrr_overwrite_state - set static MTRR state
+ * guest_force_mtrr_state - set static MTRR state for a guest
  *
  * Used to set MTRR state via different means (e.g. with data obtained from
  * a hypervisor).
@@ -428,9 +433,13 @@ void __init mtrr_copy_map(void)
  * from the x86_init.hyper.init_platform() hook.  It can be called only once.
  * The MTRR state can't be changed afterwards.  To ensure that, X86_FEATURE_MTRR
  * is cleared.
+ *
+ * @var: MTRR variable range array to use
+ * @num_var: length of the @var array
+ * @def_type: default caching type
  */
-void mtrr_overwrite_state(struct mtrr_var_range *var, unsigned int num_var,
-			  mtrr_type def_type)
+void guest_force_mtrr_state(struct mtrr_var_range *var, unsigned int num_var,
+			    mtrr_type def_type)
 {
 	unsigned int i;
 
@@ -492,13 +501,15 @@ static u8 type_merge(u8 type, u8 new_type, u8 *uniform)
 /**
  * mtrr_type_lookup - look up memory type in MTRR
  *
+ * @start: Begin of the physical address range
+ * @end: End of the physical address range
+ * @uniform: output argument:
+ *  - 1: the returned MTRR type is valid for the whole region
+ *  - 0: otherwise
+ *
  * Return Values:
  * MTRR_TYPE_(type)  - The effective MTRR type for the region
  * MTRR_TYPE_INVALID - MTRR is disabled
- *
- * Output Argument:
- * uniform - Set to 1 when the returned MTRR type is valid for the whole
- *	     region, set to 0 else.
  */
 u8 mtrr_type_lookup(u64 start, u64 end, u8 *uniform)
 {
@@ -582,7 +593,7 @@ static void get_fixed_ranges(mtrr_type *frs)
 
 void mtrr_save_fixed_ranges(void *info)
 {
-	if (boot_cpu_has(X86_FEATURE_MTRR))
+	if (mtrr_state.have_fixed)
 		get_fixed_ranges(mtrr_state.fixed_ranges);
 }
 
@@ -637,10 +648,10 @@ static void __init print_mtrr_state(void)
 	pr_info("MTRR default type: %s\n",
 		mtrr_attrib_to_str(mtrr_state.def_type));
 	if (mtrr_state.have_fixed) {
-		pr_info("MTRR fixed ranges %sabled:\n",
-			((mtrr_state.enabled & MTRR_STATE_MTRR_ENABLED) &&
-			 (mtrr_state.enabled & MTRR_STATE_MTRR_FIXED_ENABLED)) ?
-			 "en" : "dis");
+		pr_info("MTRR fixed ranges %s:\n",
+			str_enabled_disabled(
+			 (mtrr_state.enabled & MTRR_STATE_MTRR_ENABLED) &&
+			 (mtrr_state.enabled & MTRR_STATE_MTRR_FIXED_ENABLED)));
 		print_fixed(0x00000, 0x10000, mtrr_state.fixed_ranges + 0);
 		for (i = 0; i < 2; ++i)
 			print_fixed(0x80000 + i * 0x20000, 0x04000,
@@ -652,8 +663,8 @@ static void __init print_mtrr_state(void)
 		/* tail */
 		print_fixed_last();
 	}
-	pr_info("MTRR variable ranges %sabled:\n",
-		mtrr_state.enabled & MTRR_STATE_MTRR_ENABLED ? "en" : "dis");
+	pr_info("MTRR variable ranges %s:\n",
+		str_enabled_disabled(mtrr_state.enabled & MTRR_STATE_MTRR_ENABLED));
 	high_width = (boot_cpu_data.x86_phys_bits - (32 - PAGE_SHIFT) + 3) / 4;
 
 	for (i = 0; i < num_var_ranges; ++i) {
@@ -1016,8 +1027,7 @@ int generic_validate_add_page(unsigned long base, unsigned long size,
 	 * For Intel PPro stepping <= 7
 	 * must be 4 MiB aligned and not touch 0x70000000 -> 0x7003FFFF
 	 */
-	if (mtrr_if == &generic_mtrr_ops && boot_cpu_data.x86 == 6 &&
-	    boot_cpu_data.x86_model == 1 &&
+	if (mtrr_if == &generic_mtrr_ops && boot_cpu_data.x86_vfm == INTEL_PENTIUM_PRO &&
 	    boot_cpu_data.x86_stepping <= 7) {
 		if (base & ((1 << (22 - PAGE_SHIFT)) - 1)) {
 			pr_warn("mtrr: base(0x%lx000) is not 4 MiB aligned\n", base);

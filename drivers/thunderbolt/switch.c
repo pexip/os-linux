@@ -290,8 +290,9 @@ static int nvm_authenticate(struct tb_switch *sw, bool auth_only)
  * @size: Size of the buffer in bytes
  *
  * Reads from router NVM and returns the requested data in @buf. Locking
- * is up to the caller. Returns %0 in success and negative errno in case
- * of failure.
+ * is up to the caller.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_nvm_read(struct tb_switch *sw, unsigned int address, void *buf,
 		       size_t size)
@@ -372,6 +373,7 @@ static int tb_switch_nvm_add(struct tb_switch *sw)
 		ret = tb_nvm_add_active(nvm, nvm_read);
 		if (ret)
 			goto err_nvm;
+		tb_sw_dbg(sw, "NVM version %x.%x\n", nvm->major, nvm->minor);
 	}
 
 	if (!sw->no_nvm_upgrade) {
@@ -463,7 +465,7 @@ static void tb_dump_port(struct tb *tb, const struct tb_port *port)
  *
  * The port must have a TB_CAP_PHY (i.e. it should be a real port).
  *
- * Return: Returns an enum tb_port_state on success or an error code on failure.
+ * Return: &enum tb_port_state or negative error code on failure.
  */
 int tb_port_state(struct tb_port *port)
 {
@@ -490,9 +492,11 @@ int tb_port_state(struct tb_port *port)
  * switch resume). Otherwise we only wait if a device is registered but the link
  * has not yet been established.
  *
- * Return: Returns an error code on failure. Returns 0 if the port is not
- * connected or failed to reach state TB_PORT_UP within one second. Returns 1
- * if the port is connected and in state TB_PORT_UP.
+ * Return:
+ * * %0 - If the port is not connected or failed to reach
+ *   state %TB_PORT_UP within one second.
+ * * %1 - If the port is connected and in state %TB_PORT_UP.
+ * * Negative errno - An error occurred.
  */
 int tb_wait_for_port(struct tb_port *port, bool wait_if_unplugged)
 {
@@ -561,7 +565,7 @@ int tb_wait_for_port(struct tb_port *port, bool wait_if_unplugged)
  * Change the number of NFC credits allocated to @port by @credits. To remove
  * NFC credits pass a negative amount of credits.
  *
- * Return: Returns 0 on success or an error code on failure.
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_port_add_nfc_credits(struct tb_port *port, int credits)
 {
@@ -598,7 +602,7 @@ int tb_port_add_nfc_credits(struct tb_port *port, int credits)
  * @port: Port whose counters to clear
  * @counter: Counter index to clear
  *
- * Return: Returns 0 on success or an error code on failure.
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_port_clear_counter(struct tb_port *port, int counter)
 {
@@ -613,6 +617,8 @@ int tb_port_clear_counter(struct tb_port *port, int counter)
  *
  * Needed for USB4 but can be called for any CIO/USB4 ports. Makes the
  * downstream router accessible for CM.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_port_unlock(struct tb_port *port)
 {
@@ -658,6 +664,8 @@ static int __tb_port_enable(struct tb_port *port, bool enable)
  * @port: Port to enable (can be %NULL)
  *
  * This is used for lane 0 and 1 adapters to enable it.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_port_enable(struct tb_port *port)
 {
@@ -669,10 +677,19 @@ int tb_port_enable(struct tb_port *port)
  * @port: Port to disable (can be %NULL)
  *
  * This is used for lane 0 and 1 adapters to disable it.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_port_disable(struct tb_port *port)
 {
 	return __tb_port_enable(port, false);
+}
+
+static int tb_port_reset(struct tb_port *port)
+{
+	if (tb_switch_is_usb4(port->sw))
+		return port->cap_usb4 ? usb4_port_reset(port) : 0;
+	return tb_lc_reset_port(port);
 }
 
 /*
@@ -681,7 +698,7 @@ int tb_port_disable(struct tb_port *port)
  * This is a helper method for tb_switch_alloc. Does not check or initialize
  * any downstream switches.
  *
- * Return: Returns 0 on success or an error code on failure.
+ * Return: %0 on success, negative errno otherwise.
  */
 static int tb_init_port(struct tb_port *port)
 {
@@ -770,7 +787,7 @@ static int tb_port_alloc_hopid(struct tb_port *port, bool in, int min_hopid,
 	if (max_hopid < 0 || max_hopid > port_max_hopid)
 		max_hopid = port_max_hopid;
 
-	return ida_simple_get(ida, min_hopid, max_hopid + 1, GFP_KERNEL);
+	return ida_alloc_range(ida, min_hopid, max_hopid, GFP_KERNEL);
 }
 
 /**
@@ -808,7 +825,7 @@ int tb_port_alloc_out_hopid(struct tb_port *port, int min_hopid, int max_hopid)
  */
 void tb_port_release_in_hopid(struct tb_port *port, int hopid)
 {
-	ida_simple_remove(&port->in_hopids, hopid);
+	ida_free(&port->in_hopids, hopid);
 }
 
 /**
@@ -818,7 +835,7 @@ void tb_port_release_in_hopid(struct tb_port *port, int hopid)
  */
 void tb_port_release_out_hopid(struct tb_port *port, int hopid)
 {
-	ida_simple_remove(&port->out_hopids, hopid);
+	ida_free(&port->out_hopids, hopid);
 }
 
 static inline bool tb_switch_is_reachable(const struct tb_switch *parent,
@@ -839,9 +856,9 @@ static inline bool tb_switch_is_reachable(const struct tb_switch *parent,
  * link port, the function follows that link and returns another end on
  * that same link.
  *
- * If the @end port has been reached, return %NULL.
- *
  * Domain tb->lock must be held when this function is called.
+ *
+ * Return: Pointer to &struct tb_port, %NULL if the @end port has been reached.
  */
 struct tb_port *tb_next_port_on_path(struct tb_port *start, struct tb_port *end,
 				     struct tb_port *prev)
@@ -886,7 +903,7 @@ struct tb_port *tb_next_port_on_path(struct tb_port *start, struct tb_port *end,
  * tb_port_get_link_speed() - Get current link speed
  * @port: Port to check (USB4 or CIO)
  *
- * Returns link speed in Gb/s or negative errno in case of failure.
+ * Return: Link speed in Gb/s or negative errno in case of failure.
  */
 int tb_port_get_link_speed(struct tb_port *port)
 {
@@ -915,11 +932,39 @@ int tb_port_get_link_speed(struct tb_port *port)
 }
 
 /**
+ * tb_port_get_link_generation() - Returns link generation
+ * @port: Lane adapter
+ *
+ * Return: Link generation as a number or negative errno in case of
+ * failure.
+ *
+ * Does not distinguish between Thunderbolt 1 and Thunderbolt 2
+ * links so for those always returns %2.
+ */
+int tb_port_get_link_generation(struct tb_port *port)
+{
+	int ret;
+
+	ret = tb_port_get_link_speed(port);
+	if (ret < 0)
+		return ret;
+
+	switch (ret) {
+	case 40:
+		return 4;
+	case 20:
+		return 3;
+	default:
+		return 2;
+	}
+}
+
+/**
  * tb_port_get_link_width() - Get current link width
  * @port: Port to check (USB4 or CIO)
  *
- * Returns link width. Return the link width as encoded in &enum
- * tb_link_width or negative errno in case of failure.
+ * Return: Link width encoded in &enum tb_link_width or
+ * negative errno in case of failure.
  */
 int tb_port_get_link_width(struct tb_port *port)
 {
@@ -939,8 +984,17 @@ int tb_port_get_link_width(struct tb_port *port)
 		LANE_ADP_CS_1_CURRENT_WIDTH_SHIFT;
 }
 
-static bool tb_port_is_width_supported(struct tb_port *port,
-				       unsigned int width_mask)
+/**
+ * tb_port_width_supported() - Is the given link width supported
+ * @port: Port to check
+ * @width: Widths to check (bitmask)
+ *
+ * Can be called to any lane adapter. Checks if given @width is
+ * supported by the hardware.
+ *
+ * Return: %true if link width is supported, %false otherwise.
+ */
+bool tb_port_width_supported(struct tb_port *port, unsigned int width)
 {
 	u32 phy, widths;
 	int ret;
@@ -948,20 +1002,23 @@ static bool tb_port_is_width_supported(struct tb_port *port,
 	if (!port->cap_phy)
 		return false;
 
+	if (width & (TB_LINK_WIDTH_ASYM_TX | TB_LINK_WIDTH_ASYM_RX)) {
+		if (tb_port_get_link_generation(port) < 4 ||
+		    !usb4_port_asym_supported(port))
+			return false;
+	}
+
 	ret = tb_port_read(port, &phy, TB_CFG_PORT,
 			   port->cap_phy + LANE_ADP_CS_0, 1);
 	if (ret)
 		return false;
 
-	widths = (phy & LANE_ADP_CS_0_SUPPORTED_WIDTH_MASK) >>
-		LANE_ADP_CS_0_SUPPORTED_WIDTH_SHIFT;
-
-	return widths & width_mask;
-}
-
-static bool is_gen4_link(struct tb_port *port)
-{
-	return tb_port_get_link_speed(port) > 20;
+	/*
+	 * The field encoding is the same as &enum tb_link_width (which is
+	 * passed to @width).
+	 */
+	widths = FIELD_GET(LANE_ADP_CS_0_SUPPORTED_WIDTH_MASK, phy);
+	return widths & width;
 }
 
 /**
@@ -972,7 +1029,7 @@ static bool is_gen4_link(struct tb_port *port)
  * Sets the target link width of the lane adapter to @width. Does not
  * enable/disable lane bonding. For that call tb_port_set_lane_bonding().
  *
- * Return: %0 in case of success and negative errno in case of error
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_port_set_link_width(struct tb_port *port, enum tb_link_width width)
 {
@@ -991,15 +1048,23 @@ int tb_port_set_link_width(struct tb_port *port, enum tb_link_width width)
 	switch (width) {
 	case TB_LINK_WIDTH_SINGLE:
 		/* Gen 4 link cannot be single */
-		if (is_gen4_link(port))
+		if (tb_port_get_link_generation(port) >= 4)
 			return -EOPNOTSUPP;
 		val |= LANE_ADP_CS_1_TARGET_WIDTH_SINGLE <<
 			LANE_ADP_CS_1_TARGET_WIDTH_SHIFT;
 		break;
+
 	case TB_LINK_WIDTH_DUAL:
+		if (tb_port_get_link_generation(port) >= 4)
+			return usb4_port_asym_set_link_width(port, width);
 		val |= LANE_ADP_CS_1_TARGET_WIDTH_DUAL <<
 			LANE_ADP_CS_1_TARGET_WIDTH_SHIFT;
 		break;
+
+	case TB_LINK_WIDTH_ASYM_TX:
+	case TB_LINK_WIDTH_ASYM_RX:
+		return usb4_port_asym_set_link_width(port, width);
+
 	default:
 		return -EINVAL;
 	}
@@ -1018,7 +1083,7 @@ int tb_port_set_link_width(struct tb_port *port, enum tb_link_width width)
  * cases one should use tb_port_lane_bonding_enable() instead to enable
  * lane bonding.
  *
- * Return: %0 in case of success and negative errno in case of error
+ * Return: %0 on success, negative errno otherwise.
  */
 static int tb_port_set_lane_bonding(struct tb_port *port, bool bonding)
 {
@@ -1052,7 +1117,7 @@ static int tb_port_set_lane_bonding(struct tb_port *port, bool bonding)
  * tb_port_wait_for_link_width() before enabling any paths through the
  * link to make sure the link is in expected state.
  *
- * Return: %0 in case of success and negative errno in case of error
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_port_lane_bonding_enable(struct tb_port *port)
 {
@@ -1075,7 +1140,7 @@ int tb_port_lane_bonding_enable(struct tb_port *port)
 		ret = tb_port_set_link_width(port->dual_link_port,
 					     TB_LINK_WIDTH_DUAL);
 		if (ret)
-			goto err_lane0;
+			goto err_lane1;
 	}
 
 	/*
@@ -1124,23 +1189,29 @@ void tb_port_lane_bonding_disable(struct tb_port *port)
 /**
  * tb_port_wait_for_link_width() - Wait until link reaches specific width
  * @port: Port to wait for
- * @width_mask: Expected link width mask
+ * @width: Expected link width (bitmask)
  * @timeout_msec: Timeout in ms how long to wait
  *
  * Should be used after both ends of the link have been bonded (or
  * bonding has been disabled) to wait until the link actually reaches
- * the expected state. Returns %-ETIMEDOUT if the width was not reached
- * within the given timeout, %0 if it did. Can be passed a mask of
- * expected widths and succeeds if any of the widths is reached.
+ * the expected state.
+ *
+ * Can be passed a mask of expected widths.
+ *
+ * Return:
+ * * %0 - If link reaches any of the specified widths.
+ * * %-ETIMEDOUT - If link does not reach specified width.
+ * * Negative errno - Another error occurred.
  */
-int tb_port_wait_for_link_width(struct tb_port *port, unsigned int width_mask,
+int tb_port_wait_for_link_width(struct tb_port *port, unsigned int width,
 				int timeout_msec)
 {
 	ktime_t timeout = ktime_add_ms(ktime_get(), timeout_msec);
 	int ret;
 
 	/* Gen 4 link does not support single lane */
-	if ((width_mask & TB_LINK_WIDTH_SINGLE) && is_gen4_link(port))
+	if ((width & TB_LINK_WIDTH_SINGLE) &&
+	    tb_port_get_link_generation(port) >= 4)
 		return -EOPNOTSUPP;
 
 	do {
@@ -1153,7 +1224,7 @@ int tb_port_wait_for_link_width(struct tb_port *port, unsigned int width_mask,
 			 */
 			if (ret != -EACCES)
 				return ret;
-		} else if (ret & width_mask) {
+		} else if (ret & width) {
 			return 0;
 		}
 
@@ -1195,6 +1266,8 @@ static int tb_port_do_update_credits(struct tb_port *port)
  * After the link is bonded (or bonding was disabled) the port total
  * credits may change, so this function needs to be called to re-read
  * the credits. Updates also the second lane adapter.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_port_update_credits(struct tb_port *port)
 {
@@ -1203,6 +1276,9 @@ int tb_port_update_credits(struct tb_port *port)
 	ret = tb_port_do_update_credits(port);
 	if (ret)
 		return ret;
+
+	if (!port->dual_link_port)
+		return 0;
 	return tb_port_do_update_credits(port->dual_link_port);
 }
 
@@ -1247,6 +1323,8 @@ static bool tb_port_resume(struct tb_port *port)
 /**
  * tb_port_is_enabled() - Is the adapter port enabled
  * @port: Port to check
+ *
+ * Return: %true if port is enabled, %false otherwise.
  */
 bool tb_port_is_enabled(struct tb_port *port)
 {
@@ -1271,6 +1349,8 @@ bool tb_port_is_enabled(struct tb_port *port)
 /**
  * tb_usb3_port_is_enabled() - Is the USB3 adapter port enabled
  * @port: USB3 adapter port to check
+ *
+ * Return: %true if port is enabled, %false otherwise.
  */
 bool tb_usb3_port_is_enabled(struct tb_port *port)
 {
@@ -1287,6 +1367,8 @@ bool tb_usb3_port_is_enabled(struct tb_port *port)
  * tb_usb3_port_enable() - Enable USB3 adapter port
  * @port: USB3 adapter port to enable
  * @enable: Enable/disable the USB3 adapter
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_usb3_port_enable(struct tb_port *port, bool enable)
 {
@@ -1302,6 +1384,8 @@ int tb_usb3_port_enable(struct tb_port *port, bool enable)
 /**
  * tb_pci_port_is_enabled() - Is the PCIe adapter port enabled
  * @port: PCIe port to check
+ *
+ * Return: %true if port is enabled, %false otherwise.
  */
 bool tb_pci_port_is_enabled(struct tb_port *port)
 {
@@ -1318,6 +1402,8 @@ bool tb_pci_port_is_enabled(struct tb_port *port)
  * tb_pci_port_enable() - Enable PCIe adapter port
  * @port: PCIe port to enable
  * @enable: Enable/disable the PCIe adapter
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_pci_port_enable(struct tb_port *port, bool enable)
 {
@@ -1332,7 +1418,9 @@ int tb_pci_port_enable(struct tb_port *port, bool enable)
  * tb_dp_port_hpd_is_active() - Is HPD already active
  * @port: DP out port to check
  *
- * Checks if the DP OUT adapter port has HDP bit already set.
+ * Checks if the DP OUT adapter port has HPD bit already set.
+ *
+ * Return: %1 if HPD is active, %0 otherwise.
  */
 int tb_dp_port_hpd_is_active(struct tb_port *port)
 {
@@ -1344,14 +1432,16 @@ int tb_dp_port_hpd_is_active(struct tb_port *port)
 	if (ret)
 		return ret;
 
-	return !!(data & ADP_DP_CS_2_HDP);
+	return !!(data & ADP_DP_CS_2_HPD);
 }
 
 /**
  * tb_dp_port_hpd_clear() - Clear HPD from DP IN port
  * @port: Port to clear HPD
  *
- * If the DP IN port has HDP set, this function can be used to clear it.
+ * If the DP IN port has HPD set, this function can be used to clear it.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_dp_port_hpd_clear(struct tb_port *port)
 {
@@ -1363,7 +1453,7 @@ int tb_dp_port_hpd_clear(struct tb_port *port)
 	if (ret)
 		return ret;
 
-	data |= ADP_DP_CS_3_HDPC;
+	data |= ADP_DP_CS_3_HPDC;
 	return tb_port_write(port, &data, TB_CFG_PORT,
 			     port->cap_adap + ADP_DP_CS_3, 1);
 }
@@ -1378,6 +1468,8 @@ int tb_dp_port_hpd_clear(struct tb_port *port)
  * Programs specified Hop IDs for DP IN/OUT port. Can be called for USB4
  * router DP adapters too but does not program the values as the fields
  * are read-only.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_dp_port_set_hops(struct tb_port *port, unsigned int video,
 			unsigned int aux_tx, unsigned int aux_rx)
@@ -1394,7 +1486,7 @@ int tb_dp_port_set_hops(struct tb_port *port, unsigned int video,
 		return ret;
 
 	data[0] &= ~ADP_DP_CS_0_VIDEO_HOPID_MASK;
-	data[1] &= ~ADP_DP_CS_1_AUX_RX_HOPID_MASK;
+	data[1] &= ~ADP_DP_CS_1_AUX_TX_HOPID_MASK;
 	data[1] &= ~ADP_DP_CS_1_AUX_RX_HOPID_MASK;
 
 	data[0] |= (video << ADP_DP_CS_0_VIDEO_HOPID_SHIFT) &
@@ -1410,6 +1502,8 @@ int tb_dp_port_set_hops(struct tb_port *port, unsigned int video,
 /**
  * tb_dp_port_is_enabled() - Is DP adapter port enabled
  * @port: DP adapter port to check
+ *
+ * Return: %true if DP port is enabled, %false otherwise.
  */
 bool tb_dp_port_is_enabled(struct tb_port *port)
 {
@@ -1429,6 +1523,8 @@ bool tb_dp_port_is_enabled(struct tb_port *port)
  *
  * Once Hop IDs are programmed DP paths can be enabled or disabled by
  * calling this function.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_dp_port_enable(struct tb_port *port, bool enable)
 {
@@ -1485,29 +1581,124 @@ static void tb_dump_switch(const struct tb *tb, const struct tb_switch *sw)
 	       regs->__unknown1, regs->__unknown4);
 }
 
+static int tb_switch_reset_host(struct tb_switch *sw)
+{
+	if (sw->generation > 1) {
+		struct tb_port *port;
+
+		tb_switch_for_each_port(sw, port) {
+			int i, ret;
+
+			/*
+			 * For lane adapters we issue downstream port
+			 * reset and clear up path config spaces.
+			 *
+			 * For protocol adapters we disable the path and
+			 * clear path config space one by one (from 8 to
+			 * Max Input HopID of the adapter).
+			 */
+			if (tb_port_is_null(port) && !tb_is_upstream_port(port)) {
+				ret = tb_port_reset(port);
+				if (ret)
+					return ret;
+			} else if (tb_port_is_usb3_down(port) ||
+				   tb_port_is_usb3_up(port)) {
+				tb_usb3_port_enable(port, false);
+			} else if (tb_port_is_dpin(port) ||
+				   tb_port_is_dpout(port)) {
+				tb_dp_port_enable(port, false);
+			} else if (tb_port_is_pcie_down(port) ||
+				   tb_port_is_pcie_up(port)) {
+				tb_pci_port_enable(port, false);
+			} else {
+				continue;
+			}
+
+			/* Cleanup path config space of protocol adapter */
+			for (i = TB_PATH_MIN_HOPID;
+			     i <= port->config.max_in_hop_id; i++) {
+				ret = tb_path_deactivate_hop(port, i);
+				if (ret)
+					return ret;
+			}
+		}
+	} else {
+		struct tb_cfg_result res;
+
+		/* Thunderbolt 1 uses the "reset" config space packet */
+		res.err = tb_sw_write(sw, ((u32 *) &sw->config) + 2,
+				      TB_CFG_SWITCH, 2, 2);
+		if (res.err)
+			return res.err;
+		res = tb_cfg_reset(sw->tb->ctl, tb_route(sw));
+		if (res.err > 0)
+			return -EIO;
+		else if (res.err < 0)
+			return res.err;
+	}
+
+	return 0;
+}
+
+static int tb_switch_reset_device(struct tb_switch *sw)
+{
+	return tb_port_reset(tb_switch_downstream_port(sw));
+}
+
+static bool tb_switch_enumerated(struct tb_switch *sw)
+{
+	u32 val;
+	int ret;
+
+	/*
+	 * Read directly from the hardware because we use this also
+	 * during system sleep where sw->config.enabled is already set
+	 * by us.
+	 */
+	ret = tb_sw_read(sw, &val, TB_CFG_SWITCH, ROUTER_CS_3, 1);
+	if (ret)
+		return false;
+
+	return !!(val & ROUTER_CS_3_V);
+}
+
 /**
- * tb_switch_reset() - reconfigure route, enable and send TB_CFG_PKG_RESET
- * @sw: Switch to reset
+ * tb_switch_reset() - Perform reset to the router
+ * @sw: Router to reset
  *
- * Return: Returns 0 on success or an error code on failure.
+ * Issues reset to the router @sw. Can be used for any router. For host
+ * routers, resets all the downstream ports and cleans up path config
+ * spaces accordingly. For device routers issues downstream port reset
+ * through the parent router, so as side effect there will be unplug
+ * soon after this is finished.
+ *
+ * If the router is not enumerated does nothing.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_reset(struct tb_switch *sw)
 {
-	struct tb_cfg_result res;
+	int ret;
 
-	if (sw->generation > 1)
+	/*
+	 * We cannot access the port config spaces unless the router is
+	 * already enumerated. If the router is not enumerated it is
+	 * equal to being reset so we can skip that here.
+	 */
+	if (!tb_switch_enumerated(sw))
 		return 0;
 
-	tb_sw_dbg(sw, "resetting switch\n");
+	tb_sw_dbg(sw, "resetting\n");
 
-	res.err = tb_sw_write(sw, ((u32 *) &sw->config) + 2,
-			      TB_CFG_SWITCH, 2, 2);
-	if (res.err)
-		return res.err;
-	res = tb_cfg_reset(sw->tb->ctl, tb_route(sw));
-	if (res.err > 0)
-		return -EIO;
-	return res.err;
+	if (tb_route(sw))
+		ret = tb_switch_reset_device(sw);
+	else
+		ret = tb_switch_reset_host(sw);
+
+	if (ret)
+		tb_sw_warn(sw, "failed to reset\n");
+
+	return ret;
 }
 
 /**
@@ -1519,8 +1710,12 @@ int tb_switch_reset(struct tb_switch *sw)
  * @timeout_msec: Timeout in ms how long to wait
  *
  * Wait till the specified bits in specified offset reach specified value.
- * Returns %0 in case of success, %-ETIMEDOUT if the @value was not reached
- * within the given timeout or a negative errno in case of failure.
+ *
+ * Return:
+ * * %0 - On success.
+ * * %-ETIMEDOUT - If the @value was not reached within
+ *   the given timeout.
+ * * Negative errno - In case of failure.
  */
 int tb_switch_wait_for_bit(struct tb_switch *sw, u32 offset, u32 bit,
 			   u32 value, int timeout_msec)
@@ -1549,7 +1744,7 @@ int tb_switch_wait_for_bit(struct tb_switch *sw, u32 offset, u32 bit,
  *
  * Also configures a sane plug_events_delay of 255ms.
  *
- * Return: Returns 0 on success or an error code on failure.
+ * Return: %0 on success, negative errno otherwise.
  */
 static int tb_plug_events_active(struct tb_switch *sw, bool active)
 {
@@ -2179,7 +2374,7 @@ static const struct dev_pm_ops tb_switch_pm_ops = {
 			   NULL)
 };
 
-struct device_type tb_switch_type = {
+const struct device_type tb_switch_type = {
 	.name = "thunderbolt_device",
 	.release = tb_switch_release,
 	.uevent = tb_switch_uevent,
@@ -2255,8 +2450,7 @@ static bool tb_switch_exceeds_max_depth(const struct tb_switch *sw, int depth)
  * separately. The returned switch should be released by calling
  * tb_switch_put().
  *
- * Return: Pointer to the allocated switch or ERR_PTR() in case of
- * failure.
+ * Return: Pointer to &struct tb_switch or ERR_PTR() in case of failure.
  */
 struct tb_switch *tb_switch_alloc(struct tb *tb, struct device *parent,
 				  u64 route)
@@ -2375,7 +2569,7 @@ err_free_sw_ports:
  *
  * The returned switch must be released by calling tb_switch_put().
  *
- * Return: Pointer to the allocated switch or ERR_PTR() in case of failure
+ * Return: Pointer to &struct tb_switch or ERR_PTR() in case of failure.
  */
 struct tb_switch *
 tb_switch_alloc_safe_mode(struct tb *tb, struct device *parent, u64 route)
@@ -2411,7 +2605,7 @@ tb_switch_alloc_safe_mode(struct tb *tb, struct device *parent, u64 route)
  * connection manager to use. Can be called to the switch again after
  * resume from low power states to re-initialize it.
  *
- * Return: %0 in case of success and negative errno in case of failure
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_configure(struct tb_switch *sw)
 {
@@ -2474,7 +2668,7 @@ int tb_switch_configure(struct tb_switch *sw)
  * Needs to be called before any tunnels can be setup through the
  * router. Can be called to any router.
  *
- * Returns %0 in success and negative errno otherwise.
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_configuration_valid(struct tb_switch *sw)
 {
@@ -2697,6 +2891,51 @@ static int tb_switch_update_link_attributes(struct tb_switch *sw)
 	return 0;
 }
 
+/* Must be called after tb_switch_update_link_attributes() */
+static void tb_switch_link_init(struct tb_switch *sw)
+{
+	struct tb_port *up, *down;
+	bool bonded;
+
+	if (!tb_route(sw) || tb_switch_is_icm(sw))
+		return;
+
+	tb_sw_dbg(sw, "current link speed %u.0 Gb/s\n", sw->link_speed);
+	tb_sw_dbg(sw, "current link width %s\n", tb_width_name(sw->link_width));
+
+	bonded = sw->link_width >= TB_LINK_WIDTH_DUAL;
+
+	/*
+	 * Gen 4 links come up as bonded so update the port structures
+	 * accordingly.
+	 */
+	up = tb_upstream_port(sw);
+	down = tb_switch_downstream_port(sw);
+
+	up->bonded = bonded;
+	if (up->dual_link_port)
+		up->dual_link_port->bonded = bonded;
+	tb_port_update_credits(up);
+
+	down->bonded = bonded;
+	if (down->dual_link_port)
+		down->dual_link_port->bonded = bonded;
+	tb_port_update_credits(down);
+
+	if (tb_port_get_link_generation(up) < 4)
+		return;
+
+	/*
+	 * Set the Gen 4 preferred link width. This is what the router
+	 * prefers when the link is brought up. If the router does not
+	 * support asymmetric link configuration, this also will be set
+	 * to TB_LINK_WIDTH_DUAL.
+	 */
+	sw->preferred_link_width = sw->link_width;
+	tb_sw_dbg(sw, "preferred link width %s\n",
+		  tb_width_name(sw->preferred_link_width));
+}
+
 /**
  * tb_switch_lane_bonding_enable() - Enable lane bonding
  * @sw: Switch to enable lane bonding
@@ -2704,16 +2943,14 @@ static int tb_switch_update_link_attributes(struct tb_switch *sw)
  * Connection manager can call this function to enable lane bonding of a
  * switch. If conditions are correct and both switches support the feature,
  * lanes are bonded. It is safe to call this to any switch.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
-int tb_switch_lane_bonding_enable(struct tb_switch *sw)
+static int tb_switch_lane_bonding_enable(struct tb_switch *sw)
 {
 	struct tb_port *up, *down;
-	u64 route = tb_route(sw);
-	unsigned int width_mask;
+	unsigned int width;
 	int ret;
-
-	if (!route)
-		return 0;
 
 	if (!tb_switch_lane_bonding_possible(sw))
 		return 0;
@@ -2721,8 +2958,8 @@ int tb_switch_lane_bonding_enable(struct tb_switch *sw)
 	up = tb_upstream_port(sw);
 	down = tb_switch_downstream_port(sw);
 
-	if (!tb_port_is_width_supported(up, TB_LINK_WIDTH_DUAL) ||
-	    !tb_port_is_width_supported(down, TB_LINK_WIDTH_DUAL))
+	if (!tb_port_width_supported(up, TB_LINK_WIDTH_DUAL) ||
+	    !tb_port_width_supported(down, TB_LINK_WIDTH_DUAL))
 		return 0;
 
 	/*
@@ -2746,21 +2983,10 @@ int tb_switch_lane_bonding_enable(struct tb_switch *sw)
 	}
 
 	/* Any of the widths are all bonded */
-	width_mask = TB_LINK_WIDTH_DUAL | TB_LINK_WIDTH_ASYM_TX |
-		     TB_LINK_WIDTH_ASYM_RX;
+	width = TB_LINK_WIDTH_DUAL | TB_LINK_WIDTH_ASYM_TX |
+		TB_LINK_WIDTH_ASYM_RX;
 
-	ret = tb_port_wait_for_link_width(down, width_mask, 100);
-	if (ret) {
-		tb_port_warn(down, "timeout enabling lane bonding\n");
-		return ret;
-	}
-
-	tb_port_update_credits(down);
-	tb_port_update_credits(up);
-	tb_switch_update_link_attributes(sw);
-
-	tb_sw_dbg(sw, "lane bonding enabled\n");
-	return ret;
+	return tb_port_wait_for_link_width(down, width, 100);
 }
 
 /**
@@ -2769,21 +2995,30 @@ int tb_switch_lane_bonding_enable(struct tb_switch *sw)
  *
  * Disables lane bonding between @sw and parent. This can be called even
  * if lanes were not bonded originally.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
-void tb_switch_lane_bonding_disable(struct tb_switch *sw)
+static int tb_switch_lane_bonding_disable(struct tb_switch *sw)
 {
 	struct tb_port *up, *down;
 	int ret;
 
-	if (!tb_route(sw))
-		return;
-
 	up = tb_upstream_port(sw);
 	if (!up->bonded)
-		return;
+		return 0;
+
+	/*
+	 * If the link is Gen 4 there is no way to switch the link to
+	 * two single lane links so avoid that here. Also don't bother
+	 * if the link is not up anymore (sw is unplugged).
+	 */
+	ret = tb_port_get_link_generation(up);
+	if (ret < 0)
+		return ret;
+	if (ret >= 4)
+		return -EOPNOTSUPP;
 
 	down = tb_switch_downstream_port(sw);
-
 	tb_port_lane_bonding_disable(up);
 	tb_port_lane_bonding_disable(down);
 
@@ -2791,15 +3026,160 @@ void tb_switch_lane_bonding_disable(struct tb_switch *sw)
 	 * It is fine if we get other errors as the router might have
 	 * been unplugged.
 	 */
-	ret = tb_port_wait_for_link_width(down, TB_LINK_WIDTH_SINGLE, 100);
-	if (ret == -ETIMEDOUT)
-		tb_sw_warn(sw, "timeout disabling lane bonding\n");
+	return tb_port_wait_for_link_width(down, TB_LINK_WIDTH_SINGLE, 100);
+}
+
+/* Note updating sw->link_width done in tb_switch_update_link_attributes() */
+static int tb_switch_asym_enable(struct tb_switch *sw, enum tb_link_width width)
+{
+	struct tb_port *up, *down, *port;
+	enum tb_link_width down_width;
+	int ret;
+
+	up = tb_upstream_port(sw);
+	down = tb_switch_downstream_port(sw);
+
+	if (width == TB_LINK_WIDTH_ASYM_TX) {
+		down_width = TB_LINK_WIDTH_ASYM_RX;
+		port = down;
+	} else {
+		down_width = TB_LINK_WIDTH_ASYM_TX;
+		port = up;
+	}
+
+	ret = tb_port_set_link_width(up, width);
+	if (ret)
+		return ret;
+
+	ret = tb_port_set_link_width(down, down_width);
+	if (ret)
+		return ret;
+
+	/*
+	 * Initiate the change in the router that one of its TX lanes is
+	 * changing to RX but do so only if there is an actual change.
+	 */
+	if (sw->link_width != width) {
+		ret = usb4_port_asym_start(port);
+		if (ret)
+			return ret;
+
+		ret = tb_port_wait_for_link_width(up, width, 100);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+/* Note updating sw->link_width done in tb_switch_update_link_attributes() */
+static int tb_switch_asym_disable(struct tb_switch *sw)
+{
+	struct tb_port *up, *down;
+	int ret;
+
+	up = tb_upstream_port(sw);
+	down = tb_switch_downstream_port(sw);
+
+	ret = tb_port_set_link_width(up, TB_LINK_WIDTH_DUAL);
+	if (ret)
+		return ret;
+
+	ret = tb_port_set_link_width(down, TB_LINK_WIDTH_DUAL);
+	if (ret)
+		return ret;
+
+	/*
+	 * Initiate the change in the router that has three TX lanes and
+	 * is changing one of its TX lanes to RX but only if there is a
+	 * change in the link width.
+	 */
+	if (sw->link_width > TB_LINK_WIDTH_DUAL) {
+		if (sw->link_width == TB_LINK_WIDTH_ASYM_TX)
+			ret = usb4_port_asym_start(up);
+		else
+			ret = usb4_port_asym_start(down);
+		if (ret)
+			return ret;
+
+		ret = tb_port_wait_for_link_width(up, TB_LINK_WIDTH_DUAL, 100);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * tb_switch_set_link_width() - Configure router link width
+ * @sw: Router to configure
+ * @width: The new link width
+ *
+ * Set device router link width to @width from router upstream port
+ * perspective. Supports also asymmetric links if the routers both side
+ * of the link supports it.
+ *
+ * Does nothing for host router.
+ *
+ * Return: %0 on success, negative errno otherwise.
+ */
+int tb_switch_set_link_width(struct tb_switch *sw, enum tb_link_width width)
+{
+	struct tb_port *up, *down;
+	int ret = 0;
+
+	if (!tb_route(sw))
+		return 0;
+
+	up = tb_upstream_port(sw);
+	down = tb_switch_downstream_port(sw);
+
+	switch (width) {
+	case TB_LINK_WIDTH_SINGLE:
+		ret = tb_switch_lane_bonding_disable(sw);
+		break;
+
+	case TB_LINK_WIDTH_DUAL:
+		if (sw->link_width == TB_LINK_WIDTH_ASYM_TX ||
+		    sw->link_width == TB_LINK_WIDTH_ASYM_RX) {
+			ret = tb_switch_asym_disable(sw);
+			if (ret)
+				break;
+		}
+		ret = tb_switch_lane_bonding_enable(sw);
+		break;
+
+	case TB_LINK_WIDTH_ASYM_TX:
+	case TB_LINK_WIDTH_ASYM_RX:
+		ret = tb_switch_asym_enable(sw, width);
+		break;
+	}
+
+	switch (ret) {
+	case 0:
+		break;
+
+	case -ETIMEDOUT:
+		tb_sw_warn(sw, "timeout changing link width\n");
+		return ret;
+
+	case -ENOTCONN:
+	case -EOPNOTSUPP:
+	case -ENODEV:
+		return ret;
+
+	default:
+		tb_sw_dbg(sw, "failed to change link width: %d\n", ret);
+		return ret;
+	}
 
 	tb_port_update_credits(down);
 	tb_port_update_credits(up);
+
 	tb_switch_update_link_attributes(sw);
 
-	tb_sw_dbg(sw, "lane bonding disabled\n");
+	tb_sw_dbg(sw, "link width set to %s\n", tb_width_name(width));
+	return ret;
 }
 
 /**
@@ -2812,7 +3192,7 @@ void tb_switch_lane_bonding_disable(struct tb_switch *sw)
  *
  * It is recommended that this is called after lane bonding is enabled.
  *
- * Returns %0 on success and negative errno in case of error.
+ * Return: %0 on success and negative errno otherwise.
  */
 int tb_switch_configure_link(struct tb_switch *sw)
 {
@@ -2847,9 +3227,22 @@ void tb_switch_unconfigure_link(struct tb_switch *sw)
 {
 	struct tb_port *up, *down;
 
-	if (sw->is_unplugged)
-		return;
 	if (!tb_route(sw) || tb_switch_is_icm(sw))
+		return;
+
+	/*
+	 * Unconfigure downstream port so that wake-on-connect can be
+	 * configured after router unplug. No need to unconfigure upstream port
+	 * since its router is unplugged.
+	 */
+	up = tb_upstream_port(sw);
+	down = up->remote;
+	if (tb_switch_is_usb4(down->sw))
+		usb4_port_unconfigure(down);
+	else
+		tb_lc_unconfigure_port(down);
+
+	if (sw->is_unplugged)
 		return;
 
 	up = tb_upstream_port(sw);
@@ -2857,12 +3250,6 @@ void tb_switch_unconfigure_link(struct tb_switch *sw)
 		usb4_port_unconfigure(up);
 	else
 		tb_lc_unconfigure_port(up);
-
-	down = up->remote;
-	if (tb_switch_is_usb4(down->sw))
-		usb4_port_unconfigure(down);
-	else
-		tb_lc_unconfigure_port(down);
 }
 
 static void tb_switch_credits_init(struct tb_switch *sw)
@@ -2905,7 +3292,7 @@ static int tb_switch_port_hotplug_enable(struct tb_switch *sw)
  * exposed to the userspace when this function successfully returns. To
  * remove and release the switch, call tb_switch_remove().
  *
- * Return: %0 in case of success and negative errno in case of failure
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_add(struct tb_switch *sw)
 {
@@ -2958,6 +3345,8 @@ int tb_switch_add(struct tb_switch *sw)
 		ret = tb_switch_update_link_attributes(sw);
 		if (ret)
 			return ret;
+
+		tb_switch_link_init(sw);
 
 		ret = tb_switch_clx_init(sw);
 		if (ret)
@@ -3050,6 +3439,7 @@ void tb_switch_remove(struct tb_switch *sw)
 			tb_switch_remove(port->remote->sw);
 			port->remote = NULL;
 		} else if (port->xdomain) {
+			port->xdomain->is_unplugged = true;
 			tb_xdomain_remove(port->xdomain);
 			port->xdomain = NULL;
 		}
@@ -3094,7 +3484,7 @@ void tb_sw_set_unplugged(struct tb_switch *sw)
 	}
 }
 
-static int tb_switch_set_wake(struct tb_switch *sw, unsigned int flags)
+static int tb_switch_set_wake(struct tb_switch *sw, unsigned int flags, bool runtime)
 {
 	if (flags)
 		tb_sw_dbg(sw, "enabling wakeup: %#x\n", flags);
@@ -3102,11 +3492,32 @@ static int tb_switch_set_wake(struct tb_switch *sw, unsigned int flags)
 		tb_sw_dbg(sw, "disabling wakeup\n");
 
 	if (tb_switch_is_usb4(sw))
-		return usb4_switch_set_wake(sw, flags);
+		return usb4_switch_set_wake(sw, flags, runtime);
 	return tb_lc_set_wake(sw, flags);
 }
 
-int tb_switch_resume(struct tb_switch *sw)
+static void tb_switch_check_wakes(struct tb_switch *sw)
+{
+	if (device_may_wakeup(&sw->dev)) {
+		if (tb_switch_is_usb4(sw))
+			usb4_switch_check_wakes(sw);
+	}
+}
+
+/**
+ * tb_switch_resume() - Resume a switch after sleep
+ * @sw: Switch to resume
+ * @runtime: Is this resume from runtime suspend or system sleep
+ *
+ * Resumes and re-enumerates router (and all its children), if still plugged
+ * after suspend. Don't enumerate device router whose UID was changed during
+ * suspend. If this is resume from system sleep, notifies PM core about the
+ * wakes occurred during suspend. Disables all wakes, except USB4 wake of
+ * upstream port for USB4 routers that shall be always enabled.
+ *
+ * Return: %0 on success, negative errno otherwise.
+ */
+int tb_switch_resume(struct tb_switch *sw, bool runtime)
 {
 	struct tb_port *port;
 	int err;
@@ -3155,8 +3566,11 @@ int tb_switch_resume(struct tb_switch *sw)
 	if (err)
 		return err;
 
+	if (!runtime)
+		tb_switch_check_wakes(sw);
+
 	/* Disable wakes */
-	tb_switch_set_wake(sw, 0);
+	tb_switch_set_wake(sw, 0, true);
 
 	err = tb_switch_tmu_init(sw);
 	if (err)
@@ -3184,7 +3598,8 @@ int tb_switch_resume(struct tb_switch *sw)
 			 */
 			if (tb_port_unlock(port))
 				tb_port_warn(port, "failed to unlock port\n");
-			if (port->remote && tb_switch_resume(port->remote->sw)) {
+			if (port->remote &&
+			    tb_switch_resume(port->remote->sw, runtime)) {
 				tb_port_warn(port,
 					     "lost during suspend, disconnecting\n");
 				tb_sw_set_unplugged(port->remote->sw);
@@ -3233,10 +3648,11 @@ void tb_switch_suspend(struct tb_switch *sw, bool runtime)
 		flags |= TB_WAKE_ON_USB4;
 		flags |= TB_WAKE_ON_USB3 | TB_WAKE_ON_PCIE | TB_WAKE_ON_DP;
 	} else if (device_may_wakeup(&sw->dev)) {
+		flags |= TB_WAKE_ON_CONNECT | TB_WAKE_ON_DISCONNECT;
 		flags |= TB_WAKE_ON_USB4 | TB_WAKE_ON_USB3 | TB_WAKE_ON_PCIE;
 	}
 
-	tb_switch_set_wake(sw, flags);
+	tb_switch_set_wake(sw, flags, runtime);
 
 	if (tb_switch_is_usb4(sw))
 		usb4_switch_set_sleep(sw);
@@ -3250,7 +3666,9 @@ void tb_switch_suspend(struct tb_switch *sw, bool runtime)
  * @in: DP IN port
  *
  * Queries availability of DP resource for DP tunneling using switch
- * specific means. Returns %true if resource is available.
+ * specific means.
+ *
+ * Return: %true if resource is available, %false otherwise.
  */
 bool tb_switch_query_dp_resource(struct tb_switch *sw, struct tb_port *in)
 {
@@ -3266,7 +3684,8 @@ bool tb_switch_query_dp_resource(struct tb_switch *sw, struct tb_port *in)
  *
  * Allocates DP resource for DP tunneling. The resource must be
  * available for this to succeed (see tb_switch_query_dp_resource()).
- * Returns %0 in success and negative errno otherwise.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_alloc_dp_resource(struct tb_switch *sw, struct tb_port *in)
 {
@@ -3351,6 +3770,8 @@ static int tb_switch_match(struct device *dev, const void *data)
  *
  * Returned switch has reference count increased so the caller needs to
  * call tb_switch_put() when done with the switch.
+ *
+ * Return: Pointer to &struct tb_switch, %NULL if not found.
  */
 struct tb_switch *tb_switch_find_by_link_depth(struct tb *tb, u8 link, u8 depth)
 {
@@ -3376,6 +3797,8 @@ struct tb_switch *tb_switch_find_by_link_depth(struct tb *tb, u8 link, u8 depth)
  *
  * Returned switch has reference count increased so the caller needs to
  * call tb_switch_put() when done with the switch.
+ *
+ * Return: Pointer to &struct tb_switch, %NULL if not found.
  */
 struct tb_switch *tb_switch_find_by_uuid(struct tb *tb, const uuid_t *uuid)
 {
@@ -3400,6 +3823,8 @@ struct tb_switch *tb_switch_find_by_uuid(struct tb *tb, const uuid_t *uuid)
  *
  * Returned switch has reference count increased so the caller needs to
  * call tb_switch_put() when done with the switch.
+ *
+ * Return: Pointer to &struct tb_switch, %NULL if not found.
  */
 struct tb_switch *tb_switch_find_by_route(struct tb *tb, u64 route)
 {
@@ -3424,6 +3849,8 @@ struct tb_switch *tb_switch_find_by_route(struct tb *tb, u64 route)
  * tb_switch_find_port() - return the first port of @type on @sw or NULL
  * @sw: Switch to find the port from
  * @type: Port type to look for
+ *
+ * Return: Pointer to &struct tb_port, %NULL if not found.
  */
 struct tb_port *tb_switch_find_port(struct tb_switch *sw,
 				    enum tb_port_type type)
@@ -3492,6 +3919,8 @@ static int tb_switch_pcie_bridge_write(struct tb_switch *sw, unsigned int bridge
  * entry to PCIe L1 state. Shall be called after the upstream PCIe tunnel
  * was configured. Due to Intel platforms limitation, shall be called only
  * for first hop switch.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_pcie_l1_enable(struct tb_switch *sw)
 {
@@ -3526,6 +3955,8 @@ int tb_switch_pcie_l1_enable(struct tb_switch *sw)
  * connected to the type-C port. Call only after PCIe tunnel has been
  * established. The function only does the connect if not done already
  * so can be called several times for the same router.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_xhci_connect(struct tb_switch *sw)
 {

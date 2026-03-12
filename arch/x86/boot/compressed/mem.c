@@ -8,7 +8,7 @@
 
 /*
  * accept_memory() and process_unaccepted_memory() called from EFI stub which
- * runs before decompresser and its early_tdx_detect().
+ * runs before decompressor and its early_tdx_detect().
  *
  * Enumerate TDX directly from the early users.
  */
@@ -38,7 +38,7 @@ void arch_accept_memory(phys_addr_t start, phys_addr_t end)
 	if (early_is_tdx_guest()) {
 		if (!tdx_accept_memory(start, end))
 			panic("TDX: Failed to accept memory\n");
-	} else if (sev_snp_enabled()) {
+	} else if (early_is_sevsnp_guest()) {
 		snp_accept_memory(start, end);
 	} else {
 		error("Cannot accept memory: unknown platform\n");
@@ -54,17 +54,17 @@ bool init_unaccepted_memory(void)
 	enum efi_type et;
 	int ret;
 
-	et = efi_get_type(boot_params);
+	et = efi_get_type(boot_params_ptr);
 	if (et == EFI_TYPE_NONE)
 		return false;
 
-	ret = efi_get_conf_table(boot_params, &cfg_table_pa, &cfg_table_len);
+	ret = efi_get_conf_table(boot_params_ptr, &cfg_table_pa, &cfg_table_len);
 	if (ret) {
 		warn("EFI config table not found.");
 		return false;
 	}
 
-	table = (void *)efi_find_vendor_table(boot_params, cfg_table_pa,
+	table = (void *)efi_find_vendor_table(boot_params_ptr, cfg_table_pa,
 					      cfg_table_len, guid);
 	if (!table)
 		return false;

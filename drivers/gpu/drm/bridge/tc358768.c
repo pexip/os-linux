@@ -9,6 +9,7 @@
 #include <linux/gpio/consumer.h>
 #include <linux/i2c.h>
 #include <linux/kernel.h>
+#include <linux/math64.h>
 #include <linux/media-bus-format.h>
 #include <linux/minmax.h>
 #include <linux/module.h>
@@ -124,6 +125,9 @@
 #define TC358768_DSI_CONFW_MODE_CLR	(6 << 29)
 #define TC358768_DSI_CONFW_ADDR_DSI_CONTROL	(0x3 << 24)
 
+/* TC358768_DSICMD_TX (0x0600) register */
+#define TC358768_DSI_CMDTX_DC_START	BIT(0)
+
 static const char * const tc358768_supplies[] = {
 	"vddc", "vddmipi", "vddio"
 };
@@ -157,6 +161,7 @@ struct tc358768_priv {
 	u32 frs;	/* PLL Freqency range for HSCK (post divider) */
 
 	u32 dsiclk;	/* pll_clk / 2 */
+	u32 pclk;	/* incoming pclk rate */
 };
 
 static inline struct tc358768_priv *dsi_host_to_tc358768(struct mipi_dsi_host
@@ -225,6 +230,21 @@ static void tc358768_update_bits(struct tc358768_priv *priv, u32 reg, u32 mask,
 	tmp |= val & mask;
 	if (tmp != orig)
 		tc358768_write(priv, reg, tmp);
+}
+
+static void tc358768_dsicmd_tx(struct tc358768_priv *priv)
+{
+	u32 val;
+
+	/* start transfer */
+	tc358768_write(priv, TC358768_DSICMD_TX, TC358768_DSI_CMDTX_DC_START);
+	if (priv->error)
+		return;
+
+	/* wait transfer completion */
+	priv->error = regmap_read_poll_timeout(priv->regmap, TC358768_DSICMD_TX, val,
+					       (val & TC358768_DSI_CMDTX_DC_START) == 0,
+					       100, 100000);
 }
 
 static int tc358768_sw_reset(struct tc358768_priv *priv)
@@ -317,7 +337,7 @@ static int tc358768_calc_pll(struct tc358768_priv *priv,
 
 	target_pll = tc358768_pclk_to_pll(priv, mode->clock * 1000);
 
-	/* pll_clk = RefClk * [(FBD + 1)/ (PRD + 1)] * [1 / (2^FRS)] */
+	/* pll_clk = RefClk * FBD / PRD * (1 / (2^FRS)) */
 
 	for (i = 0; i < ARRAY_SIZE(frs_limits); i++)
 		if (target_pll >= frs_limits[i])
@@ -337,19 +357,19 @@ static int tc358768_calc_pll(struct tc358768_priv *priv,
 	best_prd = 0;
 	best_fbd = 0;
 
-	for (prd = 0; prd < 16; ++prd) {
-		u32 divisor = (prd + 1) * (1 << frs);
+	for (prd = 1; prd <= 16; ++prd) {
+		u32 divisor = prd * (1 << frs);
 		u32 fbd;
 
-		for (fbd = 0; fbd < 512; ++fbd) {
+		for (fbd = 1; fbd <= 512; ++fbd) {
 			u32 pll, diff, pll_in;
 
-			pll = (u32)div_u64((u64)refclk * (fbd + 1), divisor);
+			pll = (u32)div_u64((u64)refclk * fbd, divisor);
 
 			if (pll >= max_pll || pll < min_pll)
 				continue;
 
-			pll_in = (u32)div_u64((u64)refclk, prd + 1);
+			pll_in = (u32)div_u64((u64)refclk, prd);
 			if (pll_in < 4000000)
 				continue;
 
@@ -380,6 +400,7 @@ found:
 	priv->prd = best_prd;
 	priv->frs = frs;
 	priv->dsiclk = best_pll / 2;
+	priv->pclk = mode->clock * 1000;
 
 	return 0;
 }
@@ -440,7 +461,9 @@ static int tc358768_dsi_host_attach(struct mipi_dsi_host *host,
 	ret = -EINVAL;
 	ep = of_graph_get_endpoint_by_regs(host->dev->of_node, 0, 0);
 	if (ep) {
-		ret = of_property_read_u32(ep, "data-lines", &priv->pd_lines);
+		ret = of_property_read_u32(ep, "bus-width", &priv->pd_lines);
+		if (ret)
+			ret = of_property_read_u32(ep, "data-lines", &priv->pd_lines);
 
 		of_node_put(ep);
 	}
@@ -513,8 +536,7 @@ static ssize_t tc358768_dsi_host_transfer(struct mipi_dsi_host *host,
 		}
 	}
 
-	/* start transfer */
-	tc358768_write(priv, TC358768_DSICMD_TX, 1);
+	tc358768_dsicmd_tx(priv);
 
 	ret = tc358768_clear_error(priv);
 	if (ret)
@@ -532,6 +554,7 @@ static const struct mipi_dsi_host_ops tc358768_dsi_host_ops = {
 };
 
 static int tc358768_bridge_attach(struct drm_bridge *bridge,
+				  struct drm_encoder *encoder,
 				  enum drm_bridge_attach_flags flags)
 {
 	struct tc358768_priv *priv = bridge_to_tc358768(bridge);
@@ -541,7 +564,7 @@ static int tc358768_bridge_attach(struct drm_bridge *bridge,
 		return -ENOTSUPP;
 	}
 
-	return drm_bridge_attach(bridge->encoder, priv->output.bridge, bridge,
+	return drm_bridge_attach(encoder, priv->output.bridge, bridge,
 				 flags);
 }
 
@@ -558,7 +581,8 @@ tc358768_bridge_mode_valid(struct drm_bridge *bridge,
 	return MODE_OK;
 }
 
-static void tc358768_bridge_disable(struct drm_bridge *bridge)
+static void tc358768_bridge_atomic_disable(struct drm_bridge *bridge,
+					   struct drm_atomic_state *state)
 {
 	struct tc358768_priv *priv = bridge_to_tc358768(bridge);
 	int ret;
@@ -580,7 +604,8 @@ static void tc358768_bridge_disable(struct drm_bridge *bridge)
 		dev_warn(priv->dev, "Software disable failed: %d\n", ret);
 }
 
-static void tc358768_bridge_post_disable(struct drm_bridge *bridge)
+static void tc358768_bridge_atomic_post_disable(struct drm_bridge *bridge,
+						struct drm_atomic_state *state)
 {
 	struct tc358768_priv *priv = bridge_to_tc358768(bridge);
 
@@ -612,7 +637,7 @@ static int tc358768_setup_pll(struct tc358768_priv *priv,
 		mode->clock * 1000);
 
 	/* PRD[15:12] FBD[8:0] */
-	tc358768_write(priv, TC358768_PLLCTL0, (prd << 12) | fbd);
+	tc358768_write(priv, TC358768_PLLCTL0, ((prd - 1) << 12) | (fbd - 1));
 
 	/* FRS[11:10] LBWS[9:8] CKEN[4] RESETB[1] EN[0] */
 	tc358768_write(priv, TC358768_PLLCTL1,
@@ -638,20 +663,54 @@ static u32 tc358768_ps_to_ns(u32 ps)
 	return ps / 1000;
 }
 
-static void tc358768_bridge_pre_enable(struct drm_bridge *bridge)
+static u32 tc358768_dpi_to_ns(u32 val, u32 pclk)
+{
+	return (u32)div_u64((u64)val * NANO, pclk);
+}
+
+/* Convert value in DPI pixel clock units to DSI byte count */
+static u32 tc358768_dpi_to_dsi_bytes(struct tc358768_priv *priv, u32 val)
+{
+	u64 m = (u64)val * priv->dsiclk / 4 * priv->dsi_lanes;
+	u64 n = priv->pclk;
+
+	return (u32)div_u64(m + n - 1, n);
+}
+
+static u32 tc358768_dsi_bytes_to_ns(struct tc358768_priv *priv, u32 val)
+{
+	u64 m = (u64)val * NANO;
+	u64 n = priv->dsiclk / 4 * priv->dsi_lanes;
+
+	return (u32)div_u64(m, n);
+}
+
+static void tc358768_bridge_atomic_pre_enable(struct drm_bridge *bridge,
+					      struct drm_atomic_state *state)
 {
 	struct tc358768_priv *priv = bridge_to_tc358768(bridge);
 	struct mipi_dsi_device *dsi_dev = priv->output.dev;
 	unsigned long mode_flags = dsi_dev->mode_flags;
 	u32 val, val2, lptxcnt, hact, data_type;
 	s32 raw_val;
+	struct drm_crtc_state *crtc_state;
+	struct drm_connector_state *conn_state;
+	struct drm_connector *connector;
 	const struct drm_display_mode *mode;
 	u32 hsbyteclk_ps, dsiclk_ps, ui_ps;
-	u32 dsiclk, hsbyteclk, video_start;
-	const u32 internal_delay = 40;
+	u32 dsiclk, hsbyteclk;
 	int ret, i;
 	struct videomode vm;
 	struct device *dev = priv->dev;
+	/* In pixelclock units */
+	u32 dpi_htot, dpi_data_start;
+	/* In byte units */
+	u32 dsi_dpi_htot, dsi_dpi_data_start;
+	u32 dsi_hsw, dsi_hbp, dsi_hact, dsi_hfp;
+	const u32 dsi_hss = 4; /* HSS is a short packet (4 bytes) */
+	/* In hsbyteclk units */
+	u32 dsi_vsdly;
+	const u32 internal_dly = 40;
 
 	if (mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS) {
 		dev_warn_once(dev, "Non-continuous mode unimplemented, falling back to continuous\n");
@@ -667,7 +726,10 @@ static void tc358768_bridge_pre_enable(struct drm_bridge *bridge)
 		return;
 	}
 
-	mode = &bridge->encoder->crtc->state->adjusted_mode;
+	connector = drm_atomic_get_new_connector_for_encoder(state, bridge->encoder);
+	conn_state = drm_atomic_get_new_connector_state(state, connector);
+	crtc_state = drm_atomic_get_new_crtc_state(state, conn_state->crtc);
+	mode = &crtc_state->adjusted_mode;
 	ret = tc358768_setup_pll(priv, mode);
 	if (ret) {
 		dev_err(dev, "PLL setup failed: %d\n", ret);
@@ -686,27 +748,23 @@ static void tc358768_bridge_pre_enable(struct drm_bridge *bridge)
 	case MIPI_DSI_FMT_RGB888:
 		val |= (0x3 << 4);
 		hact = vm.hactive * 3;
-		video_start = (vm.hsync_len + vm.hback_porch) * 3;
 		data_type = MIPI_DSI_PACKED_PIXEL_STREAM_24;
 		break;
 	case MIPI_DSI_FMT_RGB666:
 		val |= (0x4 << 4);
 		hact = vm.hactive * 3;
-		video_start = (vm.hsync_len + vm.hback_porch) * 3;
 		data_type = MIPI_DSI_PACKED_PIXEL_STREAM_18;
 		break;
 
 	case MIPI_DSI_FMT_RGB666_PACKED:
 		val |= (0x4 << 4) | BIT(3);
 		hact = vm.hactive * 18 / 8;
-		video_start = (vm.hsync_len + vm.hback_porch) * 18 / 8;
 		data_type = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
 		break;
 
 	case MIPI_DSI_FMT_RGB565:
 		val |= (0x5 << 4);
 		hact = vm.hactive * 2;
-		video_start = (vm.hsync_len + vm.hback_porch) * 2;
 		data_type = MIPI_DSI_PACKED_PIXEL_STREAM_16;
 		break;
 	default:
@@ -716,9 +774,152 @@ static void tc358768_bridge_pre_enable(struct drm_bridge *bridge)
 		return;
 	}
 
+	/*
+	 * There are three important things to make TC358768 work correctly,
+	 * which are not trivial to manage:
+	 *
+	 * 1. Keep the DPI line-time and the DSI line-time as close to each
+	 *    other as possible.
+	 * 2. TC358768 goes to LP mode after each line's active area. The DSI
+	 *    HFP period has to be long enough for entering and exiting LP mode.
+	 *    But it is not clear how to calculate this.
+	 * 3. VSDly (video start delay) has to be long enough to ensure that the
+	 *    DSI TX does not start transmitting until we have started receiving
+	 *    pixel data from the DPI input. It is not clear how to calculate
+	 *    this either.
+	 */
+
+	dpi_htot = vm.hactive + vm.hfront_porch + vm.hsync_len + vm.hback_porch;
+	dpi_data_start = vm.hsync_len + vm.hback_porch;
+
+	dev_dbg(dev, "dpi horiz timing (pclk): %u + %u + %u + %u = %u\n",
+		vm.hsync_len, vm.hback_porch, vm.hactive, vm.hfront_porch,
+		dpi_htot);
+
+	dev_dbg(dev, "dpi horiz timing (ns): %u + %u + %u + %u = %u\n",
+		tc358768_dpi_to_ns(vm.hsync_len, vm.pixelclock),
+		tc358768_dpi_to_ns(vm.hback_porch, vm.pixelclock),
+		tc358768_dpi_to_ns(vm.hactive, vm.pixelclock),
+		tc358768_dpi_to_ns(vm.hfront_porch, vm.pixelclock),
+		tc358768_dpi_to_ns(dpi_htot, vm.pixelclock));
+
+	dev_dbg(dev, "dpi data start (ns): %u + %u = %u\n",
+		tc358768_dpi_to_ns(vm.hsync_len, vm.pixelclock),
+		tc358768_dpi_to_ns(vm.hback_porch, vm.pixelclock),
+		tc358768_dpi_to_ns(dpi_data_start, vm.pixelclock));
+
+	dsi_dpi_htot = tc358768_dpi_to_dsi_bytes(priv, dpi_htot);
+	dsi_dpi_data_start = tc358768_dpi_to_dsi_bytes(priv, dpi_data_start);
+
+	if (dsi_dev->mode_flags & MIPI_DSI_MODE_VIDEO_SYNC_PULSE) {
+		dsi_hsw = tc358768_dpi_to_dsi_bytes(priv, vm.hsync_len);
+		dsi_hbp = tc358768_dpi_to_dsi_bytes(priv, vm.hback_porch);
+	} else {
+		/* HBP is included in HSW in event mode */
+		dsi_hbp = 0;
+		dsi_hsw = tc358768_dpi_to_dsi_bytes(priv,
+						    vm.hsync_len +
+						    vm.hback_porch);
+
+		/*
+		 * The pixel packet includes the actual pixel data, and:
+		 * DSI packet header = 4 bytes
+		 * DCS code = 1 byte
+		 * DSI packet footer = 2 bytes
+		 */
+		dsi_hact = hact + 4 + 1 + 2;
+
+		dsi_hfp = dsi_dpi_htot - dsi_hact - dsi_hsw - dsi_hss;
+
+		/*
+		 * Here we should check if HFP is long enough for entering LP
+		 * and exiting LP, but it's not clear how to calculate that.
+		 * Instead, this is a naive algorithm that just adjusts the HFP
+		 * and HSW so that HFP is (at least) roughly 2/3 of the total
+		 * blanking time.
+		 */
+		if (dsi_hfp < (dsi_hfp + dsi_hsw + dsi_hss) * 2 / 3) {
+			u32 old_hfp = dsi_hfp;
+			u32 old_hsw = dsi_hsw;
+			u32 tot = dsi_hfp + dsi_hsw + dsi_hss;
+
+			dsi_hsw = tot / 3;
+
+			/*
+			 * Seems like sometimes HSW has to be divisible by num-lanes, but
+			 * not always...
+			 */
+			dsi_hsw = roundup(dsi_hsw, priv->dsi_lanes);
+
+			dsi_hfp = dsi_dpi_htot - dsi_hact - dsi_hsw - dsi_hss;
+
+			dev_dbg(dev,
+				"hfp too short, adjusting dsi hfp and dsi hsw from %u, %u to %u, %u\n",
+				old_hfp, old_hsw, dsi_hfp, dsi_hsw);
+		}
+
+		dev_dbg(dev,
+			"dsi horiz timing (bytes): %u, %u + %u + %u + %u = %u\n",
+			dsi_hss, dsi_hsw, dsi_hbp, dsi_hact, dsi_hfp,
+			dsi_hss + dsi_hsw + dsi_hbp + dsi_hact + dsi_hfp);
+
+		dev_dbg(dev, "dsi horiz timing (ns): %u + %u + %u + %u + %u = %u\n",
+			tc358768_dsi_bytes_to_ns(priv, dsi_hss),
+			tc358768_dsi_bytes_to_ns(priv, dsi_hsw),
+			tc358768_dsi_bytes_to_ns(priv, dsi_hbp),
+			tc358768_dsi_bytes_to_ns(priv, dsi_hact),
+			tc358768_dsi_bytes_to_ns(priv, dsi_hfp),
+			tc358768_dsi_bytes_to_ns(priv, dsi_hss + dsi_hsw +
+						 dsi_hbp + dsi_hact + dsi_hfp));
+	}
+
+	/* VSDly calculation */
+
+	/* Start with the HW internal delay */
+	dsi_vsdly = internal_dly;
+
+	/* Convert to byte units as the other variables are in byte units */
+	dsi_vsdly *= priv->dsi_lanes;
+
+	/* Do we need more delay, in addition to the internal? */
+	if (dsi_dpi_data_start > dsi_vsdly + dsi_hss + dsi_hsw + dsi_hbp) {
+		dsi_vsdly = dsi_dpi_data_start - dsi_hss - dsi_hsw - dsi_hbp;
+		dsi_vsdly = roundup(dsi_vsdly, priv->dsi_lanes);
+	}
+
+	dev_dbg(dev, "dsi data start (bytes) %u + %u + %u + %u = %u\n",
+		dsi_vsdly, dsi_hss, dsi_hsw, dsi_hbp,
+		dsi_vsdly + dsi_hss + dsi_hsw + dsi_hbp);
+
+	dev_dbg(dev, "dsi data start (ns) %u + %u + %u + %u = %u\n",
+		tc358768_dsi_bytes_to_ns(priv, dsi_vsdly),
+		tc358768_dsi_bytes_to_ns(priv, dsi_hss),
+		tc358768_dsi_bytes_to_ns(priv, dsi_hsw),
+		tc358768_dsi_bytes_to_ns(priv, dsi_hbp),
+		tc358768_dsi_bytes_to_ns(priv, dsi_vsdly + dsi_hss + dsi_hsw + dsi_hbp));
+
+	/* Convert back to hsbyteclk */
+	dsi_vsdly /= priv->dsi_lanes;
+
+	/*
+	 * The docs say that there is an internal delay of 40 cycles.
+	 * However, we get underflows if we follow that rule. If we
+	 * instead ignore the internal delay, things work. So either
+	 * the docs are wrong or the calculations are wrong.
+	 *
+	 * As a temporary fix, add the internal delay here, to counter
+	 * the subtraction when writing the register.
+	 */
+	dsi_vsdly += internal_dly;
+
+	/* Clamp to the register max */
+	if (dsi_vsdly - internal_dly > 0x3ff) {
+		dev_warn(dev, "VSDly too high, underflows likely\n");
+		dsi_vsdly = 0x3ff + internal_dly;
+	}
+
 	/* VSDly[9:0] */
-	video_start = max(video_start, internal_delay + 1) - internal_delay;
-	tc358768_write(priv, TC358768_VSDLY, video_start);
+	tc358768_write(priv, TC358768_VSDLY, dsi_vsdly - internal_dly);
 
 	tc358768_write(priv, TC358768_DATAFMT, val);
 	tc358768_write(priv, TC358768_DSITX_DT, data_type);
@@ -826,18 +1027,6 @@ static void tc358768_bridge_pre_enable(struct drm_bridge *bridge)
 
 		/* vbp */
 		tc358768_write(priv, TC358768_DSI_VBPR, vm.vback_porch);
-
-		/* hsw * byteclk * ndl / pclk */
-		val = (u32)div_u64(vm.hsync_len *
-				   (u64)hsbyteclk * priv->dsi_lanes,
-				   vm.pixelclock);
-		tc358768_write(priv, TC358768_DSI_HSW, val);
-
-		/* hbp * byteclk * ndl / pclk */
-		val = (u32)div_u64(vm.hback_porch *
-				   (u64)hsbyteclk * priv->dsi_lanes,
-				   vm.pixelclock);
-		tc358768_write(priv, TC358768_DSI_HBPR, val);
 	} else {
 		/* Set event mode */
 		tc358768_write(priv, TC358768_DSI_EVENT, 1);
@@ -851,16 +1040,13 @@ static void tc358768_bridge_pre_enable(struct drm_bridge *bridge)
 
 		/* vbp (not used in event mode) */
 		tc358768_write(priv, TC358768_DSI_VBPR, 0);
-
-		/* (hsw + hbp) * byteclk * ndl / pclk */
-		val = (u32)div_u64((vm.hsync_len + vm.hback_porch) *
-				   (u64)hsbyteclk * priv->dsi_lanes,
-				   vm.pixelclock);
-		tc358768_write(priv, TC358768_DSI_HSW, val);
-
-		/* hbp (not used in event mode) */
-		tc358768_write(priv, TC358768_DSI_HBPR, 0);
 	}
+
+	/* hsw (bytes) */
+	tc358768_write(priv, TC358768_DSI_HSW, dsi_hsw);
+
+	/* hbp (bytes) */
+	tc358768_write(priv, TC358768_DSI_HBPR, dsi_hbp);
 
 	/* hact (bytes) */
 	tc358768_write(priv, TC358768_DSI_HACT, hact);
@@ -900,14 +1086,12 @@ static void tc358768_bridge_pre_enable(struct drm_bridge *bridge)
 	tc358768_write(priv, TC358768_DSI_CONFW, val);
 
 	ret = tc358768_clear_error(priv);
-	if (ret) {
+	if (ret)
 		dev_err(dev, "Bridge pre_enable failed: %d\n", ret);
-		tc358768_bridge_disable(bridge);
-		tc358768_bridge_post_disable(bridge);
-	}
 }
 
-static void tc358768_bridge_enable(struct drm_bridge *bridge)
+static void tc358768_bridge_atomic_enable(struct drm_bridge *bridge,
+					  struct drm_atomic_state *state)
 {
 	struct tc358768_priv *priv = bridge_to_tc358768(bridge);
 	int ret;
@@ -924,11 +1108,8 @@ static void tc358768_bridge_enable(struct drm_bridge *bridge)
 	tc358768_update_bits(priv, TC358768_CONFCTL, BIT(6), BIT(6));
 
 	ret = tc358768_clear_error(priv);
-	if (ret) {
+	if (ret)
 		dev_err(priv->dev, "Bridge enable failed: %d\n", ret);
-		tc358768_bridge_disable(bridge);
-		tc358768_bridge_post_disable(bridge);
-	}
 }
 
 #define MAX_INPUT_SEL_FORMATS	1
@@ -969,13 +1150,31 @@ tc358768_atomic_get_input_bus_fmts(struct drm_bridge *bridge,
 	return input_fmts;
 }
 
+static bool tc358768_mode_fixup(struct drm_bridge *bridge,
+				const struct drm_display_mode *mode,
+				struct drm_display_mode *adjusted_mode)
+{
+	/* Default to positive sync */
+
+	if (!(adjusted_mode->flags &
+	      (DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_NHSYNC)))
+		adjusted_mode->flags |= DRM_MODE_FLAG_PHSYNC;
+
+	if (!(adjusted_mode->flags &
+	      (DRM_MODE_FLAG_PVSYNC | DRM_MODE_FLAG_NVSYNC)))
+		adjusted_mode->flags |= DRM_MODE_FLAG_PVSYNC;
+
+	return true;
+}
+
 static const struct drm_bridge_funcs tc358768_bridge_funcs = {
 	.attach = tc358768_bridge_attach,
 	.mode_valid = tc358768_bridge_mode_valid,
-	.pre_enable = tc358768_bridge_pre_enable,
-	.enable = tc358768_bridge_enable,
-	.disable = tc358768_bridge_disable,
-	.post_disable = tc358768_bridge_post_disable,
+	.mode_fixup = tc358768_mode_fixup,
+	.atomic_pre_enable = tc358768_bridge_atomic_pre_enable,
+	.atomic_enable = tc358768_bridge_atomic_enable,
+	.atomic_disable = tc358768_bridge_atomic_disable,
+	.atomic_post_disable = tc358768_bridge_atomic_post_disable,
 
 	.atomic_duplicate_state = drm_atomic_helper_bridge_duplicate_state,
 	.atomic_destroy_state = drm_atomic_helper_bridge_destroy_state,
@@ -1050,8 +1249,8 @@ static const struct regmap_config tc358768_regmap_config = {
 };
 
 static const struct i2c_device_id tc358768_i2c_ids[] = {
-	{ "tc358768", 0 },
-	{ "tc358778", 0 },
+	{ "tc358768" },
+	{ "tc358778" },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, tc358768_i2c_ids);
@@ -1088,9 +1287,10 @@ static int tc358768_i2c_probe(struct i2c_client *client)
 	if (!np)
 		return -ENODEV;
 
-	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
-	if (!priv)
-		return -ENOMEM;
+	priv = devm_drm_bridge_alloc(dev, struct tc358768_priv, bridge,
+				     &tc358768_bridge_funcs);
+	if (IS_ERR(priv))
+		return PTR_ERR(priv);
 
 	dev_set_drvdata(dev, priv);
 	priv->dev = dev;
@@ -1122,7 +1322,6 @@ static int tc358768_i2c_probe(struct i2c_client *client)
 	priv->dsi_host.dev = dev;
 	priv->dsi_host.ops = &tc358768_dsi_host_ops;
 
-	priv->bridge.funcs = &tc358768_bridge_funcs;
 	priv->bridge.timings = &default_tc358768_timings;
 	priv->bridge.of_node = np;
 

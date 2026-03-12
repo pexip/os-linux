@@ -16,7 +16,6 @@
 #include <linux/dmi.h>
 #include <linux/efi.h>
 #include <linux/export.h>
-#include <linux/screen_info.h>
 #include <linux/memblock.h>
 #include <linux/initrd.h>
 #include <linux/ioport.h>
@@ -48,6 +47,7 @@
 #include <asm/sections.h>
 #include <asm/setup.h>
 #include <asm/time.h>
+#include <asm/unwind.h>
 
 #define SMBIOS_BIOSSIZE_OFFSET		0x09
 #define SMBIOS_BIOSEXTERN_OFFSET	0x13
@@ -55,9 +55,9 @@
 #define SMBIOS_FREQHIGH_OFFSET		0x17
 #define SMBIOS_FREQLOW_MASK		0xFF
 #define SMBIOS_CORE_PACKAGE_OFFSET	0x23
+#define SMBIOS_THREAD_PACKAGE_OFFSET	0x25
+#define SMBIOS_THREAD_PACKAGE_2_OFFSET	0x2E
 #define LOONGSON_EFI_ENABLE		(1 << 3)
-
-struct screen_info screen_info __section(".data");
 
 unsigned long fw_arg0, fw_arg1, fw_arg2;
 DEFINE_PER_CPU(unsigned long, kernelsp);
@@ -127,7 +127,12 @@ static void __init parse_cpu_table(const struct dmi_header *dm)
 	cpu_clock_freq = freq_temp * 1000000;
 
 	loongson_sysconf.cpuname = (void *)dmi_string_parse(dm, dmi_data[16]);
-	loongson_sysconf.cores_per_package = *(dmi_data + SMBIOS_CORE_PACKAGE_OFFSET);
+	loongson_sysconf.cores_per_package = *(u8 *)(dmi_data + SMBIOS_THREAD_PACKAGE_OFFSET);
+	if (dm->length >= 0x30 && loongson_sysconf.cores_per_package == 0xff) {
+		/* SMBIOS 3.0+ has ThreadCount2 for more than 255 threads */
+		loongson_sysconf.cores_per_package =
+					  *(u16 *)(dmi_data + SMBIOS_THREAD_PACKAGE_2_OFFSET);
+	}
 
 	pr_info("CpuClock = %llu\n", cpu_clock_freq);
 }
@@ -192,6 +197,16 @@ static int __init early_parse_mem(char *p)
 		return -EINVAL;
 	}
 
+	start = 0;
+	size = memparse(p, &p);
+	if (*p == '@')	/* Every mem=... should contain '@' */
+		start = memparse(p + 1, &p);
+	else {		/* Only one mem=... is allowed if no '@' */
+		usermem = 1;
+		memblock_enforce_memory_limit(size);
+		return 0;
+	}
+
 	/*
 	 * If a user specifies memory size, we
 	 * blow away any automatically generated
@@ -201,14 +216,6 @@ static int __init early_parse_mem(char *p)
 		usermem = 1;
 		memblock_remove(memblock_start_of_DRAM(),
 			memblock_end_of_DRAM() - memblock_start_of_DRAM());
-	}
-	start = 0;
-	size = memparse(p, &p);
-	if (*p == '@')
-		start = memparse(p + 1, &p);
-	else {
-		pr_err("Invalid format!\n");
-		return -EINVAL;
 	}
 
 	if (!IS_ENABLED(CONFIG_NUMA))
@@ -255,36 +262,22 @@ static void __init arch_reserve_vmcore(void)
 #endif
 }
 
-/* 2MB alignment for crash kernel regions */
-#define CRASH_ALIGN	SZ_2M
-#define CRASH_ADDR_MAX	SZ_4G
-
-static void __init arch_parse_crashkernel(void)
+static void __init arch_reserve_crashkernel(void)
 {
-#ifdef CONFIG_KEXEC
 	int ret;
-	unsigned long long total_mem;
+	unsigned long long low_size = 0;
 	unsigned long long crash_base, crash_size;
+	bool high = false;
 
-	total_mem = memblock_phys_mem_size();
-	ret = parse_crashkernel(boot_command_line, total_mem, &crash_size, &crash_base);
-	if (ret < 0 || crash_size <= 0)
+	if (!IS_ENABLED(CONFIG_CRASH_RESERVE))
 		return;
 
-	if (crash_base <= 0) {
-		crash_base = memblock_phys_alloc_range(crash_size, CRASH_ALIGN, CRASH_ALIGN, CRASH_ADDR_MAX);
-		if (!crash_base) {
-			pr_warn("crashkernel reservation failed - No suitable area found.\n");
-			return;
-		}
-	} else if (!memblock_phys_alloc_range(crash_size, CRASH_ALIGN, crash_base, crash_base + crash_size)) {
-		pr_warn("Invalid memory region reserved for crash kernel\n");
+	ret = parse_crashkernel(boot_command_line, memblock_phys_mem_size(),
+				&crash_size, &crash_base, &low_size, NULL, &high);
+	if (ret)
 		return;
-	}
 
-	crashk_res.start = crash_base;
-	crashk_res.end	 = crash_base + crash_size - 1;
-#endif
+	reserve_crashkernel_generic(crash_size, crash_base, low_size, high);
 }
 
 static void __init fdt_setup(void)
@@ -296,15 +289,17 @@ static void __init fdt_setup(void)
 	if (acpi_os_get_root_pointer())
 		return;
 
-	/* Look for a device tree configuration table entry */
-	fdt_pointer = efi_fdt_pointer();
+	/* Prefer to use built-in dtb, checking its legality first. */
+	if (IS_ENABLED(CONFIG_BUILTIN_DTB) && !fdt_check_header(__dtb_start))
+		fdt_pointer = __dtb_start;
+	else
+		fdt_pointer = efi_fdt_pointer(); /* Fallback to firmware dtb */
+
 	if (!fdt_pointer || fdt_check_header(fdt_pointer))
 		return;
 
-	early_init_dt_scan(fdt_pointer);
+	early_init_dt_scan(fdt_pointer, __pa(fdt_pointer));
 	early_init_fdt_reserve_self();
-
-	max_low_pfn = PFN_PHYS(memblock_end_of_DRAM());
 #endif
 }
 
@@ -331,7 +326,9 @@ static void __init bootcmdline_init(char **cmdline_p)
 		if (boot_command_line[0])
 			strlcat(boot_command_line, " ", COMMAND_LINE_SIZE);
 
-		strlcat(boot_command_line, init_command_line, COMMAND_LINE_SIZE);
+		if (!strstr(boot_command_line, init_command_line))
+			strlcat(boot_command_line, init_command_line, COMMAND_LINE_SIZE);
+
 		goto out;
 	}
 #endif
@@ -358,15 +355,16 @@ out:
 void __init platform_init(void)
 {
 	arch_reserve_vmcore();
-	arch_parse_crashkernel();
+	arch_reserve_crashkernel();
 
-#ifdef CONFIG_ACPI_TABLE_UPGRADE
-	acpi_table_upgrade();
-#endif
 #ifdef CONFIG_ACPI
+	acpi_table_upgrade();
+	acpi_gbl_use_global_lock = false;
 	acpi_gbl_use_default_register_widths = false;
 	acpi_boot_table_init();
 #endif
+
+	early_init_fdt_scan_reserved_mem();
 	unflatten_and_copy_device_tree();
 
 #ifdef CONFIG_NUMA
@@ -395,12 +393,14 @@ static void __init check_kernel_sections_mem(void)
  */
 static void __init arch_mem_init(char **cmdline_p)
 {
+	/* Recalculate max_low_pfn for "mem=xxx" */
+	max_pfn = PFN_DOWN(memblock_end_of_DRAM());
+	max_low_pfn = min(PFN_DOWN(HIGHMEM_START), max_pfn);
+
 	if (usermem)
 		pr_info("User-defined physical RAM map overwrite\n");
 
 	check_kernel_sections_mem();
-
-	early_init_fdt_scan_reserved_mem();
 
 	/*
 	 * In order to reduce the possibility of kernel panic when failed to
@@ -441,7 +441,7 @@ static void __init resource_init(void)
 
 	num_standard_resources = memblock.memory.cnt;
 	res_size = num_standard_resources * sizeof(*standard_resources);
-	standard_resources = memblock_alloc(res_size, SMP_CACHE_BYTES);
+	standard_resources = memblock_alloc_or_panic(res_size, SMP_CACHE_BYTES);
 
 	for_each_mem_region(region) {
 		res = &standard_resources[i++];
@@ -468,15 +468,6 @@ static void __init resource_init(void)
 		request_resource(res, &data_resource);
 		request_resource(res, &bss_resource);
 	}
-
-#ifdef CONFIG_KEXEC
-	if (crashk_res.start < crashk_res.end) {
-		insert_resource(&iomem_resource, &crashk_res);
-		pr_info("Reserving %ldMB of memory at %ldMB for crashkernel\n",
-			(unsigned long)((crashk_res.end - crashk_res.start + 1) >> 20),
-			(unsigned long)(crashk_res.start  >> 20));
-	}
-#endif
 }
 
 static int __init add_legacy_isa_io(struct fwnode_handle *fwnode,
@@ -509,7 +500,7 @@ static int __init add_legacy_isa_io(struct fwnode_handle *fwnode,
 	}
 
 	vaddr = (unsigned long)(PCI_IOBASE + range->io_start);
-	ioremap_page_range(vaddr, vaddr + size, hw_start, pgprot_device(PAGE_KERNEL));
+	vmap_page_range(vaddr, vaddr + size, hw_start, pgprot_device(PAGE_KERNEL));
 
 	return 0;
 }
@@ -596,8 +587,10 @@ static void __init prefill_possible_map(void)
 
 	for (i = 0; i < possible; i++)
 		set_cpu_possible(i, true);
-	for (; i < NR_CPUS; i++)
+	for (; i < NR_CPUS; i++) {
+		set_cpu_present(i, false);
 		set_cpu_possible(i, false);
+	}
 
 	set_nr_cpu_ids(possible);
 }
@@ -606,6 +599,7 @@ static void __init prefill_possible_map(void)
 void __init setup_arch(char **cmdline_p)
 {
 	cpu_probe();
+	unwind_init();
 
 	init_environ();
 	efi_init();
@@ -620,6 +614,8 @@ void __init setup_arch(char **cmdline_p)
 	arch_mem_init(cmdline_p);
 
 	resource_init();
+	jump_label_init(); /* Initialise the static keys for paravirtualization */
+
 #ifdef CONFIG_SMP
 	plat_smp_setup();
 	prefill_possible_map();

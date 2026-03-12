@@ -403,11 +403,11 @@ static void lan966x_es0_read_esdx_counter(struct lan966x *lan966x,
 	u32 counter;
 
 	id = id & 0xff; /* counter limit */
-	mutex_lock(&lan966x->stats_lock);
+	spin_lock(&lan966x->stats_lock);
 	lan_wr(SYS_STAT_CFG_STAT_VIEW_SET(id), lan966x, SYS_STAT_CFG);
 	counter = lan_rd(lan966x, SYS_CNT(LAN966X_STAT_ESDX_GRN_PKTS)) +
 		  lan_rd(lan966x, SYS_CNT(LAN966X_STAT_ESDX_YEL_PKTS));
-	mutex_unlock(&lan966x->stats_lock);
+	spin_unlock(&lan966x->stats_lock);
 	if (counter)
 		admin->cache.counter = counter;
 }
@@ -417,14 +417,14 @@ static void lan966x_es0_write_esdx_counter(struct lan966x *lan966x,
 {
 	id = id & 0xff; /* counter limit */
 
-	mutex_lock(&lan966x->stats_lock);
+	spin_lock(&lan966x->stats_lock);
 	lan_wr(SYS_STAT_CFG_STAT_VIEW_SET(id), lan966x, SYS_STAT_CFG);
 	lan_wr(0, lan966x, SYS_CNT(LAN966X_STAT_ESDX_GRN_BYTES));
 	lan_wr(admin->cache.counter, lan966x,
 	       SYS_CNT(LAN966X_STAT_ESDX_GRN_PKTS));
 	lan_wr(0, lan966x, SYS_CNT(LAN966X_STAT_ESDX_YEL_BYTES));
 	lan_wr(0, lan966x, SYS_CNT(LAN966X_STAT_ESDX_YEL_PKTS));
-	mutex_unlock(&lan966x->stats_lock);
+	spin_unlock(&lan966x->stats_lock);
 }
 
 static void lan966x_vcap_cache_write(struct net_device *dev,
@@ -581,7 +581,7 @@ static void lan966x_vcap_move(struct net_device *dev,
 	lan966x_vcap_wait_update(lan966x, admin->tgt_inst);
 }
 
-static struct vcap_operations lan966x_vcap_ops = {
+static const struct vcap_operations lan966x_vcap_ops = {
 	.validate_keyset = lan966x_vcap_validate_keyset,
 	.add_default_fields = lan966x_vcap_add_default_fields,
 	.cache_erase = lan966x_vcap_cache_erase,

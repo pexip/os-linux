@@ -26,16 +26,16 @@ Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
 
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
-@@ -1031,6 +1031,8 @@ void __init setup_arch(char **cmdline_p)
+@@ -904,6 +904,8 @@ void __init setup_arch(char **cmdline_p)
  	if (efi_enabled(EFI_BOOT))
  		efi_init();
  
 +	efi_set_secure_boot(boot_params.secure_boot);
 +
  	reserve_ibft_region();
- 	dmi_setup();
+ 	x86_init.resources.dmi_setup();
  
-@@ -1192,8 +1194,6 @@ void __init setup_arch(char **cmdline_p)
+@@ -1070,8 +1072,6 @@ void __init setup_arch(char **cmdline_p)
  	/* Allocate bigger log buffer */
  	setup_log_buf(1);
  
@@ -67,15 +67,15 @@ Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
  		default:
 --- a/include/linux/security.h
 +++ b/include/linux/security.h
-@@ -482,6 +482,7 @@ int security_inode_notifysecctx(struct i
+@@ -522,6 +522,7 @@ int security_inode_notifysecctx(struct i
  int security_inode_setsecctx(struct dentry *dentry, void *ctx, u32 ctxlen);
- int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen);
+ int security_inode_getsecctx(struct inode *inode, struct lsm_context *cp);
  int security_locked_down(enum lockdown_reason what);
 +int lock_kernel_down(const char *where, enum lockdown_reason level);
- #else /* CONFIG_SECURITY */
- 
- static inline int call_blocking_lsm_notifier(enum lsm_event event, void *data)
-@@ -1388,6 +1389,11 @@ static inline int security_locked_down(e
+ int lsm_fill_user_ctx(struct lsm_ctx __user *uctx, u32 *uctx_len,
+ 		      void *val, size_t val_len, u64 id, u64 flags);
+ int security_bdev_alloc(struct block_device *bdev);
+@@ -1504,6 +1505,11 @@ static inline int security_locked_down(e
  {
  	return 0;
  }
@@ -84,9 +84,9 @@ Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
 +{
 +	return -EOPNOTSUPP;
 +}
- #endif	/* CONFIG_SECURITY */
- 
- #if defined(CONFIG_SECURITY) && defined(CONFIG_WATCH_QUEUE)
+ static inline int lsm_fill_user_ctx(struct lsm_ctx __user *uctx,
+ 				    u32 *uctx_len, void *val, size_t val_len,
+ 				    u64 id, u64 flags)
 --- a/security/lockdown/Kconfig
 +++ b/security/lockdown/Kconfig
 @@ -45,3 +45,18 @@ config LOCK_DOWN_KERNEL_FORCE_CONFIDENTI
@@ -110,7 +110,7 @@ Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
 +	  triggered in integrity mode if EFI Secure Boot is set.
 --- a/security/lockdown/lockdown.c
 +++ b/security/lockdown/lockdown.c
-@@ -23,7 +23,7 @@ static const enum lockdown_reason lockdo
+@@ -24,7 +24,7 @@ static const enum lockdown_reason lockdo
  /*
   * Put the kernel into lock-down mode.
   */

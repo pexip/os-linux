@@ -129,13 +129,25 @@ static const struct mmu_interval_notifier_ops amdgpu_hmm_hsa_ops = {
  */
 int amdgpu_hmm_register(struct amdgpu_bo *bo, unsigned long addr)
 {
+	int r;
+
 	if (bo->kfd_bo)
-		return mmu_interval_notifier_insert(&bo->notifier, current->mm,
+		r = mmu_interval_notifier_insert(&bo->notifier, current->mm,
 						    addr, amdgpu_bo_size(bo),
 						    &amdgpu_hmm_hsa_ops);
-	return mmu_interval_notifier_insert(&bo->notifier, current->mm, addr,
-					    amdgpu_bo_size(bo),
-					    &amdgpu_hmm_gfx_ops);
+	else
+		r = mmu_interval_notifier_insert(&bo->notifier, current->mm, addr,
+							amdgpu_bo_size(bo),
+							&amdgpu_hmm_gfx_ops);
+	if (r)
+		/*
+		 * Make sure amdgpu_hmm_unregister() doesn't call
+		 * mmu_interval_notifier_remove() when the notifier isn't properly
+		 * initialized.
+		 */
+		bo->notifier.mm = NULL;
+
+	return r;
 }
 
 /**
@@ -155,13 +167,12 @@ void amdgpu_hmm_unregister(struct amdgpu_bo *bo)
 
 int amdgpu_hmm_range_get_pages(struct mmu_interval_notifier *notifier,
 			       uint64_t start, uint64_t npages, bool readonly,
-			       void *owner, struct page **pages,
+			       void *owner,
 			       struct hmm_range **phmm_range)
 {
 	struct hmm_range *hmm_range;
 	unsigned long end;
 	unsigned long timeout;
-	unsigned long i;
 	unsigned long *pfns;
 	int r = 0;
 
@@ -190,19 +201,12 @@ int amdgpu_hmm_range_get_pages(struct mmu_interval_notifier *notifier,
 		pr_debug("hmm range: start = 0x%lx, end = 0x%lx",
 			hmm_range->start, hmm_range->end);
 
-		/* Assuming 128MB takes maximum 1 second to fault page address */
-		timeout = max((hmm_range->end - hmm_range->start) >> 27, 1UL);
-		timeout *= HMM_RANGE_DEFAULT_TIMEOUT;
-		timeout = jiffies + msecs_to_jiffies(timeout);
+		timeout = jiffies + msecs_to_jiffies(HMM_RANGE_DEFAULT_TIMEOUT);
 
 retry:
 		hmm_range->notifier_seq = mmu_interval_read_begin(notifier);
 		r = hmm_range_fault(hmm_range);
 		if (unlikely(r)) {
-			/*
-			 * FIXME: This timeout should encompass the retry from
-			 * mmu_interval_read_retry() as well.
-			 */
 			if (r == -EBUSY && !time_after(jiffies, timeout))
 				goto retry;
 			goto out_free_pfns;
@@ -212,19 +216,10 @@ retry:
 			break;
 		hmm_range->hmm_pfns += MAX_WALK_BYTE >> PAGE_SHIFT;
 		hmm_range->start = hmm_range->end;
-		schedule();
 	} while (hmm_range->end < end);
 
 	hmm_range->start = start;
 	hmm_range->hmm_pfns = pfns;
-
-	/*
-	 * Due to default_flags, all pages are HMM_PFN_VALID or
-	 * hmm_range_fault() fails. FIXME: The pages cannot be touched outside
-	 * the notifier_lock, and mmu_interval_read_retry() must be done first.
-	 */
-	for (i = 0; pages && i < npages; i++)
-		pages[i] = hmm_pfn_to_page(pfns[i]);
 
 	*phmm_range = hmm_range;
 
@@ -235,6 +230,8 @@ out_free_pfns:
 out_free_range:
 	kfree(hmm_range);
 
+	if (r == -EBUSY)
+		r = -EAGAIN;
 	return r;
 }
 

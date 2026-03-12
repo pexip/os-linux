@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //
-// Copyright(c) 2022 Intel Corporation. All rights reserved.
+// Copyright(c) 2022 Intel Corporation
 //
 // Author: Peter Ujfalusi <peter.ujfalusi@linux.intel.com>
 //
@@ -137,7 +137,6 @@ static int sof_msg_inject_send_message(struct sof_client_dev *cdev)
 	if (ret)
 		dev_err(dev, "IPC message send failed: %d\n", ret);
 
-	pm_runtime_mark_last_busy(dev);
 	err = pm_runtime_put_autosuspend(dev);
 	if (err < 0)
 		dev_err_ratelimited(dev, "debugfs write failed to idle %d\n", err);
@@ -267,7 +266,7 @@ static int sof_msg_inject_probe(struct auxiliary_device *auxdev,
 	priv->max_msg_size = sof_client_get_ipc_max_payload_size(cdev);
 	alloc_size = priv->max_msg_size;
 
-	if (priv->ipc_type == SOF_INTEL_IPC4)
+	if (priv->ipc_type == SOF_IPC_TYPE_4)
 		alloc_size += sizeof(struct sof_ipc4_msg);
 
 	priv->tx_buffer = devm_kmalloc(dev, alloc_size, GFP_KERNEL);
@@ -275,7 +274,7 @@ static int sof_msg_inject_probe(struct auxiliary_device *auxdev,
 	if (!priv->tx_buffer || !priv->rx_buffer)
 		return -ENOMEM;
 
-	if (priv->ipc_type == SOF_INTEL_IPC4) {
+	if (priv->ipc_type == SOF_IPC_TYPE_4) {
 		struct sof_ipc4_msg *ipc4_msg;
 
 		ipc4_msg = priv->tx_buffer;
@@ -335,6 +334,6 @@ static struct auxiliary_driver sof_msg_inject_client_drv = {
 
 module_auxiliary_driver(sof_msg_inject_client_drv);
 
-MODULE_DESCRIPTION("SOF IPC Message Injector Client Driver");
 MODULE_LICENSE("GPL");
-MODULE_IMPORT_NS(SND_SOC_SOF_CLIENT);
+MODULE_DESCRIPTION("SOF IPC Message Injector Client Driver");
+MODULE_IMPORT_NS("SND_SOC_SOF_CLIENT");

@@ -1053,7 +1053,7 @@ minstrel_ht_refill_sample_rates(struct minstrel_ht_sta *mi)
  *  - max_prob_rate must use only one stream, as a tradeoff between delivery
  *    probability and throughput during strong fluctuations
  *  - as long as the max prob rate has a probability of more than 75%, pick
- *    higher throughput rates, even if the probablity is a bit lower
+ *    higher throughput rates, even if the probability is a bit lower
  */
 static void
 minstrel_ht_update_stats(struct minstrel_priv *mp, struct minstrel_ht_sta *mi)
@@ -1725,16 +1725,15 @@ minstrel_ht_update_caps(void *priv, struct ieee80211_supported_band *sband,
 	mi->band = sband->band;
 	mi->last_stats_update = jiffies;
 
-	ack_dur = ieee80211_frame_duration(sband->band, 10, 60, 1, 1, 0);
-	mi->overhead = ieee80211_frame_duration(sband->band, 0, 60, 1, 1, 0);
+	ack_dur = ieee80211_frame_duration(sband->band, 10, 60, 1, 1);
+	mi->overhead = ieee80211_frame_duration(sband->band, 0, 60, 1, 1);
 	mi->overhead += ack_dur;
 	mi->overhead_rtscts = mi->overhead + 2 * ack_dur;
 
 	ctl_rate = &sband->bitrates[rate_lowest_index(sband, sta)];
 	erp = ctl_rate->flags & IEEE80211_RATE_ERP_G;
 	ack_dur = ieee80211_frame_duration(sband->band, 10,
-					   ctl_rate->bitrate, erp, 1,
-					   ieee80211_chandef_get_shift(chandef));
+					   ctl_rate->bitrate, erp, 1);
 	mi->overhead_legacy = ack_dur;
 	mi->overhead_legacy_rtscts = mi->overhead_legacy + 2 * ack_dur;
 
@@ -1874,15 +1873,12 @@ minstrel_ht_free_sta(void *priv, struct ieee80211_sta *sta, void *priv_sta)
 
 static void
 minstrel_ht_fill_rate_array(u8 *dest, struct ieee80211_supported_band *sband,
-			    const s16 *bitrates, int n_rates, u32 rate_flags)
+			    const s16 *bitrates, int n_rates)
 {
 	int i, j;
 
 	for (i = 0; i < sband->n_bitrates; i++) {
 		struct ieee80211_rate *rate = &sband->bitrates[i];
-
-		if ((rate_flags & sband->bitrates[i].flags) != rate_flags)
-			continue;
 
 		for (j = 0; j < n_rates; j++) {
 			if (rate->bitrate != bitrates[j])
@@ -1899,7 +1895,6 @@ minstrel_ht_init_cck_rates(struct minstrel_priv *mp)
 {
 	static const s16 bitrates[4] = { 10, 20, 55, 110 };
 	struct ieee80211_supported_band *sband;
-	u32 rate_flags = ieee80211_chandef_rate_flags(&mp->hw->conf.chandef);
 
 	memset(mp->cck_rates, 0xff, sizeof(mp->cck_rates));
 	sband = mp->hw->wiphy->bands[NL80211_BAND_2GHZ];
@@ -1909,8 +1904,7 @@ minstrel_ht_init_cck_rates(struct minstrel_priv *mp)
 	BUILD_BUG_ON(ARRAY_SIZE(mp->cck_rates) != ARRAY_SIZE(bitrates));
 	minstrel_ht_fill_rate_array(mp->cck_rates, sband,
 				    minstrel_cck_bitrates,
-				    ARRAY_SIZE(minstrel_cck_bitrates),
-				    rate_flags);
+				    ARRAY_SIZE(minstrel_cck_bitrates));
 }
 
 static void
@@ -1918,7 +1912,6 @@ minstrel_ht_init_ofdm_rates(struct minstrel_priv *mp, enum nl80211_band band)
 {
 	static const s16 bitrates[8] = { 60, 90, 120, 180, 240, 360, 480, 540 };
 	struct ieee80211_supported_band *sband;
-	u32 rate_flags = ieee80211_chandef_rate_flags(&mp->hw->conf.chandef);
 
 	memset(mp->ofdm_rates[band], 0xff, sizeof(mp->ofdm_rates[band]));
 	sband = mp->hw->wiphy->bands[band];
@@ -1928,8 +1921,7 @@ minstrel_ht_init_ofdm_rates(struct minstrel_priv *mp, enum nl80211_band band)
 	BUILD_BUG_ON(ARRAY_SIZE(mp->ofdm_rates[band]) != ARRAY_SIZE(bitrates));
 	minstrel_ht_fill_rate_array(mp->ofdm_rates[band], sband,
 				    minstrel_ofdm_bitrates,
-				    ARRAY_SIZE(minstrel_ofdm_bitrates),
-				    rate_flags);
+				    ARRAY_SIZE(minstrel_ofdm_bitrates));
 }
 
 static void *

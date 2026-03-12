@@ -1,0 +1,3 @@
+boot/vmlinu?-6.18.15+deb13-test
+lib/modules/6.18.15+deb13-test/modules.builtin  lib/modules/6.18.15+deb13-test
+lib/modules/6.18.15+deb13-test/modules.order    lib/modules/6.18.15+deb13-test

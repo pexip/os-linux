@@ -14,23 +14,27 @@ Signed-off-by: Serge Hallyn <serge.hallyn@ubuntu.com>
 [bwh: Remove unneeded binary sysctl bits]
 [bwh: Keep this sysctl, but change the default to enabled]
 ---
-Index: linux/kernel/fork.c
-===================================================================
---- linux.orig/kernel/fork.c
-+++ linux/kernel/fork.c
-@@ -108,6 +108,11 @@
+ kernel/fork.c           | 16 ++++++++++++++++
+ kernel/sysctl.c         | 13 +++++++++++++
+ kernel/user_namespace.c |  3 +++
+ 3 files changed, 32 insertions(+)
+
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -122,6 +122,12 @@
  
- #define CREATE_TRACE_POINTS
- #include <trace/events/task.h>
+ #include <kunit/visibility.h>
+ 
 +#ifdef CONFIG_USER_NS
 +extern int unprivileged_userns_clone;
 +#else
 +#define unprivileged_userns_clone 0
 +#endif
- 
++
  /*
   * Minimum number of threads to boot the kernel
-@@ -2008,6 +2013,10 @@ static __latent_entropy struct task_stru
+  */
+@@ -1933,6 +1939,10 @@ __latent_entropy struct task_struct *cop
  	if ((clone_flags & (CLONE_NEWUSER|CLONE_FS)) == (CLONE_NEWUSER|CLONE_FS))
  		return ERR_PTR(-EINVAL);
  
@@ -41,7 +45,7 @@ Index: linux/kernel/fork.c
  	/*
  	 * Thread groups must share signals as well, and detached threads
  	 * can only be started up within the thread group.
-@@ -3166,6 +3175,12 @@ int ksys_unshare(unsigned long unshare_f
+@@ -3099,6 +3109,12 @@ int ksys_unshare(unsigned long unshare_f
  	if (unshare_flags & CLONE_NEWNS)
  		unshare_flags |= CLONE_FS;
  
@@ -54,25 +58,23 @@ Index: linux/kernel/fork.c
  	err = check_unshare_flags(unshare_flags);
  	if (err)
  		goto bad_unshare_out;
-Index: linux/kernel/sysctl.c
-===================================================================
---- linux.orig/kernel/sysctl.c
-+++ linux/kernel/sysctl.c
-@@ -136,6 +136,10 @@ static enum sysctl_writes_mode sysctl_wr
- int sysctl_legacy_va_layout;
- #endif
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -77,6 +77,10 @@ EXPORT_SYMBOL_GPL(sysctl_long_vals);
+ static const int ngroups_max = NGROUPS_MAX;
+ static const int cap_last_cap = CAP_LAST_CAP;
  
 +#ifdef CONFIG_USER_NS
 +extern int unprivileged_userns_clone;
 +#endif
 +
- #endif /* CONFIG_SYSCTL */
+ #ifdef CONFIG_PROC_SYSCTL
  
- /*
-@@ -1659,6 +1663,15 @@ static struct ctl_table kern_table[] = {
- 		.mode		= 0644,
- 		.proc_handler	= proc_dointvec,
- 	},
+ /**
+@@ -1581,6 +1585,15 @@ int proc_do_static_key(const struct ctl_
+ }
+ 
+ static const struct ctl_table sysctl_subsys_table[] = {
 +#ifdef CONFIG_USER_NS
 +	{
 +		.procname	= "unprivileged_userns_clone",
@@ -84,18 +86,16 @@ Index: linux/kernel/sysctl.c
 +#endif
  #ifdef CONFIG_PROC_SYSCTL
  	{
- 		.procname	= "tainted",
-Index: linux/kernel/user_namespace.c
-===================================================================
---- linux.orig/kernel/user_namespace.c
-+++ linux/kernel/user_namespace.c
-@@ -22,6 +22,9 @@
- #include <linux/bsearch.h>
+ 		.procname	= "sysctl_writes_strict",
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -23,6 +23,9 @@
  #include <linux/sort.h>
+ #include <linux/nstree.h>
  
 +/* sysctl */
 +int unprivileged_userns_clone = 1;
 +
- static struct kmem_cache *user_ns_cachep __read_mostly;
+ static struct kmem_cache *user_ns_cachep __ro_after_init;
  static DEFINE_MUTEX(userns_state_mutex);
  

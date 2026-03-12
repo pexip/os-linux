@@ -64,7 +64,7 @@ __naked void load_bytes_negative_len_2(void)
 
 SEC("tc")
 __description("raw_stack: skb_load_bytes, zero len")
-__failure __msg("invalid zero-sized read")
+__failure __msg("R4 invalid zero-sized read: u64=[0,0]")
 __naked void skb_load_bytes_zero_len(void)
 {
 	asm volatile ("					\
@@ -236,7 +236,7 @@ __naked void load_bytes_spilled_regs_data(void)
 
 SEC("tc")
 __description("raw_stack: skb_load_bytes, invalid access 1")
-__failure __msg("invalid indirect access to stack R3 off=-513 size=8")
+__failure __msg("invalid write to stack R3 off=-513 size=8")
 __naked void load_bytes_invalid_access_1(void)
 {
 	asm volatile ("					\
@@ -255,7 +255,7 @@ __naked void load_bytes_invalid_access_1(void)
 
 SEC("tc")
 __description("raw_stack: skb_load_bytes, invalid access 2")
-__failure __msg("invalid indirect access to stack R3 off=-1 size=8")
+__failure __msg("invalid write to stack R3 off=-1 size=8")
 __naked void load_bytes_invalid_access_2(void)
 {
 	asm volatile ("					\

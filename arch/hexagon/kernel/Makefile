@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0
-extra-y := vmlinux.lds
+always-$(KBUILD_BUILTIN) := vmlinux.lds
 
 obj-y += head.o
 obj-$(CONFIG_SMP) += smp.o
@@ -17,5 +17,3 @@ obj-y += vm_vectors.o
 obj-$(CONFIG_HAS_DMA) += dma.o
 
 obj-$(CONFIG_STACKTRACE) += stacktrace.o
-
-obj-$(CONFIG_VGA_CONSOLE) += screen_info.o

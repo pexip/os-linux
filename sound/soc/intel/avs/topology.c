@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //
-// Copyright(c) 2021 Intel Corporation. All rights reserved.
+// Copyright(c) 2021 Intel Corporation
 //
 // Authors: Cezary Rojewski <cezary.rojewski@intel.com>
 //          Amadeusz Slawinski <amadeuszx.slawinski@linux.intel.com>
@@ -15,6 +15,7 @@
 #include "avs.h"
 #include "control.h"
 #include "topology.h"
+#include "utils.h"
 
 /* Get pointer to vendor array at the specified offset. */
 #define avs_tplg_vendor_array_at(array, offset) \
@@ -371,22 +372,50 @@ parse_audio_format_bitfield(struct snd_soc_component *comp, void *elem, void *ob
 	return 0;
 }
 
+static int avs_ssp_sprint(char *buf, size_t size, const char *fmt, int port, int tdm)
+{
+	char *needle = strstr(fmt, "%d");
+	int retsize;
+
+	/*
+	 * If there is %d present in fmt string it should be replaced by either
+	 * SSP or SSP:TDM, where SSP and TDM are numbers, all other formatting
+	 * will be ignored.
+	 */
+	if (needle) {
+		retsize = scnprintf(buf, min_t(size_t, size, needle - fmt + 1), "%s", fmt);
+		retsize += scnprintf(buf + retsize, size - retsize, "%d", port);
+		if (tdm)
+			retsize += scnprintf(buf + retsize, size - retsize, ":%d", tdm);
+		retsize += scnprintf(buf + retsize, size - retsize, "%s", needle + 2);
+		return retsize;
+	}
+
+	return snprintf(buf, size, "%s", fmt);
+}
+
 static int parse_link_formatted_string(struct snd_soc_component *comp, void *elem,
 				       void *object, u32 offset)
 {
 	struct snd_soc_tplg_vendor_string_elem *tuple = elem;
 	struct snd_soc_acpi_mach *mach = dev_get_platdata(comp->card->dev);
 	char *val = (char *)((u8 *)object + offset);
+	int ssp_port, tdm_slot;
 
 	/*
 	 * Dynamic naming - string formats, e.g.: ssp%d - supported only for
 	 * topologies describing single device e.g.: an I2S codec on SSP0.
 	 */
-	if (hweight_long(mach->mach_params.i2s_link_mask) != 1)
+	if (!avs_mach_singular_ssp(mach))
 		return avs_parse_string_token(comp, elem, object, offset);
 
-	snprintf(val, SNDRV_CTL_ELEM_ID_NAME_MAXLEN, tuple->string,
-		 __ffs(mach->mach_params.i2s_link_mask));
+	ssp_port = avs_mach_ssp_port(mach);
+	if (!avs_mach_singular_tdm(mach, ssp_port))
+		return avs_parse_string_token(comp, elem, object, offset);
+
+	tdm_slot = avs_mach_ssp_tdm(mach, ssp_port);
+
+	avs_ssp_sprint(val, SNDRV_CTL_ELEM_ID_NAME_MAXLEN, tuple->string, ssp_port, tdm_slot);
 
 	return 0;
 }
@@ -786,6 +815,66 @@ static const struct avs_tplg_token_parser modcfg_ext_parsers[] = {
 		.offset = offsetof(struct avs_tplg_modcfg_ext, generic.num_output_pins),
 		.parse = avs_parse_short_token,
 	},
+	{
+		.token = AVS_TKN_MODCFG_WHM_REF_AFMT_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, whm.ref_fmt),
+		.parse = avs_parse_audio_format_ptr,
+	},
+	{
+		.token = AVS_TKN_MODCFG_WHM_OUT_AFMT_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, whm.out_fmt),
+		.parse = avs_parse_audio_format_ptr,
+	},
+	{
+		.token = AVS_TKN_MODCFG_WHM_WAKE_TICK_PERIOD_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, whm.wake_tick_period),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_MODCFG_WHM_VINDEX_U8,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_BYTE,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, whm.vindex),
+		.parse = avs_parse_byte_token,
+	},
+	{
+		.token = AVS_TKN_MODCFG_WHM_DMA_TYPE_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, whm.dma_type),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_MODCFG_WHM_DMABUFF_SIZE_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, whm.dma_buffer_size),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_MODCFG_WHM_BLOB_AFMT_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, whm.blob_fmt),
+		.parse = avs_parse_audio_format_ptr,
+	},
+	{
+		.token = AVS_TKN_MODCFG_PEAKVOL_VOLUME_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, peakvol.target_volume),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_MODCFG_PEAKVOL_CURVE_TYPE_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, peakvol.curve_type),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_MODCFG_PEAKVOL_CURVE_DURATION_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_modcfg_ext, peakvol.curve_duration),
+		.parse = avs_parse_word_token,
+	},
 };
 
 static const struct avs_tplg_token_parser pin_format_parsers[] = {
@@ -813,6 +902,7 @@ static void
 assign_copier_gtw_instance(struct snd_soc_component *comp, struct avs_tplg_modcfg_ext *cfg)
 {
 	struct snd_soc_acpi_mach *mach;
+	int ssp_port, tdm_slot;
 
 	if (!guid_equal(&cfg->type, &AVS_COPIER_MOD_UUID))
 		return;
@@ -826,11 +916,22 @@ assign_copier_gtw_instance(struct snd_soc_component *comp, struct avs_tplg_modcf
 		return;
 	}
 
+	/* If topology sets value don't overwrite it */
+	if (cfg->copier.vindex.val)
+		return;
+
 	mach = dev_get_platdata(comp->card->dev);
 
-	/* Automatic assignment only when board describes single SSP. */
-	if (hweight_long(mach->mach_params.i2s_link_mask) == 1 && !cfg->copier.vindex.i2s.instance)
-		cfg->copier.vindex.i2s.instance = __ffs(mach->mach_params.i2s_link_mask);
+	if (!avs_mach_singular_ssp(mach))
+		return;
+	ssp_port = avs_mach_ssp_port(mach);
+
+	if (!avs_mach_singular_tdm(mach, ssp_port))
+		return;
+	tdm_slot = avs_mach_ssp_tdm(mach, ssp_port);
+
+	cfg->copier.vindex.i2s.instance = ssp_port;
+	cfg->copier.vindex.i2s.time_slot = tdm_slot;
 }
 
 static int avs_tplg_parse_modcfg_ext(struct snd_soc_component *comp,
@@ -1077,6 +1178,21 @@ static const struct avs_tplg_token_parser module_parsers[] = {
 		.offset = offsetof(struct avs_tplg_module, ctl_id),
 		.parse = avs_parse_byte_token,
 	},
+	{
+		.token = AVS_TKN_MOD_INIT_CONFIG_NUM_IDS_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_module, num_config_ids),
+		.parse = avs_parse_byte_token,
+	},
+};
+
+static const struct avs_tplg_token_parser init_config_parsers[] = {
+	{
+		.token = AVS_TKN_MOD_INIT_CONFIG_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = 0,
+		.parse = avs_parse_word_token,
+	},
 };
 
 static struct avs_tplg_module *
@@ -1084,16 +1200,49 @@ avs_tplg_module_create(struct snd_soc_component *comp, struct avs_tplg_pipeline 
 		       struct snd_soc_tplg_vendor_array *tuples, u32 block_size)
 {
 	struct avs_tplg_module *module;
+	u32 esize;
 	int ret;
+
+	/* See where config id block starts. */
+	ret = avs_tplg_vendor_entry_size(tuples, block_size,
+					 AVS_TKN_MOD_INIT_CONFIG_ID_U32, &esize);
+	if (ret)
+		return ERR_PTR(ret);
 
 	module = devm_kzalloc(comp->card->dev, sizeof(*module), GFP_KERNEL);
 	if (!module)
 		return ERR_PTR(-ENOMEM);
 
 	ret = avs_parse_tokens(comp, module, module_parsers,
-			       ARRAY_SIZE(module_parsers), tuples, block_size);
+			       ARRAY_SIZE(module_parsers), tuples, esize);
 	if (ret < 0)
 		return ERR_PTR(ret);
+
+	block_size -= esize;
+	/* Parse trailing config ids if any. */
+	if (block_size) {
+		u32 num_config_ids = module->num_config_ids;
+		u32 *config_ids;
+
+		if (!num_config_ids)
+			return ERR_PTR(-EINVAL);
+
+		config_ids = devm_kcalloc(comp->card->dev, num_config_ids, sizeof(*config_ids),
+					   GFP_KERNEL);
+		if (!config_ids)
+			return ERR_PTR(-ENOMEM);
+
+		tuples = avs_tplg_vendor_array_at(tuples, esize);
+		ret = parse_dictionary_entries(comp, tuples, block_size,
+					       config_ids, num_config_ids, sizeof(*config_ids),
+					       AVS_TKN_MOD_INIT_CONFIG_ID_U32,
+					       init_config_parsers,
+					       ARRAY_SIZE(init_config_parsers));
+		if (ret)
+			return ERR_PTR(ret);
+
+		module->config_ids = config_ids;
+	}
 
 	module->owner = owner;
 	INIT_LIST_HEAD(&module->node);
@@ -1238,6 +1387,27 @@ static const struct avs_tplg_token_parser path_parsers[] = {
 	},
 };
 
+static const struct avs_tplg_token_parser condpath_parsers[] = {
+	{
+		.token = AVS_TKN_CONDPATH_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path, id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_SOURCE_PATH_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path, source_path_id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_SINK_PATH_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path, sink_path_id),
+		.parse = avs_parse_word_token,
+	},
+};
+
 static struct avs_tplg_path *
 avs_tplg_path_create(struct snd_soc_component *comp, struct avs_tplg_path_template *owner,
 		     struct snd_soc_tplg_vendor_array *tuples, u32 block_size,
@@ -1301,6 +1471,39 @@ static const struct avs_tplg_token_parser path_tmpl_parsers[] = {
 		.token = AVS_TKN_PATH_TMPL_ID_U32,
 		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
 		.offset = offsetof(struct avs_tplg_path_template, id),
+		.parse = avs_parse_word_token,
+	},
+};
+
+static const struct avs_tplg_token_parser condpath_tmpl_parsers[] = {
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path_template, id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_SOURCE_TPLG_NAME_STRING,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_STRING,
+		.offset = offsetof(struct avs_tplg_path_template, source.tplg_name),
+		.parse = avs_parse_string_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_SOURCE_PATH_TMPL_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path_template, source.id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_SINK_TPLG_NAME_STRING,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_STRING,
+		.offset = offsetof(struct avs_tplg_path_template, sink.tplg_name),
+		.parse = avs_parse_string_token,
+	},
+	{
+		.token = AVS_TKN_CONDPATH_TMPL_SINK_PATH_TMPL_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_path_template, sink.id),
 		.parse = avs_parse_word_token,
 	},
 };
@@ -1375,26 +1578,167 @@ avs_tplg_path_template_create(struct snd_soc_component *comp, struct avs_tplg *o
 	return template;
 }
 
+static int avs_tplg_parse_condpath_templates(struct snd_soc_component *comp,
+					     struct snd_soc_tplg_vendor_array *tuples,
+					     u32 block_size)
+{
+	struct avs_soc_component *acomp = to_avs_soc_component(comp);
+	struct avs_tplg *tplg = acomp->tplg;
+	int ret, i;
+
+	ret = parse_dictionary_header(comp, tuples, (void **)&tplg->condpath_tmpls,
+				      &tplg->num_condpath_tmpls,
+				      sizeof(*tplg->condpath_tmpls),
+				      AVS_TKN_MANIFEST_NUM_CONDPATH_TMPLS_U32);
+	if (ret)
+		return ret;
+
+	block_size -= le32_to_cpu(tuples->size);
+	/* With header parsed, move on to parsing entries. */
+	tuples = avs_tplg_vendor_array_next(tuples);
+
+	for (i = 0; i < tplg->num_condpath_tmpls; i++) {
+		struct avs_tplg_path_template *template;
+		u32 esize;
+
+		template = &tplg->condpath_tmpls[i];
+		template->owner = tplg; /* Used when building sysfs hierarchy. */
+		INIT_LIST_HEAD(&template->path_list);
+		INIT_LIST_HEAD(&template->node);
+
+		ret = avs_tplg_vendor_entry_size(tuples, block_size,
+						 AVS_TKN_CONDPATH_TMPL_ID_U32, &esize);
+		if (ret)
+			return ret;
+
+		ret = parse_path_template(comp, tuples, esize, template,
+					  condpath_tmpl_parsers,
+					  ARRAY_SIZE(condpath_tmpl_parsers),
+					  condpath_parsers,
+					  ARRAY_SIZE(condpath_parsers));
+		if (ret < 0) {
+			dev_err(comp->dev, "parse condpath_tmpl: %d failed: %d\n", i, ret);
+			return ret;
+		}
+
+		block_size -= esize;
+		tuples = avs_tplg_vendor_array_at(tuples, esize);
+	}
+
+	return 0;
+}
+
+static const struct avs_tplg_token_parser mod_init_config_parsers[] = {
+	{
+		.token = AVS_TKN_INIT_CONFIG_ID_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_init_config, id),
+		.parse = avs_parse_word_token,
+	},
+	{
+		.token = AVS_TKN_INIT_CONFIG_PARAM_U8,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_BYTE,
+		.offset = offsetof(struct avs_tplg_init_config, param),
+		.parse = avs_parse_byte_token,
+	},
+	{
+		.token = AVS_TKN_INIT_CONFIG_LENGTH_U32,
+		.type = SND_SOC_TPLG_TUPLE_TYPE_WORD,
+		.offset = offsetof(struct avs_tplg_init_config, length),
+		.parse = avs_parse_word_token,
+	},
+};
+
+static int avs_tplg_parse_initial_configs(struct snd_soc_component *comp,
+					   struct snd_soc_tplg_vendor_array *tuples,
+					   u32 block_size)
+{
+	struct avs_soc_component *acomp = to_avs_soc_component(comp);
+	struct avs_tplg *tplg = acomp->tplg;
+	int ret, i;
+
+	/* Parse tuple section telling how many init configs there are. */
+	ret = parse_dictionary_header(comp, tuples, (void **)&tplg->init_configs,
+				      &tplg->num_init_configs,
+				      sizeof(*tplg->init_configs),
+				      AVS_TKN_MANIFEST_NUM_INIT_CONFIGS_U32);
+	if (ret)
+		return ret;
+
+	block_size -= le32_to_cpu(tuples->size);
+	/* With header parsed, move on to parsing entries. */
+	tuples = avs_tplg_vendor_array_next(tuples);
+
+	for (i = 0; i < tplg->num_init_configs && block_size > 0; i++) {
+		struct avs_tplg_init_config *config = &tplg->init_configs[i];
+		struct snd_soc_tplg_vendor_array *tmp;
+		void *init_config_data;
+		u32 esize;
+
+		/*
+		 * Usually to get section length we search for first token of next group of data,
+		 * but in this case we can't as tuples are followed by raw data.
+		 */
+		tmp = avs_tplg_vendor_array_next(tuples);
+		esize = le32_to_cpu(tuples->size) + le32_to_cpu(tmp->size);
+
+		ret = parse_dictionary_entries(comp, tuples, esize, config, 1, sizeof(*config),
+					       AVS_TKN_INIT_CONFIG_ID_U32,
+					       mod_init_config_parsers,
+					       ARRAY_SIZE(mod_init_config_parsers));
+
+		block_size -= esize;
+
+		/* handle raw data section */
+		init_config_data = (void *)tuples + esize;
+		esize = config->length;
+
+		config->data = devm_kmemdup(comp->card->dev, init_config_data, esize, GFP_KERNEL);
+		if (!config->data)
+			return -ENOMEM;
+
+		tuples = init_config_data + esize;
+		block_size -= esize;
+	}
+
+	return 0;
+}
+
 static int avs_route_load(struct snd_soc_component *comp, int index,
 			  struct snd_soc_dapm_route *route)
 {
 	struct snd_soc_acpi_mach *mach = dev_get_platdata(comp->card->dev);
 	size_t len = SNDRV_CTL_ELEM_ID_NAME_MAXLEN;
-	char buf[SNDRV_CTL_ELEM_ID_NAME_MAXLEN];
-	u32 port;
+	int ssp_port, tdm_slot;
+	char *buf;
 
 	/* See parse_link_formatted_string() for dynamic naming when(s). */
-	if (hweight_long(mach->mach_params.i2s_link_mask) == 1) {
-		port = __ffs(mach->mach_params.i2s_link_mask);
+	if (!avs_mach_singular_ssp(mach))
+		return 0;
+	ssp_port = avs_mach_ssp_port(mach);
 
-		snprintf(buf, len, route->source, port);
-		strscpy((char *)route->source, buf, len);
-		snprintf(buf, len, route->sink, port);
-		strscpy((char *)route->sink, buf, len);
-		if (route->control) {
-			snprintf(buf, len, route->control, port);
-			strscpy((char *)route->control, buf, len);
-		}
+	if (!avs_mach_singular_tdm(mach, ssp_port))
+		return 0;
+	tdm_slot = avs_mach_ssp_tdm(mach, ssp_port);
+
+	buf = devm_kzalloc(comp->card->dev, len, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+	avs_ssp_sprint(buf, len, route->source, ssp_port, tdm_slot);
+	route->source = buf;
+
+	buf = devm_kzalloc(comp->card->dev, len, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+	avs_ssp_sprint(buf, len, route->sink, ssp_port, tdm_slot);
+	route->sink = buf;
+
+	if (route->control) {
+		buf = devm_kzalloc(comp->card->dev, len, GFP_KERNEL);
+		if (!buf)
+			return -ENOMEM;
+		avs_ssp_sprint(buf, len, route->control, ssp_port, tdm_slot);
+		route->control = buf;
 	}
 
 	return 0;
@@ -1408,9 +1752,12 @@ static int avs_widget_load(struct snd_soc_component *comp, int index,
 	struct avs_tplg_path_template *template;
 	struct avs_soc_component *acomp = to_avs_soc_component(comp);
 	struct avs_tplg *tplg;
+	int ssp_port, tdm_slot;
 
 	if (!le32_to_cpu(dw->priv.size))
 		return 0;
+
+	w->no_wname_in_kcontrol_name = true;
 
 	if (w->ignore_suspend && !AVS_S0IX_SUPPORTED) {
 		dev_info_once(comp->dev, "Device does not support S0IX, check BIOS settings\n");
@@ -1419,16 +1766,28 @@ static int avs_widget_load(struct snd_soc_component *comp, int index,
 
 	tplg = acomp->tplg;
 	mach = dev_get_platdata(comp->card->dev);
+	if (!avs_mach_singular_ssp(mach))
+		goto static_name;
+	ssp_port = avs_mach_ssp_port(mach);
 
 	/* See parse_link_formatted_string() for dynamic naming when(s). */
-	if (hweight_long(mach->mach_params.i2s_link_mask) == 1) {
+	if (avs_mach_singular_tdm(mach, ssp_port)) {
+		/* size is based on possible %d -> SSP:TDM, where SSP and TDM < 16 + '\0' */
+		size_t size = strlen(dw->name) + 3;
+		char *buf;
+
+		tdm_slot = avs_mach_ssp_tdm(mach, ssp_port);
+
+		buf = kmalloc(size, GFP_KERNEL);
+		if (!buf)
+			return -ENOMEM;
+		avs_ssp_sprint(buf, size, dw->name, ssp_port, tdm_slot);
 		kfree(w->name);
 		/* w->name is freed later by soc_tplg_dapm_widget_create() */
-		w->name = kasprintf(GFP_KERNEL, dw->name, __ffs(mach->mach_params.i2s_link_mask));
-		if (!w->name)
-			return -ENOMEM;
+		w->name = buf;
 	}
 
+static_name:
 	template = avs_tplg_path_template_create(comp, tplg, dw->priv.array,
 						 le32_to_cpu(dw->priv.size));
 	if (IS_ERR(template)) {
@@ -1456,8 +1815,16 @@ static int avs_dai_load(struct snd_soc_component *comp, int index,
 			struct snd_soc_dai_driver *dai_drv, struct snd_soc_tplg_pcm *pcm,
 			struct snd_soc_dai *dai)
 {
-	if (pcm)
+	u32 fe_subformats = SNDRV_PCM_SUBFMTBIT_MSBITS_20 |
+			    SNDRV_PCM_SUBFMTBIT_MSBITS_24 |
+			    SNDRV_PCM_SUBFMTBIT_MSBITS_MAX;
+
+	if (pcm) {
 		dai_drv->ops = &avs_dai_fe_ops;
+		dai_drv->capture.subformats = fe_subformats;
+		dai_drv->playback.subformats = fe_subformats;
+	}
+
 	return 0;
 }
 
@@ -1476,6 +1843,9 @@ static int avs_link_load(struct snd_soc_component *comp, int index, struct snd_s
 		/* Open LINK (BE) pipes last and close them first to prevent xruns. */
 		link->trigger[0] = SND_SOC_DPCM_TRIGGER_PRE;
 		link->trigger[1] = SND_SOC_DPCM_TRIGGER_PRE;
+	} else {
+		/* Do not ignore codec capabilities. */
+		link->dpcm_merged_format = 1;
 	}
 
 	return 0;
@@ -1502,6 +1872,7 @@ static int avs_manifest(struct snd_soc_component *comp, int index,
 	struct snd_soc_tplg_vendor_array *tuples = manifest->priv.array;
 	struct avs_soc_component *acomp = to_avs_soc_component(comp);
 	size_t remaining = le32_to_cpu(manifest->priv.size);
+	bool has_init_config = true;
 	u32 offset;
 	int ret;
 
@@ -1599,17 +1970,68 @@ static int avs_manifest(struct snd_soc_component *comp, int index,
 	remaining -= offset;
 	tuples = avs_tplg_vendor_array_at(tuples, offset);
 
+	ret = avs_tplg_vendor_array_lookup(tuples, remaining,
+					   AVS_TKN_MANIFEST_NUM_CONDPATH_TMPLS_U32, &offset);
+	if (ret) {
+		dev_err(comp->dev, "condpath lookup failed: %d\n", ret);
+		return ret;
+	}
+
 	/* Bindings dictionary. */
-	return avs_tplg_parse_bindings(comp, tuples, remaining);
+	ret = avs_tplg_parse_bindings(comp, tuples, offset);
+	if (ret < 0)
+		return ret;
+
+	remaining -= offset;
+	tuples = avs_tplg_vendor_array_at(tuples, offset);
+
+	ret = avs_tplg_vendor_array_lookup(tuples, remaining,
+					   AVS_TKN_MANIFEST_NUM_INIT_CONFIGS_U32, &offset);
+	if (ret == -ENOENT) {
+		dev_dbg(comp->dev, "init config lookup failed: %d\n", ret);
+		has_init_config = false;
+	} else if (ret) {
+		dev_err(comp->dev, "init config lookup failed: %d\n", ret);
+		return ret;
+	}
+
+	/* Condpaths dictionary. */
+	ret = avs_tplg_parse_condpath_templates(comp, tuples,
+						has_init_config ? offset : remaining);
+	if (ret < 0)
+		return ret;
+
+	if (!has_init_config)
+		return 0;
+
+	remaining -= offset;
+	tuples = avs_tplg_vendor_array_at(tuples, offset);
+
+	/* Initial configs dictionary. */
+	ret = avs_tplg_parse_initial_configs(comp, tuples, remaining);
+	if (ret < 0)
+		return ret;
+
+	return 0;
 }
 
-#define AVS_CONTROL_OPS_VOLUME	257
+enum {
+	AVS_CONTROL_OPS_VOLUME = 257,
+	AVS_CONTROL_OPS_MUTE,
+};
 
 static const struct snd_soc_tplg_kcontrol_ops avs_control_ops[] = {
 	{
 		.id = AVS_CONTROL_OPS_VOLUME,
 		.get = avs_control_volume_get,
 		.put = avs_control_volume_put,
+		.info = avs_control_volume_info,
+	},
+	{
+		.id = AVS_CONTROL_OPS_MUTE,
+		.get = avs_control_mute_get,
+		.put = avs_control_mute_put,
+		.info = avs_control_mute_info,
 	},
 };
 
@@ -1631,17 +2053,19 @@ avs_control_load(struct snd_soc_component *comp, int index, struct snd_kcontrol_
 	struct avs_control_data *ctl_data;
 	struct soc_mixer_control *mc;
 	size_t block_size;
-	int ret;
+	int ret, i;
 
 	switch (le32_to_cpu(hdr->type)) {
 	case SND_SOC_TPLG_TYPE_MIXER:
-		tmc = container_of(hdr, typeof(*tmc), hdr);
-		tuples = tmc->priv.array;
-		block_size = le32_to_cpu(tmc->priv.size);
 		break;
 	default:
 		return -EINVAL;
 	}
+
+	mc = (struct soc_mixer_control *)ctmpl->private_value;
+	tmc = container_of(hdr, typeof(*tmc), hdr);
+	tuples = tmc->priv.array;
+	block_size = le32_to_cpu(tmc->priv.size);
 
 	ctl_data = devm_kzalloc(comp->card->dev, sizeof(*ctl_data), GFP_KERNEL);
 	if (!ctl_data)
@@ -1653,12 +2077,17 @@ avs_control_load(struct snd_soc_component *comp, int index, struct snd_kcontrol_
 	if (ret)
 		return ret;
 
-	mc = (struct soc_mixer_control *)ctmpl->private_value;
 	mc->dobj.private = ctl_data;
+	if (tmc->invert) {
+		ctl_data->values[0] = mc->max;
+		for (i = 1; i < mc->num_channels; i++)
+			ctl_data->values[i] = mc->max;
+	}
+
 	return 0;
 }
 
-static struct snd_soc_tplg_ops avs_tplg_ops = {
+static const struct snd_soc_tplg_ops avs_tplg_ops = {
 	.io_ops			= avs_control_ops,
 	.io_ops_count		= ARRAY_SIZE(avs_control_ops),
 	.control_load		= avs_control_load,

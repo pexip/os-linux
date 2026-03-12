@@ -919,9 +919,10 @@ static int hinic_set_channels(struct net_device *netdev,
 	return 0;
 }
 
-static int hinic_get_rss_hash_opts(struct hinic_dev *nic_dev,
-				   struct ethtool_rxnfc *cmd)
+static int hinic_get_rxfh_fields(struct net_device *netdev,
+				 struct ethtool_rxfh_fields *cmd)
 {
+	struct hinic_dev *nic_dev = netdev_priv(netdev);
 	struct hinic_rss_type rss_type = { 0 };
 	int err;
 
@@ -964,7 +965,7 @@ static int hinic_get_rss_hash_opts(struct hinic_dev *nic_dev,
 	return 0;
 }
 
-static int set_l4_rss_hash_ops(struct ethtool_rxnfc *cmd,
+static int set_l4_rss_hash_ops(const struct ethtool_rxfh_fields *cmd,
 			       struct hinic_rss_type *rss_type)
 {
 	u8 rss_l4_en = 0;
@@ -1000,16 +1001,18 @@ static int set_l4_rss_hash_ops(struct ethtool_rxnfc *cmd,
 	return 0;
 }
 
-static int hinic_set_rss_hash_opts(struct hinic_dev *nic_dev,
-				   struct ethtool_rxnfc *cmd)
+static int hinic_set_rxfh_fields(struct net_device *dev,
+				 const struct ethtool_rxfh_fields *cmd,
+				 struct netlink_ext_ack *extack)
 {
-	struct hinic_rss_type *rss_type = &nic_dev->rss_type;
+	struct hinic_dev *nic_dev = netdev_priv(dev);
+	struct hinic_rss_type *rss_type;
 	int err;
 
-	if (!(nic_dev->flags & HINIC_RSS_ENABLE)) {
-		cmd->data = 0;
+	rss_type = &nic_dev->rss_type;
+
+	if (!(nic_dev->flags & HINIC_RSS_ENABLE))
 		return -EOPNOTSUPP;
-	}
 
 	/* RSS does not support anything other than hashing
 	 * to queues on src and dst IPs and ports
@@ -1108,26 +1111,6 @@ static int hinic_get_rxnfc(struct net_device *netdev,
 	case ETHTOOL_GRXRINGS:
 		cmd->data = nic_dev->num_qps;
 		break;
-	case ETHTOOL_GRXFH:
-		err = hinic_get_rss_hash_opts(nic_dev, cmd);
-		break;
-	default:
-		err = -EOPNOTSUPP;
-		break;
-	}
-
-	return err;
-}
-
-static int hinic_set_rxnfc(struct net_device *netdev, struct ethtool_rxnfc *cmd)
-{
-	struct hinic_dev *nic_dev = netdev_priv(netdev);
-	int err = 0;
-
-	switch (cmd->cmd) {
-	case ETHTOOL_SRXFH:
-		err = hinic_set_rss_hash_opts(nic_dev, cmd);
-		break;
 	default:
 		err = -EOPNOTSUPP;
 		break;
@@ -1137,7 +1120,7 @@ static int hinic_set_rxnfc(struct net_device *netdev, struct ethtool_rxnfc *cmd)
 }
 
 static int hinic_get_rxfh(struct net_device *netdev,
-			  u32 *indir, u8 *key, u8 *hfunc)
+			  struct ethtool_rxfh_param *rxfh)
 {
 	struct hinic_dev *nic_dev = netdev_priv(netdev);
 	u8 hash_engine_type = 0;
@@ -1146,32 +1129,33 @@ static int hinic_get_rxfh(struct net_device *netdev,
 	if (!(nic_dev->flags & HINIC_RSS_ENABLE))
 		return -EOPNOTSUPP;
 
-	if (hfunc) {
-		err = hinic_rss_get_hash_engine(nic_dev,
-						nic_dev->rss_tmpl_idx,
-						&hash_engine_type);
-		if (err)
-			return -EFAULT;
+	err = hinic_rss_get_hash_engine(nic_dev,
+					nic_dev->rss_tmpl_idx,
+					&hash_engine_type);
+	if (err)
+		return -EFAULT;
 
-		*hfunc = hash_engine_type ? ETH_RSS_HASH_TOP : ETH_RSS_HASH_XOR;
-	}
+	rxfh->hfunc = hash_engine_type ? ETH_RSS_HASH_TOP : ETH_RSS_HASH_XOR;
 
-	if (indir) {
+	if (rxfh->indir) {
 		err = hinic_rss_get_indir_tbl(nic_dev,
-					      nic_dev->rss_tmpl_idx, indir);
+					      nic_dev->rss_tmpl_idx,
+					      rxfh->indir);
 		if (err)
 			return -EFAULT;
 	}
 
-	if (key)
+	if (rxfh->key)
 		err = hinic_rss_get_template_tbl(nic_dev,
-						 nic_dev->rss_tmpl_idx, key);
+						 nic_dev->rss_tmpl_idx,
+						 rxfh->key);
 
 	return err;
 }
 
-static int hinic_set_rxfh(struct net_device *netdev, const u32 *indir,
-			  const u8 *key, const u8 hfunc)
+static int hinic_set_rxfh(struct net_device *netdev,
+			  struct ethtool_rxfh_param *rxfh,
+			  struct netlink_ext_ack *extack)
 {
 	struct hinic_dev *nic_dev = netdev_priv(netdev);
 	int err = 0;
@@ -1179,11 +1163,12 @@ static int hinic_set_rxfh(struct net_device *netdev, const u32 *indir,
 	if (!(nic_dev->flags & HINIC_RSS_ENABLE))
 		return -EOPNOTSUPP;
 
-	if (hfunc != ETH_RSS_HASH_NO_CHANGE) {
-		if (hfunc != ETH_RSS_HASH_TOP && hfunc != ETH_RSS_HASH_XOR)
+	if (rxfh->hfunc != ETH_RSS_HASH_NO_CHANGE) {
+		if (rxfh->hfunc != ETH_RSS_HASH_TOP &&
+		    rxfh->hfunc != ETH_RSS_HASH_XOR)
 			return -EOPNOTSUPP;
 
-		nic_dev->rss_hash_engine = (hfunc == ETH_RSS_HASH_XOR) ?
+		nic_dev->rss_hash_engine = (rxfh->hfunc == ETH_RSS_HASH_XOR) ?
 			HINIC_RSS_HASH_ENGINE_TYPE_XOR :
 			HINIC_RSS_HASH_ENGINE_TYPE_TOEP;
 		err = hinic_rss_set_hash_engine
@@ -1193,7 +1178,7 @@ static int hinic_set_rxfh(struct net_device *netdev, const u32 *indir,
 			return -EFAULT;
 	}
 
-	err = __set_rss_rxfh(netdev, indir, key);
+	err = __set_rss_rxfh(netdev, rxfh->indir, rxfh->key);
 
 	return err;
 }
@@ -1469,7 +1454,6 @@ static void hinic_get_strings(struct net_device *netdev,
 			      u32 stringset, u8 *data)
 {
 	struct hinic_dev *nic_dev = netdev_priv(netdev);
-	char *p = (char *)data;
 	u16 i, j;
 
 	switch (stringset) {
@@ -1477,31 +1461,19 @@ static void hinic_get_strings(struct net_device *netdev,
 		memcpy(data, *hinic_test_strings, sizeof(hinic_test_strings));
 		return;
 	case ETH_SS_STATS:
-		for (i = 0; i < ARRAY_SIZE(hinic_function_stats); i++) {
-			memcpy(p, hinic_function_stats[i].name,
-			       ETH_GSTRING_LEN);
-			p += ETH_GSTRING_LEN;
-		}
+		for (i = 0; i < ARRAY_SIZE(hinic_function_stats); i++)
+			ethtool_puts(&data, hinic_function_stats[i].name);
 
-		for (i = 0; i < ARRAY_SIZE(hinic_port_stats); i++) {
-			memcpy(p, hinic_port_stats[i].name,
-			       ETH_GSTRING_LEN);
-			p += ETH_GSTRING_LEN;
-		}
+		for (i = 0; i < ARRAY_SIZE(hinic_port_stats); i++)
+			ethtool_puts(&data, hinic_port_stats[i].name);
 
-		for (i = 0; i < nic_dev->num_qps; i++) {
-			for (j = 0; j < ARRAY_SIZE(hinic_tx_queue_stats); j++) {
-				sprintf(p, hinic_tx_queue_stats[j].name, i);
-				p += ETH_GSTRING_LEN;
-			}
-		}
+		for (i = 0; i < nic_dev->num_qps; i++)
+			for (j = 0; j < ARRAY_SIZE(hinic_tx_queue_stats); j++)
+				ethtool_sprintf(&data, hinic_tx_queue_stats[j].name, i);
 
-		for (i = 0; i < nic_dev->num_qps; i++) {
-			for (j = 0; j < ARRAY_SIZE(hinic_rx_queue_stats); j++) {
-				sprintf(p, hinic_rx_queue_stats[j].name, i);
-				p += ETH_GSTRING_LEN;
-			}
-		}
+		for (i = 0; i < nic_dev->num_qps; i++)
+			for (j = 0; j < ARRAY_SIZE(hinic_rx_queue_stats); j++)
+				ethtool_sprintf(&data, hinic_rx_queue_stats[j].name, i);
 
 		return;
 	default:
@@ -1808,11 +1780,12 @@ static const struct ethtool_ops hinic_ethtool_ops = {
 	.get_channels = hinic_get_channels,
 	.set_channels = hinic_set_channels,
 	.get_rxnfc = hinic_get_rxnfc,
-	.set_rxnfc = hinic_set_rxnfc,
 	.get_rxfh_key_size = hinic_get_rxfh_key_size,
 	.get_rxfh_indir_size = hinic_get_rxfh_indir_size,
 	.get_rxfh = hinic_get_rxfh,
 	.set_rxfh = hinic_set_rxfh,
+	.get_rxfh_fields = hinic_get_rxfh_fields,
+	.set_rxfh_fields = hinic_set_rxfh_fields,
 	.get_sset_count = hinic_get_sset_count,
 	.get_ethtool_stats = hinic_get_ethtool_stats,
 	.get_strings = hinic_get_strings,
@@ -1840,11 +1813,12 @@ static const struct ethtool_ops hinicvf_ethtool_ops = {
 	.get_channels = hinic_get_channels,
 	.set_channels = hinic_set_channels,
 	.get_rxnfc = hinic_get_rxnfc,
-	.set_rxnfc = hinic_set_rxnfc,
 	.get_rxfh_key_size = hinic_get_rxfh_key_size,
 	.get_rxfh_indir_size = hinic_get_rxfh_indir_size,
 	.get_rxfh = hinic_get_rxfh,
 	.set_rxfh = hinic_set_rxfh,
+	.get_rxfh_fields = hinic_get_rxfh_fields,
+	.set_rxfh_fields = hinic_set_rxfh_fields,
 	.get_sset_count = hinic_get_sset_count,
 	.get_ethtool_stats = hinic_get_ethtool_stats,
 	.get_strings = hinic_get_strings,

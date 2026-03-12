@@ -38,6 +38,7 @@
 #include <net/xfrm.h>
 #include <linux/idr.h>
 #include "lib/aso.h"
+#include "lib/devcom.h"
 
 #define MLX5E_IPSEC_SADB_RX_BITS 10
 #define MLX5E_IPSEC_ESN_SCOPE_MID 0x80000000L
@@ -75,27 +76,36 @@ struct mlx5_replay_esn {
 	u8 trigger : 1;
 };
 
-struct mlx5_accel_esp_xfrm_attrs {
-	u32   spi;
-	u32   mode;
-	struct aes_gcm_keymat aes_gcm;
-
+struct mlx5e_ipsec_addr {
 	union {
 		__be32 a4;
 		__be32 a6[4];
 	} saddr;
-
+	union {
+		__be32 m4;
+		__be32 m6[4];
+	} smask;
 	union {
 		__be32 a4;
 		__be32 a6[4];
 	} daddr;
+	union {
+		__be32 m4;
+		__be32 m6[4];
+	} dmask;
+	u8 family;
+};
 
+struct mlx5_accel_esp_xfrm_attrs {
+	u32   spi;
+	u32   mode;
+	struct aes_gcm_keymat aes_gcm;
+	struct mlx5e_ipsec_addr addrs;
 	struct upspec upspec;
 	u8 dir : 2;
 	u8 type : 2;
 	u8 drop : 1;
 	u8 encap : 1;
-	u8 family;
 	struct mlx5_replay_esn replay_esn;
 	u32 authsize;
 	u32 reqid;
@@ -127,6 +137,7 @@ struct mlx5e_ipsec_hw_stats {
 	u64 ipsec_rx_bytes;
 	u64 ipsec_rx_drop_pkts;
 	u64 ipsec_rx_drop_bytes;
+	u64 ipsec_rx_drop_mismatch_sa_sel;
 	u64 ipsec_tx_pkts;
 	u64 ipsec_tx_bytes;
 	u64 ipsec_tx_drop_pkts;
@@ -136,7 +147,6 @@ struct mlx5e_ipsec_hw_stats {
 struct mlx5e_ipsec_sw_stats {
 	atomic64_t ipsec_rx_drop_sp_alloc;
 	atomic64_t ipsec_rx_drop_sadb_miss;
-	atomic64_t ipsec_rx_drop_syndrome;
 	atomic64_t ipsec_tx_drop_bundle;
 	atomic64_t ipsec_tx_drop_no_state;
 	atomic64_t ipsec_tx_drop_not_ip;
@@ -175,6 +185,7 @@ struct mlx5e_ipsec_rx_create_attr {
 	u32 family;
 	int prio;
 	int pol_level;
+	int pol_miss_level;
 	int sa_level;
 	int status_level;
 	enum mlx5_flow_namespace_type chains_ns;
@@ -184,33 +195,32 @@ struct mlx5e_ipsec_ft {
 	struct mutex mutex; /* Protect changes to this struct */
 	struct mlx5_flow_table *pol;
 	struct mlx5_flow_table *sa;
+	struct mlx5_flow_table *sa_sel;
 	struct mlx5_flow_table *status;
 	u32 refcnt;
 };
 
+struct mlx5e_ipsec_drop {
+	struct mlx5_flow_handle *rule;
+	struct mlx5_fc *fc;
+};
+
 struct mlx5e_ipsec_rule {
 	struct mlx5_flow_handle *rule;
+	struct mlx5_flow_handle *status_pass;
+	struct mlx5_flow_handle *sa_sel;
 	struct mlx5_modify_hdr *modify_hdr;
 	struct mlx5_pkt_reformat *pkt_reformat;
 	struct mlx5_fc *fc;
+	struct mlx5e_ipsec_drop replay;
+	struct mlx5e_ipsec_drop auth;
+	struct mlx5e_ipsec_drop trailer;
 };
 
 struct mlx5e_ipsec_miss {
 	struct mlx5_flow_group *group;
 	struct mlx5_flow_handle *rule;
-};
-
-struct mlx5e_ipsec_rx {
-	struct mlx5e_ipsec_ft ft;
-	struct mlx5e_ipsec_miss pol;
-	struct mlx5e_ipsec_miss sa;
-	struct mlx5e_ipsec_rule status;
-	struct mlx5e_ipsec_miss status_drop;
-	struct mlx5_fc *status_drop_cnt;
-	struct mlx5e_ipsec_fc *fc;
-	struct mlx5_fs_chains *chains;
-	u8 allow_tunnel_mode : 1;
-	struct xarray ipsec_obj_id_map;
+	struct mlx5_fc *fc;
 };
 
 struct mlx5e_ipsec_tx_create_attr {
@@ -221,12 +231,20 @@ struct mlx5e_ipsec_tx_create_attr {
 	enum mlx5_flow_namespace_type chains_ns;
 };
 
+struct mlx5e_ipsec_mpv_work {
+	int event;
+	struct work_struct work;
+	struct mlx5e_priv *slave_priv;
+	struct mlx5e_priv *master_priv;
+};
+
 struct mlx5e_ipsec {
 	struct mlx5_core_dev *mdev;
 	struct xarray sadb;
 	struct mlx5e_ipsec_sw_stats sw_stats;
 	struct mlx5e_ipsec_hw_stats hw_stats;
 	struct workqueue_struct *wq;
+	struct completion comp;
 	struct mlx5e_flow_steering *fs;
 	struct mlx5e_ipsec_rx *rx_ipv4;
 	struct mlx5e_ipsec_rx *rx_ipv6;
@@ -238,6 +256,8 @@ struct mlx5e_ipsec {
 	struct notifier_block netevent_nb;
 	struct mlx5_ipsec_fs *roce;
 	u8 is_uplink_rep: 1;
+	struct mlx5e_ipsec_mpv_work mpv_work;
+	struct xarray ipsec_obj_id_map;
 };
 
 struct mlx5e_ipsec_esn_state {
@@ -255,6 +275,7 @@ struct mlx5e_ipsec_limits {
 struct mlx5e_ipsec_sa_entry {
 	struct mlx5e_ipsec_esn_state esn_state;
 	struct xfrm_state *x;
+	struct net_device *dev;
 	struct mlx5e_ipsec *ipsec;
 	struct mlx5_accel_esp_xfrm_attrs attrs;
 	void (*set_iv_op)(struct sk_buff *skb, struct xfrm_state *x,
@@ -269,18 +290,8 @@ struct mlx5e_ipsec_sa_entry {
 };
 
 struct mlx5_accel_pol_xfrm_attrs {
-	union {
-		__be32 a4;
-		__be32 a6[4];
-	} saddr;
-
-	union {
-		__be32 a4;
-		__be32 a6[4];
-	} daddr;
-
+	struct mlx5e_ipsec_addr addrs;
 	struct upspec upspec;
-	u8 family;
 	u8 action;
 	u8 type : 2;
 	u8 dir : 2;
@@ -302,13 +313,13 @@ void mlx5e_ipsec_cleanup(struct mlx5e_priv *priv);
 void mlx5e_ipsec_build_netdev(struct mlx5e_priv *priv);
 
 void mlx5e_accel_ipsec_fs_cleanup(struct mlx5e_ipsec *ipsec);
-int mlx5e_accel_ipsec_fs_init(struct mlx5e_ipsec *ipsec);
+int mlx5e_accel_ipsec_fs_init(struct mlx5e_ipsec *ipsec, struct mlx5_devcom_comp_dev **devcom);
 int mlx5e_accel_ipsec_fs_add_rule(struct mlx5e_ipsec_sa_entry *sa_entry);
 void mlx5e_accel_ipsec_fs_del_rule(struct mlx5e_ipsec_sa_entry *sa_entry);
 int mlx5e_accel_ipsec_fs_add_pol(struct mlx5e_ipsec_pol_entry *pol_entry);
 void mlx5e_accel_ipsec_fs_del_pol(struct mlx5e_ipsec_pol_entry *pol_entry);
 void mlx5e_accel_ipsec_fs_modify(struct mlx5e_ipsec_sa_entry *sa_entry);
-bool mlx5e_ipsec_fs_tunnel_enabled(struct mlx5e_ipsec_sa_entry *sa_entry);
+bool mlx5e_ipsec_fs_tunnel_allowed(struct mlx5e_ipsec_sa_entry *sa_entry);
 
 int mlx5_ipsec_create_sa_ctx(struct mlx5e_ipsec_sa_entry *sa_entry);
 void mlx5_ipsec_free_sa_ctx(struct mlx5e_ipsec_sa_entry *sa_entry);
@@ -328,6 +339,11 @@ void mlx5e_accel_ipsec_fs_read_stats(struct mlx5e_priv *priv,
 
 void mlx5e_ipsec_build_accel_xfrm_attrs(struct mlx5e_ipsec_sa_entry *sa_entry,
 					struct mlx5_accel_esp_xfrm_attrs *attrs);
+void mlx5e_ipsec_handle_mpv_event(int event, struct mlx5e_priv *slave_priv,
+				  struct mlx5e_priv *master_priv);
+void mlx5e_ipsec_send_event(struct mlx5e_priv *priv, int event);
+void mlx5e_ipsec_disable_events(struct mlx5e_priv *priv);
+
 static inline struct mlx5_core_dev *
 mlx5e_ipsec_sa2dev(struct mlx5e_ipsec_sa_entry *sa_entry)
 {
@@ -362,6 +378,19 @@ static inline void mlx5e_ipsec_build_netdev(struct mlx5e_priv *priv)
 static inline u32 mlx5_ipsec_device_caps(struct mlx5_core_dev *mdev)
 {
 	return 0;
+}
+
+static inline void mlx5e_ipsec_handle_mpv_event(int event, struct mlx5e_priv *slave_priv,
+						struct mlx5e_priv *master_priv)
+{
+}
+
+static inline void mlx5e_ipsec_send_event(struct mlx5e_priv *priv, int event)
+{
+}
+
+static inline void mlx5e_ipsec_disable_events(struct mlx5e_priv *priv)
+{
 }
 #endif
 

@@ -46,12 +46,8 @@ int ioprio_check_cap(int ioprio)
 			 */
 			if (!capable(CAP_SYS_ADMIN) && !capable(CAP_SYS_NICE))
 				return -EPERM;
-			fallthrough;
-			/* rt has prio field too */
-		case IOPRIO_CLASS_BE:
-			if (level >= IOPRIO_NR_LEVELS)
-				return -EINVAL;
 			break;
+		case IOPRIO_CLASS_BE:
 		case IOPRIO_CLASS_IDLE:
 			break;
 		case IOPRIO_CLASS_NONE:
@@ -138,32 +134,6 @@ out:
 	rcu_read_unlock();
 	return ret;
 }
-
-/*
- * If the task has set an I/O priority, use that. Otherwise, return
- * the default I/O priority.
- *
- * Expected to be called for current task or with task_lock() held to keep
- * io_context stable.
- */
-int __get_task_ioprio(struct task_struct *p)
-{
-	struct io_context *ioc = p->io_context;
-	int prio;
-
-	if (p != current)
-		lockdep_assert_held(&p->alloc_lock);
-	if (ioc)
-		prio = ioc->ioprio;
-	else
-		prio = IOPRIO_DEFAULT;
-
-	if (IOPRIO_PRIO_CLASS(prio) == IOPRIO_CLASS_NONE)
-		prio = IOPRIO_PRIO_VALUE(task_nice_ioclass(p),
-					 task_nice_ioprio(p));
-	return prio;
-}
-EXPORT_SYMBOL_GPL(__get_task_ioprio);
 
 static int get_task_ioprio(struct task_struct *p)
 {

@@ -8,8 +8,22 @@ like to know when a security bug is found so that it can be fixed and
 disclosed as quickly as possible.  Please report security bugs to the
 Linux kernel security team.
 
-Contact
--------
+The security team and maintainers almost always require additional
+information beyond what was initially provided in a report and rely on
+active and efficient collaboration with the reporter to perform further
+testing (e.g., verifying versions, configuration options, mitigations, or
+patches). Before contacting the security team, the reporter must ensure
+they are available to explain their findings, engage in discussions, and
+run additional tests.  Reports where the reporter does not respond promptly
+or cannot effectively discuss their findings may be abandoned if the
+communication does not quickly improve.
+
+As it is with any bug, the more information provided the easier it
+will be to diagnose and fix.  Please review the procedure outlined in
+'Documentation/admin-guide/reporting-issues.rst' if you are unclear about what
+information is helpful.  Any exploit code is very helpful and will not
+be released without consent from the reporter unless it has already been
+made public.
 
 The Linux kernel security team can be contacted by email at
 <security@kernel.org>.  This is a private list of security officers
@@ -18,13 +32,6 @@ If you already have a fix, please include it with your report, as
 that can speed up the process considerably.  It is possible that the
 security team will bring in extra help from area maintainers to
 understand and fix the security vulnerability.
-
-As it is with any bug, the more information provided the easier it
-will be to diagnose and fix.  Please review the procedure outlined in
-'Documentation/admin-guide/reporting-issues.rst' if you are unclear about what
-information is helpful.  Any exploit code is very helpful and will not
-be released without consent from the reporter unless it has already been
-made public.
 
 Please send plain text emails without attachments where possible.
 It is much harder to have a context-quoted discussion about a complex
@@ -66,15 +73,32 @@ lifted, in perpetuity.
 Coordination with other groups
 ------------------------------
 
-The kernel security team strongly recommends that reporters of potential
-security issues NEVER contact the "linux-distros" mailing list until
-AFTER discussing it with the kernel security team.  Do not Cc: both
-lists at once.  You may contact the linux-distros mailing list after a
-fix has been agreed on and you fully understand the requirements that
-doing so will impose on you and the kernel community.
+While the kernel security team solely focuses on getting bugs fixed,
+other groups focus on fixing issues in distros and coordinating
+disclosure between operating system vendors.  Coordination is usually
+handled by the "linux-distros" mailing list and disclosure by the
+public "oss-security" mailing list, both of which are closely related
+and presented in the linux-distros wiki:
+<https://oss-security.openwall.org/wiki/mailing-lists/distros>
 
-The different lists have different goals and the linux-distros rules do
-not contribute to actually fixing any potential security problems.
+Please note that the respective policies and rules are different since
+the 3 lists pursue different goals.  Coordinating between the kernel
+security team and other teams is difficult since for the kernel security
+team occasional embargoes (as subject to a maximum allowed number of
+days) start from the availability of a fix, while for "linux-distros"
+they start from the initial post to the list regardless of the
+availability of a fix.
+
+As such, the kernel security team strongly recommends that as a reporter
+of a potential security issue you DO NOT contact the "linux-distros"
+mailing list UNTIL a fix is accepted by the affected code's maintainers
+and you have read the distros wiki page above and you fully understand
+the requirements that contacting "linux-distros" will impose on you and
+the kernel community.  This also means that in general it doesn't make
+sense to Cc: both lists at once, except maybe for coordination if and
+while an accepted fix has not yet been merged.  In other words, until a
+fix is accepted do not Cc: "linux-distros", and after it's merged do not
+Cc: the kernel security team.
 
 CVE assignment
 --------------
@@ -82,9 +106,8 @@ CVE assignment
 The security team does not assign CVEs, nor do we require them for
 reports or fixes, as this can needlessly complicate the process and may
 delay the bug handling.  If a reporter wishes to have a CVE identifier
-assigned, they should find one by themselves, for example by contacting
-MITRE directly.  However under no circumstances will a patch inclusion
-be delayed to wait for a CVE identifier to arrive.
+assigned for a confirmed issue, they can contact the :doc:`kernel CVE
+assignment team<../process/cve>` to obtain one.
 
 Non-disclosure agreements
 -------------------------

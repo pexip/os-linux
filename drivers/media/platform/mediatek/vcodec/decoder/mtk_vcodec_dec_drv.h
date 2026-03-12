@@ -17,6 +17,17 @@
 
 #define IS_VDEC_LAT_ARCH(hw_arch) ((hw_arch) >= MTK_VDEC_LAT_SINGLE_CORE)
 #define IS_VDEC_INNER_RACING(capability) ((capability) & MTK_VCODEC_INNER_RACING)
+#define IS_VDEC_SUPPORT_EXT(capability) ((capability) & MTK_VDEC_IS_SUPPORT_EXT)
+
+enum mtk_vcodec_dec_chip_name {
+	MTK_VDEC_INVAL = 0,
+	MTK_VDEC_MT8173 = 8173,
+	MTK_VDEC_MT8183 = 8183,
+	MTK_VDEC_MT8186 = 8186,
+	MTK_VDEC_MT8188 = 8188,
+	MTK_VDEC_MT8192 = 8192,
+	MTK_VDEC_MT8195 = 8195,
+};
 
 /*
  * enum mtk_vdec_format_types - Structure used to get supported
@@ -32,6 +43,7 @@ enum mtk_vdec_format_types {
 	MTK_VDEC_FORMAT_HEVC_FRAME = 0x1000,
 	MTK_VCODEC_INNER_RACING = 0x20000,
 	MTK_VDEC_IS_SUPPORT_10BIT = 0x40000,
+	MTK_VDEC_IS_SUPPORT_EXT = 0x80000,
 };
 
 /*
@@ -57,11 +69,11 @@ enum mtk_vdec_hw_arch {
  * @pic_w: picture width
  * @pic_h: picture height
  * @buf_w: picture buffer width (64 aligned up from pic_w)
- * @buf_h: picture buffer heiht (64 aligned up from pic_h)
+ * @buf_h: picture buffer height (64 aligned up from pic_h)
  * @fb_sz: bitstream size of each plane
  * E.g. suppose picture size is 176x144,
  *      buffer size will be aligned to 176x160.
- * @cap_fourcc: fourcc number(may changed when resolution change)
+ * @cap_fourcc: fourcc number(may change on a resolution change)
  * @reserved: align struct to 64-bit in order to adjust 32-bit and 64-bit os.
  */
 struct vdec_pic_info {
@@ -231,6 +243,7 @@ struct mtk_vcodec_dec_ctx {
  *
  * @dec_mutex: decoder hardware lock
  * @dev_mutex: video_device lock
+ * @dev_ctx_lock: the lock of context list
  * @decode_workqueue: decode work queue
  *
  * @irqlock: protect data access by irq handler and work thread
@@ -249,6 +262,8 @@ struct mtk_vcodec_dec_ctx {
  * @vdec_racing_info: record register value
  * @dec_racing_info_mutex: mutex lock used for inner racing mode
  * @dbgfs: debug log related information
+ *
+ * @chip_name: used to distinguish platforms and select the correct codec configuration values
  */
 struct mtk_vcodec_dec_dev {
 	struct v4l2_device v4l2_dev;
@@ -270,6 +285,7 @@ struct mtk_vcodec_dec_dev {
 	/* decoder hardware mutex lock */
 	struct mutex dec_mutex[MTK_VDEC_HW_MAX];
 	struct mutex dev_mutex;
+	spinlock_t dev_ctx_lock;
 	struct workqueue_struct *decode_workqueue;
 
 	spinlock_t irqlock;
@@ -289,11 +305,18 @@ struct mtk_vcodec_dec_dev {
 	/* Protects access to vdec_racing_info data */
 	struct mutex dec_racing_info_mutex;
 	struct mtk_vcodec_dbgfs dbgfs;
+
+	enum mtk_vcodec_dec_chip_name chip_name;
 };
 
 static inline struct mtk_vcodec_dec_ctx *fh_to_dec_ctx(struct v4l2_fh *fh)
 {
 	return container_of(fh, struct mtk_vcodec_dec_ctx, fh);
+}
+
+static inline struct mtk_vcodec_dec_ctx *file_to_dec_ctx(struct file *filp)
+{
+	return fh_to_dec_ctx(file_to_v4l2_fh(filp));
 }
 
 static inline struct mtk_vcodec_dec_ctx *ctrl_to_dec_ctx(struct v4l2_ctrl *ctrl)

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import contextlib
+import itertools
 import pathlib
 import re
-from collections import OrderedDict
 from collections.abc import (
     Generator,
 )
@@ -14,21 +14,16 @@ from typing import (
     IO,
 )
 
+from .config_v2 import (
+    ConfigMerged,
+    ConfigMergedDebianarch,
+    ConfigMergedFeatureset,
+    ConfigMergedFlavour,
+)
+from .dataclasses_deb822 import write_deb822
 from .debian import Changelog, PackageArchitecture, \
-    Version, _ControlFileDict
+    Version, SourcePackage, BinaryPackage
 from .utils import Templates
-
-
-class PackagesList(OrderedDict):
-    def append(self, package) -> None:
-        self[package['Package']] = package
-
-    def extend(self, packages) -> None:
-        for package in packages:
-            self[package['Package']] = package
-
-    def setdefault(self, package) -> Any:
-        return super().setdefault(package['Package'], package)
 
 
 class Makefile:
@@ -142,23 +137,35 @@ class MakeFlags(dict):
 
 
 class PackagesBundle:
+    class BinaryPackages(dict[str, BinaryPackage]):
+        def add(self, package: BinaryPackage) -> BinaryPackage:
+            return super().setdefault(package.name, package)
+
     name: str | None
     templates: Templates
     base: pathlib.Path
     makefile: Makefile
-    packages: PackagesList
+    source: SourcePackage
+    packages: BinaryPackages
 
     def __init__(
             self,
             name: str | None,
+            source_template: str,
+            replace: dict[str, str],
             templates: Templates,
             base: pathlib.Path = pathlib.Path('debian'),
+            override_name: str | None = None,
     ) -> None:
         self.name = name
         self.templates = templates
         self.base = base
         self.makefile = Makefile()
-        self.packages = PackagesList()
+        self.source = list(self.templates.get_source_control(source_template, replace))[0]
+        self.packages = self.BinaryPackages()
+
+        if not self.source.name:
+            self.source.name = override_name
 
     def add(
             self,
@@ -172,18 +179,20 @@ class PackagesBundle:
     ) -> list[Any]:
         ret = []
         for raw_package in self.templates.get_control(f'{pkgid}.control', replace):
-            package = self.packages.setdefault(raw_package)
-            package_name = package['Package']
+            package = self.packages.add(raw_package)
+            package_name = package.name
             ret.append(package)
 
-            package.meta.setdefault('rules-ruleids', {})[ruleid] = makeflags
+            package.meta_rules_ruleids[ruleid] = makeflags
             if arch:
-                package.meta.setdefault('architectures', PackageArchitecture()).add(arch)
-            package.meta['rules-check-packages'] = check_packages
+                package.meta_architectures.add(arch)
+            package.meta_rules_check_packages = check_packages
 
             for name in (
                     'NEWS',
                     'bug-presubj',
+                    'install',
+                    'links',
                     'lintian-overrides',
                     'maintscript',
                     'postinst',
@@ -197,14 +206,18 @@ class PackagesBundle:
                 except KeyError:
                     pass
                 else:
-                    with self.open(f'{package_name}.{name}') as f:
+                    if arch:
+                        out = f'{package_name}.{name}.{arch}'
+                    else:
+                        out = f'{package_name}.{name}'
+                    with self.open(out) as f:
                         f.write(template)
 
         return ret
 
     def add_packages(
             self,
-            packages: Iterable[_ControlFileDict],
+            packages: Iterable[BinaryPackage],
             ruleid: Iterable[str],
             makeflags: MakeFlags,
             *,
@@ -212,11 +225,11 @@ class PackagesBundle:
             check_packages: bool = True,
     ) -> None:
         for package in packages:
-            package = self.packages.setdefault(package)
-            package.meta.setdefault('rules-ruleids', {})[ruleid] = makeflags
+            package = self.packages.add(package)
+            package.meta_rules_ruleids[ruleid] = makeflags
             if arch:
-                package.meta.setdefault('architectures', PackageArchitecture()).add(arch)
-            package.meta['rules-check-packages'] = check_packages
+                package.meta_architectures.add(arch)
+            package.meta_rules_check_packages = check_packages
 
     def path(self, name) -> pathlib.Path:
         if self.name:
@@ -255,20 +268,19 @@ class PackagesBundle:
         targets: dict[frozenset[str], dict] = {}
 
         for package_name, package in self.packages.items():
-            target_name = package.meta.get('rules-target')
-            ruleids = package.meta.get('rules-ruleids')
-            makeflags = MakeFlags({
-                # Requires Python 3.9+
-                k.removeprefix('rules-makeflags-').upper(): v
-                for (k, v) in package.meta.items() if k.startswith('rules-makeflags-')
-            })
+            if not isinstance(package, BinaryPackage):
+                continue
+
+            target_name = package.meta_rules_target
+            ruleids = package.meta_rules_ruleids
+            makeflags = MakeFlags(package.meta_rules_makeflags)
 
             if ruleids:
-                arches = package.meta.get('architectures')
+                arches = package.meta_architectures
                 if arches:
-                    package['Architecture'] = arches
+                    package.architecture = arches
                 else:
-                    arches = package.get('Architecture')
+                    arches = package.architecture
 
                 if target_name:
                     for ruleid, makeflags_package in ruleids.items():
@@ -284,7 +296,7 @@ class PackagesBundle:
                             },
                         )
 
-                        if package.meta['rules-check-packages']:
+                        if package.meta_rules_check_packages:
                             target.setdefault('packages', set()).add(package_name)
                         else:
                             target.setdefault('packages_extra', set()).add(package_name)
@@ -324,76 +336,50 @@ class PackagesBundle:
     def merge_build_depends(self) -> None:
         # Merge Build-Depends pseudo-fields from binary packages into the
         # source package
-        source = self.packages["source"]
         arch_all = PackageArchitecture("all")
         for name, package in self.packages.items():
-            if name == "source":
-                continue
-            dep = package.get("Build-Depends")
+            dep = package.build_depends
             if not dep:
                 continue
-            del package["Build-Depends"]
-            if package["Architecture"] == arch_all:
-                dep_type = "Build-Depends-Indep"
+            if package.architecture == arch_all:
+                build_dep = self.source.build_depends_indep
             else:
-                dep_type = "Build-Depends-Arch"
+                build_dep = self.source.build_depends_arch
             for group in dep:
                 for item in group:
-                    if package["Architecture"] != arch_all and not item.arches:
-                        item.arches = package["Architecture"]
-                    if package.get("Build-Profiles") and not item.restrictions:
-                        item.restrictions = package["Build-Profiles"]
-                source.setdefault(dep_type).merge(group)
+                    if package.architecture != arch_all and not item.arches:
+                        item.arches = package.architecture
+                    item.restrictions &= package.build_profiles
+                build_dep.merge(group)
 
     def write(self) -> None:
         self.write_control()
         self.write_makefile()
 
     def write_control(self) -> None:
+        p = [self.source] + sorted(
+            self.packages.values(),
+            # Sort deb before udeb and then according to name
+            key=lambda i: (i.package_type or '', i.name),
+        )
         with self.open('control') as f:
-            self.write_rfc822(f, self.packages.values())
+            write_deb822(p, f)
 
     def write_makefile(self) -> None:
         with self.open('rules.gen') as f:
             self.makefile.write(f)
 
-    def write_rfc822(self, f: IO, entries: Iterable) -> None:
-        for entry in entries:
-            for key, value in entry.items():
-                if value:
-                    f.write(u"%s: %s\n" % (key, value))
-            f.write('\n')
-
-
-def iter_featuresets(config) -> Iterable[str]:
-    for featureset in config['base', ]['featuresets']:
-        if config.merge('base', None, featureset).get('enabled', True):
-            yield featureset
-
-
-def iter_arches(config) -> Iterable[str]:
-    return iter(config['base', ]['arches'])
-
-
-def iter_arch_featuresets(config, arch) -> Iterable[str]:
-    for featureset in config['base', arch].get('featuresets', []):
-        if config.merge('base', arch, featureset).get('enabled', True):
-            yield featureset
-
-
-def iter_flavours(config, arch, featureset) -> Iterable[str]:
-    return iter(config['base', arch, featureset]['flavours'])
-
 
 class Gencontrol(object):
+    config: ConfigMerged
     vars: dict[str, str]
     bundles: dict[str, PackagesBundle]
 
-    def __init__(self, config, templates, version=Version) -> None:
+    def __init__(self, config: ConfigMerged, templates, version=Version) -> None:
         self.config, self.templates = config, templates
         self.changelog = Changelog(version=version)
         self.vars = {}
-        self.bundles = {'': PackagesBundle(None, templates)}
+        self.bundles = {}
 
     @property
     def bundle(self) -> PackagesBundle:
@@ -407,37 +393,64 @@ class Gencontrol(object):
         self.write()
 
     def do_source(self) -> None:
-        source = self.templates.get_source_control("source.control", self.vars)[0]
-        if not source.get('Source'):
-            source['Source'] = self.changelog[0].source
-        self.bundle.packages['source'] = source
+        self.bundles[''] = PackagesBundle(
+            None, 'source.control', self.vars, self.templates,
+            override_name=self.changelog[0].source,
+        )
 
     def do_main(self) -> None:
         vars = self.vars.copy()
 
         makeflags = MakeFlags()
 
-        self.do_main_setup(vars, makeflags)
-        self.do_main_makefile(makeflags)
-        self.do_main_packages(vars, makeflags)
-        self.do_main_recurse(vars, makeflags)
+        self.do_main_setup(self.config, vars, makeflags)
+        self.do_main_makefile(self.config, vars, makeflags)
+        self.do_main_packages(self.config, vars, makeflags)
+        self.do_main_recurse(self.config, vars, makeflags)
 
-    def do_main_setup(self, vars, makeflags) -> None:
+    def do_main_setup(
+        self,
+        config: ConfigMerged,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_main_makefile(self, makeflags) -> None:
+    def do_main_makefile(
+        self,
+        config: ConfigMerged,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_main_packages(self, vars, makeflags) -> None:
+    def do_main_packages(
+        self,
+        config: ConfigMerged,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_main_recurse(self, vars, makeflags) -> None:
-        for featureset in iter_featuresets(self.config):
-            self.do_indep_featureset(featureset,
-                                     vars.copy(), makeflags.copy())
-        for arch in iter_arches(self.config):
-            self.do_arch(arch, vars.copy(),
-                         makeflags.copy())
+    def do_main_recurse(
+        self,
+        config: ConfigMerged,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        for featureset in config.root_featuresets:
+            if featureset.enable:
+                self.do_indep_featureset(featureset, vars.copy(), makeflags.copy())
+
+        # Sort the output the same way as before
+        for arch in sorted(
+            itertools.chain.from_iterable(
+                i.debianarchs for i in config.kernelarchs
+            ),
+            key=lambda i: i.name
+        ):
+            if arch.enable:
+                self.do_arch(arch, vars.copy(), makeflags.copy())
 
     def do_extra(self) -> None:
         try:
@@ -445,92 +458,170 @@ class Gencontrol(object):
         except KeyError:
             return
 
-        extra_arches: dict[str, Any] = {}
         for package in packages_extra:
-            arches = package['Architecture']
-            for arch in arches:
-                i = extra_arches.get(arch, [])
-                i.append(package)
-                extra_arches[arch] = i
-        for arch in sorted(extra_arches.keys()):
-            self.bundle.add_packages(packages_extra, (arch, ),
-                                     MakeFlags(), check_packages=False)
+            package.meta_rules_target = 'meta'
+            if not package.architecture:
+                raise RuntimeError('Require Architecture in debian/templates/extra.control')
+            for arch in package.architecture:
+                self.bundle.add_packages([package], (arch, ),
+                                         MakeFlags(), arch=arch, check_packages=False)
 
-    def do_indep_featureset(self, featureset, vars, makeflags) -> None:
+    def do_indep_featureset(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        vars['config'] = config
         vars['localversion'] = ''
-        if featureset != 'none':
-            vars['localversion'] = '-' + featureset
+        if config.name_featureset != 'none':
+            vars['localversion'] = '-' + config.name_featureset
 
-        self.do_indep_featureset_setup(vars, makeflags, featureset)
-        self.do_indep_featureset_makefile(featureset, makeflags)
-        self.do_indep_featureset_packages(featureset,
-                                          vars, makeflags)
+        self.do_indep_featureset_setup(config, vars, makeflags)
+        self.do_indep_featureset_makefile(config, vars, makeflags)
+        self.do_indep_featureset_packages(config, vars, makeflags)
 
-    def do_indep_featureset_setup(self, vars, makeflags, featureset) -> None:
+    def do_indep_featureset_setup(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_indep_featureset_makefile(self, featureset, makeflags) -> None:
-        makeflags['FEATURESET'] = featureset
+    def do_indep_featureset_makefile(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        makeflags['FEATURESET'] = config.name
 
-    def do_indep_featureset_packages(self, featureset, vars, makeflags) -> None:
+    def do_indep_featureset_packages(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_arch(self, arch, vars, makeflags) -> None:
-        vars['arch'] = arch
+    def do_arch(
+        self,
+        config: ConfigMergedDebianarch,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        vars['config'] = config
+        vars['arch'] = config.name
 
-        self.do_arch_setup(vars, makeflags, arch)
-        self.do_arch_makefile(arch, makeflags)
-        self.do_arch_packages(arch, vars, makeflags)
-        self.do_arch_recurse(arch, vars, makeflags)
+        self.do_arch_setup(config, vars, makeflags)
+        self.do_arch_makefile(config, vars, makeflags)
+        self.do_arch_packages(config, vars, makeflags)
+        self.do_arch_recurse(config, vars, makeflags)
 
-    def do_arch_setup(self, vars, makeflags, arch) -> None:
+    def do_arch_setup(
+        self,
+        config: ConfigMergedDebianarch,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_arch_makefile(self, arch, makeflags) -> None:
-        makeflags['ARCH'] = arch
+    def do_arch_makefile(
+        self,
+        config: ConfigMergedDebianarch,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        makeflags['ARCH'] = config.name
 
-    def do_arch_packages(self, arch, vars, makeflags) -> None:
+    def do_arch_packages(
+        self,
+        config: ConfigMergedDebianarch,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_arch_recurse(self, arch, vars, makeflags) -> None:
-        for featureset in iter_arch_featuresets(self.config, arch):
-            self.do_featureset(arch, featureset,
-                               vars.copy(), makeflags.copy())
+    def do_arch_recurse(
+        self,
+        config: ConfigMergedDebianarch,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        for featureset in config.featuresets:
+            if featureset.enable:
+                self.do_featureset(featureset, vars.copy(), makeflags.copy())
 
-    def do_featureset(self, arch, featureset, vars, makeflags) -> None:
+    def do_featureset(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        vars['config'] = config
         vars['localversion'] = ''
-        if featureset != 'none':
-            vars['localversion'] = '-' + featureset
+        if config.name_featureset != 'none':
+            vars['localversion'] = '-' + config.name_featureset
 
-        self.do_featureset_setup(vars, makeflags, arch, featureset)
-        self.do_featureset_makefile(arch, featureset, makeflags)
-        self.do_featureset_packages(arch, featureset, vars, makeflags)
-        self.do_featureset_recurse(arch, featureset, vars, makeflags)
+        self.do_featureset_setup(config, vars, makeflags)
+        self.do_featureset_makefile(config, vars, makeflags)
+        self.do_featureset_packages(config, vars, makeflags)
+        self.do_featureset_recurse(config, vars, makeflags)
 
-    def do_featureset_setup(self, vars, makeflags, arch, featureset) -> None:
+    def do_featureset_setup(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_featureset_makefile(self, arch, featureset, makeflags) -> None:
-        makeflags['FEATURESET'] = featureset
+    def do_featureset_makefile(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        makeflags['FEATURESET'] = config.name
 
-    def do_featureset_packages(self, arch, featureset, vars, makeflags) -> None:
+    def do_featureset_packages(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def do_featureset_recurse(self, arch, featureset, vars, makeflags) -> None:
-        for flavour in iter_flavours(self.config, arch, featureset):
-            self.do_flavour(arch, featureset, flavour,
-                            vars.copy(), makeflags.copy())
+    def do_featureset_recurse(
+        self,
+        config: ConfigMergedFeatureset,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        for flavour in config.flavours:
+            if flavour.enable:
+                self.do_flavour(flavour, vars.copy(), makeflags.copy())
 
-    def do_flavour(self, arch, featureset, flavour, vars,
-                   makeflags):
-        vars['localversion'] += '-' + flavour
+    def do_flavour(
+        self,
+        config: ConfigMergedFlavour,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        vars['config'] = config
+        vars['localversion'] += '-' + config.name_flavour
 
-        self.do_flavour_setup(vars, makeflags, arch, featureset, flavour)
-        self.do_flavour_makefile(arch, featureset, flavour, makeflags)
-        self.do_flavour_packages(arch, featureset, flavour,
-                                 vars, makeflags)
+        self.do_flavour_setup(config, vars, makeflags)
+        self.do_flavour_makefile(config, vars, makeflags)
+        self.do_flavour_packages(config, vars, makeflags)
 
-    def do_flavour_setup(self, vars, makeflags, arch, featureset, flavour) -> None:
+    def do_flavour_setup(
+        self,
+        config: ConfigMergedFlavour,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         for i in (
             ('kernel-arch', 'KERNEL_ARCH'),
             ('localversion', 'LOCALVERSION'),
@@ -538,16 +629,23 @@ class Gencontrol(object):
             if i[0] in vars:
                 makeflags[i[1]] = vars[i[0]]
 
-    def do_flavour_makefile(self, arch, featureset, flavour, makeflags) -> None:
-        makeflags['FLAVOUR'] = flavour
+    def do_flavour_makefile(
+        self,
+        config: ConfigMergedFlavour,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
+        makeflags['FLAVOUR'] = config.name
 
-    def do_flavour_packages(self, arch, featureset, flavour, vars, makeflags) -> None:
+    def do_flavour_packages(
+        self,
+        config: ConfigMergedFlavour,
+        vars: dict[str, str],
+        makeflags: MakeFlags,
+    ) -> None:
         pass
 
-    def substitute(self, s: str | list | tuple, vars) -> str | list:
-        if isinstance(s, (list, tuple)):
-            return [self.substitute(i, vars) for i in s]
-
+    def substitute(self, s: str, vars) -> str:
         def subst(match) -> str:
             return vars[match.group(1)]
 

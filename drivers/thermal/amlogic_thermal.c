@@ -7,10 +7,10 @@
  *
  * Register value to celsius temperature formulas:
  *	Read_Val	    m * U
- * U = ---------, Uptat = ---------
+ * U = ---------, uptat = ---------
  *	2^16		  1 + n * U
  *
- * Temperature = A * ( Uptat + u_efuse / 2^16 )- B
+ * Temperature = A * ( uptat + u_efuse / 2^16 )- B
  *
  *  A B m n : calibration parameters
  *  u_efuse : fused calibration value, it's a signed 16 bits value
@@ -112,7 +112,7 @@ static int amlogic_thermal_code_to_millicelsius(struct amlogic_thermal *pdata,
 	const struct amlogic_thermal_soc_calib_data *param =
 					pdata->data->calibration_parameters;
 	int temp;
-	s64 factor, Uptat, uefuse;
+	s64 factor, uptat, uefuse;
 
 	uefuse = pdata->trim_info & TSENSOR_TRIM_SIGN_MASK ?
 			     ~(pdata->trim_info & TSENSOR_TRIM_TEMP_MASK) + 1 :
@@ -121,12 +121,12 @@ static int amlogic_thermal_code_to_millicelsius(struct amlogic_thermal *pdata,
 	factor = param->n * temp_code;
 	factor = div_s64(factor, 100);
 
-	Uptat = temp_code * param->m;
-	Uptat = div_s64(Uptat, 100);
-	Uptat = Uptat * BIT(16);
-	Uptat = div_s64(Uptat, BIT(16) + factor);
+	uptat = temp_code * param->m;
+	uptat = div_s64(uptat, 100);
+	uptat = uptat * BIT(16);
+	uptat = div_s64(uptat, BIT(16) + factor);
 
-	temp = (Uptat + uefuse) * param->A;
+	temp = (uptat + uefuse) * param->A;
 	temp = div_s64(temp, BIT(16));
 	temp = (temp - param->B) * 100;
 
@@ -167,13 +167,11 @@ static int amlogic_thermal_enable(struct amlogic_thermal *data)
 	return 0;
 }
 
-static int amlogic_thermal_disable(struct amlogic_thermal *data)
+static void amlogic_thermal_disable(struct amlogic_thermal *data)
 {
 	regmap_update_bits(data->regmap, TSENSOR_CFG_REG1,
 			   TSENSOR_CFG_REG1_ENABLE, 0);
 	clk_disable_unprepare(data->clk);
-
-	return 0;
 }
 
 static int amlogic_thermal_get_temp(struct thermal_zone_device *tz, int *temp)
@@ -222,6 +220,12 @@ static const struct amlogic_thermal_data amlogic_thermal_g12a_ddr_param = {
 	.regmap_config = &amlogic_thermal_regmap_config_g12a,
 };
 
+static const struct amlogic_thermal_data amlogic_thermal_a1_cpu_param = {
+	.u_efuse_off = 0x114,
+	.calibration_parameters = &amlogic_thermal_g12a,
+	.regmap_config = &amlogic_thermal_regmap_config_g12a,
+};
+
 static const struct of_device_id of_amlogic_thermal_match[] = {
 	{
 		.compatible = "amlogic,g12a-ddr-thermal",
@@ -230,6 +234,10 @@ static const struct of_device_id of_amlogic_thermal_match[] = {
 	{
 		.compatible = "amlogic,g12a-cpu-thermal",
 		.data = &amlogic_thermal_g12a_cpu_param,
+	},
+	{
+		.compatible = "amlogic,a1-cpu-thermal",
+		.data = &amlogic_thermal_a1_cpu_param,
 	},
 	{ /* sentinel */ }
 };
@@ -291,38 +299,41 @@ static int amlogic_thermal_probe(struct platform_device *pdev)
 	return ret;
 }
 
-static int amlogic_thermal_remove(struct platform_device *pdev)
+static void amlogic_thermal_remove(struct platform_device *pdev)
 {
 	struct amlogic_thermal *data = platform_get_drvdata(pdev);
 
-	return amlogic_thermal_disable(data);
+	amlogic_thermal_disable(data);
 }
 
-static int __maybe_unused amlogic_thermal_suspend(struct device *dev)
+static int amlogic_thermal_suspend(struct device *dev)
 {
 	struct amlogic_thermal *data = dev_get_drvdata(dev);
 
-	return amlogic_thermal_disable(data);
+	amlogic_thermal_disable(data);
+
+	return 0;
 }
 
-static int __maybe_unused amlogic_thermal_resume(struct device *dev)
+static int amlogic_thermal_resume(struct device *dev)
 {
 	struct amlogic_thermal *data = dev_get_drvdata(dev);
 
 	return amlogic_thermal_enable(data);
 }
 
-static SIMPLE_DEV_PM_OPS(amlogic_thermal_pm_ops,
-			 amlogic_thermal_suspend, amlogic_thermal_resume);
+static DEFINE_SIMPLE_DEV_PM_OPS(amlogic_thermal_pm_ops,
+				amlogic_thermal_suspend,
+				amlogic_thermal_resume);
 
 static struct platform_driver amlogic_thermal_driver = {
 	.driver = {
 		.name		= "amlogic_thermal",
-		.pm		= &amlogic_thermal_pm_ops,
+		.pm		= pm_ptr(&amlogic_thermal_pm_ops),
 		.of_match_table = of_amlogic_thermal_match,
 	},
-	.probe	= amlogic_thermal_probe,
-	.remove	= amlogic_thermal_remove,
+	.probe = amlogic_thermal_probe,
+	.remove = amlogic_thermal_remove,
 };
 
 module_platform_driver(amlogic_thermal_driver);

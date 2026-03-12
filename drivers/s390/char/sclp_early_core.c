@@ -7,11 +7,13 @@
 #include <linux/kernel.h>
 #include <asm/processor.h>
 #include <asm/lowcore.h>
+#include <asm/ctlreg.h>
 #include <asm/ebcdic.h>
 #include <asm/irq.h>
 #include <asm/sections.h>
 #include <asm/physmem_info.h>
 #include <asm/facility.h>
+#include <asm/machine.h>
 #include "sclp.h"
 #include "sclp_rw.h"
 
@@ -31,17 +33,17 @@ void sclp_early_wait_irq(void)
 	psw_t psw_ext_save, psw_wait;
 	union ctlreg0 cr0, cr0_new;
 
-	__ctl_store(cr0.val, 0, 0);
+	local_ctl_store(0, &cr0.reg);
 	cr0_new.val = cr0.val & ~CR0_IRQ_SUBCLASS_MASK;
 	cr0_new.lap = 0;
 	cr0_new.sssm = 1;
-	__ctl_load(cr0_new.val, 0, 0);
+	local_ctl_load(0, &cr0_new.reg);
 
-	psw_ext_save = S390_lowcore.external_new_psw;
+	psw_ext_save = get_lowcore()->external_new_psw;
 	psw_mask = __extract_psw();
-	S390_lowcore.external_new_psw.mask = psw_mask;
+	get_lowcore()->external_new_psw.mask = psw_mask;
 	psw_wait.mask = psw_mask | PSW_MASK_EXT | PSW_MASK_WAIT;
-	S390_lowcore.ext_int_code = 0;
+	get_lowcore()->ext_int_code = 0;
 
 	do {
 		asm volatile(
@@ -49,16 +51,16 @@ void sclp_early_wait_irq(void)
 			"	stg	%[addr],%[psw_wait_addr]\n"
 			"	stg	%[addr],%[psw_ext_addr]\n"
 			"	lpswe	%[psw_wait]\n"
-			"0:\n"
+			"0:"
 			: [addr] "=&d" (addr),
 			  [psw_wait_addr] "=Q" (psw_wait.addr),
-			  [psw_ext_addr] "=Q" (S390_lowcore.external_new_psw.addr)
+			  [psw_ext_addr] "=Q" (get_lowcore()->external_new_psw.addr)
 			: [psw_wait] "Q" (psw_wait)
 			: "cc", "memory");
-	} while (S390_lowcore.ext_int_code != EXT_IRQ_SERVICE_SIG);
+	} while (get_lowcore()->ext_int_code != EXT_IRQ_SERVICE_SIG);
 
-	S390_lowcore.external_new_psw = psw_ext_save;
-	__ctl_load(cr0.val, 0, 0);
+	get_lowcore()->external_new_psw = psw_ext_save;
+	local_ctl_load(0, &cr0.reg);
 }
 
 int sclp_early_cmd(sclp_cmdw_t cmd, void *sccb)
@@ -332,6 +334,18 @@ int __init sclp_early_get_hsa_size(unsigned long *hsa_size)
 	if (sclp_info_sccb.hsa_size)
 		*hsa_size = (sclp_info_sccb.hsa_size - 1) * PAGE_SIZE;
 	return 0;
+}
+
+void __init sclp_early_detect_machine_features(void)
+{
+	struct read_info_sccb *sccb = &sclp_info_sccb;
+
+	if (!sclp_info_sccb_valid)
+		return;
+	if (sccb->fac85 & 0x02)
+		set_machine_feature(MFEATURE_ESOP);
+	if (sccb->fac91 & 0x40)
+		set_machine_feature(MFEATURE_TLB_GUEST);
 }
 
 #define SCLP_STORAGE_INFO_FACILITY     0x0000400000000000UL

@@ -121,6 +121,12 @@ static const struct ieee80211_iface_combination wfx_iface_combinations[] = {
 	}
 };
 
+#ifdef CONFIG_PM
+static const struct wiphy_wowlan_support wfx_wowlan_support = {
+	.flags = WIPHY_WOWLAN_ANY | WIPHY_WOWLAN_DISCONNECT,
+};
+#endif
+
 static const struct ieee80211_ops wfx_ops = {
 	.start                   = wfx_start,
 	.stop                    = wfx_stop,
@@ -151,6 +157,13 @@ static const struct ieee80211_ops wfx_ops = {
 	.change_chanctx          = wfx_change_chanctx,
 	.assign_vif_chanctx      = wfx_assign_vif_chanctx,
 	.unassign_vif_chanctx    = wfx_unassign_vif_chanctx,
+	.remain_on_channel       = wfx_remain_on_channel,
+	.cancel_remain_on_channel = wfx_cancel_remain_on_channel,
+#ifdef CONFIG_PM
+	.suspend                 = wfx_suspend,
+	.resume                  = wfx_resume,
+	.set_wakeup              = wfx_set_wakeup,
+#endif
 };
 
 bool wfx_api_older_than(struct wfx_dev *wdev, int major, int minor)
@@ -246,6 +259,7 @@ static void wfx_free_common(void *data)
 
 	mutex_destroy(&wdev->tx_power_loop_info_lock);
 	mutex_destroy(&wdev->rx_stats_lock);
+	mutex_destroy(&wdev->scan_lock);
 	mutex_destroy(&wdev->conf_mutex);
 	ieee80211_free_hw(wdev->hw);
 }
@@ -286,8 +300,12 @@ struct wfx_dev *wfx_init_common(struct device *dev, const struct wfx_platform_da
 					NL80211_PROBE_RESP_OFFLOAD_SUPPORT_P2P |
 					NL80211_PROBE_RESP_OFFLOAD_SUPPORT_80211U;
 	hw->wiphy->features |= NL80211_FEATURE_AP_SCAN;
+#ifdef CONFIG_PM
+	hw->wiphy->wowlan = &wfx_wowlan_support;
+#endif
 	hw->wiphy->flags |= WIPHY_FLAG_AP_PROBE_RESP_OFFLOAD;
 	hw->wiphy->flags |= WIPHY_FLAG_AP_UAPSD;
+	hw->wiphy->max_remain_on_channel_duration = 5000;
 	hw->wiphy->max_ap_assoc_sta = HIF_LINK_ID_MAX;
 	hw->wiphy->max_scan_ssids = 2;
 	hw->wiphy->max_scan_ie_len = IEEE80211_MAX_DATA_LEN;
@@ -314,6 +332,7 @@ struct wfx_dev *wfx_init_common(struct device *dev, const struct wfx_platform_da
 		gpiod_set_consumer_name(wdev->pdata.gpio_wakeup, "wfx wakeup");
 
 	mutex_init(&wdev->conf_mutex);
+	mutex_init(&wdev->scan_lock);
 	mutex_init(&wdev->rx_stats_lock);
 	mutex_init(&wdev->tx_power_loop_info_lock);
 	init_completion(&wdev->firmware_ready);
@@ -475,10 +494,23 @@ static int __init wfx_core_init(void)
 {
 	int ret = 0;
 
-	if (IS_ENABLED(CONFIG_SPI))
+	if (IS_ENABLED(CONFIG_SPI)) {
 		ret = spi_register_driver(&wfx_spi_driver);
-	if (IS_ENABLED(CONFIG_MMC) && !ret)
+		if (ret)
+			goto out;
+	}
+	if (IS_ENABLED(CONFIG_MMC)) {
 		ret = sdio_register_driver(&wfx_sdio_driver);
+		if (ret)
+			goto unregister_spi;
+	}
+
+	return 0;
+
+unregister_spi:
+	if (IS_ENABLED(CONFIG_SPI))
+		spi_unregister_driver(&wfx_spi_driver);
+out:
 	return ret;
 }
 module_init(wfx_core_init);

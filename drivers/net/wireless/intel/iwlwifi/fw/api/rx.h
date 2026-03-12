@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause */
 /*
- * Copyright (C) 2012-2014, 2018-2022 Intel Corporation
+ * Copyright (C) 2012-2014, 2018-2025 Intel Corporation
  * Copyright (C) 2013-2015 Intel Mobile Communications GmbH
  * Copyright (C) 2015-2017 Intel Deutschland GmbH
  */
@@ -193,10 +193,13 @@ enum iwl_rx_mpdu_amsdu_info {
 	IWL_RX_MPDU_AMSDU_LAST_SUBFRAME		= 0x80,
 };
 
-#define RX_MPDU_BAND_POS 6
-#define RX_MPDU_BAND_MASK 0xC0
-#define BAND_IN_RX_STATUS(_val) \
-	(((_val) & RX_MPDU_BAND_MASK) >> RX_MPDU_BAND_POS)
+enum iwl_rx_mpdu_mac_phy_band {
+	/* whether or not this is MAC or LINK depends on the API */
+	IWL_RX_MPDU_MAC_PHY_BAND_MAC_MASK	= 0x0f,
+	IWL_RX_MPDU_MAC_PHY_BAND_LINK_MASK	= 0x0f,
+	IWL_RX_MPDU_MAC_PHY_BAND_PHY_MASK	= 0x30,
+	IWL_RX_MPDU_MAC_PHY_BAND_BAND_MASK	= 0xc0,
+};
 
 enum iwl_rx_l3_proto_values {
 	IWL_RX_L3_TYPE_NONE,
@@ -371,7 +374,7 @@ enum iwl_rx_phy_eht_data1 {
 	IWL_RX_PHY_DATA1_EHT_RU_ALLOC_B1_B7		= 0x0000fe00,
 };
 
-/* goes into Metadata DW 7 */
+/* goes into Metadata DW 7 (Qu) or 8 (So or higher) */
 enum iwl_rx_phy_he_data2 {
 	/* info type: HE MU-EXT */
 	/* the a1/a2/... is what the PHY/firmware calls the values */
@@ -387,7 +390,7 @@ enum iwl_rx_phy_he_data2 {
 	IWL_RX_PHY_DATA2_HE_TB_EXT_SPTL_REUSE4		= 0x0000f000,
 };
 
-/* goes into Metadata DW 8 */
+/* goes into Metadata DW 8 (Qu) or 7 (So or higher) */
 enum iwl_rx_phy_he_data3 {
 	/* info type: HE MU-EXT */
 	IWL_RX_PHY_DATA3_HE_MU_EXT_CH1_RU1		= 0x000000ff, /* c1 */
@@ -408,10 +411,9 @@ enum iwl_rx_phy_he_he_data4 {
 	IWL_RX_PHY_DATA4_HE_MU_EXT_PREAMBLE_PUNC_TYPE_MASK	= 0x0600,
 };
 
-/* goes into Metadata DW 7 */
+/* goes into Metadata DW 8 (Qu has no EHT) */
 enum iwl_rx_phy_eht_data2 {
 	/* info type: EHT-MU-EXT */
-	/* OFDM_RX_VECTOR_COMMON_RU_ALLOC_0_OUT */
 	IWL_RX_PHY_DATA2_EHT_MU_EXT_RU_ALLOC_A1	= 0x000001ff,
 	IWL_RX_PHY_DATA2_EHT_MU_EXT_RU_ALLOC_A2	= 0x0003fe00,
 	IWL_RX_PHY_DATA2_EHT_MU_EXT_RU_ALLOC_B1	= 0x07fc0000,
@@ -420,11 +422,10 @@ enum iwl_rx_phy_eht_data2 {
 	IWL_RX_PHY_DATA2_EHT_TB_EXT_TRIG_SIGA1	= 0xffffffff,
 };
 
-/* goes into Metadata DW 8 */
+/* goes into Metadata DW 7 (Qu has no EHT) */
 enum iwl_rx_phy_eht_data3 {
+	/* note: low 8 bits cannot be used */
 	/* info type: EHT-MU-EXT */
-	/* OFDM_RX_VECTOR_COMMON_RU_ALLOC_1_OUT */
-	IWL_RX_PHY_DATA3_EHT_MU_EXT_RU_ALLOC_B2	= 0x000001ff,
 	IWL_RX_PHY_DATA3_EHT_MU_EXT_RU_ALLOC_C1	= 0x0003fe00,
 	IWL_RX_PHY_DATA3_EHT_MU_EXT_RU_ALLOC_C2	= 0x07fc0000,
 };
@@ -432,10 +433,10 @@ enum iwl_rx_phy_eht_data3 {
 /* goes into Metadata DW 4 */
 enum iwl_rx_phy_eht_data4 {
 	/* info type: EHT-MU-EXT */
-	/* OFDM_RX_VECTOR_COMMON_RU_ALLOC_2_OUT */
 	IWL_RX_PHY_DATA4_EHT_MU_EXT_RU_ALLOC_D1	= 0x000001ff,
 	IWL_RX_PHY_DATA4_EHT_MU_EXT_RU_ALLOC_D2	= 0x0003fe00,
 	IWL_RX_PHY_DATA4_EHT_MU_EXT_SIGB_MCS	= 0x000c0000,
+	IWL_RX_PHY_DATA4_EHT_MU_EXT_RU_ALLOC_B2	= 0x1ff00000,
 };
 
 /* goes into Metadata DW 16 */
@@ -641,7 +642,9 @@ struct iwl_rx_mpdu_desc_v3 {
 	 */
 	__le32 reserved[1];
 } __packed; /* RX_MPDU_RES_START_API_S_VER_3,
-	       RX_MPDU_RES_START_API_S_VER_5 */
+	     * RX_MPDU_RES_START_API_S_VER_5,
+	     * RX_MPDU_RES_START_API_S_VER_6
+	     */
 
 /**
  * struct iwl_rx_mpdu_desc - RX MPDU descriptor
@@ -670,9 +673,10 @@ struct iwl_rx_mpdu_desc {
 	 */
 	__le16 phy_info;
 	/**
-	 * @mac_phy_idx: MAC/PHY index
+	 * @mac_phy_band: MAC/link ID, PHY ID, band;
+	 *	see &enum iwl_rx_mpdu_mac_phy_band
 	 */
-	u8 mac_phy_idx;
+	u8 mac_phy_band;
 	/* DW4 */
 	union {
 		struct {
@@ -712,12 +716,22 @@ struct iwl_rx_mpdu_desc {
 	__le32 reorder_data;
 
 	union {
+		/**
+		 * @v1: version 1 of the remaining RX descriptor,
+		 *	see &struct iwl_rx_mpdu_desc_v1
+		 */
 		struct iwl_rx_mpdu_desc_v1 v1;
+		/**
+		 * @v3: version 3 of the remaining RX descriptor,
+		 *	see &struct iwl_rx_mpdu_desc_v3
+		 */
 		struct iwl_rx_mpdu_desc_v3 v3;
 	};
 } __packed; /* RX_MPDU_RES_START_API_S_VER_3,
-	       RX_MPDU_RES_START_API_S_VER_4,
-	       RX_MPDU_RES_START_API_S_VER_5 */
+	     * RX_MPDU_RES_START_API_S_VER_4,
+	     * RX_MPDU_RES_START_API_S_VER_5,
+	     * RX_MPDU_RES_START_API_S_VER_6
+	     */
 
 #define IWL_RX_DESC_SIZE_V1 offsetofend(struct iwl_rx_mpdu_desc, v1)
 
@@ -813,7 +827,7 @@ struct iwl_rx_no_data {
  *	15:8 chain-B, measured at FINA time (FINA_ENERGY), 16:23 channel
  * @on_air_rise_time: GP2 during on air rise
  * @fr_time: frame time
- * @rate: rate/mcs of frame
+ * @rate: rate/mcs of frame, format depends on the notification version
  * @phy_info: &enum iwl_rx_phy_eht_data0 and &enum iwl_rx_phy_info_type
  * @rx_vec: DW-12:9 raw RX vectors from DSP according to modulation type.
  *	for VHT: OFDM_RX_VECTOR_SIGA1_OUT, OFDM_RX_VECTOR_SIGA2_OUT
@@ -829,9 +843,7 @@ struct iwl_rx_no_data_ver_3 {
 	__le32 rate;
 	__le32 phy_info[2];
 	__le32 rx_vec[4];
-} __packed; /* RX_NO_DATA_NTFY_API_S_VER_1,
-	       RX_NO_DATA_NTFY_API_S_VER_2
-	       RX_NO_DATA_NTFY_API_S_VER_3 */
+} __packed; /* RX_NO_DATA_NTFY_API_S_VER_3, _VER_4 */
 
 struct iwl_frame_release {
 	u8 baid;
@@ -978,7 +990,7 @@ struct iwl_ba_window_status_notif {
 } __packed; /* BA_WINDOW_STATUS_NTFY_API_S_VER_1 */
 
 /**
- * struct iwl_rfh_queue_config - RX queue configuration
+ * struct iwl_rfh_queue_data - RX queue configuration
  * @q_num: Q num
  * @enable: enable queue
  * @reserved: alignment
@@ -1008,5 +1020,25 @@ struct iwl_rfh_queue_config {
 	u8 reserved[3];
 	struct iwl_rfh_queue_data data[];
 } __packed; /* RFH_QUEUE_CONFIG_API_S_VER_1 */
+
+/**
+ * struct iwl_beacon_filter_notif_v1 - beacon filter notification
+ * @average_energy: average energy for the received beacon
+ * @mac_id: MAC ID the beacon was received for
+ */
+struct iwl_beacon_filter_notif_v1 {
+	__le32 average_energy;
+	__le32 mac_id;
+} __packed; /* BEACON_FILTER_IN_NTFY_API_S_VER_1 */
+
+/**
+ * struct iwl_beacon_filter_notif - beacon filter notification
+ * @average_energy: average energy for the received beacon
+ * @link_id: link ID the beacon was received for
+ */
+struct iwl_beacon_filter_notif {
+	__le32 average_energy;
+	__le32 link_id;
+} __packed; /* BEACON_FILTER_IN_NTFY_API_S_VER_2 */
 
 #endif /* __iwl_fw_api_rx_h__ */

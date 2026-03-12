@@ -147,13 +147,13 @@ void saa7146_buffer_next(struct saa7146_dev *dev,
 			printk("vdma%d.num_line_byte: 0x%08x\n", 1,saa7146_read(dev,NUM_LINE_BYTE1));
 */
 		}
-		del_timer(&q->timeout);
+		timer_delete(&q->timeout);
 	}
 }
 
 void saa7146_buffer_timeout(struct timer_list *t)
 {
-	struct saa7146_dmaqueue *q = from_timer(q, t, timeout);
+	struct saa7146_dmaqueue *q = timer_container_of(q, t, timeout);
 	struct saa7146_dev *dev = q->dev;
 	unsigned long flags;
 
@@ -387,7 +387,7 @@ int saa7146_register_device(struct video_device *vfd, struct saa7146_dev *dev,
 	q->gfp_flags = __GFP_DMA32;
 	q->buf_struct_size = sizeof(struct saa7146_buf);
 	q->lock = &dev->v4l2_lock;
-	q->min_buffers_needed = 2;
+	q->min_queued_buffers = 2;
 	q->dev = &dev->pci->dev;
 	err = vb2_queue_init(q);
 	if (err)

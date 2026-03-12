@@ -266,7 +266,6 @@ static int ksz_ptp_enable_mode(struct ksz_device *dev)
 	struct ksz_port *prt;
 	struct dsa_port *dp;
 	bool tag_en = false;
-	int ret;
 
 	dsa_switch_for_each_user_port(dp, dev->ds) {
 		prt = &dev->ports[dp->index];
@@ -277,9 +276,7 @@ static int ksz_ptp_enable_mode(struct ksz_device *dev)
 	}
 
 	if (tag_en) {
-		ret = ptp_schedule_worker(ptp_data->clock, 0);
-		if (ret)
-			return ret;
+		ptp_schedule_worker(ptp_data->clock, 0);
 	} else {
 		ptp_cancel_worker_sync(ptp_data->clock);
 	}
@@ -293,7 +290,7 @@ static int ksz_ptp_enable_mode(struct ksz_device *dev)
 /* The function is return back the capability of timestamping feature when
  * requested through ethtool -T <interface> utility
  */
-int ksz_get_ts_info(struct dsa_switch *ds, int port, struct ethtool_ts_info *ts)
+int ksz_get_ts_info(struct dsa_switch *ds, int port, struct kernel_ethtool_ts_info *ts)
 {
 	struct ksz_device *dev = ds->priv;
 	struct ksz_ptp_data *ptp_data;
@@ -322,22 +319,21 @@ int ksz_get_ts_info(struct dsa_switch *ds, int port, struct ethtool_ts_info *ts)
 	return 0;
 }
 
-int ksz_hwtstamp_get(struct dsa_switch *ds, int port, struct ifreq *ifr)
+int ksz_hwtstamp_get(struct dsa_switch *ds, int port,
+		     struct kernel_hwtstamp_config *config)
 {
 	struct ksz_device *dev = ds->priv;
-	struct hwtstamp_config *config;
 	struct ksz_port *prt;
 
 	prt = &dev->ports[port];
-	config = &prt->tstamp_config;
+	*config = prt->tstamp_config;
 
-	return copy_to_user(ifr->ifr_data, config, sizeof(*config)) ?
-		-EFAULT : 0;
+	return 0;
 }
 
 static int ksz_set_hwtstamp_config(struct ksz_device *dev,
 				   struct ksz_port *prt,
-				   struct hwtstamp_config *config)
+				   struct kernel_hwtstamp_config *config)
 {
 	int ret;
 
@@ -407,26 +403,21 @@ static int ksz_set_hwtstamp_config(struct ksz_device *dev,
 	return ksz_ptp_enable_mode(dev);
 }
 
-int ksz_hwtstamp_set(struct dsa_switch *ds, int port, struct ifreq *ifr)
+int ksz_hwtstamp_set(struct dsa_switch *ds, int port,
+		     struct kernel_hwtstamp_config *config,
+		     struct netlink_ext_ack *extack)
 {
 	struct ksz_device *dev = ds->priv;
-	struct hwtstamp_config config;
 	struct ksz_port *prt;
 	int ret;
 
 	prt = &dev->ports[port];
 
-	if (copy_from_user(&config, ifr->ifr_data, sizeof(config)))
-		return -EFAULT;
-
-	ret = ksz_set_hwtstamp_config(dev, prt, &config);
+	ret = ksz_set_hwtstamp_config(dev, prt, config);
 	if (ret)
 		return ret;
 
-	memcpy(&prt->tstamp_config, &config, sizeof(config));
-
-	if (copy_to_user(ifr->ifr_data, &config, sizeof(config)))
-		return -EFAULT;
+	prt->tstamp_config = *config;
 
 	return 0;
 }
@@ -557,7 +548,7 @@ static void ksz_ptp_txtstamp_skb(struct ksz_device *dev,
 	struct skb_shared_hwtstamps hwtstamps = {};
 	int ret;
 
-	/* timeout must include DSA master to transmit data, tstamp latency,
+	/* timeout must include DSA conduit to transmit data, tstamp latency,
 	 * IRQ latency and time for reading the time stamp.
 	 */
 	ret = wait_for_completion_timeout(&prt->tstamp_msg_comp,
@@ -1102,18 +1093,18 @@ static int ksz_ptp_msg_irq_setup(struct ksz_port *port, u8 n)
 	static const char * const name[] = {"pdresp-msg", "xdreq-msg",
 					    "sync-msg"};
 	const struct ksz_dev_ops *ops = port->ksz_dev->dev_ops;
+	struct ksz_irq *ptpirq = &port->ptpirq;
 	struct ksz_ptp_irq *ptpmsg_irq;
 
 	ptpmsg_irq = &port->ptpmsg_irq[n];
+	ptpmsg_irq->num = irq_create_mapping(ptpirq->domain, n);
+	if (!ptpmsg_irq->num)
+		return -EINVAL;
 
 	ptpmsg_irq->port = port;
 	ptpmsg_irq->ts_reg = ops->get_port_addr(port->num, ts_reg[n]);
 
-	snprintf(ptpmsg_irq->name, sizeof(ptpmsg_irq->name), name[n]);
-
-	ptpmsg_irq->num = irq_find_mapping(port->ptpirq.domain, n);
-	if (ptpmsg_irq->num < 0)
-		return ptpmsg_irq->num;
+	strscpy(ptpmsg_irq->name, name[n]);
 
 	return request_threaded_irq(ptpmsg_irq->num, NULL,
 				    ksz_ptp_msg_thread_fn, IRQF_ONESHOT,
@@ -1139,17 +1130,14 @@ int ksz_ptp_irq_setup(struct dsa_switch *ds, u8 p)
 
 	init_completion(&port->tstamp_msg_comp);
 
-	ptpirq->domain = irq_domain_add_linear(dev->dev->of_node, ptpirq->nirqs,
-					       &ksz_ptp_irq_domain_ops, ptpirq);
+	ptpirq->domain = irq_domain_create_linear(dev_fwnode(dev->dev), ptpirq->nirqs,
+						  &ksz_ptp_irq_domain_ops, ptpirq);
 	if (!ptpirq->domain)
 		return -ENOMEM;
 
-	for (irq = 0; irq < ptpirq->nirqs; irq++)
-		irq_create_mapping(ptpirq->domain, irq);
-
 	ptpirq->irq_num = irq_find_mapping(port->pirq.domain, PORT_SRC_PTP_INT);
-	if (ptpirq->irq_num < 0) {
-		ret = ptpirq->irq_num;
+	if (!ptpirq->irq_num) {
+		ret = -EINVAL;
 		goto out;
 	}
 
@@ -1168,12 +1156,11 @@ int ksz_ptp_irq_setup(struct dsa_switch *ds, u8 p)
 
 out_ptp_msg:
 	free_irq(ptpirq->irq_num, ptpirq);
-	while (irq--)
+	while (irq--) {
 		free_irq(port->ptpmsg_irq[irq].num, &port->ptpmsg_irq[irq]);
-out:
-	for (irq = 0; irq < ptpirq->nirqs; irq++)
 		irq_dispose_mapping(port->ptpmsg_irq[irq].num);
-
+	}
+out:
 	irq_domain_remove(ptpirq->domain);
 
 	return ret;

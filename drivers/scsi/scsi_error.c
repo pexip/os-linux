@@ -48,7 +48,7 @@
 
 #include <trace/events/scsi.h>
 
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 
 /*
  * These should *probably* be handled by the host itself.
@@ -61,11 +61,11 @@ static int scsi_eh_try_stu(struct scsi_cmnd *scmd);
 static enum scsi_disposition scsi_try_to_abort_cmd(const struct scsi_host_template *,
 						   struct scsi_cmnd *);
 
-void scsi_eh_wakeup(struct Scsi_Host *shost)
+void scsi_eh_wakeup(struct Scsi_Host *shost, unsigned int busy)
 {
 	lockdep_assert_held(shost->host_lock);
 
-	if (scsi_host_busy(shost) == shost->host_failed) {
+	if (busy == shost->host_failed) {
 		trace_scsi_eh_wakeup(shost);
 		wake_up_process(shost->ehandler);
 		SCSI_LOG_ERROR_RECOVERY(5, shost_printk(KERN_INFO, shost,
@@ -88,7 +88,7 @@ void scsi_schedule_eh(struct Scsi_Host *shost)
 	if (scsi_host_set_state(shost, SHOST_RECOVERY) == 0 ||
 	    scsi_host_set_state(shost, SHOST_CANCEL_RECOVERY) == 0) {
 		shost->host_eh_scheduled++;
-		scsi_eh_wakeup(shost);
+		scsi_eh_wakeup(shost, scsi_host_busy(shost));
 	}
 
 	spin_unlock_irqrestore(shost->host_lock, flags);
@@ -282,11 +282,21 @@ static void scsi_eh_inc_host_failed(struct rcu_head *head)
 {
 	struct scsi_cmnd *scmd = container_of(head, typeof(*scmd), rcu);
 	struct Scsi_Host *shost = scmd->device->host;
+	unsigned int busy;
 	unsigned long flags;
 
 	spin_lock_irqsave(shost->host_lock, flags);
 	shost->host_failed++;
-	scsi_eh_wakeup(shost);
+	spin_unlock_irqrestore(shost->host_lock, flags);
+	/*
+	 * The counting of busy requests needs to occur after adding to
+	 * host_failed or after the lock acquire for adding to host_failed
+	 * to prevent a race with host unbusy and missing an eh wakeup.
+	 */
+	busy = scsi_host_busy(shost);
+
+	spin_lock_irqsave(shost->host_lock, flags);
+	scsi_eh_wakeup(shost, busy);
 	spin_unlock_irqrestore(shost->host_lock, flags);
 }
 
@@ -301,6 +311,7 @@ void scsi_eh_scmd_add(struct scsi_cmnd *scmd)
 	int ret;
 
 	WARN_ON_ONCE(!shost->ehandler);
+	WARN_ON_ONCE(!test_bit(SCMD_STATE_INFLIGHT, &scmd->state));
 
 	spin_lock_irqsave(shost->host_lock, flags);
 	if (scsi_host_set_state(shost, SHOST_RECOVERY)) {
@@ -545,6 +556,18 @@ enum scsi_disposition scsi_check_sense(struct scsi_cmnd *scmd)
 
 	scsi_report_sense(sdev, &sshdr);
 
+	if (sshdr.sense_key == UNIT_ATTENTION) {
+		/*
+		 * Increment the counters for Power on/Reset or New Media so
+		 * that all ULDs interested in these can see that those have
+		 * happened, even if someone else gets the sense data.
+		 */
+		if (sshdr.asc == 0x28)
+			atomic_inc(&sdev->ua_new_media_ctr);
+		else if (sshdr.asc == 0x29)
+			atomic_inc(&sdev->ua_por_ctr);
+	}
+
 	if (scsi_sense_is_deferred(&sshdr))
 		return NEEDS_RETRY;
 
@@ -651,7 +674,8 @@ enum scsi_disposition scsi_check_sense(struct scsi_cmnd *scmd)
 		 * if the device is in the process of becoming ready, we
 		 * should retry.
 		 */
-		if ((sshdr.asc == 0x04) && (sshdr.ascq == 0x01))
+		if ((sshdr.asc == 0x04) &&
+		    (sshdr.ascq == 0x01 || sshdr.ascq == 0x0a))
 			return NEEDS_RETRY;
 		/*
 		 * if the device is not started, we need to wake
@@ -709,6 +733,13 @@ enum scsi_disposition scsi_check_sense(struct scsi_cmnd *scmd)
 		return SUCCESS;
 
 	case COMPLETED:
+		/*
+		 * A command using command duration limits (CDL) with a
+		 * descriptor set with policy 0xD may be completed with success
+		 * and the sense data DATA CURRENTLY UNAVAILABLE, indicating
+		 * that the command was in fact aborted because it exceeded its
+		 * duration limit. Never retry these commands.
+		 */
 		if (sshdr.asc == 0x55 && sshdr.ascq == 0x0a) {
 			set_scsi_ml_byte(scmd, SCSIML_STAT_DL_TIMEOUT);
 			req->cmd_flags |= REQ_FAILFAST_DEV;
@@ -1038,6 +1069,9 @@ void scsi_eh_prep_cmnd(struct scsi_cmnd *scmd, struct scsi_eh_save *ses,
 			unsigned char *cmnd, int cmnd_size, unsigned sense_bytes)
 {
 	struct scsi_device *sdev = scmd->device;
+#ifdef CONFIG_BLK_INLINE_ENCRYPTION
+	struct request *rq = scsi_cmd_to_rq(scmd);
+#endif
 
 	/*
 	 * We need saved copies of a number of fields - this is because
@@ -1090,6 +1124,18 @@ void scsi_eh_prep_cmnd(struct scsi_cmnd *scmd, struct scsi_eh_save *ses,
 			(sdev->lun << 5 & 0xe0);
 
 	/*
+	 * Encryption must be disabled for the commands submitted by the error handler.
+	 * Hence, clear the encryption context information.
+	 */
+#ifdef CONFIG_BLK_INLINE_ENCRYPTION
+	ses->rq_crypt_keyslot = rq->crypt_keyslot;
+	ses->rq_crypt_ctx = rq->crypt_ctx;
+
+	rq->crypt_keyslot = NULL;
+	rq->crypt_ctx = NULL;
+#endif
+
+	/*
 	 * Zero the sense buffer.  The scsi spec mandates that any
 	 * untransferred sense data should be interpreted as being zero.
 	 */
@@ -1106,6 +1152,10 @@ EXPORT_SYMBOL(scsi_eh_prep_cmnd);
  */
 void scsi_eh_restore_cmnd(struct scsi_cmnd* scmd, struct scsi_eh_save *ses)
 {
+#ifdef CONFIG_BLK_INLINE_ENCRYPTION
+	struct request *rq = scsi_cmd_to_rq(scmd);
+#endif
+
 	/*
 	 * Restore original data
 	 */
@@ -1118,6 +1168,11 @@ void scsi_eh_restore_cmnd(struct scsi_cmnd* scmd, struct scsi_eh_save *ses)
 	scmd->underflow = ses->underflow;
 	scmd->prot_op = ses->prot_op;
 	scmd->eh_eflags = ses->eh_eflags;
+
+#ifdef CONFIG_BLK_INLINE_ENCRYPTION
+	rq->crypt_keyslot = ses->rq_crypt_keyslot;
+	rq->crypt_ctx = ses->rq_crypt_ctx;
+#endif
 }
 EXPORT_SYMBOL(scsi_eh_restore_cmnd);
 
@@ -2361,14 +2416,14 @@ int scsi_error_handler(void *data)
 	return 0;
 }
 
-/*
- * Function:    scsi_report_bus_reset()
+/**
+ * scsi_report_bus_reset() - report bus reset observed
  *
- * Purpose:     Utility function used by low-level drivers to report that
- *		they have observed a bus reset on the bus being handled.
+ * Utility function used by low-level drivers to report that
+ * they have observed a bus reset on the bus being handled.
  *
- * Arguments:   shost       - Host in question
- *		channel     - channel on which reset was observed.
+ * @shost:      Host in question
+ * @channel:    channel on which reset was observed.
  *
  * Returns:     Nothing
  *
@@ -2393,15 +2448,15 @@ void scsi_report_bus_reset(struct Scsi_Host *shost, int channel)
 }
 EXPORT_SYMBOL(scsi_report_bus_reset);
 
-/*
- * Function:    scsi_report_device_reset()
+/**
+ * scsi_report_device_reset() - report device reset observed
  *
- * Purpose:     Utility function used by low-level drivers to report that
- *		they have observed a device reset on the device being handled.
+ * Utility function used by low-level drivers to report that
+ * they have observed a device reset on the device being handled.
  *
- * Arguments:   shost       - Host in question
- *		channel     - channel on which reset was observed
- *		target	    - target on which reset was observed
+ * @shost:      Host in question
+ * @channel:    channel on which reset was observed
+ * @target:     target on which reset was observed
  *
  * Returns:     Nothing
  *

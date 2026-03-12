@@ -1,4 +1,9 @@
 ##
+## file: arch/Kconfig
+##
+CONFIG_SCHED_SMT=y
+
+##
 ## file: arch/powerpc/Kconfig
 ##
 #. This feature is broken; see #866122
@@ -6,15 +11,15 @@
 CONFIG_IRQ_ALL_CPUS=y
 CONFIG_NUMA=y
 ## choice: Page size
-CONFIG_PPC_64K_PAGES=y
+CONFIG_PPC_4K_PAGES=y
 ## end choice
-CONFIG_SCHED_SMT=y
 CONFIG_KERNEL_START=0xc000000000000000
 
 ##
 ## file: arch/powerpc/crypto/Kconfig
 ##
-CONFIG_CRYPTO_CRC32C_VPMSUM=m
+CONFIG_CRYPTO_DEV_VMX=y
+CONFIG_CRYPTO_DEV_VMX_ENCRYPT=m
 
 ##
 ## file: arch/powerpc/kvm/Kconfig
@@ -49,7 +54,7 @@ CONFIG_OPAL_PRD=m
 ##
 CONFIG_PPC_PSERIES=y
 CONFIG_PPC_SPLPAR=y
-# CONFIG_LPARCFG is not set
+CONFIG_LPARCFG=y
 
 ##
 ## file: block/partitions/Kconfig
@@ -76,7 +81,6 @@ CONFIG_HW_RANDOM_POWERNV=m
 ## file: drivers/crypto/Kconfig
 ##
 CONFIG_CRYPTO_DEV_NX=y
-CONFIG_CRYPTO_DEV_VMX=y
 
 ##
 ## file: drivers/crypto/nx/Kconfig
@@ -85,11 +89,6 @@ CONFIG_CRYPTO_DEV_NX_ENCRYPT=m
 CONFIG_CRYPTO_DEV_NX_COMPRESS=m
 CONFIG_CRYPTO_DEV_NX_COMPRESS_PSERIES=m
 CONFIG_CRYPTO_DEV_NX_COMPRESS_POWERNV=m
-
-##
-## file: drivers/crypto/vmx/Kconfig
-##
-CONFIG_CRYPTO_DEV_VMX_ENCRYPT=m
 
 ##
 ## file: drivers/gpu/drm/amd/amdgpu/Kconfig
@@ -145,6 +144,7 @@ CONFIG_IBM_EMAC_RX_COPY_THRESHOLD=256
 ## file: drivers/pci/hotplug/Kconfig
 ##
 CONFIG_HOTPLUG_PCI=y
+CONFIG_HOTPLUG_PCI_POWERNV=m
 CONFIG_HOTPLUG_PCI_RPA=m
 CONFIG_HOTPLUG_PCI_RPA_DLPAR=m
 
@@ -171,16 +171,6 @@ CONFIG_HVCS=m
 ## file: drivers/tty/serial/Kconfig
 ##
 # CONFIG_SERIAL_ICOM is not set
-
-##
-## file: drivers/vfio/Kconfig
-##
-CONFIG_VFIO=m
-
-##
-## file: drivers/vfio/pci/Kconfig
-##
-CONFIG_VFIO_PCI=m
 
 ##
 ## file: drivers/video/fbdev/Kconfig
@@ -217,4 +207,3 @@ CONFIG_CPUMASK_OFFSTACK=y
 # CONFIG_FLATMEM_MANUAL is not set
 CONFIG_SPARSEMEM_MANUAL=y
 ## end choice
-CONFIG_SPARSEMEM_VMEMMAP=y

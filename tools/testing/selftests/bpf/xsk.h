@@ -93,8 +93,8 @@ static inline __u32 xsk_prod_nb_free(struct xsk_ring_prod *r, __u32 nb)
 	/* Refresh the local tail pointer.
 	 * cached_cons is r->size bigger than the real consumer pointer so
 	 * that this addition can be avoided in the more frequently
-	 * executed code that computs free_entries in the beginning of
-	 * this function. Without this optimization it whould have been
+	 * executed code that computes free_entries in the beginning of
+	 * this function. Without this optimization it would have been
 	 * free_entries = r->cached_prod - r->cached_cons + r->size.
 	 */
 	r->cached_cons = __atomic_load_n(r->consumer, __ATOMIC_ACQUIRE);
@@ -200,11 +200,12 @@ struct xsk_umem_config {
 	__u32 frame_size;
 	__u32 frame_headroom;
 	__u32 flags;
+	__u32 tx_metadata_len;
 };
 
 int xsk_attach_xdp_program(struct bpf_program *prog, int ifindex, u32 xdp_flags);
 void xsk_detach_xdp_program(int ifindex, u32 xdp_flags);
-int xsk_update_xskmap(struct bpf_map *map, struct xsk_socket *xsk);
+int xsk_update_xskmap(struct bpf_map *map, struct xsk_socket *xsk, u32 index);
 void xsk_clear_xskmap(struct bpf_map *map);
 bool xsk_is_in_mode(u32 ifindex, int mode);
 

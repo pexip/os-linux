@@ -246,14 +246,14 @@ Description:	Controls whether PRS disable is turned on for the workqueue.
 		capability.
 
 What:		/sys/bus/dsa/devices/wq<m>.<n>/occupancy
-Date		May 25, 2021
+Date:		May 25, 2021
 KernelVersion:	5.14.0
 Contact:	dmaengine@vger.kernel.org
 Description:	Show the current number of entries in this WQ if WQ Occupancy
 		Support bit WQ capabilities is 1.
 
 What:		/sys/bus/dsa/devices/wq<m>.<n>/enqcmds_retries
-Date		Oct 29, 2021
+Date:		Oct 29, 2021
 KernelVersion:	5.17.0
 Contact:	dmaengine@vger.kernel.org
 Description:	Indicate the number of retires for an enqcmds submission on a sharedwq.
@@ -269,6 +269,12 @@ Description:	Shows the operation capability bits displayed in bitmap format
 		order to configure the WQ to accept specific bits that
 		correlates to the operations allowed. It's visible only
 		on platforms that support the capability.
+
+What:		/sys/bus/dsa/devices/wq<m>.<n>/driver_name
+Date:		Sept 8, 2023
+KernelVersion:	6.7.0
+Contact:	dmaengine@vger.kernel.org
+Description:	Name of driver to be bounded to the wq.
 
 What:           /sys/bus/dsa/devices/engine<m>.<n>/group_id
 Date:           Oct 25, 2019

@@ -30,7 +30,7 @@ disabled and enabled, as well as for preemption and from a time
 a task is woken to the task is actually scheduled in.
 
 One of the most common uses of ftrace is the event tracing.
-Throughout the kernel is hundreds of static event points that
+Throughout the kernel are hundreds of static event points that
 can be enabled via the tracefs file system to see what is
 going on in certain parts of the kernel.
 
@@ -180,6 +180,21 @@ of ftrace. Here is a list of some of the key files:
 	Only active when the file contains a number greater than 0.
 	(in microseconds)
 
+  buffer_percent:
+
+	This is the watermark for how much the ring buffer needs to be filled
+	before a waiter is woken up. That is, if an application calls a
+	blocking read syscall on one of the per_cpu trace_pipe_raw files, it
+	will block until the given amount of data specified by buffer_percent
+	is in the ring buffer before it wakes the reader up. This also
+	controls how the splice system calls are blocked on this file::
+
+	  0   - means to wake up as soon as there is any data in the ring buffer.
+	  50  - means to wake up when roughly half of the ring buffer sub-buffers
+	        are full.
+	  100 - means to block until the ring buffer is totally full and is
+	        about to start overwriting the older data.
+
   buffer_size_kb:
 
 	This sets or displays the number of kilobytes each CPU
@@ -202,6 +217,27 @@ of ftrace. Here is a list of some of the key files:
   buffer_total_size_kb:
 
 	This displays the total combined size of all the trace buffers.
+
+  buffer_subbuf_size_kb:
+
+	This sets or displays the sub buffer size. The ring buffer is broken up
+	into several same size "sub buffers". An event can not be bigger than
+	the size of the sub buffer. Normally, the sub buffer is the size of the
+	architecture's page (4K on x86). The sub buffer also contains meta data
+	at the start which also limits the size of an event.  That means when
+	the sub buffer is a page size, no event can be larger than the page
+	size minus the sub buffer meta data.
+
+	Note, the buffer_subbuf_size_kb is a way for the user to specify the
+	minimum size of the subbuffer. The kernel may make it bigger due to the
+	implementation details, or simply fail the operation if the kernel can
+	not handle the request.
+
+	Changing the sub buffer size allows for events to be larger than the
+	page size.
+
+	Note: When changing the sub-buffer size, tracing is stopped and any
+	data in the ring buffer and the snapshot buffer will be discarded.
 
   free_buffer:
 
@@ -347,7 +383,7 @@ of ftrace. Here is a list of some of the key files:
 	not be listed in this count.
 
 	If the callback registered to be traced by a function with
-	the "save regs" attribute (thus even more overhead), a 'R'
+	the "save regs" attribute (thus even more overhead), an 'R'
 	will be displayed on the same line as the function that
 	is returning registers.
 
@@ -356,7 +392,7 @@ of ftrace. Here is a list of some of the key files:
 	an 'I' will be displayed on the same line as the function that
 	can be overridden.
 
-	If a non ftrace trampoline is attached (BPF) a 'D' will be displayed.
+	If a non-ftrace trampoline is attached (BPF) a 'D' will be displayed.
 	Note, normal ftrace trampolines can also be attached, but only one
 	"direct" trampoline can be attached to a given function at a time.
 
@@ -366,7 +402,7 @@ of ftrace. Here is a list of some of the key files:
 
 	If a function had either the "ip modify" or a "direct" call attached to
 	it in the past, a 'M' will be shown. This flag is never cleared. It is
-	used to know if a function was every modified by the ftrace infrastructure,
+	used to know if a function was ever modified by the ftrace infrastructure,
 	and can be used for debugging.
 
 	If the architecture supports it, it will also show what callback
@@ -382,7 +418,7 @@ of ftrace. Here is a list of some of the key files:
 
 	This file contains all the functions that ever had a function callback
 	to it via the ftrace infrastructure. It has the same format as
-	enabled_functions but shows all functions that have every been
+	enabled_functions but shows all functions that have ever been
 	traced.
 
 	To see any function that has every been modified by "ip modify" or a
@@ -481,7 +517,7 @@ of ftrace. Here is a list of some of the key files:
 	Whenever an event is recorded into the ring buffer, a
 	"timestamp" is added. This stamp comes from a specified
 	clock. By default, ftrace uses the "local" clock. This
-	clock is very fast and strictly per cpu, but on some
+	clock is very fast and strictly per CPU, but on some
 	systems it may not be monotonic with respect to other
 	CPUs. In other words, the local clocks may not be in sync
 	with local clocks on other CPUs.
@@ -774,6 +810,12 @@ Here is the list of current tracers that may be configured.
 	to draw a graph of function calls similar to C code
 	source.
 
+	Note that the function graph calculates the timings of when the
+	function starts and returns internally and for each instance. If
+	there are two instances that run function graph tracer and traces
+	the same functions, the length of the timings may be slightly off as
+	each read the timestamp separately and not at the same time.
+
   "blk"
 
 	The block tracer. The tracer used by the blktrace user
@@ -826,7 +868,7 @@ Here is the list of current tracers that may be configured.
 
   "mmiotrace"
 
-	A special tracer that is used to trace binary module.
+	A special tracer that is used to trace binary modules.
 	It will trace all the calls that a module makes to the
 	hardware. Everything it writes and reads from the I/O
 	as well.
@@ -995,14 +1037,15 @@ explains which is which.
   CPU#: The CPU which the process was running on.
 
   irqs-off: 'd' interrupts are disabled. '.' otherwise.
-	.. caution:: If the architecture does not support a way to
-		read the irq flags variable, an 'X' will always
-		be printed here.
 
   need-resched:
+	- 'B' all, TIF_NEED_RESCHED, PREEMPT_NEED_RESCHED and TIF_RESCHED_LAZY is set,
 	- 'N' both TIF_NEED_RESCHED and PREEMPT_NEED_RESCHED is set,
 	- 'n' only TIF_NEED_RESCHED is set,
 	- 'p' only PREEMPT_NEED_RESCHED is set,
+	- 'L' both PREEMPT_NEED_RESCHED and TIF_RESCHED_LAZY is set,
+	- 'b' both TIF_NEED_RESCHED and TIF_RESCHED_LAZY is set,
+	- 'l' only TIF_RESCHED_LAZY is set
 	- '.' otherwise.
 
   hardirq/softirq:
@@ -1149,6 +1192,31 @@ Here are the available options:
 
   trace_printk
 	Can disable trace_printk() from writing into the buffer.
+
+  trace_printk_dest
+	Set to have trace_printk() and similar internal tracing functions
+	write into this instance. Note, only one trace instance can have
+	this set. By setting this flag, it clears the trace_printk_dest flag
+	of the instance that had it set previously. By default, the top
+	level trace has this set, and will get it set again if another
+	instance has it set then clears it.
+
+	This flag cannot be cleared by the top level instance, as it is the
+	default instance. The only way the top level instance has this flag
+	cleared, is by it being set in another instance.
+
+  copy_trace_marker
+	If there are applications that hard code writing into the top level
+	trace_marker file (/sys/kernel/tracing/trace_marker or trace_marker_raw),
+	and the tooling would like it to go into an instance, this option can
+	be used. Create an instance and set this option, and then all writes
+	into the top level trace_marker file will also be redirected into this
+	instance.
+
+	Note, by default this option is set for the top level instance. If it
+	is disabled, then writes to the trace_marker or trace_marker_raw files
+	will not be written into the top level file. If no instance has this
+	option set, then a write will error with the errno of ENODEV.
 
   annotate
 	It is sometimes confusing when the CPU buffers are full
@@ -1932,7 +2000,7 @@ wakeup
 One common case that people are interested in tracing is the
 time it takes for a task that is woken to actually wake up.
 Now for non Real-Time tasks, this can be arbitrary. But tracing
-it none the less can be interesting. 
+it nonetheless can be interesting. 
 
 Without function tracing::
 
@@ -2574,7 +2642,7 @@ want, depending on your needs.
 
 - The cpu number on which the function executed is default
   enabled.  It is sometimes better to only trace one cpu (see
-  tracing_cpu_mask file) or you might sometimes see unordered
+  tracing_cpumask file) or you might sometimes see unordered
   function calls while cpu tracing switch.
 
 	- hide: echo nofuncgraph-cpu > trace_options
@@ -3022,7 +3090,7 @@ Notice that we lost the sys_nanosleep.
   # cat set_ftrace_filter
   hrtimer_run_queues
   hrtimer_run_pending
-  hrtimer_init
+  hrtimer_setup
   hrtimer_cancel
   hrtimer_try_to_cancel
   hrtimer_forward
@@ -3060,7 +3128,7 @@ Again, now we want to append.
   # cat set_ftrace_filter
   hrtimer_run_queues
   hrtimer_run_pending
-  hrtimer_init
+  hrtimer_setup
   hrtimer_cancel
   hrtimer_try_to_cancel
   hrtimer_forward

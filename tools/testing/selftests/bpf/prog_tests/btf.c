@@ -3535,6 +3535,66 @@ static struct btf_raw_test raw_tests[] = {
 	.value_type_id = 1,
 	.max_entries = 1,
 },
+{
+	.descr = "datasec: name '?.foo bar:buz' is ok",
+	.raw_types = {
+		/* int */
+		BTF_TYPE_INT_ENC(0, BTF_INT_SIGNED, 0, 32, 4),  /* [1] */
+		/* VAR x */                                     /* [2] */
+		BTF_TYPE_ENC(1, BTF_INFO_ENC(BTF_KIND_VAR, 0, 0), 1),
+		BTF_VAR_STATIC,
+		/* DATASEC ?.data */                            /* [3] */
+		BTF_TYPE_ENC(3, BTF_INFO_ENC(BTF_KIND_DATASEC, 0, 1), 4),
+		BTF_VAR_SECINFO_ENC(2, 0, 4),
+		BTF_END_RAW,
+	},
+	BTF_STR_SEC("\0x\0?.foo bar:buz"),
+},
+{
+	.descr = "datasec: name with non-printable first char not is ok",
+	.raw_types = {
+		/* int */
+		BTF_TYPE_INT_ENC(0, BTF_INT_SIGNED, 0, 32, 4),  /* [1] */
+		/* VAR x */                                     /* [2] */
+		BTF_TYPE_ENC(1, BTF_INFO_ENC(BTF_KIND_VAR, 0, 0), 1),
+		BTF_VAR_STATIC,
+		/* DATASEC ?.data */                            /* [3] */
+		BTF_TYPE_ENC(3, BTF_INFO_ENC(BTF_KIND_DATASEC, 0, 1), 4),
+		BTF_VAR_SECINFO_ENC(2, 0, 4),
+		BTF_END_RAW,
+	},
+	BTF_STR_SEC("\0x\0\7foo"),
+	.err_str = "Invalid name",
+	.btf_load_err = true,
+},
+{
+	.descr = "datasec: name '\\0' is not ok",
+	.raw_types = {
+		/* int */
+		BTF_TYPE_INT_ENC(0, BTF_INT_SIGNED, 0, 32, 4),  /* [1] */
+		/* VAR x */                                     /* [2] */
+		BTF_TYPE_ENC(1, BTF_INFO_ENC(BTF_KIND_VAR, 0, 0), 1),
+		BTF_VAR_STATIC,
+		/* DATASEC \0 */                                /* [3] */
+		BTF_TYPE_ENC(3, BTF_INFO_ENC(BTF_KIND_DATASEC, 0, 1), 4),
+		BTF_VAR_SECINFO_ENC(2, 0, 4),
+		BTF_END_RAW,
+	},
+	BTF_STR_SEC("\0x\0"),
+	.err_str = "Invalid name",
+	.btf_load_err = true,
+},
+{
+	.descr = "type name '?foo' is not ok",
+	.raw_types = {
+		/* union ?foo; */
+		BTF_TYPE_ENC(1, BTF_INFO_ENC(BTF_KIND_FWD, 1, 0), 0), /* [1] */
+		BTF_END_RAW,
+	},
+	BTF_STR_SEC("\0?foo"),
+	.err_str = "Invalid name",
+	.btf_load_err = true,
+},
 
 {
 	.descr = "float test #1, well-formed",
@@ -3806,11 +3866,11 @@ static struct btf_raw_test raw_tests[] = {
 	.err_str = "vlen != 0",
 },
 {
-	.descr = "decl_tag test #8, invalid kflag",
+	.descr = "decl_tag test #8, tag with kflag",
 	.raw_types = {
 		BTF_TYPE_INT_ENC(0, BTF_INT_SIGNED, 0, 32, 4),	/* [1] */
 		BTF_VAR_ENC(NAME_TBD, 1, 0),			/* [2] */
-		BTF_TYPE_ENC(NAME_TBD, BTF_INFO_ENC(BTF_KIND_DECL_TAG, 1, 0), 2), (-1),
+		BTF_DECL_ATTR_ENC(NAME_TBD, 2, -1),
 		BTF_END_RAW,
 	},
 	BTF_STR_SEC("\0local\0tag1"),
@@ -3821,8 +3881,6 @@ static struct btf_raw_test raw_tests[] = {
 	.key_type_id = 1,
 	.value_type_id = 1,
 	.max_entries = 1,
-	.btf_load_err = true,
-	.err_str = "Invalid btf_info kind_flag",
 },
 {
 	.descr = "decl_tag test #9, var, invalid component_idx",
@@ -4147,6 +4205,23 @@ static struct btf_raw_test raw_tests[] = {
 	.err_str = "Type tags don't precede modifiers",
 },
 {
+	.descr = "type_tag test #7, tag with kflag",
+	.raw_types = {
+		BTF_TYPE_INT_ENC(0, BTF_INT_SIGNED, 0, 32, 4),	/* [1] */
+		BTF_TYPE_ATTR_ENC(NAME_TBD, 1),			/* [2] */
+		BTF_PTR_ENC(2),					/* [3] */
+		BTF_END_RAW,
+	},
+	BTF_STR_SEC("\0tag"),
+	.map_type = BPF_MAP_TYPE_ARRAY,
+	.map_name = "tag_type_check_btf",
+	.key_size = sizeof(int),
+	.value_size = 4,
+	.key_type_id = 1,
+	.value_type_id = 1,
+	.max_entries = 1,
+},
+{
 	.descr = "enum64 test #1, unsigned, size 8",
 	.raw_types = {
 		BTF_TYPE_INT_ENC(0, BTF_INT_SIGNED, 0, 32, 4),			/* [1] */
@@ -4361,6 +4436,9 @@ static void do_test_raw(unsigned int test_num)
 	}
 
 	if (err || btf_fd < 0)
+		goto done;
+
+	if (!test->map_type)
 		goto done;
 
 	opts.btf_fd = btf_fd;
@@ -4630,11 +4708,6 @@ static int test_btf_id(unsigned int test_num)
 	/* The map holds the last ref to BTF and its btf_id */
 	close(map_fd);
 	map_fd = -1;
-	btf_fd[0] = bpf_btf_get_fd_by_id(map_info.btf_id);
-	if (CHECK(btf_fd[0] >= 0, "BTF lingers")) {
-		err = -1;
-		goto done;
-	}
 
 	fprintf(stderr, "OK");
 
@@ -4962,7 +5035,7 @@ struct pprint_mapv_int128 {
 static struct btf_raw_test pprint_test_template[] = {
 {
 	.raw_types = {
-		/* unsighed char */			/* [1] */
+		/* unsigned char */			/* [1] */
 		BTF_TYPE_INT_ENC(NAME_TBD, 0, 0, 8, 1),
 		/* unsigned short */			/* [2] */
 		BTF_TYPE_INT_ENC(NAME_TBD, 0, 0, 16, 2),
@@ -5029,7 +5102,7 @@ static struct btf_raw_test pprint_test_template[] = {
 	 * be encoded with kind_flag set.
 	 */
 	.raw_types = {
-		/* unsighed char */			/* [1] */
+		/* unsigned char */			/* [1] */
 		BTF_TYPE_INT_ENC(NAME_TBD, 0, 0, 8, 1),
 		/* unsigned short */			/* [2] */
 		BTF_TYPE_INT_ENC(NAME_TBD, 0, 0, 16, 2),
@@ -5096,7 +5169,7 @@ static struct btf_raw_test pprint_test_template[] = {
 	 * will have both int and enum types.
 	 */
 	.raw_types = {
-		/* unsighed char */			/* [1] */
+		/* unsigned char */			/* [1] */
 		BTF_TYPE_INT_ENC(NAME_TBD, 0, 0, 8, 1),
 		/* unsigned short */			/* [2] */
 		BTF_TYPE_INT_ENC(NAME_TBD, 0, 0, 16, 2),
@@ -5265,6 +5338,7 @@ static size_t get_pprint_mapv_size(enum pprint_mapv_kind_t mapv_kind)
 #endif
 
 	assert(0);
+	return 0;
 }
 
 static void set_pprint_mapv(enum pprint_mapv_kind_t mapv_kind,
@@ -7296,7 +7370,7 @@ static struct btf_dedup_test dedup_tests[] = {
 			BTF_FUNC_PROTO_ENC(0, 2),			/* [3] */
 				BTF_FUNC_PROTO_ARG_ENC(NAME_NTH(2), 1),
 				BTF_FUNC_PROTO_ARG_ENC(NAME_NTH(3), 1),
-			BTF_FUNC_ENC(NAME_NTH(4), 2),			/* [4] */
+			BTF_FUNC_ENC(NAME_NTH(4), 3),			/* [4] */
 			/* tag -> t */
 			BTF_DECL_TAG_ENC(NAME_NTH(5), 2, -1),		/* [5] */
 			BTF_DECL_TAG_ENC(NAME_NTH(5), 2, -1),		/* [6] */
@@ -7317,7 +7391,7 @@ static struct btf_dedup_test dedup_tests[] = {
 			BTF_FUNC_PROTO_ENC(0, 2),			/* [3] */
 				BTF_FUNC_PROTO_ARG_ENC(NAME_NTH(2), 1),
 				BTF_FUNC_PROTO_ARG_ENC(NAME_NTH(3), 1),
-			BTF_FUNC_ENC(NAME_NTH(4), 2),			/* [4] */
+			BTF_FUNC_ENC(NAME_NTH(4), 3),			/* [4] */
 			BTF_DECL_TAG_ENC(NAME_NTH(5), 2, -1),		/* [5] */
 			BTF_DECL_TAG_ENC(NAME_NTH(5), 4, -1),		/* [6] */
 			BTF_DECL_TAG_ENC(NAME_NTH(5), 4, 1),		/* [7] */

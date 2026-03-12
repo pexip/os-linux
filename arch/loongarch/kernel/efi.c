@@ -66,7 +66,18 @@ void __init efi_runtime_init(void)
 	set_bit(EFI_RUNTIME_SERVICES, &efi.flags);
 }
 
+bool efi_poweroff_required(void)
+{
+	return efi_enabled(EFI_RUNTIME_SERVICES) &&
+		(acpi_gbl_reduced_hardware || acpi_no_s5);
+}
+
 unsigned long __initdata screen_info_table = EFI_INVALID_TABLE_ADDR;
+
+#if defined(CONFIG_SYSFB) || defined(CONFIG_EFI_EARLYCON)
+struct screen_info screen_info __section(".data");
+EXPORT_SYMBOL_GPL(screen_info);
+#endif
 
 static void __init init_screen_info(void)
 {
@@ -84,7 +95,7 @@ static void __init init_screen_info(void)
 	memset(si, 0, sizeof(*si));
 	early_memunmap(si, sizeof(*si));
 
-	memblock_reserve(screen_info.lfb_base, screen_info.lfb_size);
+	memblock_reserve(__screen_info_lfb_base(&screen_info), screen_info.lfb_size);
 }
 
 void __init efi_init(void)
@@ -115,7 +126,8 @@ void __init efi_init(void)
 
 	set_bit(EFI_CONFIG_TABLES, &efi.flags);
 
-	init_screen_info();
+	if (IS_ENABLED(CONFIG_EFI_EARLYCON) || IS_ENABLED(CONFIG_SYSFB))
+		init_screen_info();
 
 	if (boot_memmap == EFI_INVALID_TABLE_ADDR)
 		return;
@@ -132,6 +144,20 @@ void __init efi_init(void)
 		if (efi_memmap_init_early(&data) < 0)
 			panic("Unable to map EFI memory map.\n");
 
+		/*
+		 * Reserve the physical memory region occupied by the EFI
+		 * memory map table (header + descriptors). This is crucial
+		 * for kdump, as the kdump kernel relies on this original
+		 * memmap passed by the bootloader. Without reservation,
+		 * this region could be overwritten by the primary kernel.
+		 * Also, set the EFI_PRESERVE_BS_REGIONS flag to indicate that
+		 * critical boot services code/data regions like this are preserved.
+		 */
+		memblock_reserve((phys_addr_t)boot_memmap, sizeof(*tbl) + data.size);
+		set_bit(EFI_PRESERVE_BS_REGIONS, &efi.flags);
+
 		early_memunmap(tbl, sizeof(*tbl));
 	}
+
+	efi_esrt_init();
 }

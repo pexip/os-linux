@@ -9,12 +9,9 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
-#include <linux/gpio.h>
 #include <linux/i2c.h>
 #include <linux/regmap.h>
 #include <linux/of.h>
-#include <linux/of_device.h>
-#include <linux/of_gpio.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
@@ -293,7 +290,7 @@ static const struct snd_soc_component_driver soc_component_dev_pcm1681 = {
 };
 
 static const struct i2c_device_id pcm1681_i2c_id[] = {
-	{"pcm1681", 0},
+	{"pcm1681"},
 	{}
 };
 MODULE_DEVICE_TABLE(i2c, pcm1681_i2c_id);

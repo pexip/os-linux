@@ -13,8 +13,8 @@
 #define __BP_HARDEN_HYP_VECS_SZ	((BP_HARDEN_EL2_SLOTS - 1) * SZ_2K)
 
 #ifndef __ASSEMBLY__
-
-#include <linux/percpu.h>
+#include <linux/smp.h>
+#include <asm/percpu.h>
 
 #include <asm/cpufeature.h>
 #include <asm/virt.h>
@@ -73,7 +73,7 @@ static __always_inline void arm64_apply_bp_hardening(void)
 {
 	struct bp_hardening_data *d;
 
-	if (!cpus_have_const_cap(ARM64_SPECTRE_V2))
+	if (!alternative_has_cap_unlikely(ARM64_SPECTRE_V2))
 		return;
 
 	d = this_cpu_ptr(&bp_hardening_data);
@@ -97,7 +97,9 @@ enum mitigation_state arm64_get_meltdown_state(void);
 
 enum mitigation_state arm64_get_spectre_bhb_state(void);
 bool is_spectre_bhb_affected(const struct arm64_cpu_capabilities *entry, int scope);
-u8 spectre_bhb_loop_affected(int scope);
+extern bool __nospectre_bhb;
+u8 get_spectre_bhb_loop_value(void);
+bool is_spectre_bhb_fw_mitigated(void);
 void spectre_bhb_enable_mitigation(const struct arm64_cpu_capabilities *__unused);
 bool try_emulate_el1_ssbs(struct pt_regs *regs, u32 instr);
 
@@ -115,6 +117,7 @@ void spectre_bhb_patch_wa3(struct alt_instr *alt,
 			   __le32 *origptr, __le32 *updptr, int nr_inst);
 void spectre_bhb_patch_clearbhb(struct alt_instr *alt,
 				__le32 *origptr, __le32 *updptr, int nr_inst);
+void spectre_print_disabled_mitigations(void);
 
 #endif	/* __ASSEMBLY__ */
 #endif	/* __ASM_SPECTRE_H */

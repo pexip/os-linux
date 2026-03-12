@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0 or BSD-3-Clause
+// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 
 /* Authors: Bernard Metzler <bmt@zurich.ibm.com> */
 /* Copyright (c) 2008-2019, IBM Corporation */
@@ -34,6 +34,15 @@ static struct page *siw_get_pblpage(struct siw_mem *mem, u64 addr, int *idx)
 	return NULL;
 }
 
+static struct page *siw_get_page(struct siw_mem *mem, struct siw_sge *sge,
+				 unsigned long offset, int *pbl_idx)
+{
+	if (!mem->is_pbl)
+		return siw_get_upage(mem->umem, sge->laddr + offset);
+	else
+		return siw_get_pblpage(mem, sge->laddr + offset, pbl_idx);
+}
+
 /*
  * Copy short payload at provided destination payload address
  */
@@ -67,11 +76,7 @@ static int siw_try_1seg(struct siw_iwarp_tx *c_tx, void *paddr)
 			char *buffer;
 			int pbl_idx = 0;
 
-			if (!mem->is_pbl)
-				p = siw_get_upage(mem->umem, sge->laddr);
-			else
-				p = siw_get_pblpage(mem, sge->laddr, &pbl_idx);
-
+			p = siw_get_page(mem, sge, 0, &pbl_idx);
 			if (unlikely(!p))
 				return -EFAULT;
 
@@ -85,13 +90,7 @@ static int siw_try_1seg(struct siw_iwarp_tx *c_tx, void *paddr)
 				memcpy(paddr, buffer + off, part);
 				kunmap_local(buffer);
 
-				if (!mem->is_pbl)
-					p = siw_get_upage(mem->umem,
-							  sge->laddr + part);
-				else
-					p = siw_get_pblpage(mem,
-							    sge->laddr + part,
-							    &pbl_idx);
+				p = siw_get_page(mem, sge, part, &pbl_idx);
 				if (unlikely(!p))
 					return -EFAULT;
 
@@ -249,14 +248,8 @@ static int siw_qp_prepare_tx(struct siw_iwarp_tx *c_tx)
 		/*
 		 * Do complete CRC if enabled and short packet
 		 */
-		if (c_tx->mpa_crc_hd) {
-			crypto_shash_init(c_tx->mpa_crc_hd);
-			if (crypto_shash_update(c_tx->mpa_crc_hd,
-						(u8 *)&c_tx->pkt,
-						c_tx->ctrl_len))
-				return -EINVAL;
-			crypto_shash_final(c_tx->mpa_crc_hd, (u8 *)crc);
-		}
+		if (c_tx->mpa_crc_enabled)
+			siw_crc_oneshot(&c_tx->pkt, c_tx->ctrl_len, (u8 *)crc);
 		c_tx->ctrl_len += MPA_CRC_SIZE;
 
 		return PKT_COMPLETE;
@@ -284,6 +277,15 @@ static int siw_qp_prepare_tx(struct siw_iwarp_tx *c_tx)
 	return PKT_FRAGMENTED;
 }
 
+static noinline_for_stack int
+siw_sendmsg(struct socket *sock, unsigned int msg_flags,
+	    struct kvec *vec, size_t num, size_t len)
+{
+	struct msghdr msg = { .msg_flags = msg_flags };
+
+	return kernel_sendmsg(sock, &msg, vec, num, len);
+}
+
 /*
  * Send out one complete control type FPDU, or header of FPDU carrying
  * data. Used for fixed sized packets like Read.Requests or zero length
@@ -292,13 +294,11 @@ static int siw_qp_prepare_tx(struct siw_iwarp_tx *c_tx)
 static int siw_tx_ctrl(struct siw_iwarp_tx *c_tx, struct socket *s,
 			      int flags)
 {
-	struct msghdr msg = { .msg_flags = flags };
 	struct kvec iov = { .iov_base =
 				    (char *)&c_tx->pkt.ctrl + c_tx->ctrl_sent,
 			    .iov_len = c_tx->ctrl_len - c_tx->ctrl_sent };
 
-	int rv = kernel_sendmsg(s, &msg, &iov, 1,
-				c_tx->ctrl_len - c_tx->ctrl_sent);
+	int rv = siw_sendmsg(s, flags, &iov, 1, iov.iov_len);
 
 	if (rv >= 0) {
 		c_tx->ctrl_sent += rv;
@@ -337,19 +337,20 @@ static int siw_tcp_sendpages(struct socket *s, struct page **page, int offset,
 			msg.msg_flags &= ~MSG_MORE;
 
 		tcp_rate_check_app_limited(sk);
+		if (!sendpage_ok(page[i]))
+			msg.msg_flags &= ~MSG_SPLICE_PAGES;
 		bvec_set_page(&bvec, page[i], bytes, offset);
-		iov_iter_bvec(&msg.msg_iter, ITER_SOURCE, &bvec, 1, size);
+		iov_iter_bvec(&msg.msg_iter, ITER_SOURCE, &bvec, 1, bytes);
 
 try_page_again:
 		lock_sock(sk);
-		rv = tcp_sendmsg_locked(sk, &msg, size);
+		rv = tcp_sendmsg_locked(sk, &msg, bytes);
 		release_sock(sk);
 
 		if (rv > 0) {
 			size -= rv;
 			sent += rv;
 			if (rv != bytes) {
-				offset += rv;
 				bytes -= rv;
 				goto try_page_again;
 			}
@@ -433,13 +434,13 @@ static void siw_unmap_pages(struct kvec *iov, unsigned long kmap_mask, int len)
  * Write out iov referencing hdr, data and trailer of current FPDU.
  * Update transmit state dependent on write return status
  */
-static int siw_tx_hdt(struct siw_iwarp_tx *c_tx, struct socket *s)
+static noinline_for_stack int siw_tx_hdt(struct siw_iwarp_tx *c_tx,
+					 struct socket *s)
 {
 	struct siw_wqe *wqe = &c_tx->wqe_active;
 	struct siw_sge *sge = &wqe->sqe.sge[c_tx->sge_idx];
 	struct kvec iov[MAX_ARRAY];
 	struct page *page_array[MAX_ARRAY];
-	struct msghdr msg = { .msg_flags = MSG_DONTWAIT | MSG_EOR };
 
 	int seg = 0, do_crc = c_tx->do_crc, is_kva = 0, rv;
 	unsigned int data_len = c_tx->bytes_unsent, hdr_len = 0, trl_len = 0,
@@ -486,9 +487,8 @@ static int siw_tx_hdt(struct siw_iwarp_tx *c_tx, struct socket *s)
 			iov[seg].iov_len = sge_len;
 
 			if (do_crc)
-				crypto_shash_update(c_tx->mpa_crc_hd,
-						    iov[seg].iov_base,
-						    sge_len);
+				siw_crc_update(&c_tx->mpa_crc,
+					       iov[seg].iov_base, sge_len);
 			sge_off += sge_len;
 			data_len -= sge_len;
 			seg++;
@@ -502,13 +502,7 @@ static int siw_tx_hdt(struct siw_iwarp_tx *c_tx, struct socket *s)
 			if (!is_kva) {
 				struct page *p;
 
-				if (mem->is_pbl)
-					p = siw_get_pblpage(
-						mem, sge->laddr + sge_off,
-						&pbl_idx);
-				else
-					p = siw_get_upage(mem->umem,
-							  sge->laddr + sge_off);
+				p = siw_get_page(mem, sge, sge_off, &pbl_idx);
 				if (unlikely(!p)) {
 					siw_unmap_pages(iov, kmap_mask, seg);
 					wqe->processed -= c_tx->bytes_unsent;
@@ -526,15 +520,14 @@ static int siw_tx_hdt(struct siw_iwarp_tx *c_tx, struct socket *s)
 					iov[seg].iov_len = plen;
 
 					if (do_crc)
-						crypto_shash_update(
-							c_tx->mpa_crc_hd,
+						siw_crc_update(
+							&c_tx->mpa_crc,
 							iov[seg].iov_base,
 							plen);
 				} else if (do_crc) {
 					kaddr = kmap_local_page(p);
-					crypto_shash_update(c_tx->mpa_crc_hd,
-							    kaddr + fp_off,
-							    plen);
+					siw_crc_update(&c_tx->mpa_crc,
+						       kaddr + fp_off, plen);
 					kunmap_local(kaddr);
 				}
 			} else {
@@ -546,10 +539,9 @@ static int siw_tx_hdt(struct siw_iwarp_tx *c_tx, struct socket *s)
 
 				page_array[seg] = ib_virt_dma_to_page(va);
 				if (do_crc)
-					crypto_shash_update(
-						c_tx->mpa_crc_hd,
-						ib_virt_dma_to_ptr(va),
-						plen);
+					siw_crc_update(&c_tx->mpa_crc,
+						       ib_virt_dma_to_ptr(va),
+						       plen);
 			}
 
 			sge_len -= plen;
@@ -586,14 +578,14 @@ sge_done:
 	if (c_tx->pad) {
 		*(u32 *)c_tx->trailer.pad = 0;
 		if (do_crc)
-			crypto_shash_update(c_tx->mpa_crc_hd,
-				(u8 *)&c_tx->trailer.crc - c_tx->pad,
-				c_tx->pad);
+			siw_crc_update(&c_tx->mpa_crc,
+				       (u8 *)&c_tx->trailer.crc - c_tx->pad,
+				       c_tx->pad);
 	}
-	if (!c_tx->mpa_crc_hd)
+	if (!c_tx->mpa_crc_enabled)
 		c_tx->trailer.crc = 0;
 	else if (do_crc)
-		crypto_shash_final(c_tx->mpa_crc_hd, (u8 *)&c_tx->trailer.crc);
+		siw_crc_final(&c_tx->mpa_crc, (u8 *)&c_tx->trailer.crc);
 
 	data_len = c_tx->bytes_unsent;
 
@@ -601,14 +593,16 @@ sge_done:
 		rv = siw_0copy_tx(s, page_array, &wqe->sqe.sge[c_tx->sge_idx],
 				  c_tx->sge_off, data_len);
 		if (rv == data_len) {
-			rv = kernel_sendmsg(s, &msg, &iov[seg], 1, trl_len);
+
+			rv = siw_sendmsg(s, MSG_DONTWAIT | MSG_EOR, &iov[seg],
+					 1, trl_len);
 			if (rv > 0)
 				rv += data_len;
 			else
 				rv = data_len;
 		}
 	} else {
-		rv = kernel_sendmsg(s, &msg, iov, seg + 1,
+		rv = siw_sendmsg(s, MSG_DONTWAIT | MSG_EOR, iov, seg + 1,
 				    hdr_len + data_len + trl_len);
 		siw_unmap_pages(iov, kmap_mask, seg);
 	}
@@ -746,10 +740,9 @@ static void siw_prepare_fpdu(struct siw_qp *qp, struct siw_wqe *wqe)
 	/*
 	 * Init MPA CRC computation
 	 */
-	if (c_tx->mpa_crc_hd) {
-		crypto_shash_init(c_tx->mpa_crc_hd);
-		crypto_shash_update(c_tx->mpa_crc_hd, (u8 *)&c_tx->pkt,
-				    c_tx->ctrl_len);
+	if (c_tx->mpa_crc_enabled) {
+		siw_crc_init(&c_tx->mpa_crc);
+		siw_crc_update(&c_tx->mpa_crc, &c_tx->pkt, c_tx->ctrl_len);
 		c_tx->do_crc = 1;
 	}
 }
@@ -1009,13 +1002,12 @@ static int siw_qp_sq_proc_local(struct siw_qp *qp, struct siw_wqe *wqe)
  * MPA FPDUs, each containing a DDP segment.
  *
  * SQ processing may occur in user context as a result of posting
- * new WQE's or from siw_sq_work_handler() context. Processing in
+ * new WQE's or from siw_tx_thread context. Processing in
  * user context is limited to non-kernel verbs users.
  *
  * SQ processing may get paused anytime, possibly in the middle of a WR
  * or FPDU, if insufficient send space is available. SQ processing
- * gets resumed from siw_sq_work_handler(), if send space becomes
- * available again.
+ * gets resumed from siw_tx_thread, if send space becomes available again.
  *
  * Must be called with the QP state read-locked.
  *

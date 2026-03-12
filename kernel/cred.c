@@ -36,7 +36,7 @@ do {									\
 static struct kmem_cache *cred_jar;
 
 /* init to 2 - one for init_task, one to ensure it is never freed */
-static struct group_info init_groups = { .usage = ATOMIC_INIT(2) };
+static struct group_info init_groups = { .usage = REFCOUNT_INIT(2) };
 
 /*
  * The initial credentials for the initial task
@@ -116,18 +116,23 @@ EXPORT_SYMBOL(__put_cred);
  */
 void exit_creds(struct task_struct *tsk)
 {
-	struct cred *cred;
+	struct cred *real_cred, *cred;
 
 	kdebug("exit_creds(%u,%p,%p,{%ld})", tsk->pid, tsk->real_cred, tsk->cred,
 	       atomic_long_read(&tsk->cred->usage));
 
-	cred = (struct cred *) tsk->real_cred;
+	real_cred = (struct cred *) tsk->real_cred;
 	tsk->real_cred = NULL;
-	put_cred(cred);
 
 	cred = (struct cred *) tsk->cred;
 	tsk->cred = NULL;
-	put_cred(cred);
+
+	if (real_cred == cred) {
+		put_cred_many(cred, 2);
+	} else {
+		put_cred(real_cred);
+		put_cred(cred);
+	}
 
 #ifdef CONFIG_KEYS_REQUEST_CACHE
 	key_put(tsk->cached_requested_key);
@@ -282,7 +287,7 @@ struct cred *prepare_exec_creds(void)
  * The new process gets the current process's subjective credentials as its
  * objective and subjective credentials
  */
-int copy_creds(struct task_struct *p, unsigned long clone_flags)
+int copy_creds(struct task_struct *p, u64 clone_flags)
 {
 	struct cred *new;
 	int ret;
@@ -297,8 +302,7 @@ int copy_creds(struct task_struct *p, unsigned long clone_flags)
 #endif
 		clone_flags & CLONE_THREAD
 	    ) {
-		p->real_cred = get_cred(p->cred);
-		get_cred(p->cred);
+		p->real_cred = get_cred_many(p->cred, 2);
 		kdebug("share_creds(%p{%ld})",
 		       p->cred, atomic_long_read(&p->cred->usage));
 		inc_rlimit_ucounts(task_ucounts(p), UCOUNT_RLIMIT_NPROC, 1);
@@ -450,8 +454,7 @@ int commit_creds(struct cred *new)
 		proc_id_connector(task, PROC_EVENT_GID);
 
 	/* release the old obj and subj refs both */
-	put_cred(old);
-	put_cred(old);
+	put_cred_many(old, 2);
 	return 0;
 }
 EXPORT_SYMBOL(commit_creds);
@@ -472,56 +475,6 @@ void abort_creds(struct cred *new)
 	put_cred(new);
 }
 EXPORT_SYMBOL(abort_creds);
-
-/**
- * override_creds - Override the current process's subjective credentials
- * @new: The credentials to be assigned
- *
- * Install a set of temporary override subjective credentials on the current
- * process, returning the old set for later reversion.
- */
-const struct cred *override_creds(const struct cred *new)
-{
-	const struct cred *old = current->cred;
-
-	kdebug("override_creds(%p{%ld})", new,
-	       atomic_long_read(&new->usage));
-
-	/*
-	 * NOTE! This uses 'get_new_cred()' rather than 'get_cred()'.
-	 *
-	 * That means that we do not clear the 'non_rcu' flag, since
-	 * we are only installing the cred into the thread-synchronous
-	 * '->cred' pointer, not the '->real_cred' pointer that is
-	 * visible to other threads under RCU.
-	 */
-	get_new_cred((struct cred *)new);
-	rcu_assign_pointer(current->cred, new);
-
-	kdebug("override_creds() = %p{%ld}", old,
-	       atomic_long_read(&old->usage));
-	return old;
-}
-EXPORT_SYMBOL(override_creds);
-
-/**
- * revert_creds - Revert a temporary subjective credentials override
- * @old: The credentials to be restored
- *
- * Revert a temporary set of override subjective credentials to an old set,
- * discarding the override set.
- */
-void revert_creds(const struct cred *old)
-{
-	const struct cred *override = current->cred;
-
-	kdebug("revert_creds(%p{%ld})", old,
-	       atomic_long_read(&old->usage));
-
-	rcu_assign_pointer(current->cred, old);
-	put_cred(override);
-}
-EXPORT_SYMBOL(revert_creds);
 
 /**
  * cred_fscmp - Compare two credentials with respect to filesystem access.
@@ -603,8 +556,8 @@ int set_cred_ucounts(struct cred *new)
 void __init cred_init(void)
 {
 	/* allocate a slab in which we can store credentials */
-	cred_jar = kmem_cache_create("cred_jar", sizeof(struct cred), 0,
-			SLAB_HWCACHE_ALIGN|SLAB_PANIC|SLAB_ACCOUNT, NULL);
+	cred_jar = KMEM_CACHE(cred,
+			      SLAB_HWCACHE_ALIGN | SLAB_PANIC | SLAB_ACCOUNT);
 }
 
 /**
