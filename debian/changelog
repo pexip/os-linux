@@ -1,3 +1,9 @@
+linux (6.6.100-1+pexip25u1) pexip-trixie; urgency=medium
+
+  * Move trixie kernel forward to 6.6.100
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Wed, 18 Mar 2026 10:36:28 +0000
+
 linux (6.6.100-1+pexip24u1) pexip; urgency=medium
 
   * Update packaging for new kernel version
