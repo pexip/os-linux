@@ -42,7 +42,6 @@
 #include <linux/io.h>
 #include <linux/mtd/partitions.h>
 #include <linux/of.h>
-#include <linux/of_gpio.h>
 #include <linux/gpio/consumer.h>
 
 #include "internals.h"
@@ -365,6 +364,10 @@ static int nand_check_wp(struct nand_chip *chip)
 
 	/* Broken xD cards report WP despite being writable */
 	if (chip->options & NAND_BROKEN_XD)
+		return 0;
+
+	/* controller responsible for NAND write protect */
+	if (chip->controller->controller_wp)
 		return 0;
 
 	/* Check the WP bit */
@@ -1212,21 +1215,36 @@ static int nand_lp_exec_read_page_op(struct nand_chip *chip, unsigned int page,
 	return nand_exec_op(chip, &op);
 }
 
+static unsigned int rawnand_last_page_of_lun(unsigned int pages_per_lun, unsigned int lun)
+{
+	/* lun is expected to be very small */
+	return (lun * pages_per_lun) + pages_per_lun - 1;
+}
+
 static void rawnand_cap_cont_reads(struct nand_chip *chip)
 {
 	struct nand_memory_organization *memorg;
-	unsigned int pages_per_lun, first_lun, last_lun;
+	unsigned int ppl, first_lun, last_lun;
 
 	memorg = nanddev_get_memorg(&chip->base);
-	pages_per_lun = memorg->pages_per_eraseblock * memorg->eraseblocks_per_lun;
-	first_lun = chip->cont_read.first_page / pages_per_lun;
-	last_lun = chip->cont_read.last_page / pages_per_lun;
+	ppl = memorg->pages_per_eraseblock * memorg->eraseblocks_per_lun;
+	first_lun = chip->cont_read.first_page / ppl;
+	last_lun = chip->cont_read.last_page / ppl;
 
 	/* Prevent sequential cache reads across LUN boundaries */
 	if (first_lun != last_lun)
-		chip->cont_read.pause_page = first_lun * pages_per_lun + pages_per_lun - 1;
+		chip->cont_read.pause_page = rawnand_last_page_of_lun(ppl, first_lun);
 	else
 		chip->cont_read.pause_page = chip->cont_read.last_page;
+
+	if (chip->cont_read.first_page == chip->cont_read.pause_page) {
+		chip->cont_read.first_page++;
+		chip->cont_read.pause_page = min(chip->cont_read.last_page,
+						 rawnand_last_page_of_lun(ppl, first_lun + 1));
+	}
+
+	if (chip->cont_read.first_page >= chip->cont_read.last_page)
+		chip->cont_read.ongoing = false;
 }
 
 static int nand_lp_exec_cont_read_page_op(struct nand_chip *chip, unsigned int page,
@@ -1293,12 +1311,11 @@ static int nand_lp_exec_cont_read_page_op(struct nand_chip *chip, unsigned int p
 	if (!chip->cont_read.ongoing)
 		return 0;
 
-	if (page == chip->cont_read.pause_page &&
-	    page != chip->cont_read.last_page) {
-		chip->cont_read.first_page = chip->cont_read.pause_page + 1;
-		rawnand_cap_cont_reads(chip);
-	} else if (page == chip->cont_read.last_page) {
+	if (page == chip->cont_read.last_page) {
 		chip->cont_read.ongoing = false;
+	} else if (page == chip->cont_read.pause_page) {
+		chip->cont_read.first_page++;
+		rawnand_cap_cont_reads(chip);
 	}
 
 	return 0;
@@ -1531,7 +1548,8 @@ static int nand_exec_prog_page_op(struct nand_chip *chip, unsigned int page,
 			    NAND_COMMON_TIMING_NS(conf, tWB_max)),
 		NAND_OP_WAIT_RDY(NAND_COMMON_TIMING_MS(conf, tPROG_max), 0),
 	};
-	struct nand_operation op = NAND_OPERATION(chip->cur_cs, instrs);
+	struct nand_operation op = NAND_DESTRUCTIVE_OPERATION(chip->cur_cs,
+							      instrs);
 	int naddrs = nand_fill_column_cycles(chip, addrs, offset_in_page);
 
 	if (naddrs < 0)
@@ -1815,7 +1833,7 @@ int nand_readid_op(struct nand_chip *chip, u8 addr, void *buf,
 
 		/* READ_ID data bytes are received twice in NV-DDR mode */
 		if (len && nand_interface_is_nvddr(conf)) {
-			ddrbuf = kzalloc(len * 2, GFP_KERNEL);
+			ddrbuf = kcalloc(2, len, GFP_KERNEL);
 			if (!ddrbuf)
 				return -ENOMEM;
 
@@ -1954,7 +1972,8 @@ int nand_erase_op(struct nand_chip *chip, unsigned int eraseblock)
 			NAND_OP_WAIT_RDY(NAND_COMMON_TIMING_MS(conf, tBERS_max),
 					 0),
 		};
-		struct nand_operation op = NAND_OPERATION(chip->cur_cs, instrs);
+		struct nand_operation op = NAND_DESTRUCTIVE_OPERATION(chip->cur_cs,
+								      instrs);
 
 		if (chip->options & NAND_ROW_ADDR_3)
 			instrs[1].ctx.addr.naddrs++;
@@ -2184,7 +2203,7 @@ int nand_read_data_op(struct nand_chip *chip, void *buf, unsigned int len,
 		 * twice.
 		 */
 		if (force_8bit && nand_interface_is_nvddr(conf)) {
-			ddrbuf = kzalloc(len * 2, GFP_KERNEL);
+			ddrbuf = kcalloc(2, len, GFP_KERNEL);
 			if (!ddrbuf)
 				return -ENOMEM;
 
@@ -2763,137 +2782,6 @@ int nand_set_features(struct nand_chip *chip, int addr,
 
 	return nand_set_features_op(chip, addr, subfeature_param);
 }
-
-/**
- * nand_check_erased_buf - check if a buffer contains (almost) only 0xff data
- * @buf: buffer to test
- * @len: buffer length
- * @bitflips_threshold: maximum number of bitflips
- *
- * Check if a buffer contains only 0xff, which means the underlying region
- * has been erased and is ready to be programmed.
- * The bitflips_threshold specify the maximum number of bitflips before
- * considering the region is not erased.
- * Note: The logic of this function has been extracted from the memweight
- * implementation, except that nand_check_erased_buf function exit before
- * testing the whole buffer if the number of bitflips exceed the
- * bitflips_threshold value.
- *
- * Returns a positive number of bitflips less than or equal to
- * bitflips_threshold, or -ERROR_CODE for bitflips in excess of the
- * threshold.
- */
-static int nand_check_erased_buf(void *buf, int len, int bitflips_threshold)
-{
-	const unsigned char *bitmap = buf;
-	int bitflips = 0;
-	int weight;
-
-	for (; len && ((uintptr_t)bitmap) % sizeof(long);
-	     len--, bitmap++) {
-		weight = hweight8(*bitmap);
-		bitflips += BITS_PER_BYTE - weight;
-		if (unlikely(bitflips > bitflips_threshold))
-			return -EBADMSG;
-	}
-
-	for (; len >= sizeof(long);
-	     len -= sizeof(long), bitmap += sizeof(long)) {
-		unsigned long d = *((unsigned long *)bitmap);
-		if (d == ~0UL)
-			continue;
-		weight = hweight_long(d);
-		bitflips += BITS_PER_LONG - weight;
-		if (unlikely(bitflips > bitflips_threshold))
-			return -EBADMSG;
-	}
-
-	for (; len > 0; len--, bitmap++) {
-		weight = hweight8(*bitmap);
-		bitflips += BITS_PER_BYTE - weight;
-		if (unlikely(bitflips > bitflips_threshold))
-			return -EBADMSG;
-	}
-
-	return bitflips;
-}
-
-/**
- * nand_check_erased_ecc_chunk - check if an ECC chunk contains (almost) only
- *				 0xff data
- * @data: data buffer to test
- * @datalen: data length
- * @ecc: ECC buffer
- * @ecclen: ECC length
- * @extraoob: extra OOB buffer
- * @extraooblen: extra OOB length
- * @bitflips_threshold: maximum number of bitflips
- *
- * Check if a data buffer and its associated ECC and OOB data contains only
- * 0xff pattern, which means the underlying region has been erased and is
- * ready to be programmed.
- * The bitflips_threshold specify the maximum number of bitflips before
- * considering the region as not erased.
- *
- * Note:
- * 1/ ECC algorithms are working on pre-defined block sizes which are usually
- *    different from the NAND page size. When fixing bitflips, ECC engines will
- *    report the number of errors per chunk, and the NAND core infrastructure
- *    expect you to return the maximum number of bitflips for the whole page.
- *    This is why you should always use this function on a single chunk and
- *    not on the whole page. After checking each chunk you should update your
- *    max_bitflips value accordingly.
- * 2/ When checking for bitflips in erased pages you should not only check
- *    the payload data but also their associated ECC data, because a user might
- *    have programmed almost all bits to 1 but a few. In this case, we
- *    shouldn't consider the chunk as erased, and checking ECC bytes prevent
- *    this case.
- * 3/ The extraoob argument is optional, and should be used if some of your OOB
- *    data are protected by the ECC engine.
- *    It could also be used if you support subpages and want to attach some
- *    extra OOB data to an ECC chunk.
- *
- * Returns a positive number of bitflips less than or equal to
- * bitflips_threshold, or -ERROR_CODE for bitflips in excess of the
- * threshold. In case of success, the passed buffers are filled with 0xff.
- */
-int nand_check_erased_ecc_chunk(void *data, int datalen,
-				void *ecc, int ecclen,
-				void *extraoob, int extraooblen,
-				int bitflips_threshold)
-{
-	int data_bitflips = 0, ecc_bitflips = 0, extraoob_bitflips = 0;
-
-	data_bitflips = nand_check_erased_buf(data, datalen,
-					      bitflips_threshold);
-	if (data_bitflips < 0)
-		return data_bitflips;
-
-	bitflips_threshold -= data_bitflips;
-
-	ecc_bitflips = nand_check_erased_buf(ecc, ecclen, bitflips_threshold);
-	if (ecc_bitflips < 0)
-		return ecc_bitflips;
-
-	bitflips_threshold -= ecc_bitflips;
-
-	extraoob_bitflips = nand_check_erased_buf(extraoob, extraooblen,
-						  bitflips_threshold);
-	if (extraoob_bitflips < 0)
-		return extraoob_bitflips;
-
-	if (data_bitflips)
-		memset(data, 0xff, datalen);
-
-	if (ecc_bitflips)
-		memset(ecc, 0xff, ecclen);
-
-	if (extraoob_bitflips)
-		memset(extraoob, 0xff, extraooblen);
-
-	return data_bitflips + ecc_bitflips + extraoob_bitflips;
-}
-EXPORT_SYMBOL(nand_check_erased_ecc_chunk);
 
 /**
  * nand_read_page_raw_notsupp - dummy read raw page function
@@ -3506,10 +3394,7 @@ static void rawnand_cont_read_skip_first_page(struct nand_chip *chip, unsigned i
 		return;
 
 	chip->cont_read.first_page++;
-	if (chip->cont_read.first_page == chip->cont_read.pause_page)
-		chip->cont_read.first_page++;
-	if (chip->cont_read.first_page >= chip->cont_read.last_page)
-		chip->cont_read.ongoing = false;
+	rawnand_cap_cont_reads(chip);
 }
 
 /**
@@ -3718,6 +3603,9 @@ read_retry:
 		}
 	}
 	nand_deselect_target(chip);
+
+	if (WARN_ON_ONCE(chip->cont_read.ongoing))
+		chip->cont_read.ongoing = false;
 
 	ops->retlen = ops->len - (size_t) readlen;
 	if (oob)
@@ -6450,11 +6338,14 @@ static int nand_scan_tail(struct nand_chip *chip)
 		ecc->steps = mtd->writesize / ecc->size;
 	if (!base->ecc.ctx.nsteps)
 		base->ecc.ctx.nsteps = ecc->steps;
-	if (ecc->steps * ecc->size != mtd->writesize) {
-		WARN(1, "Invalid ECC parameters\n");
-		ret = -EINVAL;
-		goto err_nand_manuf_cleanup;
-	}
+
+	/*
+	 * Validity check: Warn if ECC parameters are not compatible with page size.
+	 * Due to the custom handling of ECC blocks in certain controllers the check
+	 * may result in an expected failure.
+	 */
+	if (ecc->steps * ecc->size != mtd->writesize)
+		pr_warn("ECC parameters may be invalid in reference to underlying NAND chip\n");
 
 	if (!ecc->total) {
 		ecc->total = ecc->steps * ecc->bytes;

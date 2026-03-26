@@ -76,9 +76,8 @@ int crypto_engine_stop(struct crypto_engine *engine);
 struct crypto_engine *crypto_engine_alloc_init(struct device *dev, bool rt);
 struct crypto_engine *crypto_engine_alloc_init_and_set(struct device *dev,
 						       bool retry_support,
-						       int (*cbk_do_batch)(struct crypto_engine *engine),
 						       bool rt, int qlen);
-int crypto_engine_exit(struct crypto_engine *engine);
+void crypto_engine_exit(struct crypto_engine *engine);
 
 int crypto_engine_register_aead(struct aead_engine_alg *alg);
 void crypto_engine_unregister_aead(struct aead_engine_alg *alg);

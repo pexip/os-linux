@@ -13,8 +13,8 @@
 #define __BP_HARDEN_HYP_VECS_SZ	((BP_HARDEN_EL2_SLOTS - 1) * SZ_2K)
 
 #ifndef __ASSEMBLY__
-
-#include <linux/percpu.h>
+#include <linux/smp.h>
+#include <asm/percpu.h>
 
 #include <asm/cpufeature.h>
 #include <asm/virt.h>
@@ -73,7 +73,7 @@ static __always_inline void arm64_apply_bp_hardening(void)
 {
 	struct bp_hardening_data *d;
 
-	if (!cpus_have_const_cap(ARM64_SPECTRE_V2))
+	if (!alternative_has_cap_unlikely(ARM64_SPECTRE_V2))
 		return;
 
 	d = this_cpu_ptr(&bp_hardening_data);
@@ -117,6 +117,7 @@ void spectre_bhb_patch_wa3(struct alt_instr *alt,
 			   __le32 *origptr, __le32 *updptr, int nr_inst);
 void spectre_bhb_patch_clearbhb(struct alt_instr *alt,
 				__le32 *origptr, __le32 *updptr, int nr_inst);
+void spectre_print_disabled_mitigations(void);
 
 #endif	/* __ASSEMBLY__ */
 #endif	/* __ASM_SPECTRE_H */

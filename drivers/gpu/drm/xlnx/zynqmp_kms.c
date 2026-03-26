@@ -9,6 +9,7 @@
  * - Laurent Pinchart <laurent.pinchart@ideasonboard.com>
  */
 
+#include <drm/clients/drm_client_setup.h>
 #include <drm/drm_atomic.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_blend.h>
@@ -27,7 +28,6 @@
 #include <drm/drm_managed.h>
 #include <drm/drm_mode_config.h>
 #include <drm/drm_plane.h>
-#include <drm/drm_plane_helper.h>
 #include <drm/drm_probe_helper.h>
 #include <drm/drm_simple_kms_helper.h>
 #include <drm/drm_vblank.h>
@@ -121,9 +121,13 @@ static void zynqmp_dpsub_plane_atomic_update(struct drm_plane *plane,
 		zynqmp_disp_blend_set_global_alpha(dpsub->disp, true,
 						   plane->state->alpha >> 8);
 
-	/* Enable or re-enable the plane if the format has changed. */
-	if (format_changed)
-		zynqmp_disp_layer_enable(layer, ZYNQMP_DPSUB_LAYER_NONLIVE);
+	/*
+	 * Unconditionally enable the layer, as it may have been disabled
+	 * previously either explicitly to reconfigure layer format, or
+	 * implicitly after DPSUB reset during display mode change. DRM
+	 * framework calls this callback for enabled planes only.
+	 */
+	zynqmp_disp_layer_enable(layer);
 }
 
 static const struct drm_plane_helper_funcs zynqmp_dpsub_plane_helper_funcs = {
@@ -369,6 +373,7 @@ static int zynqmp_dpsub_dumb_create(struct drm_file *file_priv,
 
 static struct drm_framebuffer *
 zynqmp_dpsub_fb_create(struct drm_device *drm, struct drm_file *file_priv,
+		       const struct drm_format_info *info,
 		       const struct drm_mode_fb_cmd2 *mode_cmd)
 {
 	struct zynqmp_dpsub *dpsub = to_zynqmp_dpsub(drm);
@@ -379,7 +384,7 @@ zynqmp_dpsub_fb_create(struct drm_device *drm, struct drm_file *file_priv,
 	for (i = 0; i < ARRAY_SIZE(cmd.pitches); ++i)
 		cmd.pitches[i] = ALIGN(cmd.pitches[i], dpsub->dma_align);
 
-	return drm_gem_fb_create(drm, file_priv, &cmd);
+	return drm_gem_fb_create(drm, file_priv, info, &cmd);
 }
 
 static const struct drm_mode_config_funcs zynqmp_dpsub_mode_config_funcs = {
@@ -399,12 +404,12 @@ static const struct drm_driver zynqmp_dpsub_drm_driver = {
 					  DRIVER_ATOMIC,
 
 	DRM_GEM_DMA_DRIVER_OPS_WITH_DUMB_CREATE(zynqmp_dpsub_dumb_create),
+	DRM_FBDEV_DMA_DRIVER_OPS,
 
 	.fops				= &zynqmp_dpsub_drm_fops,
 
 	.name				= "zynqmp-dpsub",
 	.desc				= "Xilinx DisplayPort Subsystem Driver",
-	.date				= "20130509",
 	.major				= 1,
 	.minor				= 0,
 };
@@ -520,7 +525,7 @@ int zynqmp_dpsub_drm_init(struct zynqmp_dpsub *dpsub)
 		goto err_poll_fini;
 
 	/* Initialize fbdev generic emulation. */
-	drm_fbdev_dma_setup(drm, 24);
+	drm_client_setup_with_fourcc(drm, DRM_FORMAT_RGB888);
 
 	return 0;
 

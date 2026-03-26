@@ -1447,7 +1447,8 @@ release:
 
 static void ath10k_sdio_sleep_timer_handler(struct timer_list *t)
 {
-	struct ath10k_sdio *ar_sdio = from_timer(ar_sdio, t, sleep_timer);
+	struct ath10k_sdio *ar_sdio = timer_container_of(ar_sdio, t,
+							 sleep_timer);
 
 	ar_sdio->mbox_state = SDIO_MBOX_REQUEST_TO_SLEEP_STATE;
 	queue_work(ar_sdio->workqueue, &ar_sdio->wr_async_work);
@@ -1621,7 +1622,7 @@ static void ath10k_sdio_hif_power_down(struct ath10k *ar)
 
 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "sdio power off\n");
 
-	del_timer_sync(&ar_sdio->sleep_timer);
+	timer_delete_sync(&ar_sdio->sleep_timer);
 	ath10k_sdio_set_mbox_sleep(ar, true);
 
 	/* Disable the card */
@@ -1844,7 +1845,7 @@ static int ath10k_sdio_get_htt_tx_complete(struct ath10k *ar)
 	ret = ath10k_sdio_diag_read32(ar, addr, &val);
 	if (ret) {
 		ath10k_warn(ar,
-			    "unable to read hi_acs_flags for htt tx comple : %d\n", ret);
+			    "unable to read hi_acs_flags for htt tx complete: %d\n", ret);
 		return ret;
 	}
 
@@ -2486,7 +2487,11 @@ void ath10k_sdio_fw_crashed_dump(struct ath10k *ar)
 	if (fast_dump)
 		ath10k_bmi_start(ar);
 
+	mutex_lock(&ar->dump_mutex);
+
+	spin_lock_bh(&ar->data_lock);
 	ar->stats.fw_crash_counter++;
+	spin_unlock_bh(&ar->data_lock);
 
 	ath10k_sdio_disable_intrs(ar);
 
@@ -2503,6 +2508,8 @@ void ath10k_sdio_fw_crashed_dump(struct ath10k *ar)
 	ath10k_sdio_dump_memory(ar, crash_data, fast_dump);
 
 	ath10k_sdio_enable_intrs(ar);
+
+	mutex_unlock(&ar->dump_mutex);
 
 	ath10k_core_start_recovery(ar);
 }
@@ -2532,7 +2539,7 @@ static int ath10k_sdio_probe(struct sdio_func *func,
 		return -ENOMEM;
 	}
 
-	netif_napi_add(&ar->napi_dev, &ar->napi, ath10k_sdio_napi_poll);
+	netif_napi_add(ar->napi_dev, &ar->napi, ath10k_sdio_napi_poll);
 
 	ath10k_dbg(ar, ATH10K_DBG_BOOT,
 		   "sdio new func %d vendor 0x%x device 0x%x block 0x%x/0x%x\n",
@@ -2667,29 +2674,10 @@ static struct sdio_driver ath10k_sdio_driver = {
 	.probe = ath10k_sdio_probe,
 	.remove = ath10k_sdio_remove,
 	.drv = {
-		.owner = THIS_MODULE,
 		.pm = ATH10K_SDIO_PM_OPS,
 	},
 };
-
-static int __init ath10k_sdio_init(void)
-{
-	int ret;
-
-	ret = sdio_register_driver(&ath10k_sdio_driver);
-	if (ret)
-		pr_err("sdio driver registration failed: %d\n", ret);
-
-	return ret;
-}
-
-static void __exit ath10k_sdio_exit(void)
-{
-	sdio_unregister_driver(&ath10k_sdio_driver);
-}
-
-module_init(ath10k_sdio_init);
-module_exit(ath10k_sdio_exit);
+module_sdio_driver(ath10k_sdio_driver);
 
 MODULE_AUTHOR("Qualcomm Atheros");
 MODULE_DESCRIPTION("Driver support for Qualcomm Atheros 802.11ac WLAN SDIO devices");

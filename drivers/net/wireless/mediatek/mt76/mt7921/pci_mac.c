@@ -34,9 +34,9 @@ int mt7921e_tx_prepare_skb(struct mt76_dev *mdev, void *txwi_ptr,
 	if (sta) {
 		struct mt792x_sta *msta = (struct mt792x_sta *)sta->drv_priv;
 
-		if (time_after(jiffies, msta->last_txs + HZ / 4)) {
+		if (time_after(jiffies, msta->deflink.last_txs + HZ / 4)) {
 			info->flags |= IEEE80211_TX_CTL_REQ_TX_STATUS;
-			msta->last_txs = jiffies;
+			msta->deflink.last_txs = jiffies;
 		}
 	}
 
@@ -81,9 +81,12 @@ int mt7921e_mac_reset(struct mt792x_dev *dev)
 
 	mt792x_wpdma_reset(dev, true);
 
-	local_bh_disable();
 	mt76_for_each_q_rx(&dev->mt76, i) {
 		napi_enable(&dev->mt76.napi[i]);
+	}
+
+	local_bh_disable();
+	mt76_for_each_q_rx(&dev->mt76, i) {
 		napi_schedule(&dev->mt76.napi[i]);
 	}
 	local_bh_enable();
@@ -115,8 +118,8 @@ int mt7921e_mac_reset(struct mt792x_dev *dev)
 	err = __mt7921_start(&dev->phy);
 out:
 
-	local_bh_disable();
 	napi_enable(&dev->mt76.tx_napi);
+	local_bh_disable();
 	napi_schedule(&dev->mt76.tx_napi);
 	local_bh_enable();
 

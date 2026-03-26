@@ -249,6 +249,7 @@ static struct variant_data variant_stm32 = {
 	.f_max			= 48000000,
 	.pwrreg_clkgate		= true,
 	.pwrreg_nopower		= true,
+	.dma_flow_controller	= true,
 	.init			= mmci_variant_init,
 };
 
@@ -272,6 +273,7 @@ static struct variant_data variant_stm32_sdmmc = {
 	.datactrl_mask_sdio	= MCI_DPSM_ST_SDIOEN,
 	.stm32_idmabsize_mask	= GENMASK(12, 5),
 	.stm32_idmabsize_align	= BIT(5),
+	.supports_sdio_irq	= true,
 	.busy_timeout		= true,
 	.busy_detect		= true,
 	.busy_detect_flag	= MCI_STM32_BUSYD0,
@@ -299,6 +301,7 @@ static struct variant_data variant_stm32_sdmmcv2 = {
 	.datactrl_mask_sdio	= MCI_DPSM_ST_SDIOEN,
 	.stm32_idmabsize_mask	= GENMASK(16, 5),
 	.stm32_idmabsize_align	= BIT(5),
+	.supports_sdio_irq	= true,
 	.dma_lli		= true,
 	.busy_timeout		= true,
 	.busy_detect		= true,
@@ -327,6 +330,7 @@ static struct variant_data variant_stm32_sdmmcv3 = {
 	.datactrl_mask_sdio	= MCI_DPSM_ST_SDIOEN,
 	.stm32_idmabsize_mask	= GENMASK(16, 6),
 	.stm32_idmabsize_align	= BIT(6),
+	.supports_sdio_irq	= true,
 	.dma_lli		= true,
 	.busy_timeout		= true,
 	.busy_detect		= true,
@@ -420,8 +424,9 @@ void mmci_write_pwrreg(struct mmci_host *host, u32 pwr)
  */
 static void mmci_write_datactrlreg(struct mmci_host *host, u32 datactrl)
 {
-	/* Keep busy mode in DPSM if enabled */
-	datactrl |= host->datactrl_reg & host->variant->busy_dpsm_flag;
+	/* Keep busy mode in DPSM and SDIO mask if enabled */
+	datactrl |= host->datactrl_reg & (host->variant->busy_dpsm_flag |
+					  host->variant->datactrl_mask_sdio);
 
 	if (host->datactrl_reg != datactrl) {
 		host->datactrl_reg = datactrl;
@@ -1015,7 +1020,7 @@ static int _mmci_dmae_prep_data(struct mmci_host *host, struct mmc_data *data,
 		.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES,
 		.src_maxburst = variant->fifohalfsize >> 2, /* # of words */
 		.dst_maxburst = variant->fifohalfsize >> 2, /* # of words */
-		.device_fc = false,
+		.device_fc = variant->dma_flow_controller,
 	};
 	struct dma_chan *chan;
 	struct dma_device *device;
@@ -1761,6 +1766,25 @@ static irqreturn_t mmci_pio_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+static void mmci_write_sdio_irq_bit(struct mmci_host *host, int enable)
+{
+	void __iomem *base = host->base;
+	u32 mask = readl_relaxed(base + MMCIMASK0);
+
+	if (enable)
+		writel_relaxed(mask | MCI_ST_SDIOITMASK, base + MMCIMASK0);
+	else
+		writel_relaxed(mask & ~MCI_ST_SDIOITMASK, base + MMCIMASK0);
+}
+
+static void mmci_signal_sdio_irq(struct mmci_host *host, u32 status)
+{
+	if (status & MCI_ST_SDIOIT) {
+		mmci_write_sdio_irq_bit(host, 0);
+		sdio_signal_irq(host->mmc);
+	}
+}
+
 /*
  * Handle completion of command and data transfers.
  */
@@ -1804,6 +1828,9 @@ static irqreturn_t mmci_irq(int irq, void *dev_id)
 			mmci_cmd_irq(host, host->cmd, status);
 			mmci_data_irq(host, host->data, status);
 		}
+
+		if (host->variant->supports_sdio_irq)
+			mmci_signal_sdio_irq(host, status);
 
 		/*
 		 * Busy detection has been handled by mmci_cmd_irq() above.
@@ -2041,6 +2068,34 @@ static int mmci_sig_volt_switch(struct mmc_host *mmc, struct mmc_ios *ios)
 	return ret;
 }
 
+static void mmci_enable_sdio_irq(struct mmc_host *mmc, int enable)
+{
+	struct mmci_host *host = mmc_priv(mmc);
+	unsigned long flags;
+
+	if (enable)
+		/* Keep the SDIO mode bit if SDIO irqs are enabled */
+		pm_runtime_get_sync(mmc_dev(mmc));
+
+	spin_lock_irqsave(&host->lock, flags);
+	mmci_write_sdio_irq_bit(host, enable);
+	spin_unlock_irqrestore(&host->lock, flags);
+
+	if (!enable) {
+		pm_runtime_put_autosuspend(mmc_dev(mmc));
+	}
+}
+
+static void mmci_ack_sdio_irq(struct mmc_host *mmc)
+{
+	struct mmci_host *host = mmc_priv(mmc);
+	unsigned long flags;
+
+	spin_lock_irqsave(&host->lock, flags);
+	mmci_write_sdio_irq_bit(host, 1);
+	spin_unlock_irqrestore(&host->lock, flags);
+}
+
 static struct mmc_host_ops mmci_ops = {
 	.request	= mmci_request,
 	.pre_req	= mmci_pre_request,
@@ -2167,7 +2222,7 @@ static int mmci_probe(struct amba_device *dev,
 			return -ENOMEM;
 	}
 
-	mmc = mmc_alloc_host(sizeof(struct mmci_host), &dev->dev);
+	mmc = devm_mmc_alloc_host(&dev->dev, sizeof(*host));
 	if (!mmc)
 		return -ENOMEM;
 
@@ -2178,7 +2233,7 @@ static int mmci_probe(struct amba_device *dev,
 
 	ret = mmci_of_parse(np, mmc);
 	if (ret)
-		goto host_free;
+		return ret;
 
 	/*
 	 * Some variant (STM32) doesn't have opendrain bit, nevertheless
@@ -2186,19 +2241,15 @@ static int mmci_probe(struct amba_device *dev,
 	 */
 	if (!variant->opendrain) {
 		host->pinctrl = devm_pinctrl_get(&dev->dev);
-		if (IS_ERR(host->pinctrl)) {
-			dev_err(&dev->dev, "failed to get pinctrl");
-			ret = PTR_ERR(host->pinctrl);
-			goto host_free;
-		}
+		if (IS_ERR(host->pinctrl))
+			return dev_err_probe(&dev->dev, PTR_ERR(host->pinctrl),
+					     "failed to get pinctrl\n");
 
 		host->pins_opendrain = pinctrl_lookup_state(host->pinctrl,
 							    MMCI_PINCTRL_STATE_OPENDRAIN);
-		if (IS_ERR(host->pins_opendrain)) {
-			dev_err(mmc_dev(mmc), "Can't select opendrain pins\n");
-			ret = PTR_ERR(host->pins_opendrain);
-			goto host_free;
-		}
+		if (IS_ERR(host->pins_opendrain))
+			return dev_err_probe(&dev->dev, PTR_ERR(host->pins_opendrain),
+					     "Can't select opendrain pins\n");
 	}
 
 	host->hw_designer = amba_manf(dev);
@@ -2207,14 +2258,12 @@ static int mmci_probe(struct amba_device *dev,
 	dev_dbg(mmc_dev(mmc), "revision = 0x%01x\n", host->hw_revision);
 
 	host->clk = devm_clk_get(&dev->dev, NULL);
-	if (IS_ERR(host->clk)) {
-		ret = PTR_ERR(host->clk);
-		goto host_free;
-	}
+	if (IS_ERR(host->clk))
+		return PTR_ERR(host->clk);
 
 	ret = clk_prepare_enable(host->clk);
 	if (ret)
-		goto host_free;
+		return ret;
 
 	if (variant->qcom_fifo)
 		host->get_rx_fifocnt = mmci_qcom_get_rx_fifocnt;
@@ -2314,6 +2363,16 @@ static int mmci_probe(struct amba_device *dev,
 			mmci_write_datactrlreg(host,
 					       host->variant->busy_dpsm_flag);
 		mmc->caps |= MMC_CAP_WAIT_WHILE_BUSY;
+	}
+
+	if (variant->supports_sdio_irq && host->mmc->caps & MMC_CAP_SDIO_IRQ) {
+		mmc->caps2 |= MMC_CAP2_SDIO_IRQ_NOTHREAD;
+
+		mmci_ops.enable_sdio_irq = mmci_enable_sdio_irq;
+		mmci_ops.ack_sdio_irq	= mmci_ack_sdio_irq;
+
+		mmci_write_datactrlreg(host,
+				       host->variant->datactrl_mask_sdio);
 	}
 
 	/* Variants with mandatory busy timeout in HW needs R1B responses. */
@@ -2425,8 +2484,6 @@ static int mmci_probe(struct amba_device *dev,
 
  clk_disable:
 	clk_disable_unprepare(host->clk);
- host_free:
-	mmc_free_host(mmc);
 	return ret;
 }
 
@@ -2456,11 +2513,9 @@ static void mmci_remove(struct amba_device *dev)
 
 		mmci_dma_release(host);
 		clk_disable_unprepare(host->clk);
-		mmc_free_host(mmc);
 	}
 }
 
-#ifdef CONFIG_PM
 static void mmci_save(struct mmci_host *host)
 {
 	unsigned long flags;
@@ -2525,12 +2580,10 @@ static int mmci_runtime_resume(struct device *dev)
 
 	return 0;
 }
-#endif
 
 static const struct dev_pm_ops mmci_dev_pm_ops = {
-	SET_SYSTEM_SLEEP_PM_OPS(pm_runtime_force_suspend,
-				pm_runtime_force_resume)
-	SET_RUNTIME_PM_OPS(mmci_runtime_suspend, mmci_runtime_resume, NULL)
+	SYSTEM_SLEEP_PM_OPS(pm_runtime_force_suspend, pm_runtime_force_resume)
+	RUNTIME_PM_OPS(mmci_runtime_suspend, mmci_runtime_resume, NULL)
 };
 
 static const struct amba_id mmci_ids[] = {
@@ -2619,7 +2672,7 @@ MODULE_DEVICE_TABLE(amba, mmci_ids);
 static struct amba_driver mmci_driver = {
 	.drv		= {
 		.name	= DRIVER_NAME,
-		.pm	= &mmci_dev_pm_ops,
+		.pm	= pm_ptr(&mmci_dev_pm_ops),
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 	.probe		= mmci_probe,

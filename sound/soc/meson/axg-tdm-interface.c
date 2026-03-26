@@ -133,7 +133,7 @@ static int axg_tdm_iface_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 
 	case SND_SOC_DAIFMT_BP_FC:
 	case SND_SOC_DAIFMT_BC_FP:
-		dev_err(dai->dev, "only CBS_CFS and CBM_CFM are supported\n");
+		dev_err(dai->dev, "only BP_FP and BC_FC are supported\n");
 		fallthrough;
 	default:
 		return -EINVAL;
@@ -309,6 +309,7 @@ static int axg_tdm_iface_hw_params(struct snd_pcm_substream *substream,
 				   struct snd_soc_dai *dai)
 {
 	struct axg_tdm_iface *iface = snd_soc_dai_get_drvdata(dai);
+	struct axg_tdm_stream *ts = snd_soc_dai_get_dma_data(dai, substream);
 	int ret;
 
 	switch (iface->fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
@@ -346,7 +347,19 @@ static int axg_tdm_iface_hw_params(struct snd_pcm_substream *substream,
 			return ret;
 	}
 
-	return 0;
+	ret = axg_tdm_stream_set_cont_clocks(ts, iface->fmt);
+	if (ret)
+		dev_err(dai->dev, "failed to apply continuous clock setting\n");
+
+	return ret;
+}
+
+static int axg_tdm_iface_hw_free(struct snd_pcm_substream *substream,
+				 struct snd_soc_dai *dai)
+{
+	struct axg_tdm_stream *ts = snd_soc_dai_get_dma_data(dai, substream);
+
+	return axg_tdm_stream_set_cont_clocks(ts, 0);
 }
 
 static int axg_tdm_iface_trigger(struct snd_pcm_substream *substream,
@@ -417,6 +430,7 @@ static const struct snd_soc_dai_ops axg_tdm_iface_ops = {
 	.set_fmt	= axg_tdm_iface_set_fmt,
 	.startup	= axg_tdm_iface_startup,
 	.hw_params	= axg_tdm_iface_hw_params,
+	.hw_free	= axg_tdm_iface_hw_free,
 	.trigger	= axg_tdm_iface_trigger,
 };
 
@@ -428,14 +442,18 @@ static const struct snd_soc_dai_driver axg_tdm_iface_dai_drv[] = {
 			.stream_name	= "Playback",
 			.channels_min	= 1,
 			.channels_max	= AXG_TDM_CHANNEL_MAX,
-			.rates		= AXG_TDM_RATES,
+			.rates		= SNDRV_PCM_RATE_CONTINUOUS,
+			.rate_min	= 5512,
+			.rate_max	= 768000,
 			.formats	= AXG_TDM_FORMATS,
 		},
 		.capture = {
 			.stream_name	= "Capture",
 			.channels_min	= 1,
 			.channels_max	= AXG_TDM_CHANNEL_MAX,
-			.rates		= AXG_TDM_RATES,
+			.rates		= SNDRV_PCM_RATE_CONTINUOUS,
+			.rate_min	= 5512,
+			.rate_max	= 768000,
 			.formats	= AXG_TDM_FORMATS,
 		},
 		.id = TDM_IFACE_PAD,
@@ -447,7 +465,9 @@ static const struct snd_soc_dai_driver axg_tdm_iface_dai_drv[] = {
 			.stream_name	= "Loopback",
 			.channels_min	= 1,
 			.channels_max	= AXG_TDM_CHANNEL_MAX,
-			.rates		= AXG_TDM_RATES,
+			.rates		= SNDRV_PCM_RATE_CONTINUOUS,
+			.rate_min	= 5512,
+			.rate_max	= 768000,
 			.formats	= AXG_TDM_FORMATS,
 		},
 		.id = TDM_IFACE_LOOPBACK,
@@ -509,7 +529,6 @@ static int axg_tdm_iface_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct snd_soc_dai_driver *dai_drv;
 	struct axg_tdm_iface *iface;
-	int i;
 
 	iface = devm_kzalloc(dev, sizeof(*iface), GFP_KERNEL);
 	if (!iface)
@@ -521,14 +540,10 @@ static int axg_tdm_iface_probe(struct platform_device *pdev)
 	 * We'll change the number of channel provided by DAI stream, so dpcm
 	 * channel merge can be done properly
 	 */
-	dai_drv = devm_kcalloc(dev, ARRAY_SIZE(axg_tdm_iface_dai_drv),
-			       sizeof(*dai_drv), GFP_KERNEL);
+	dai_drv = devm_kmemdup_array(dev, axg_tdm_iface_dai_drv, ARRAY_SIZE(axg_tdm_iface_dai_drv),
+				     sizeof(axg_tdm_iface_dai_drv[0]), GFP_KERNEL);
 	if (!dai_drv)
 		return -ENOMEM;
-
-	for (i = 0; i < ARRAY_SIZE(axg_tdm_iface_dai_drv); i++)
-		memcpy(&dai_drv[i], &axg_tdm_iface_dai_drv[i],
-		       sizeof(*dai_drv));
 
 	/* Bit clock provided on the pad */
 	iface->sclk = devm_clk_get(dev, "sclk");

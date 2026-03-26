@@ -8,10 +8,12 @@
  * The serial core bus manages the serial core controller instances.
  */
 
+#include <linux/cleanup.h>
 #include <linux/container_of.h>
 #include <linux/device.h>
 #include <linux/idr.h>
 #include <linux/module.h>
+#include <linux/property.h>
 #include <linux/serial_core.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
@@ -28,7 +30,7 @@ static const struct device_type serial_port_type = {
 	.name = "port",
 };
 
-static int serial_base_match(struct device *dev, struct device_driver *drv)
+static int serial_base_match(struct device *dev, const struct device_driver *drv)
 {
 	if (dev->type == &serial_ctrl_type &&
 	    str_has_prefix(drv->name, serial_ctrl_type.name))
@@ -41,7 +43,7 @@ static int serial_base_match(struct device *dev, struct device_driver *drv)
 	return 0;
 }
 
-static struct bus_type serial_base_bus_type = {
+static const struct bus_type serial_base_bus_type = {
 	.name = "serial-base",
 	.match = serial_base_match,
 };
@@ -58,6 +60,7 @@ void serial_base_driver_unregister(struct device_driver *driver)
 	driver_unregister(driver);
 }
 
+/* On failure the caller must put device @dev with put_device() */
 static int serial_base_device_init(struct uart_port *port,
 				   struct device *dev,
 				   struct device *parent_dev,
@@ -71,6 +74,9 @@ static int serial_base_device_init(struct uart_port *port,
 	dev->parent = parent_dev;
 	dev->bus = &serial_base_bus_type;
 	dev->release = release;
+	dev->of_node_reused = true;
+
+	device_set_node(dev, fwnode_handle_get(dev_fwnode(parent_dev)));
 
 	if (!serial_base_initialized) {
 		dev_dbg(port->dev, "uart_add_one_port() called before arch_initcall()?\n");
@@ -91,6 +97,7 @@ static void serial_base_ctrl_release(struct device *dev)
 {
 	struct serial_ctrl_device *ctrl_dev = to_serial_base_ctrl_device(dev);
 
+	fwnode_handle_put(dev_fwnode(dev));
 	kfree(ctrl_dev);
 }
 
@@ -138,6 +145,7 @@ static void serial_base_port_release(struct device *dev)
 {
 	struct serial_port_device *port_dev = to_serial_base_port_device(dev);
 
+	fwnode_handle_put(dev_fwnode(dev));
 	kfree(port_dev);
 }
 
@@ -203,6 +211,42 @@ void serial_base_port_device_remove(struct serial_port_device *port_dev)
 	ida_free(&ctrl_dev->port_ida, port_dev->port->port_id);
 	put_device(&port_dev->dev);
 }
+
+#ifdef CONFIG_SERIAL_CORE_CONSOLE
+
+/**
+ * serial_base_match_and_update_preferred_console - Match and update a preferred console
+ * @drv: Serial port device driver
+ * @port: Serial port instance
+ *
+ * Tries to match and update the preferred console for a serial port for
+ * the kernel command line option console=DEVNAME:0.0.
+ *
+ * Cannot be called early for ISA ports, depends on struct device.
+ *
+ * Return: 0 on success, negative error code on failure.
+ */
+int serial_base_match_and_update_preferred_console(struct uart_driver *drv,
+						   struct uart_port *port)
+{
+	const char *port_match __free(kfree) = NULL;
+	int ret;
+
+	port_match = kasprintf(GFP_KERNEL, "%s:%d.%d", dev_name(port->dev),
+			       port->ctrl_id, port->port_id);
+	if (!port_match)
+		return -ENOMEM;
+
+	ret = match_devname_and_update_preferred_console(port_match,
+							 drv->dev_name,
+							 port->line);
+	if (ret == -ENOENT)
+		return 0;
+
+	return ret;
+}
+
+#endif
 
 static int serial_base_init(void)
 {

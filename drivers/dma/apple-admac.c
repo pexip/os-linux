@@ -130,7 +130,7 @@ struct admac_data {
 	int irq;
 	int irq_index;
 	int nchannels;
-	struct admac_chan channels[];
+	struct admac_chan channels[] __counted_by(nchannels);
 };
 
 struct admac_tx {
@@ -925,7 +925,7 @@ free_reset:
 	return err;
 }
 
-static int admac_remove(struct platform_device *pdev)
+static void admac_remove(struct platform_device *pdev)
 {
 	struct admac_data *ad = platform_get_drvdata(pdev);
 
@@ -933,11 +933,10 @@ static int admac_remove(struct platform_device *pdev)
 	dma_async_device_unregister(&ad->dma);
 	free_irq(ad->irq, ad);
 	reset_control_rearm(ad->rstc);
-
-	return 0;
 }
 
 static const struct of_device_id admac_of_match[] = {
+	{ .compatible = "apple,t8103-admac", },
 	{ .compatible = "apple,admac", },
 	{ }
 };

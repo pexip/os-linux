@@ -92,6 +92,26 @@ static const struct devlink_param devlink_param_generic[] = {
 		.name = DEVLINK_PARAM_GENERIC_EVENT_EQ_SIZE_NAME,
 		.type = DEVLINK_PARAM_GENERIC_EVENT_EQ_SIZE_TYPE,
 	},
+	{
+		.id = DEVLINK_PARAM_GENERIC_ID_ENABLE_PHC,
+		.name = DEVLINK_PARAM_GENERIC_ENABLE_PHC_NAME,
+		.type = DEVLINK_PARAM_GENERIC_ENABLE_PHC_TYPE,
+	},
+	{
+		.id = DEVLINK_PARAM_GENERIC_ID_CLOCK_ID,
+		.name = DEVLINK_PARAM_GENERIC_CLOCK_ID_NAME,
+		.type = DEVLINK_PARAM_GENERIC_CLOCK_ID_TYPE,
+	},
+	{
+		.id = DEVLINK_PARAM_GENERIC_ID_TOTAL_VFS,
+		.name = DEVLINK_PARAM_GENERIC_TOTAL_VFS_NAME,
+		.type = DEVLINK_PARAM_GENERIC_TOTAL_VFS_TYPE,
+	},
+	{
+		.id = DEVLINK_PARAM_GENERIC_ID_NUM_DOORBELLS,
+		.name = DEVLINK_PARAM_GENERIC_NUM_DOORBELLS_NAME,
+		.type = DEVLINK_PARAM_GENERIC_NUM_DOORBELLS_TYPE,
+	},
 };
 
 static int devlink_param_generic_verify(const struct devlink_param *param)
@@ -158,30 +178,12 @@ static int devlink_param_get(struct devlink *devlink,
 
 static int devlink_param_set(struct devlink *devlink,
 			     const struct devlink_param *param,
-			     struct devlink_param_gset_ctx *ctx)
+			     struct devlink_param_gset_ctx *ctx,
+			     struct netlink_ext_ack *extack)
 {
 	if (!param->set)
 		return -EOPNOTSUPP;
-	return param->set(devlink, param->id, ctx);
-}
-
-static int
-devlink_param_type_to_nla_type(enum devlink_param_type param_type)
-{
-	switch (param_type) {
-	case DEVLINK_PARAM_TYPE_U8:
-		return NLA_U8;
-	case DEVLINK_PARAM_TYPE_U16:
-		return NLA_U16;
-	case DEVLINK_PARAM_TYPE_U32:
-		return NLA_U32;
-	case DEVLINK_PARAM_TYPE_STRING:
-		return NLA_STRING;
-	case DEVLINK_PARAM_TYPE_BOOL:
-		return NLA_FLAG;
-	default:
-		return -EINVAL;
-	}
+	return param->set(devlink, param->id, ctx, extack);
 }
 
 static int
@@ -211,6 +213,11 @@ devlink_nl_param_value_fill_one(struct sk_buff *msg,
 		break;
 	case DEVLINK_PARAM_TYPE_U32:
 		if (nla_put_u32(msg, DEVLINK_ATTR_PARAM_VALUE_DATA, val.vu32))
+			goto value_nest_cancel;
+		break;
+	case DEVLINK_PARAM_TYPE_U64:
+		if (devlink_nl_put_u64(msg, DEVLINK_ATTR_PARAM_VALUE_DATA,
+				       val.vu64))
 			goto value_nest_cancel;
 		break;
 	case DEVLINK_PARAM_TYPE_STRING:
@@ -246,7 +253,6 @@ static int devlink_nl_param_fill(struct sk_buff *msg, struct devlink *devlink,
 	struct devlink_param_gset_ctx ctx;
 	struct nlattr *param_values_list;
 	struct nlattr *param_attr;
-	int nla_type;
 	void *hdr;
 	int err;
 	int i;
@@ -292,11 +298,7 @@ static int devlink_nl_param_fill(struct sk_buff *msg, struct devlink *devlink,
 		goto param_nest_cancel;
 	if (param->generic && nla_put_flag(msg, DEVLINK_ATTR_PARAM_GENERIC))
 		goto param_nest_cancel;
-
-	nla_type = devlink_param_type_to_nla_type(param->type);
-	if (nla_type < 0)
-		goto param_nest_cancel;
-	if (nla_put_u8(msg, DEVLINK_ATTR_PARAM_TYPE, nla_type))
+	if (nla_put_u8(msg, DEVLINK_ATTR_PARAM_TYPE, param->type))
 		goto param_nest_cancel;
 
 	param_values_list = nla_nest_start_noflag(msg,
@@ -343,7 +345,7 @@ static void devlink_param_notify(struct devlink *devlink,
 	 * will replay the notifications if the params are added/removed
 	 * outside of the lifetime of the instance.
 	 */
-	if (!devl_is_registered(devlink))
+	if (!devl_is_registered(devlink) || !devlink_nl_notify_need(devlink))
 		return;
 
 	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
@@ -356,8 +358,7 @@ static void devlink_param_notify(struct devlink *devlink,
 		return;
 	}
 
-	genlmsg_multicast_netns(&devlink_nl_family, devlink_net(devlink),
-				msg, 0, DEVLINK_MCGRP_CONFIG, GFP_KERNEL);
+	devlink_nl_notify_send(devlink, msg);
 }
 
 static void devlink_params_notify(struct devlink *devlink,
@@ -419,25 +420,7 @@ devlink_param_type_get_from_info(struct genl_info *info,
 	if (GENL_REQ_ATTR_CHECK(info, DEVLINK_ATTR_PARAM_TYPE))
 		return -EINVAL;
 
-	switch (nla_get_u8(info->attrs[DEVLINK_ATTR_PARAM_TYPE])) {
-	case NLA_U8:
-		*param_type = DEVLINK_PARAM_TYPE_U8;
-		break;
-	case NLA_U16:
-		*param_type = DEVLINK_PARAM_TYPE_U16;
-		break;
-	case NLA_U32:
-		*param_type = DEVLINK_PARAM_TYPE_U32;
-		break;
-	case NLA_STRING:
-		*param_type = DEVLINK_PARAM_TYPE_STRING;
-		break;
-	case NLA_FLAG:
-		*param_type = DEVLINK_PARAM_TYPE_BOOL;
-		break;
-	default:
-		return -EINVAL;
-	}
+	*param_type = nla_get_u8(info->attrs[DEVLINK_ATTR_PARAM_TYPE]);
 
 	return 0;
 }
@@ -470,6 +453,11 @@ devlink_param_value_get_from_info(const struct devlink_param *param,
 		if (nla_len(param_data) != sizeof(u32))
 			return -EINVAL;
 		value->vu32 = nla_get_u32(param_data);
+		break;
+	case DEVLINK_PARAM_TYPE_U64:
+		if (nla_len(param_data) != sizeof(u64))
+			return -EINVAL;
+		value->vu64 = nla_get_u64(param_data);
 		break;
 	case DEVLINK_PARAM_TYPE_STRING:
 		len = strnlen(nla_data(param_data), nla_len(param_data));
@@ -572,7 +560,7 @@ static int __devlink_nl_cmd_param_set_doit(struct devlink *devlink,
 			return -EOPNOTSUPP;
 		ctx.val = value;
 		ctx.cmode = cmode;
-		err = devlink_param_set(devlink, param, &ctx);
+		err = devlink_param_set(devlink, param, &ctx, info->extack);
 		if (err)
 			return err;
 	}
@@ -581,7 +569,7 @@ static int __devlink_nl_cmd_param_set_doit(struct devlink *devlink,
 	return 0;
 }
 
-int devlink_nl_cmd_param_set_doit(struct sk_buff *skb, struct genl_info *info)
+int devlink_nl_param_set_doit(struct sk_buff *skb, struct genl_info *info)
 {
 	struct devlink *devlink = info->user_ptr[0];
 
@@ -589,22 +577,22 @@ int devlink_nl_cmd_param_set_doit(struct sk_buff *skb, struct genl_info *info)
 					       info, DEVLINK_CMD_PARAM_NEW);
 }
 
-int devlink_nl_cmd_port_param_get_dumpit(struct sk_buff *msg,
-					 struct netlink_callback *cb)
+int devlink_nl_port_param_get_dumpit(struct sk_buff *msg,
+				     struct netlink_callback *cb)
 {
 	NL_SET_ERR_MSG(cb->extack, "Port params are not supported");
 	return msg->len;
 }
 
-int devlink_nl_cmd_port_param_get_doit(struct sk_buff *skb,
-				       struct genl_info *info)
+int devlink_nl_port_param_get_doit(struct sk_buff *skb,
+				   struct genl_info *info)
 {
 	NL_SET_ERR_MSG(info->extack, "Port params are not supported");
 	return -EINVAL;
 }
 
-int devlink_nl_cmd_port_param_set_doit(struct sk_buff *skb,
-				       struct genl_info *info)
+int devlink_nl_port_param_set_doit(struct sk_buff *skb,
+				   struct genl_info *info)
 {
 	NL_SET_ERR_MSG(info->extack, "Port params are not supported");
 	return -EINVAL;

@@ -131,6 +131,8 @@
  * @i2c_clk: clock reference for i2c input clock
  * @bus_clk_rate: current i2c bus clock rate
  * @last: a flag indicating is this is last message in transfer
+ * @slave: associated &i2c_client
+ * @irq: platform device IRQ number
  */
 struct axxia_i2c_dev {
 	void __iomem *base;
@@ -165,7 +167,7 @@ static void i2c_int_enable(struct axxia_i2c_dev *idev, u32 mask)
 	writel(int_en | mask, idev->base + MST_INT_ENABLE);
 }
 
-/**
+/*
  * ns_to_clk - Convert time (ns) to clock cycles for the given clock frequency.
  */
 static u32 ns_to_clk(u64 ns, u32 clk_mhz)
@@ -253,17 +255,12 @@ static int i2c_m_rd(const struct i2c_msg *msg)
 	return (msg->flags & I2C_M_RD) != 0;
 }
 
-static int i2c_m_ten(const struct i2c_msg *msg)
-{
-	return (msg->flags & I2C_M_TEN) != 0;
-}
-
 static int i2c_m_recv_len(const struct i2c_msg *msg)
 {
 	return (msg->flags & I2C_M_RECV_LEN) != 0;
 }
 
-/**
+/*
  * axxia_i2c_empty_rx_fifo - Fetch data from RX FIFO and update SMBus block
  * transfer length if this is the first byte of such a transfer.
  */
@@ -295,7 +292,7 @@ static int axxia_i2c_empty_rx_fifo(struct axxia_i2c_dev *idev)
 	return 0;
 }
 
-/**
+/*
  * axxia_i2c_fill_tx_fifo - Fill TX FIFO from current message buffer.
  * @return: Number of bytes left to transfer.
  */
@@ -437,20 +434,10 @@ static void axxia_i2c_set_addr(struct axxia_i2c_dev *idev, struct i2c_msg *msg)
 {
 	u32 addr_1, addr_2;
 
-	if (i2c_m_ten(msg)) {
-		/* 10-bit address
-		 *   addr_1: 5'b11110 | addr[9:8] | (R/nW)
-		 *   addr_2: addr[7:0]
-		 */
-		addr_1 = 0xF0 | ((msg->addr >> 7) & 0x06);
-		if (i2c_m_rd(msg))
-			addr_1 |= 1;	/* Set the R/nW bit of the address */
-		addr_2 = msg->addr & 0xFF;
+	if (msg->flags & I2C_M_TEN) {
+		addr_1 = i2c_10bit_addr_hi_from_msg(msg);
+		addr_2 = i2c_10bit_addr_lo_from_msg(msg);
 	} else {
-		/* 7-bit address
-		 *   addr_1: addr[6:0] | (R/nW)
-		 *   addr_2: dont care
-		 */
 		addr_1 = i2c_8bit_addr_from_msg(msg);
 		addr_2 = 0;
 	}
@@ -719,7 +706,7 @@ static int axxia_i2c_unreg_slave(struct i2c_client *slave)
 }
 
 static const struct i2c_algorithm axxia_i2c_algo = {
-	.master_xfer = axxia_i2c_xfer,
+	.xfer = axxia_i2c_xfer,
 	.functionality = axxia_i2c_func,
 	.reg_slave = axxia_i2c_reg_slave,
 	.unreg_slave = axxia_i2c_unreg_slave,
@@ -822,7 +809,7 @@ MODULE_DEVICE_TABLE(of, axxia_i2c_of_match);
 
 static struct platform_driver axxia_i2c_driver = {
 	.probe = axxia_i2c_probe,
-	.remove_new = axxia_i2c_remove,
+	.remove = axxia_i2c_remove,
 	.driver = {
 		.name = "axxia-i2c",
 		.of_match_table = axxia_i2c_of_match,

@@ -35,9 +35,9 @@
 #define I915_GFP_ALLOW_FAIL (GFP_KERNEL | __GFP_RETRY_MAYFAIL | __GFP_NOWARN)
 
 #if IS_ENABLED(CONFIG_DRM_I915_TRACE_GTT)
-#define DBG(...) trace_printk(__VA_ARGS__)
+#define GTT_TRACE(...) trace_printk(__VA_ARGS__)
 #else
-#define DBG(...)
+#define GTT_TRACE(...)
 #endif
 
 #define NALLOC 3 /* 1 normal, 1 for concurrent threads, 1 for preallocation */
@@ -171,6 +171,9 @@ struct intel_gt;
 #define for_each_sgt_daddr(__dp, __iter, __sgt) \
 	__for_each_sgt_daddr(__dp, __iter, __sgt, I915_GTT_PAGE_SIZE)
 
+#define for_each_sgt_daddr_next(__dp, __iter) \
+	__for_each_daddr_next(__dp, __iter, I915_GTT_PAGE_SIZE)
+
 struct i915_page_table {
 	struct drm_i915_gem_object *base;
 	union {
@@ -246,8 +249,13 @@ struct i915_address_space {
 	struct work_struct release_work;
 
 	struct drm_mm mm;
+	struct {
+		struct drm_i915_gem_object *obj;
+		struct i915_vma *vma;
+	} rsvd;
 	struct intel_gt *gt;
 	struct drm_i915_private *i915;
+	struct drm_i915_file_private *fpriv;
 	struct device *dma;
 	u64 total;		/* size addr space maps (ex. 2GB for ggtt) */
 	u64 reserved;		/* size addr space reserved */
@@ -304,6 +312,7 @@ struct i915_address_space {
 	u64 (*pte_encode)(dma_addr_t addr,
 			  unsigned int pat_index,
 			  u32 flags); /* Create a valid PTE */
+	dma_addr_t (*pte_decode)(u64 pte, bool *is_present, bool *is_local);
 #define PTE_READ_ONLY	BIT(0)
 #define PTE_LM		BIT(1)
 
@@ -332,6 +341,8 @@ struct i915_address_space {
 				   struct i915_vma_resource *vma_res,
 				   unsigned int pat_index,
 				   u32 flags);
+	dma_addr_t (*read_entry)(struct i915_address_space *vm,
+				 u64 offset, bool *is_present, bool *is_local);
 	void (*cleanup)(struct i915_address_space *vm);
 
 	void (*foreach)(struct i915_address_space *vm,
@@ -582,6 +593,9 @@ void intel_ggtt_bind_vma(struct i915_address_space *vm,
 void intel_ggtt_unbind_vma(struct i915_address_space *vm,
 			   struct i915_vma_resource *vma_res);
 
+dma_addr_t intel_ggtt_read_entry(struct i915_address_space *vm,
+				 u64 offset, bool *is_present, bool *is_local);
+
 int i915_ggtt_probe_hw(struct drm_i915_private *i915);
 int i915_ggtt_init_hw(struct drm_i915_private *i915);
 int i915_ggtt_enable_hw(struct drm_i915_private *i915);
@@ -600,8 +614,8 @@ int i915_ppgtt_init_hw(struct intel_gt *gt);
 struct i915_ppgtt *i915_ppgtt_create(struct intel_gt *gt,
 				     unsigned long lmem_pt_obj_flags);
 
-void i915_ggtt_suspend_vm(struct i915_address_space *vm);
-bool i915_ggtt_resume_vm(struct i915_address_space *vm);
+void i915_ggtt_suspend_vm(struct i915_address_space *vm, bool evict_all);
+bool i915_ggtt_resume_vm(struct i915_address_space *vm, bool all_evicted);
 void i915_ggtt_suspend(struct i915_ggtt *gtt);
 void i915_ggtt_resume(struct i915_ggtt *ggtt);
 
@@ -687,5 +701,7 @@ static inline struct sgt_dma {
 
 	return (struct sgt_dma){ sg, addr, addr + sg_dma_len(sg) };
 }
+
+bool i915_ggtt_require_binder(struct drm_i915_private *i915);
 
 #endif

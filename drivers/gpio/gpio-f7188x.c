@@ -159,11 +159,12 @@ static int f7188x_gpio_direction_in(struct gpio_chip *chip, unsigned offset);
 static int f7188x_gpio_get(struct gpio_chip *chip, unsigned offset);
 static int f7188x_gpio_direction_out(struct gpio_chip *chip,
 				     unsigned offset, int value);
-static void f7188x_gpio_set(struct gpio_chip *chip, unsigned offset, int value);
+static int f7188x_gpio_set(struct gpio_chip *chip, unsigned int offset,
+			   int value);
 static int f7188x_gpio_set_config(struct gpio_chip *chip, unsigned offset,
 				  unsigned long config);
 
-#define F7188X_GPIO_BANK(_base, _ngpio, _regbase, _label)			\
+#define F7188X_GPIO_BANK(_ngpio, _regbase, _label)			\
 	{								\
 		.chip = {						\
 			.label            = _label,			\
@@ -174,7 +175,7 @@ static int f7188x_gpio_set_config(struct gpio_chip *chip, unsigned offset,
 			.direction_output = f7188x_gpio_direction_out,	\
 			.set              = f7188x_gpio_set,		\
 			.set_config	  = f7188x_gpio_set_config,	\
-			.base             = _base,			\
+			.base             = -1,				\
 			.ngpio            = _ngpio,			\
 			.can_sleep        = true,			\
 		},							\
@@ -191,98 +192,98 @@ static int f7188x_gpio_set_config(struct gpio_chip *chip, unsigned offset,
 #define f7188x_gpio_data_single(type)	((type) == nct6126d)
 
 static struct f7188x_gpio_bank f71869_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 6, 0xF0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 8, 0xE0, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xD0, DRVNAME "-2"),
-	F7188X_GPIO_BANK(30, 8, 0xC0, DRVNAME "-3"),
-	F7188X_GPIO_BANK(40, 8, 0xB0, DRVNAME "-4"),
-	F7188X_GPIO_BANK(50, 5, 0xA0, DRVNAME "-5"),
-	F7188X_GPIO_BANK(60, 6, 0x90, DRVNAME "-6"),
+	F7188X_GPIO_BANK(6, 0xF0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(8, 0xE0, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xD0, DRVNAME "-2"),
+	F7188X_GPIO_BANK(8, 0xC0, DRVNAME "-3"),
+	F7188X_GPIO_BANK(8, 0xB0, DRVNAME "-4"),
+	F7188X_GPIO_BANK(5, 0xA0, DRVNAME "-5"),
+	F7188X_GPIO_BANK(6, 0x90, DRVNAME "-6"),
 };
 
 static struct f7188x_gpio_bank f71869a_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 6, 0xF0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 8, 0xE0, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xD0, DRVNAME "-2"),
-	F7188X_GPIO_BANK(30, 8, 0xC0, DRVNAME "-3"),
-	F7188X_GPIO_BANK(40, 8, 0xB0, DRVNAME "-4"),
-	F7188X_GPIO_BANK(50, 5, 0xA0, DRVNAME "-5"),
-	F7188X_GPIO_BANK(60, 8, 0x90, DRVNAME "-6"),
-	F7188X_GPIO_BANK(70, 8, 0x80, DRVNAME "-7"),
+	F7188X_GPIO_BANK(6, 0xF0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(8, 0xE0, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xD0, DRVNAME "-2"),
+	F7188X_GPIO_BANK(8, 0xC0, DRVNAME "-3"),
+	F7188X_GPIO_BANK(8, 0xB0, DRVNAME "-4"),
+	F7188X_GPIO_BANK(5, 0xA0, DRVNAME "-5"),
+	F7188X_GPIO_BANK(8, 0x90, DRVNAME "-6"),
+	F7188X_GPIO_BANK(8, 0x80, DRVNAME "-7"),
 };
 
 static struct f7188x_gpio_bank f71882_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 8, 0xF0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 8, 0xE0, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xD0, DRVNAME "-2"),
-	F7188X_GPIO_BANK(30, 4, 0xC0, DRVNAME "-3"),
-	F7188X_GPIO_BANK(40, 4, 0xB0, DRVNAME "-4"),
+	F7188X_GPIO_BANK(8, 0xF0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(8, 0xE0, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xD0, DRVNAME "-2"),
+	F7188X_GPIO_BANK(4, 0xC0, DRVNAME "-3"),
+	F7188X_GPIO_BANK(4, 0xB0, DRVNAME "-4"),
 };
 
 static struct f7188x_gpio_bank f71889a_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 7, 0xF0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 7, 0xE0, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xD0, DRVNAME "-2"),
-	F7188X_GPIO_BANK(30, 8, 0xC0, DRVNAME "-3"),
-	F7188X_GPIO_BANK(40, 8, 0xB0, DRVNAME "-4"),
-	F7188X_GPIO_BANK(50, 5, 0xA0, DRVNAME "-5"),
-	F7188X_GPIO_BANK(60, 8, 0x90, DRVNAME "-6"),
-	F7188X_GPIO_BANK(70, 8, 0x80, DRVNAME "-7"),
+	F7188X_GPIO_BANK(7, 0xF0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(7, 0xE0, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xD0, DRVNAME "-2"),
+	F7188X_GPIO_BANK(8, 0xC0, DRVNAME "-3"),
+	F7188X_GPIO_BANK(8, 0xB0, DRVNAME "-4"),
+	F7188X_GPIO_BANK(5, 0xA0, DRVNAME "-5"),
+	F7188X_GPIO_BANK(8, 0x90, DRVNAME "-6"),
+	F7188X_GPIO_BANK(8, 0x80, DRVNAME "-7"),
 };
 
 static struct f7188x_gpio_bank f71889_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 7, 0xF0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 7, 0xE0, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xD0, DRVNAME "-2"),
-	F7188X_GPIO_BANK(30, 8, 0xC0, DRVNAME "-3"),
-	F7188X_GPIO_BANK(40, 8, 0xB0, DRVNAME "-4"),
-	F7188X_GPIO_BANK(50, 5, 0xA0, DRVNAME "-5"),
-	F7188X_GPIO_BANK(60, 8, 0x90, DRVNAME "-6"),
-	F7188X_GPIO_BANK(70, 8, 0x80, DRVNAME "-7"),
+	F7188X_GPIO_BANK(7, 0xF0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(7, 0xE0, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xD0, DRVNAME "-2"),
+	F7188X_GPIO_BANK(8, 0xC0, DRVNAME "-3"),
+	F7188X_GPIO_BANK(8, 0xB0, DRVNAME "-4"),
+	F7188X_GPIO_BANK(5, 0xA0, DRVNAME "-5"),
+	F7188X_GPIO_BANK(8, 0x90, DRVNAME "-6"),
+	F7188X_GPIO_BANK(8, 0x80, DRVNAME "-7"),
 };
 
 static struct f7188x_gpio_bank f81866_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 8, 0xF0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 8, 0xE0, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xD0, DRVNAME "-2"),
-	F7188X_GPIO_BANK(30, 8, 0xC0, DRVNAME "-3"),
-	F7188X_GPIO_BANK(40, 8, 0xB0, DRVNAME "-4"),
-	F7188X_GPIO_BANK(50, 8, 0xA0, DRVNAME "-5"),
-	F7188X_GPIO_BANK(60, 8, 0x90, DRVNAME "-6"),
-	F7188X_GPIO_BANK(70, 8, 0x80, DRVNAME "-7"),
-	F7188X_GPIO_BANK(80, 8, 0x88, DRVNAME "-8"),
+	F7188X_GPIO_BANK(8, 0xF0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(8, 0xE0, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xD0, DRVNAME "-2"),
+	F7188X_GPIO_BANK(8, 0xC0, DRVNAME "-3"),
+	F7188X_GPIO_BANK(8, 0xB0, DRVNAME "-4"),
+	F7188X_GPIO_BANK(8, 0xA0, DRVNAME "-5"),
+	F7188X_GPIO_BANK(8, 0x90, DRVNAME "-6"),
+	F7188X_GPIO_BANK(8, 0x80, DRVNAME "-7"),
+	F7188X_GPIO_BANK(8, 0x88, DRVNAME "-8"),
 };
 
 
 static struct f7188x_gpio_bank f81804_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 8, 0xF0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 8, 0xE0, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xD0, DRVNAME "-2"),
-	F7188X_GPIO_BANK(50, 8, 0xA0, DRVNAME "-3"),
-	F7188X_GPIO_BANK(60, 8, 0x90, DRVNAME "-4"),
-	F7188X_GPIO_BANK(70, 8, 0x80, DRVNAME "-5"),
-	F7188X_GPIO_BANK(90, 8, 0x98, DRVNAME "-6"),
+	F7188X_GPIO_BANK(8, 0xF0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(8, 0xE0, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xD0, DRVNAME "-2"),
+	F7188X_GPIO_BANK(8, 0xA0, DRVNAME "-3"),
+	F7188X_GPIO_BANK(8, 0x90, DRVNAME "-4"),
+	F7188X_GPIO_BANK(8, 0x80, DRVNAME "-5"),
+	F7188X_GPIO_BANK(8, 0x98, DRVNAME "-6"),
 };
 
 static struct f7188x_gpio_bank f81865_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 8, 0xF0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 8, 0xE0, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xD0, DRVNAME "-2"),
-	F7188X_GPIO_BANK(30, 8, 0xC0, DRVNAME "-3"),
-	F7188X_GPIO_BANK(40, 8, 0xB0, DRVNAME "-4"),
-	F7188X_GPIO_BANK(50, 8, 0xA0, DRVNAME "-5"),
-	F7188X_GPIO_BANK(60, 5, 0x90, DRVNAME "-6"),
+	F7188X_GPIO_BANK(8, 0xF0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(8, 0xE0, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xD0, DRVNAME "-2"),
+	F7188X_GPIO_BANK(8, 0xC0, DRVNAME "-3"),
+	F7188X_GPIO_BANK(8, 0xB0, DRVNAME "-4"),
+	F7188X_GPIO_BANK(8, 0xA0, DRVNAME "-5"),
+	F7188X_GPIO_BANK(5, 0x90, DRVNAME "-6"),
 };
 
 static struct f7188x_gpio_bank nct6126d_gpio_bank[] = {
-	F7188X_GPIO_BANK(0, 8, 0xE0, DRVNAME "-0"),
-	F7188X_GPIO_BANK(10, 8, 0xE4, DRVNAME "-1"),
-	F7188X_GPIO_BANK(20, 8, 0xE8, DRVNAME "-2"),
-	F7188X_GPIO_BANK(30, 8, 0xEC, DRVNAME "-3"),
-	F7188X_GPIO_BANK(40, 8, 0xF0, DRVNAME "-4"),
-	F7188X_GPIO_BANK(50, 8, 0xF4, DRVNAME "-5"),
-	F7188X_GPIO_BANK(60, 8, 0xF8, DRVNAME "-6"),
-	F7188X_GPIO_BANK(70, 8, 0xFC, DRVNAME "-7"),
+	F7188X_GPIO_BANK(8, 0xE0, DRVNAME "-0"),
+	F7188X_GPIO_BANK(8, 0xE4, DRVNAME "-1"),
+	F7188X_GPIO_BANK(8, 0xE8, DRVNAME "-2"),
+	F7188X_GPIO_BANK(8, 0xEC, DRVNAME "-3"),
+	F7188X_GPIO_BANK(8, 0xF0, DRVNAME "-4"),
+	F7188X_GPIO_BANK(8, 0xF4, DRVNAME "-5"),
+	F7188X_GPIO_BANK(8, 0xF8, DRVNAME "-6"),
+	F7188X_GPIO_BANK(8, 0xFC, DRVNAME "-7"),
 };
 
 static int f7188x_gpio_get_direction(struct gpio_chip *chip, unsigned offset)
@@ -391,7 +392,8 @@ static int f7188x_gpio_direction_out(struct gpio_chip *chip,
 	return 0;
 }
 
-static void f7188x_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+static int f7188x_gpio_set(struct gpio_chip *chip, unsigned int offset,
+			   int value)
 {
 	int err;
 	struct f7188x_gpio_bank *bank = gpiochip_get_data(chip);
@@ -400,7 +402,8 @@ static void f7188x_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
 
 	err = superio_enter(sio->addr);
 	if (err)
-		return;
+		return err;
+
 	superio_select(sio->addr, sio->device);
 
 	data_out = superio_inb(sio->addr, f7188x_gpio_data_out(bank->regbase));
@@ -411,6 +414,8 @@ static void f7188x_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
 	superio_outb(sio->addr, f7188x_gpio_data_out(bank->regbase), data_out);
 
 	superio_exit(sio->addr);
+
+	return 0;
 }
 
 static int f7188x_gpio_set_config(struct gpio_chip *chip, unsigned offset,

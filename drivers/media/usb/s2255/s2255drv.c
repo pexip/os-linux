@@ -471,7 +471,7 @@ static void s2255_reset_dsppower(struct s2255_dev *dev)
  */
 static void s2255_timer(struct timer_list *t)
 {
-	struct s2255_dev *dev = from_timer(dev, t, timer);
+	struct s2255_dev *dev = timer_container_of(dev, t, timer);
 	struct s2255_fw *data = dev->fw_data;
 	if (usb_submit_urb(data->fw_urb, GFP_ATOMIC) < 0) {
 		pr_err("s2255: can't submit urb\n");
@@ -704,8 +704,6 @@ static const struct vb2_ops s2255_video_qops = {
 	.buf_queue = buffer_queue,
 	.start_streaming = start_streaming,
 	.stop_streaming = stop_streaming,
-	.wait_prepare = vb2_ops_wait_prepare,
-	.wait_finish = vb2_ops_wait_finish,
 };
 
 static int vidioc_querycap(struct file *file, void *priv,
@@ -1906,9 +1904,10 @@ static int s2255_get_fx2fw(struct s2255_dev *dev)
 {
 	int fw;
 	int ret;
-	unsigned char transBuffer[64];
-	ret = s2255_vendor_req(dev, S2255_VR_FW, 0, 0, transBuffer, 2,
-			       S2255_VR_IN);
+	u8 transBuffer[2] = {};
+
+	ret = s2255_vendor_req(dev, S2255_VR_FW, 0, 0, transBuffer,
+			       sizeof(transBuffer), S2255_VR_IN);
 	if (ret < 0)
 		dprintk(dev, 2, "get fw error: %x\n", ret);
 	fw = transBuffer[0] + (transBuffer[1] << 8);

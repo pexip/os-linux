@@ -905,10 +905,18 @@ void ntfs_update_mftmirr(struct ntfs_sb_info *sbi, int wait)
 void ntfs_bad_inode(struct inode *inode, const char *hint)
 {
 	struct ntfs_sb_info *sbi = inode->i_sb->s_fs_info;
+	struct ntfs_inode *ni = ntfs_i(inode);
 
 	ntfs_inode_err(inode, "%s", hint);
-	make_bad_inode(inode);
-	ntfs_set_state(sbi, NTFS_DIRTY_ERROR);
+
+	/* Do not call make_bad_inode()! */
+	ni->ni_bad = true;
+
+	/* Avoid recursion if bad inode is $Volume. */
+	if (inode->i_ino != MFT_REC_VOL &&
+	    !(sbi->flags & NTFS_FLAGS_LOG_REPLAYING)) {
+		ntfs_set_state(sbi, NTFS_DIRTY_ERROR);
+	}
 }
 
 /*
@@ -1029,34 +1037,6 @@ struct buffer_head *ntfs_bread(struct super_block *sb, sector_t block)
 	ntfs_err(sb, "failed to read volume at offset 0x%llx",
 		 (u64)block << sb->s_blocksize_bits);
 	return NULL;
-}
-
-int ntfs_sb_read(struct super_block *sb, u64 lbo, size_t bytes, void *buffer)
-{
-	struct block_device *bdev = sb->s_bdev;
-	u32 blocksize = sb->s_blocksize;
-	u64 block = lbo >> sb->s_blocksize_bits;
-	u32 off = lbo & (blocksize - 1);
-	u32 op = blocksize - off;
-
-	for (; bytes; block += 1, off = 0, op = blocksize) {
-		struct buffer_head *bh = __bread(bdev, block, blocksize);
-
-		if (!bh)
-			return -EIO;
-
-		if (op > bytes)
-			op = bytes;
-
-		memcpy(buffer, bh->b_data + off, op);
-
-		put_bh(bh);
-
-		bytes -= op;
-		buffer = Add2Ptr(buffer, op);
-	}
-
-	return 0;
 }
 
 int ntfs_sb_write(struct super_block *sb, u64 lbo, size_t bytes,
@@ -1369,7 +1349,14 @@ int ntfs_get_bh(struct ntfs_sb_info *sbi, const struct runs_tree *run, u64 vbo,
 				}
 				if (buffer_locked(bh))
 					__wait_on_buffer(bh);
-				set_buffer_uptodate(bh);
+
+				lock_buffer(bh);
+				if (!buffer_uptodate(bh))
+				{
+					memset(bh->b_data, 0, blocksize);
+					set_buffer_uptodate(bh);
+				}
+				unlock_buffer(bh);
 			} else {
 				bh = ntfs_bread(sb, block);
 				if (!bh) {
@@ -2153,8 +2140,8 @@ int ntfs_insert_security(struct ntfs_sb_info *sbi,
 			if (le32_to_cpu(d_security->size) == new_sec_size &&
 			    d_security->key.hash == hash_key.hash &&
 			    !memcmp(d_security + 1, sd, size_sd)) {
-				*security_id = d_security->key.sec_id;
 				/* Such security already exists. */
+				*security_id = d_security->key.sec_id;
 				err = 0;
 				goto out;
 			}
@@ -2650,8 +2637,8 @@ int ntfs_set_label(struct ntfs_sb_info *sbi, u8 *label, int len)
 {
 	int err;
 	struct ATTRIB *attr;
+	u32 uni_bytes;
 	struct ntfs_inode *ni = sbi->volume.ni;
-	const u8 max_ulen = 0x80; /* TODO: use attrdef to get maximum length */
 	/* Allocate PATH_MAX bytes. */
 	struct cpu_str *uni = __getname();
 
@@ -2663,7 +2650,8 @@ int ntfs_set_label(struct ntfs_sb_info *sbi, u8 *label, int len)
 	if (err < 0)
 		goto out;
 
-	if (uni->len > max_ulen) {
+	uni_bytes = uni->len * sizeof(u16);
+	if (uni_bytes > NTFS_LABEL_MAX_LENGTH * sizeof(u16)) {
 		ntfs_warn(sbi->sb, "new label is too long");
 		err = -EFBIG;
 		goto out;
@@ -2674,13 +2662,13 @@ int ntfs_set_label(struct ntfs_sb_info *sbi, u8 *label, int len)
 	/* Ignore any errors. */
 	ni_remove_attr(ni, ATTR_LABEL, NULL, 0, false, NULL);
 
-	err = ni_insert_resident(ni, uni->len * sizeof(u16), ATTR_LABEL, NULL,
-				 0, &attr, NULL, NULL);
+	err = ni_insert_resident(ni, uni_bytes, ATTR_LABEL, NULL, 0, &attr,
+				 NULL, NULL);
 	if (err < 0)
 		goto unlock_out;
 
 	/* write new label in on-disk struct. */
-	memcpy(resident_data(attr), uni->name, uni->len * sizeof(u16));
+	memcpy(resident_data(attr), uni->name, uni_bytes);
 
 	/* update cached value of current label. */
 	if (len >= ARRAY_SIZE(sbi->volume.label))

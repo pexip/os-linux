@@ -9,7 +9,7 @@
 #include "smb_common.h"
 #include "server.h"
 #include "misc.h"
-#include "smbstatus.h"
+#include "../common/smb2status.h"
 #include "connection.h"
 #include "ksmbd_work.h"
 #include "mgmt/user_session.h"
@@ -358,7 +358,7 @@ static int smb1_check_user_session(struct ksmbd_work *work)
 static int smb1_allocate_rsp_buf(struct ksmbd_work *work)
 {
 	work->response_buf = kzalloc(MAX_CIFS_SMALL_BUFFER_SIZE,
-			GFP_KERNEL);
+			KSMBD_DEFAULT_GFP);
 	work->response_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
 
 	if (!work->response_buf) {
@@ -492,7 +492,7 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work, int info_level,
  * @shortname:	destination short filename
  *
  * Return:	shortname length or 0 when source long name is '.' or '..'
- * TODO: Though this function comforms the restriction of 8.3 Filename spec,
+ * TODO: Though this function conforms the restriction of 8.3 Filename spec,
  * but the result is different with Windows 7's one. need to check.
  */
 int ksmbd_extract_shortname(struct ksmbd_conn *conn, const char *longname,
@@ -515,7 +515,7 @@ int ksmbd_extract_shortname(struct ksmbd_conn *conn, const char *longname,
 
 	p = strrchr(longname, '.');
 	if (p == longname) { /*name starts with a dot*/
-		strscpy(extension, "___", strlen("___"));
+		strscpy(extension, "___", sizeof(extension));
 	} else {
 		if (p) {
 			p++;
@@ -576,7 +576,7 @@ static int smb_handle_negotiate(struct ksmbd_work *work)
 
 	ksmbd_debug(SMB, "Unsupported SMB1 protocol\n");
 
-	if (ksmbd_iov_pin_rsp(work, (void *)neg_rsp,
+	if (ksmbd_iov_pin_rsp(work, (void *)neg_rsp + 4,
 			      sizeof(struct smb_negotiate_rsp) - 4))
 		return -ENOMEM;
 
@@ -740,13 +740,15 @@ int __ksmbd_override_fsids(struct ksmbd_work *work,
 		struct ksmbd_share_config *share)
 {
 	struct ksmbd_session *sess = work->sess;
+	struct ksmbd_user *user = sess->user;
 	struct cred *cred;
 	struct group_info *gi;
 	unsigned int uid;
 	unsigned int gid;
+	int i;
 
-	uid = user_uid(sess->user);
-	gid = user_gid(sess->user);
+	uid = user_uid(user);
+	gid = user_gid(user);
 	if (share->force_uid != KSMBD_SHARE_INVALID_UID)
 		uid = share->force_uid;
 	if (share->force_gid != KSMBD_SHARE_INVALID_GID)
@@ -759,11 +761,18 @@ int __ksmbd_override_fsids(struct ksmbd_work *work,
 	cred->fsuid = make_kuid(&init_user_ns, uid);
 	cred->fsgid = make_kgid(&init_user_ns, gid);
 
-	gi = groups_alloc(0);
+	gi = groups_alloc(user->ngroups);
 	if (!gi) {
 		abort_creds(cred);
 		return -ENOMEM;
 	}
+
+	for (i = 0; i < user->ngroups; i++)
+		gi->gid[i] = make_kgid(&init_user_ns, user->sgid[i]);
+
+	if (user->ngroups)
+		groups_sort(gi);
+
 	set_groups(cred, gi);
 	put_group_info(gi);
 
@@ -772,10 +781,6 @@ int __ksmbd_override_fsids(struct ksmbd_work *work,
 
 	WARN_ON(work->saved_cred);
 	work->saved_cred = override_creds(cred);
-	if (!work->saved_cred) {
-		abort_creds(cred);
-		return -EINVAL;
-	}
 	return 0;
 }
 
@@ -787,13 +792,11 @@ int ksmbd_override_fsids(struct ksmbd_work *work)
 void ksmbd_revert_fsids(struct ksmbd_work *work)
 {
 	const struct cred *cred;
-
 	WARN_ON(!work->saved_cred);
 
-	cred = current_cred();
-	revert_creds(work->saved_cred);
-	put_cred(cred);
+	cred = revert_creds(work->saved_cred);
 	work->saved_cred = NULL;
+	put_cred(cred);
 }
 
 __le32 smb_map_generic_desired_access(__le32 daccess)

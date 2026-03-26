@@ -8,6 +8,8 @@
 #ifndef SELFTEST_KVM_TEST_UTIL_H
 #define SELFTEST_KVM_TEST_UTIL_H
 
+#include <setjmp.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -20,7 +22,9 @@
 #include <sys/mman.h>
 #include "kselftest.h"
 
-static inline int _no_printf(const char *format, ...) { return 0; }
+#define msecs_to_usecs(msec)    ((msec) * 1000ULL)
+
+static inline __printf(1, 2) int _no_printf(const char *format, ...) { return 0; }
 
 #ifdef DEBUG
 #define pr_debug(...) printf(__VA_ARGS__)
@@ -33,7 +37,7 @@ static inline int _no_printf(const char *format, ...) { return 0; }
 #define pr_info(...) _no_printf(__VA_ARGS__)
 #endif
 
-void print_skip(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void __printf(1, 2) print_skip(const char *fmt, ...);
 #define __TEST_REQUIRE(f, fmt, ...)				\
 do {								\
 	if (!(f))						\
@@ -46,9 +50,9 @@ ssize_t test_write(int fd, const void *buf, size_t count);
 ssize_t test_read(int fd, void *buf, size_t count);
 int test_seq_read(const char *path, char **bufp, size_t *sizep);
 
-void test_assert(bool exp, const char *exp_str,
-		 const char *file, unsigned int line, const char *fmt, ...)
-		__attribute__((format(printf, 5, 6)));
+void __printf(5, 6) test_assert(bool exp, const char *exp_str,
+				const char *file, unsigned int line,
+				const char *fmt, ...);
 
 #define TEST_ASSERT(e, fmt, ...) \
 	test_assert((e), #e, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
@@ -76,6 +80,23 @@ do {									\
 	__builtin_unreachable(); \
 } while (0)
 
+extern sigjmp_buf expect_sigbus_jmpbuf;
+void expect_sigbus_handler(int signum);
+
+#define TEST_EXPECT_SIGBUS(action)						\
+do {										\
+	struct sigaction sa_old, sa_new = {					\
+		.sa_handler = expect_sigbus_handler,				\
+	};									\
+										\
+	sigaction(SIGBUS, &sa_new, &sa_old);					\
+	if (sigsetjmp(expect_sigbus_jmpbuf, 1) == 0) {				\
+		action;								\
+		TEST_FAIL("'%s' should have triggered SIGBUS", #action);	\
+	}									\
+	sigaction(SIGBUS, &sa_old, NULL);					\
+} while (0)
+
 size_t parse_size(const char *size);
 
 int64_t timespec_to_ns(struct timespec ts);
@@ -89,8 +110,27 @@ struct guest_random_state {
 	uint32_t seed;
 };
 
+extern uint32_t guest_random_seed;
+extern struct guest_random_state guest_rng;
+
 struct guest_random_state new_guest_random_state(uint32_t seed);
 uint32_t guest_random_u32(struct guest_random_state *state);
+
+static inline bool __guest_random_bool(struct guest_random_state *state,
+				       uint8_t percent)
+{
+	return (guest_random_u32(state) % 100) < percent;
+}
+
+static inline bool guest_random_bool(struct guest_random_state *state)
+{
+	return __guest_random_bool(state, 50);
+}
+
+static inline uint64_t guest_random_u64(struct guest_random_state *state)
+{
+	return ((uint64_t)guest_random_u32(state) << 32) | guest_random_u32(state);
+}
 
 enum vm_mem_backing_src_type {
 	VM_MEM_SRC_ANONYMOUS,
@@ -132,6 +172,7 @@ bool is_backing_src_hugetlb(uint32_t i);
 void backing_src_help(const char *flag);
 enum vm_mem_backing_src_type parse_backing_src_type(const char *type_name);
 long get_run_delay(void);
+bool is_numa_balancing_enabled(void);
 
 /*
  * Whether or not the given source type is shared memory (as opposed to
@@ -140,6 +181,11 @@ long get_run_delay(void);
 static inline bool backing_src_is_shared(enum vm_mem_backing_src_type t)
 {
 	return vm_mem_backing_src_alias(t)->flag & MAP_SHARED;
+}
+
+static inline bool backing_src_can_be_huge(enum vm_mem_backing_src_type t)
+{
+	return t != VM_MEM_SRC_ANONYMOUS && t != VM_MEM_SRC_SHMEM;
 }
 
 /* Aligns x up to the next multiple of size. Size must be a power of 2. */
@@ -186,8 +232,10 @@ static inline uint32_t atoi_non_negative(const char *name, const char *num_str)
 }
 
 int guest_vsnprintf(char *buf, int n, const char *fmt, va_list args);
-int guest_snprintf(char *buf, int n, const char *fmt, ...);
+__printf(3, 4) int guest_snprintf(char *buf, int n, const char *fmt, ...);
 
 char *strdup_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2), nonnull(1)));
+
+char *sys_get_cur_clocksource(void);
 
 #endif /* SELFTEST_KVM_TEST_UTIL_H */

@@ -24,7 +24,7 @@
  */
 #include "dc.h"
 #include "reg_helper.h"
-#include "dcn10_dpp.h"
+#include "dcn10/dcn10_dpp.h"
 
 #include "dcn10_cm_common.h"
 #include "custom_float.h"
@@ -60,6 +60,26 @@ void cm_helper_program_color_matrices(
 		i++;
 	}
 
+}
+
+void cm_helper_read_color_matrices(struct dc_context *ctx,
+				   uint16_t *regval,
+				   const struct color_matrices_reg *reg)
+{
+	uint32_t cur_csc_reg, regval0, regval1;
+	unsigned int i = 0;
+
+	for (cur_csc_reg = reg->csc_c11_c12;
+	     cur_csc_reg <= reg->csc_c33_c34; cur_csc_reg++) {
+		REG_GET_2(cur_csc_reg,
+				csc_c11, &regval0,
+				csc_c12, &regval1);
+
+		regval[2 * i] = regval0;
+		regval[(2 * i) + 1] = regval1;
+
+		i++;
+	}
 }
 
 void cm_helper_program_xfer_func(
@@ -345,23 +365,18 @@ bool cm_helper_translate_curve_to_hw_format(struct dc_context *ctx,
 		region_start = -MAX_LOW_POINT;
 		region_end   = NUMBER_REGIONS - MAX_LOW_POINT;
 	} else {
-		/* 11 segments
-		 * segment is from 2^-10 to 2^1
+		/* 13 segments
+		 * segment is from 2^-12 to 2^0
 		 * There are less than 256 points, for optimization
 		 */
-		seg_distr[0] = 3;
-		seg_distr[1] = 4;
-		seg_distr[2] = 4;
-		seg_distr[3] = 4;
-		seg_distr[4] = 4;
-		seg_distr[5] = 4;
-		seg_distr[6] = 4;
-		seg_distr[7] = 4;
-		seg_distr[8] = 4;
-		seg_distr[9] = 4;
-		seg_distr[10] = 1;
+		const uint8_t SEG_COUNT = 12;
 
-		region_start = -10;
+		for (i = 0; i < SEG_COUNT; i++)
+			seg_distr[i] = 4;
+
+		seg_distr[SEG_COUNT] = 1;
+
+		region_start = -SEG_COUNT;
 		region_end = 1;
 	}
 

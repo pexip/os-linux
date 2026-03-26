@@ -271,6 +271,9 @@ static int kfd_get_cu_occupancy(struct attribute *attr, char *buffer)
 	struct kfd_node *dev = NULL;
 	struct kfd_process *proc = NULL;
 	struct kfd_process_device *pdd = NULL;
+	int i;
+	struct kfd_cu_occupancy *cu_occupancy;
+	u32 queue_format;
 
 	pdd = container_of(attr, struct kfd_process_device, attr_cu_occupancy);
 	dev = pdd->dev;
@@ -280,31 +283,54 @@ static int kfd_get_cu_occupancy(struct attribute *attr, char *buffer)
 	cu_cnt = 0;
 	proc = pdd->process;
 	if (pdd->qpd.queue_count == 0) {
-		pr_debug("Gpu-Id: %d has no active queues for process %d\n",
-			 dev->id, proc->pasid);
+		pr_debug("Gpu-Id: %d has no active queues for process pid %d\n",
+			 dev->id, (int)proc->lead_thread->pid);
 		return snprintf(buffer, PAGE_SIZE, "%d\n", cu_cnt);
 	}
 
 	/* Collect wave count from device if it supports */
 	wave_cnt = 0;
 	max_waves_per_cu = 0;
-	dev->kfd2kgd->get_cu_occupancy(dev->adev, proc->pasid, &wave_cnt,
-			&max_waves_per_cu, 0);
+
+	cu_occupancy = kcalloc(AMDGPU_MAX_QUEUES, sizeof(*cu_occupancy), GFP_KERNEL);
+	if (!cu_occupancy)
+		return -ENOMEM;
+
+	/*
+	 * For GFX 9.4.3, fetch the CU occupancy from the first XCC in the partition.
+	 * For AQL queues, because of cooperative dispatch we multiply the wave count
+	 * by number of XCCs in the partition to get the total wave counts across all
+	 * XCCs in the partition.
+	 * For PM4 queues, there is no cooperative dispatch so wave_cnt stay as it is.
+	 */
+	dev->kfd2kgd->get_cu_occupancy(dev->adev, cu_occupancy,
+			&max_waves_per_cu, ffs(dev->xcc_mask) - 1);
+
+	for (i = 0; i < AMDGPU_MAX_QUEUES; i++) {
+		if (cu_occupancy[i].wave_cnt != 0 &&
+		    kfd_dqm_is_queue_in_process(dev->dqm, &pdd->qpd,
+						cu_occupancy[i].doorbell_off,
+						&queue_format)) {
+			if (unlikely(queue_format == KFD_QUEUE_FORMAT_PM4))
+				wave_cnt += cu_occupancy[i].wave_cnt;
+			else
+				wave_cnt += (NUM_XCC(dev->xcc_mask) *
+						cu_occupancy[i].wave_cnt);
+		}
+	}
 
 	/* Translate wave count to number of compute units */
 	cu_cnt = (wave_cnt + (max_waves_per_cu - 1)) / max_waves_per_cu;
+	kfree(cu_occupancy);
 	return snprintf(buffer, PAGE_SIZE, "%d\n", cu_cnt);
 }
 
 static ssize_t kfd_procfs_show(struct kobject *kobj, struct attribute *attr,
 			       char *buffer)
 {
-	if (strcmp(attr->name, "pasid") == 0) {
-		struct kfd_process *p = container_of(attr, struct kfd_process,
-						     attr_pasid);
-
-		return snprintf(buffer, PAGE_SIZE, "%d\n", p->pasid);
-	} else if (strncmp(attr->name, "vram_", 5) == 0) {
+	if (strcmp(attr->name, "pasid") == 0)
+		return snprintf(buffer, PAGE_SIZE, "%d\n", 0);
+	else if (strncmp(attr->name, "vram_", 5) == 0) {
 		struct kfd_process_device *pdd = container_of(attr, struct kfd_process_device,
 							      attr_vram);
 		return snprintf(buffer, PAGE_SIZE, "%llu\n", atomic64_read(&pdd->vram_usage));
@@ -666,7 +692,8 @@ int kfd_process_create_wq(void)
 	if (!kfd_process_wq)
 		kfd_process_wq = alloc_workqueue("kfd_process_wq", 0, 0);
 	if (!kfd_restore_wq)
-		kfd_restore_wq = alloc_ordered_workqueue("kfd_restore_wq", 0);
+		kfd_restore_wq = alloc_ordered_workqueue("kfd_restore_wq",
+							 WQ_FREEZABLE);
 
 	if (!kfd_process_wq || !kfd_restore_wq) {
 		kfd_process_destroy_wq();
@@ -827,14 +854,16 @@ struct kfd_process *kfd_create_process(struct task_struct *thread)
 	 */
 	mutex_lock(&kfd_processes_mutex);
 
-	if (kfd_is_locked()) {
+	if (kfd_is_locked(NULL)) {
 		pr_debug("KFD is locked! Cannot create process");
 		process = ERR_PTR(-EINVAL);
 		goto out;
 	}
 
-	/* A prior open of /dev/kfd could have already created the process. */
-	process = find_process(thread, false);
+	/* A prior open of /dev/kfd could have already created the process.
+	 * find_process will increase process kref in this case
+	 */
+	process = find_process(thread, true);
 	if (process) {
 		pr_debug("Process already found\n");
 	} else {
@@ -871,11 +900,11 @@ struct kfd_process *kfd_create_process(struct task_struct *thread)
 		kfd_procfs_add_sysfs_files(process);
 		kfd_procfs_add_sysfs_counters(process);
 
+		kfd_debugfs_add_process(process);
+
 		init_waitqueue_head(&process->wait_irq_drain);
 	}
 out:
-	if (!IS_ERR(process))
-		kref_get(&process->ref);
 	mutex_unlock(&kfd_processes_mutex);
 	mmput(thread->mm);
 
@@ -1027,17 +1056,15 @@ static void kfd_process_destroy_pdds(struct kfd_process *p)
 	for (i = 0; i < p->n_pdds; i++) {
 		struct kfd_process_device *pdd = p->pdds[i];
 
-		pr_debug("Releasing pdd (topology id %d) for process (pasid 0x%x)\n",
-				pdd->dev->id, p->pasid);
+		kfd_smi_event_process(pdd, false);
 
+		pr_debug("Releasing pdd (topology id %d, for pid %d)\n",
+			pdd->dev->id, p->lead_thread->pid);
 		kfd_process_device_destroy_cwsr_dgpu(pdd);
 		kfd_process_device_destroy_ib_mem(pdd);
 
-		if (pdd->drm_file) {
-			amdgpu_amdkfd_gpuvm_release_process_vm(
-					pdd->dev->adev, pdd->drm_priv);
+		if (pdd->drm_file)
 			fput(pdd->drm_file);
-		}
 
 		if (pdd->qpd.cwsr_kaddr && !pdd->qpd.cwsr_base)
 			free_pages((unsigned long)pdd->qpd.cwsr_kaddr,
@@ -1060,6 +1087,8 @@ static void kfd_process_destroy_pdds(struct kfd_process *p)
 			pm_runtime_put_autosuspend(adev_to_drm(pdd->dev->adev)->dev);
 			pdd->runtime_inuse = false;
 		}
+
+		atomic_dec(&pdd->dev->kfd->kfd_processes_count);
 
 		kfree(pdd);
 		p->pdds[i] = NULL;
@@ -1131,6 +1160,7 @@ static void kfd_process_wq_release(struct work_struct *work)
 {
 	struct kfd_process *p = container_of(work, struct kfd_process,
 					     release_work);
+	struct dma_fence *ef;
 
 	kfd_process_dequeue_from_all_devices(p);
 	pqm_uninit(&p->pqm);
@@ -1144,20 +1174,23 @@ static void kfd_process_wq_release(struct work_struct *work)
 	 * destroyed. This allows any BOs to be freed without
 	 * triggering pointless evictions or waiting for fences.
 	 */
-	dma_fence_signal(p->ef);
+	synchronize_rcu();
+	ef = rcu_access_pointer(p->ef);
+	if (ef)
+		dma_fence_signal(ef);
 
 	kfd_process_remove_sysfs(p);
+	kfd_debugfs_remove_process(p);
 
 	kfd_process_kunmap_signal_bo(p);
 	kfd_process_free_outstanding_kfd_bos(p);
 	svm_range_list_fini(p);
 
 	kfd_process_destroy_pdds(p);
-	dma_fence_put(p->ef);
+	dma_fence_put(ef);
 
 	kfd_event_free_process(p);
 
-	kfd_pasid_free(p->pasid);
 	mutex_destroy(&p->mutex);
 
 	put_task_struct(p->lead_thread);
@@ -1175,10 +1208,8 @@ static void kfd_process_ref_release(struct kref *ref)
 
 static struct mmu_notifier *kfd_process_alloc_notifier(struct mm_struct *mm)
 {
-	int idx = srcu_read_lock(&kfd_processes_srcu);
-	struct kfd_process *p = find_process_by_mm(mm);
-
-	srcu_read_unlock(&kfd_processes_srcu, idx);
+	/* This increments p->ref counter if kfd process p exists */
+	struct kfd_process *p = kfd_lookup_process_by_mm(mm);
 
 	return p ? &p->mmu_notifier : ERR_PTR(-ESRCH);
 }
@@ -1444,8 +1475,13 @@ bool kfd_process_xnack_mode(struct kfd_process *p, bool supported)
 		 * per-process XNACK mode selection. But let the dev->noretry
 		 * setting still influence the default XNACK mode.
 		 */
-		if (supported && KFD_SUPPORT_XNACK_PER_PROCESS(dev))
+		if (supported && KFD_SUPPORT_XNACK_PER_PROCESS(dev)) {
+			if (!amdgpu_sriov_xnack_support(dev->kfd->adev)) {
+				pr_debug("SRIOV platform xnack not supported\n");
+				return false;
+			}
 			continue;
+		}
 
 		/* GFXv10 and later GPUs do not support shader preemption
 		 * during page faults. This can lead to poor QoS for queue
@@ -1505,12 +1541,6 @@ static struct kfd_process *create_process(const struct task_struct *thread)
 	atomic_set(&process->debugged_process_count, 0);
 	sema_init(&process->runtime_enable_sema, 0);
 
-	process->pasid = kfd_pasid_alloc();
-	if (process->pasid == 0) {
-		err = -ENOSPC;
-		goto err_alloc_pasid;
-	}
-
 	err = pqm_init(&process->pqm, process);
 	if (err != 0)
 		goto err_process_pqm_init;
@@ -1564,8 +1594,6 @@ err_init_svm_range_list:
 err_init_apertures:
 	pqm_uninit(&process->pqm);
 err_process_pqm_init:
-	kfd_pasid_free(process->pasid);
-err_alloc_pasid:
 	kfd_event_free_process(process);
 err_event_init:
 	mutex_destroy(&process->mutex);
@@ -1623,6 +1651,8 @@ struct kfd_process_device *kfd_create_process_device_data(struct kfd_node *dev,
 	/* Init idr used for memory handle translation */
 	idr_init(&pdd->alloc_idr);
 
+	atomic_inc(&dev->kfd->kfd_processes_count);
+
 	return pdd;
 }
 
@@ -1646,6 +1676,7 @@ int kfd_process_device_init_vm(struct kfd_process_device *pdd,
 	struct amdgpu_fpriv *drv_priv;
 	struct amdgpu_vm *avm;
 	struct kfd_process *p;
+	struct dma_fence *ef;
 	struct kfd_node *dev;
 	int ret;
 
@@ -1665,13 +1696,16 @@ int kfd_process_device_init_vm(struct kfd_process_device *pdd,
 
 	ret = amdgpu_amdkfd_gpuvm_acquire_process_vm(dev->adev, avm,
 						     &p->kgd_process_info,
-						     &p->ef);
+						     p->ef ? NULL : &ef);
 	if (ret) {
 		dev_err(dev->adev->dev, "Failed to create process VM object\n");
 		return ret;
 	}
+
+	if (!p->ef)
+		RCU_INIT_POINTER(p->ef, ef);
+
 	pdd->drm_priv = drm_file->private_data;
-	atomic64_set(&pdd->tlb_seq, 0);
 
 	ret = kfd_process_device_reserve_ib_mem(pdd);
 	if (ret)
@@ -1680,15 +1714,21 @@ int kfd_process_device_init_vm(struct kfd_process_device *pdd,
 	if (ret)
 		goto err_init_cwsr;
 
-	ret = amdgpu_amdkfd_gpuvm_set_vm_pasid(dev->adev, avm, p->pasid);
-	if (ret)
-		goto err_set_pasid;
+	if (unlikely(!avm->pasid)) {
+		dev_warn(pdd->dev->adev->dev, "WARN: vm %p has no pasid associated",
+				 avm);
+		ret = -EINVAL;
+		goto err_get_pasid;
+	}
 
+	pdd->pasid = avm->pasid;
 	pdd->drm_file = drm_file;
+
+	kfd_smi_event_process(pdd, true);
 
 	return 0;
 
-err_set_pasid:
+err_get_pasid:
 	kfd_process_device_destroy_cwsr_dgpu(pdd);
 err_init_cwsr:
 	kfd_process_device_destroy_ib_mem(pdd);
@@ -1774,25 +1814,50 @@ void kfd_process_device_remove_obj_handle(struct kfd_process_device *pdd,
 		idr_remove(&pdd->alloc_idr, handle);
 }
 
-/* This increments the process->ref counter. */
-struct kfd_process *kfd_lookup_process_by_pasid(u32 pasid)
+static struct kfd_process_device *kfd_lookup_process_device_by_pasid(u32 pasid)
 {
-	struct kfd_process *p, *ret_p = NULL;
+	struct kfd_process_device *ret_p = NULL;
+	struct kfd_process *p;
 	unsigned int temp;
+	int i;
+
+	hash_for_each_rcu(kfd_processes_table, temp, p, kfd_processes) {
+		for (i = 0; i < p->n_pdds; i++) {
+			if (p->pdds[i]->pasid == pasid) {
+				ret_p = p->pdds[i];
+				break;
+			}
+		}
+		if (ret_p)
+			break;
+	}
+	return ret_p;
+}
+
+/* This increments the process->ref counter. */
+struct kfd_process *kfd_lookup_process_by_pasid(u32 pasid,
+						struct kfd_process_device **pdd)
+{
+	struct kfd_process_device *ret_p;
 
 	int idx = srcu_read_lock(&kfd_processes_srcu);
 
-	hash_for_each_rcu(kfd_processes_table, temp, p, kfd_processes) {
-		if (p->pasid == pasid) {
-			kref_get(&p->ref);
-			ret_p = p;
-			break;
-		}
+	ret_p = kfd_lookup_process_device_by_pasid(pasid);
+	if (ret_p) {
+		if (pdd)
+			*pdd = ret_p;
+		kref_get(&ret_p->process->ref);
+
+		srcu_read_unlock(&kfd_processes_srcu, idx);
+		return ret_p->process;
 	}
 
 	srcu_read_unlock(&kfd_processes_srcu, idx);
 
-	return ret_p;
+	if (pdd)
+		*pdd = NULL;
+
+	return NULL;
 }
 
 /* This increments the process->ref counter. */
@@ -1840,6 +1905,8 @@ int kfd_process_evict_queues(struct kfd_process *p, uint32_t trigger)
 			goto fail;
 		}
 		n_evicted++;
+
+		pdd->dev->dqm->is_hws_hang = false;
 	}
 
 	return r;
@@ -1916,6 +1983,23 @@ kfd_process_gpuid_from_node(struct kfd_process *p, struct kfd_node *node,
 	return -EINVAL;
 }
 
+static int signal_eviction_fence(struct kfd_process *p)
+{
+	struct dma_fence *ef;
+	int ret;
+
+	rcu_read_lock();
+	ef = dma_fence_get_rcu_safe(&p->ef);
+	rcu_read_unlock();
+	if (!ef)
+		return true;
+
+	ret = dma_fence_signal(ef);
+	dma_fence_put(ef);
+
+	return ret;
+}
+
 static void evict_process_worker(struct work_struct *work)
 {
 	int ret;
@@ -1928,29 +2012,45 @@ static void evict_process_worker(struct work_struct *work)
 	 * lifetime of this thread, kfd_process p will be valid
 	 */
 	p = container_of(dwork, struct kfd_process, eviction_work);
-	WARN_ONCE(p->last_eviction_seqno != p->ef->seqno,
-		  "Eviction fence mismatch\n");
 
-	/* Narrow window of overlap between restore and evict work
-	 * item is possible. Once amdgpu_amdkfd_gpuvm_restore_process_bos
-	 * unreserves KFD BOs, it is possible to evicted again. But
-	 * restore has few more steps of finish. So lets wait for any
-	 * previous restore work to complete
-	 */
-	flush_delayed_work(&p->restore_work);
-
-	pr_debug("Started evicting pasid 0x%x\n", p->pasid);
+	pr_debug("Started evicting process pid %d\n", p->lead_thread->pid);
 	ret = kfd_process_evict_queues(p, KFD_QUEUE_EVICTION_TRIGGER_TTM);
 	if (!ret) {
-		dma_fence_signal(p->ef);
-		dma_fence_put(p->ef);
-		p->ef = NULL;
-		queue_delayed_work(kfd_restore_wq, &p->restore_work,
-				msecs_to_jiffies(PROCESS_RESTORE_TIME_MS));
+		/* If another thread already signaled the eviction fence,
+		 * they are responsible stopping the queues and scheduling
+		 * the restore work.
+		 */
+		if (signal_eviction_fence(p) ||
+		    mod_delayed_work(kfd_restore_wq, &p->restore_work,
+				     msecs_to_jiffies(PROCESS_RESTORE_TIME_MS)))
+			kfd_process_restore_queues(p);
 
-		pr_debug("Finished evicting pasid 0x%x\n", p->pasid);
+		pr_debug("Finished evicting process pid %d\n", p->lead_thread->pid);
 	} else
-		pr_err("Failed to evict queues of pasid 0x%x\n", p->pasid);
+		pr_err("Failed to evict queues of process pid %d\n", p->lead_thread->pid);
+}
+
+static int restore_process_helper(struct kfd_process *p)
+{
+	int ret = 0;
+
+	/* VMs may not have been acquired yet during debugging. */
+	if (p->kgd_process_info) {
+		ret = amdgpu_amdkfd_gpuvm_restore_process_bos(
+			p->kgd_process_info, &p->ef);
+		if (ret)
+			return ret;
+	}
+
+	ret = kfd_process_restore_queues(p);
+	if (!ret)
+		pr_debug("Finished restoring process pid %d\n",
+			p->lead_thread->pid);
+	else
+		pr_err("Failed to restore queues of process pid %d\n",
+		      p->lead_thread->pid);
+
+	return ret;
 }
 
 static void restore_process_worker(struct work_struct *work)
@@ -1965,7 +2065,7 @@ static void restore_process_worker(struct work_struct *work)
 	 * lifetime of this thread, kfd_process p will be valid
 	 */
 	p = container_of(dwork, struct kfd_process, restore_work);
-	pr_debug("Started restoring pasid 0x%x\n", p->pasid);
+	pr_debug("Started restoring process pasid %d\n", (int)p->lead_thread->pid);
 
 	/* Setting last_restore_timestamp before successful restoration.
 	 * Otherwise this would have to be set by KGD (restore_process_bos)
@@ -1978,24 +2078,15 @@ static void restore_process_worker(struct work_struct *work)
 	 */
 
 	p->last_restore_timestamp = get_jiffies_64();
-	/* VMs may not have been acquired yet during debugging. */
-	if (p->kgd_process_info)
-		ret = amdgpu_amdkfd_gpuvm_restore_process_bos(p->kgd_process_info,
-							     &p->ef);
-	if (ret) {
-		pr_debug("Failed to restore BOs of pasid 0x%x, retry after %d ms\n",
-			 p->pasid, PROCESS_BACK_OFF_TIME_MS);
-		ret = queue_delayed_work(kfd_restore_wq, &p->restore_work,
-				msecs_to_jiffies(PROCESS_BACK_OFF_TIME_MS));
-		WARN(!ret, "reschedule restore work failed\n");
-		return;
-	}
 
-	ret = kfd_process_restore_queues(p);
-	if (!ret)
-		pr_debug("Finished restoring pasid 0x%x\n", p->pasid);
-	else
-		pr_err("Failed to restore queues of pasid 0x%x\n", p->pasid);
+	ret = restore_process_helper(p);
+	if (ret) {
+		pr_debug("Failed to restore BOs of process pid %d, retry after %d ms\n",
+			 p->lead_thread->pid, PROCESS_BACK_OFF_TIME_MS);
+		if (mod_delayed_work(kfd_restore_wq, &p->restore_work,
+				     msecs_to_jiffies(PROCESS_RESTORE_TIME_MS)))
+			kfd_process_restore_queues(p);
+	}
 }
 
 void kfd_suspend_all_processes(void)
@@ -2006,14 +2097,9 @@ void kfd_suspend_all_processes(void)
 
 	WARN(debug_evictions, "Evicting all processes");
 	hash_for_each_rcu(kfd_processes_table, temp, p, kfd_processes) {
-		cancel_delayed_work_sync(&p->eviction_work);
-		flush_delayed_work(&p->restore_work);
-
 		if (kfd_process_evict_queues(p, KFD_QUEUE_EVICTION_TRIGGER_SUSPEND))
-			pr_err("Failed to suspend process 0x%x\n", p->pasid);
-		dma_fence_signal(p->ef);
-		dma_fence_put(p->ef);
-		p->ef = NULL;
+			pr_err("Failed to suspend process pid %d\n", p->lead_thread->pid);
+		signal_eviction_fence(p);
 	}
 	srcu_read_unlock(&kfd_processes_srcu, idx);
 }
@@ -2025,9 +2111,9 @@ int kfd_resume_all_processes(void)
 	int ret = 0, idx = srcu_read_lock(&kfd_processes_srcu);
 
 	hash_for_each_rcu(kfd_processes_table, temp, p, kfd_processes) {
-		if (!queue_delayed_work(kfd_restore_wq, &p->restore_work, 0)) {
-			pr_err("Restore process %d failed during resume\n",
-			       p->pasid);
+		if (restore_process_helper(p)) {
+			pr_err("Restore process pid %d failed during resume\n",
+			      p->lead_thread->pid);
 			ret = -EFAULT;
 		}
 	}
@@ -2067,36 +2153,6 @@ int kfd_reserved_mem_mmap(struct kfd_node *dev, struct kfd_process *process,
 			       KFD_CWSR_TBA_TMA_SIZE, vma->vm_page_prot);
 }
 
-void kfd_flush_tlb(struct kfd_process_device *pdd, enum TLB_FLUSH_TYPE type)
-{
-	struct amdgpu_vm *vm = drm_priv_to_vm(pdd->drm_priv);
-	uint64_t tlb_seq = amdgpu_vm_tlb_seq(vm);
-	struct kfd_node *dev = pdd->dev;
-	uint32_t xcc_mask = dev->xcc_mask;
-	int xcc = 0;
-
-	/*
-	 * It can be that we race and lose here, but that is extremely unlikely
-	 * and the worst thing which could happen is that we flush the changes
-	 * into the TLB once more which is harmless.
-	 */
-	if (atomic64_xchg(&pdd->tlb_seq, tlb_seq) == tlb_seq)
-		return;
-
-	if (dev->dqm->sched_policy == KFD_SCHED_POLICY_NO_HWS) {
-		/* Nothing to flush until a VMID is assigned, which
-		 * only happens when the first queue is created.
-		 */
-		if (pdd->qpd.vmid)
-			amdgpu_amdkfd_flush_gpu_tlb_vmid(dev->adev,
-							pdd->qpd.vmid);
-	} else {
-		for_each_inst(xcc, xcc_mask)
-			amdgpu_amdkfd_flush_gpu_tlb_pasid(
-				dev->adev, pdd->process->pasid, type, xcc);
-	}
-}
-
 /* assumes caller holds process lock. */
 int kfd_process_drain_interrupts(struct kfd_process_device *pdd)
 {
@@ -2112,12 +2168,14 @@ int kfd_process_drain_interrupts(struct kfd_process_device *pdd)
 	memset(irq_drain_fence, 0, sizeof(irq_drain_fence));
 	irq_drain_fence[0] = (KFD_IRQ_FENCE_SOURCEID << 8) |
 							KFD_IRQ_FENCE_CLIENTID;
-	irq_drain_fence[3] = pdd->process->pasid;
+	irq_drain_fence[3] = pdd->pasid;
 
 	/*
-	 * For GFX 9.4.3, send the NodeId also in IH cookie DW[3]
+	 * For GFX 9.4.3/9.5.0, send the NodeId also in IH cookie DW[3]
 	 */
-	if (KFD_GC_VERSION(pdd->dev->kfd) == IP_VERSION(9, 4, 3)) {
+	if (KFD_GC_VERSION(pdd->dev->kfd) == IP_VERSION(9, 4, 3) ||
+	    KFD_GC_VERSION(pdd->dev->kfd) == IP_VERSION(9, 4, 4) ||
+	    KFD_GC_VERSION(pdd->dev->kfd) == IP_VERSION(9, 5, 0)) {
 		node_id = ffs(pdd->dev->interrupt_bitmap) - 1;
 		irq_drain_fence[3] |= node_id << 16;
 	}
@@ -2141,7 +2199,7 @@ void kfd_process_close_interrupt_drain(unsigned int pasid)
 {
 	struct kfd_process *p;
 
-	p = kfd_lookup_process_by_pasid(pasid);
+	p = kfd_lookup_process_by_pasid(pasid, NULL);
 
 	if (!p)
 		return;
@@ -2262,8 +2320,8 @@ int kfd_debugfs_mqds_by_process(struct seq_file *m, void *data)
 	int idx = srcu_read_lock(&kfd_processes_srcu);
 
 	hash_for_each_rcu(kfd_processes_table, temp, p, kfd_processes) {
-		seq_printf(m, "Process %d PASID 0x%x:\n",
-			   p->lead_thread->tgid, p->pasid);
+		seq_printf(m, "Process %d PASID %d:\n",
+			   p->lead_thread->tgid, p->lead_thread->pid);
 
 		mutex_lock(&p->mutex);
 		r = pqm_debugfs_mqds(m, &p->pqm);

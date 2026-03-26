@@ -10,7 +10,7 @@
 #ifndef __X86_MEM_ENCRYPT_H__
 #define __X86_MEM_ENCRYPT_H__
 
-#ifndef __ASSEMBLY__
+#ifndef __ASSEMBLER__
 
 #include <linux/init.h>
 #include <linux/cc_platform.h>
@@ -20,8 +20,10 @@ struct boot_params;
 
 #ifdef CONFIG_X86_MEM_ENCRYPT
 void __init mem_encrypt_init(void);
+void __init mem_encrypt_setup_arch(void);
 #else
 static inline void mem_encrypt_init(void) { }
+static inline void __init mem_encrypt_setup_arch(void) { }
 #endif
 
 #ifdef CONFIG_AMD_MEM_ENCRYPT
@@ -44,7 +46,6 @@ void __init sme_map_bootdata(char *real_mode_data);
 void __init sme_unmap_bootdata(char *real_mode_data);
 
 void __init sme_early_init(void);
-void __init sev_setup_arch(void);
 
 void sme_encrypt_kernel(struct boot_params *bp);
 void sme_enable(struct boot_params *bp);
@@ -60,7 +61,7 @@ void __init sev_es_init_vc_handling(void);
 
 static inline u64 sme_get_me_mask(void)
 {
-	return RIP_REL_REF(sme_me_mask);
+	return sme_me_mask;
 }
 
 #define __bss_decrypted __section(".bss..decrypted")
@@ -79,7 +80,6 @@ static inline void __init sme_map_bootdata(char *real_mode_data) { }
 static inline void __init sme_unmap_bootdata(char *real_mode_data) { }
 
 static inline void __init sme_early_init(void) { }
-static inline void __init sev_setup_arch(void) { }
 
 static inline void sme_encrypt_kernel(struct boot_params *bp) { }
 static inline void sme_enable(struct boot_params *bp) { }
@@ -114,6 +114,6 @@ void add_encrypt_protection_map(void);
 
 extern char __start_bss_decrypted[], __end_bss_decrypted[], __start_bss_decrypted_unused[];
 
-#endif	/* __ASSEMBLY__ */
+#endif	/* __ASSEMBLER__ */
 
 #endif	/* __X86_MEM_ENCRYPT_H__ */

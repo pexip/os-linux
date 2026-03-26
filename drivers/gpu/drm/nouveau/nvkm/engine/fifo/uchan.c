@@ -72,7 +72,7 @@ struct nvkm_uobj {
 };
 
 static int
-nvkm_uchan_object_fini_1(struct nvkm_oproxy *oproxy, bool suspend)
+nvkm_uchan_object_fini_1(struct nvkm_oproxy *oproxy, enum nvkm_suspend_state suspend)
 {
 	struct nvkm_uobj *uobj = container_of(oproxy, typeof(*uobj), oproxy);
 	struct nvkm_chan *chan = uobj->chan;
@@ -87,7 +87,7 @@ nvkm_uchan_object_fini_1(struct nvkm_oproxy *oproxy, bool suspend)
 		nvkm_chan_cctx_bind(chan, ectx->engn, NULL);
 
 		if (refcount_dec_and_test(&ectx->uses))
-			nvkm_object_fini(ectx->object, false);
+			nvkm_object_fini(ectx->object, NVKM_POWEROFF);
 		mutex_unlock(&chan->cgrp->mutex);
 	}
 
@@ -258,7 +258,7 @@ nvkm_uchan_map(struct nvkm_object *object, void *argv, u32 argc,
 	struct nvkm_chan *chan = nvkm_uchan(object)->chan;
 	struct nvkm_device *device = chan->cgrp->runl->fifo->engine.subdev.device;
 
-	if (chan->func->userd->bar < 0)
+	if (!chan->func->userd->bar)
 		return -ENOSYS;
 
 	*type = NVKM_OBJECT_MAP_IO;
@@ -269,7 +269,7 @@ nvkm_uchan_map(struct nvkm_object *object, void *argv, u32 argc,
 }
 
 static int
-nvkm_uchan_fini(struct nvkm_object *object, bool suspend)
+nvkm_uchan_fini(struct nvkm_object *object, enum nvkm_suspend_state suspend)
 {
 	struct nvkm_chan *chan = nvkm_uchan(object)->chan;
 
@@ -316,6 +316,15 @@ nvkm_uchan = {
 	.sclass = nvkm_uchan_sclass,
 	.uevent = nvkm_uchan_uevent,
 };
+
+struct nvkm_chan *
+nvkm_uchan_chan(struct nvkm_object *object)
+{
+	if (WARN_ON(object->func != &nvkm_uchan))
+		return NULL;
+
+	return nvkm_uchan(object)->chan;
+}
 
 int
 nvkm_uchan_new(struct nvkm_fifo *fifo, struct nvkm_cgrp *cgrp, const struct nvkm_oclass *oclass,

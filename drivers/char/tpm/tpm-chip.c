@@ -158,6 +158,9 @@ int tpm_try_get_ops(struct tpm_chip *chip)
 {
 	int rc = -EIO;
 
+	if (chip->flags & TPM_CHIP_FLAG_DISABLE)
+		return rc;
+
 	get_device(&chip->dev);
 
 	down_read(&chip->ops_sem);
@@ -279,7 +282,9 @@ static void tpm_dev_release(struct device *dev)
 
 	kfree(chip->work_space.context_buf);
 	kfree(chip->work_space.session_buf);
-	kfree(chip->allocated_banks);
+#ifdef CONFIG_TCG_TPM2_HMAC
+	kfree(chip->auth);
+#endif
 	kfree(chip);
 }
 
@@ -299,6 +304,7 @@ int tpm_class_shutdown(struct device *dev)
 	down_write(&chip->ops_sem);
 	if (chip->flags & TPM_CHIP_FLAG_TPM2) {
 		if (!tpm_chip_start(chip)) {
+			tpm2_end_auth_session(chip);
 			tpm2_shutdown(chip, TPM2_SU_CLEAR);
 			tpm_chip_stop(chip);
 		}
@@ -669,6 +675,16 @@ EXPORT_SYMBOL_GPL(tpm_chip_register);
  */
 void tpm_chip_unregister(struct tpm_chip *chip)
 {
+#ifdef CONFIG_TCG_TPM2_HMAC
+	int rc;
+
+	rc = tpm_try_get_ops(chip);
+	if (!rc) {
+		tpm2_end_auth_session(chip);
+		tpm_put_ops(chip);
+	}
+#endif
+
 	tpm_del_legacy_sysfs(chip);
 	if (tpm_is_hwrng_enabled(chip))
 		hwrng_unregister(&chip->hwrng);

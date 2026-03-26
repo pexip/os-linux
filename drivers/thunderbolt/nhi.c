@@ -19,6 +19,7 @@
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/property.h>
+#include <linux/string_choices.h>
 #include <linux/string_helpers.h>
 
 #include "nhi.h"
@@ -48,7 +49,7 @@
 
 static bool host_reset = true;
 module_param(host_reset, bool, 0444);
-MODULE_PARM_DESC(host_reset, "reset USBv2 host router (default: true)");
+MODULE_PARM_DESC(host_reset, "reset USB4 host router (default: true)");
 
 static int ring_interrupt_index(const struct tb_ring *ring)
 {
@@ -146,7 +147,7 @@ static void ring_interrupt_active(struct tb_ring *ring, bool active)
 		dev_WARN(&ring->nhi->pdev->dev,
 					 "interrupt for %s %d is already %s\n",
 					 RING_TYPE(ring), ring->hop,
-					 active ? "enabled" : "disabled");
+					 str_enabled_disabled(active));
 
 	if (active)
 		iowrite32(new, ring->nhi->iobase + reg);
@@ -343,8 +344,10 @@ EXPORT_SYMBOL_GPL(__tb_ring_enqueue);
  *
  * This function can be called when @start_poll callback of the @ring
  * has been called. It will read one completed frame from the ring and
- * return it to the caller. Returns %NULL if there is no more completed
- * frames.
+ * return it to the caller.
+ *
+ * Return: Pointer to &struct ring_frame, %NULL if there is no more
+ * completed frames.
  */
 struct ring_frame *tb_ring_poll(struct tb_ring *ring)
 {
@@ -465,7 +468,7 @@ static int ring_request_msix(struct tb_ring *ring, bool no_suspend)
 	if (!nhi->pdev->msix_enabled)
 		return 0;
 
-	ret = ida_simple_get(&nhi->msix_ida, 0, MSIX_MAX_VECS, GFP_KERNEL);
+	ret = ida_alloc_max(&nhi->msix_ida, MSIX_MAX_VECS - 1, GFP_KERNEL);
 	if (ret < 0)
 		return ret;
 
@@ -485,7 +488,7 @@ static int ring_request_msix(struct tb_ring *ring, bool no_suspend)
 	return 0;
 
 err_ida_remove:
-	ida_simple_remove(&nhi->msix_ida, ring->vector);
+	ida_free(&nhi->msix_ida, ring->vector);
 
 	return ret;
 }
@@ -496,7 +499,7 @@ static void ring_release_msix(struct tb_ring *ring)
 		return;
 
 	free_irq(ring->irq, ring);
-	ida_simple_remove(&ring->nhi->msix_ida, ring->vector);
+	ida_free(&ring->nhi->msix_ida, ring->vector);
 	ring->vector = 0;
 	ring->irq = 0;
 }
@@ -639,6 +642,8 @@ err_free_ring:
  * @hop: HopID (ring) to allocate
  * @size: Number of entries in the ring
  * @flags: Flags for the ring
+ *
+ * Return: Pointer to &struct tb_ring, %NULL otherwise.
  */
 struct tb_ring *tb_ring_alloc_tx(struct tb_nhi *nhi, int hop, int size,
 				 unsigned int flags)
@@ -660,6 +665,8 @@ EXPORT_SYMBOL_GPL(tb_ring_alloc_tx);
  *		interrupt is triggered and masked, instead of callback
  *		in each Rx frame.
  * @poll_data: Optional data passed to @start_poll
+ *
+ * Return: Pointer to &struct tb_ring, %NULL otherwise.
  */
 struct tb_ring *tb_ring_alloc_rx(struct tb_nhi *nhi, int hop, int size,
 				 unsigned int flags, int e2e_tx_hop,
@@ -853,8 +860,9 @@ EXPORT_SYMBOL_GPL(tb_ring_free);
  * @cmd: Command to send
  * @data: Data to be send with the command
  *
- * Sends mailbox command to the firmware running on NHI. Returns %0 in
- * case of success and negative errno in case of failure.
+ * Sends mailbox command to the firmware running on NHI.
+ *
+ * Return: %0 on success, negative errno otherwise.
  */
 int nhi_mailbox_cmd(struct tb_nhi *nhi, enum nhi_mailbox_cmd cmd, u32 data)
 {
@@ -890,6 +898,8 @@ int nhi_mailbox_cmd(struct tb_nhi *nhi, enum nhi_mailbox_cmd cmd, u32 data)
  *
  * The function reads current firmware operation mode using NHI mailbox
  * registers and returns it to the caller.
+ *
+ * Return: &enum nhi_fw_mode.
  */
 enum nhi_fw_mode nhi_mailbox_mode(struct tb_nhi *nhi)
 {
@@ -1221,7 +1231,7 @@ static void nhi_check_iommu(struct tb_nhi *nhi)
 		str_enabled_disabled(port_ok));
 }
 
-static bool nhi_reset(struct tb_nhi *nhi)
+static void nhi_reset(struct tb_nhi *nhi)
 {
 	ktime_t timeout;
 	u32 val;
@@ -1229,11 +1239,11 @@ static bool nhi_reset(struct tb_nhi *nhi)
 	val = ioread32(nhi->iobase + REG_CAPS);
 	/* Reset only v2 and later routers */
 	if (FIELD_GET(REG_CAPS_VERSION_MASK, val) < REG_CAPS_VERSION_2)
-		return false;
+		return;
 
 	if (!host_reset) {
 		dev_dbg(&nhi->pdev->dev, "skipping host router reset\n");
-		return false;
+		return;
 	}
 
 	iowrite32(REG_RESET_HRR, nhi->iobase + REG_RESET);
@@ -1244,14 +1254,12 @@ static bool nhi_reset(struct tb_nhi *nhi)
 		val = ioread32(nhi->iobase + REG_RESET);
 		if (!(val & REG_RESET_HRR)) {
 			dev_warn(&nhi->pdev->dev, "host router reset successful\n");
-			return true;
+			return;
 		}
 		usleep_range(10, 20);
 	} while (ktime_before(ktime_get(), timeout));
 
 	dev_warn(&nhi->pdev->dev, "timeout resetting host router\n");
-
-	return false;
 }
 
 static int nhi_init_msi(struct tb_nhi *nhi)
@@ -1333,7 +1341,6 @@ static int nhi_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	struct device *dev = &pdev->dev;
 	struct tb_nhi *nhi;
 	struct tb *tb;
-	bool reset;
 	int res;
 
 	if (!nhi_imr_valid(pdev))
@@ -1343,18 +1350,18 @@ static int nhi_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	if (res)
 		return dev_err_probe(dev, res, "cannot enable PCI device, aborting\n");
 
-	res = pcim_iomap_regions(pdev, 1 << 0, "thunderbolt");
-	if (res)
-		return dev_err_probe(dev, res, "cannot obtain PCI resources, aborting\n");
-
 	nhi = devm_kzalloc(&pdev->dev, sizeof(*nhi), GFP_KERNEL);
 	if (!nhi)
 		return -ENOMEM;
 
 	nhi->pdev = pdev;
 	nhi->ops = (const struct tb_nhi_ops *)id->driver_data;
-	/* cannot fail - table is allocated in pcim_iomap_regions */
-	nhi->iobase = pcim_iomap_table(pdev)[0];
+
+	nhi->iobase = pcim_iomap_region(pdev, 0, "thunderbolt");
+	res = PTR_ERR_OR_ZERO(nhi->iobase);
+	if (res)
+		return dev_err_probe(dev, res, "cannot obtain PCI resources, aborting\n");
+
 	nhi->hop_count = ioread32(nhi->iobase + REG_CAPS) & 0x3ff;
 	dev_dbg(dev, "total paths: %d\n", nhi->hop_count);
 
@@ -1367,12 +1374,7 @@ static int nhi_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	nhi_check_quirks(nhi);
 	nhi_check_iommu(nhi);
-
-	/*
-	 * Only USB4 v2 hosts support host reset so if we already did
-	 * that then don't do it again when the domain is initialized.
-	 */
-	reset = nhi_reset(nhi) ? false : host_reset;
+	nhi_reset(nhi);
 
 	res = nhi_init_msi(nhi);
 	if (res)
@@ -1399,7 +1401,7 @@ static int nhi_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	dev_dbg(dev, "NHI initialized, starting thunderbolt\n");
 
-	res = tb_domain_add(tb, reset);
+	res = tb_domain_add(tb, host_reset);
 	if (res) {
 		/*
 		 * At this point the RX/TX rings might already have been
@@ -1535,6 +1537,8 @@ static struct pci_device_id nhi_ids[] = {
 	{ PCI_VDEVICE(INTEL, PCI_DEVICE_ID_INTEL_PTL_P_NHI0),
 	  .driver_data = (kernel_ulong_t)&icl_nhi_ops },
 	{ PCI_VDEVICE(INTEL, PCI_DEVICE_ID_INTEL_PTL_P_NHI1),
+	  .driver_data = (kernel_ulong_t)&icl_nhi_ops },
+	{ PCI_VDEVICE(INTEL, PCI_DEVICE_ID_INTEL_WCL_NHI0),
 	  .driver_data = (kernel_ulong_t)&icl_nhi_ops },
 	{ PCI_VDEVICE(INTEL, PCI_DEVICE_ID_INTEL_BARLOW_RIDGE_HOST_80G_NHI) },
 	{ PCI_VDEVICE(INTEL, PCI_DEVICE_ID_INTEL_BARLOW_RIDGE_HOST_40G_NHI) },

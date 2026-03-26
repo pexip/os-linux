@@ -57,7 +57,8 @@ enum file_state {
 
 /* MEI device states */
 enum mei_dev_state {
-	MEI_DEV_INITIALIZING = 0,
+	MEI_DEV_UNINITIALIZED = 0,
+	MEI_DEV_INITIALIZING,
 	MEI_DEV_INIT_CLIENTS,
 	MEI_DEV_ENABLED,
 	MEI_DEV_RESETTING,
@@ -70,9 +71,9 @@ enum mei_dev_state {
 /**
  * enum mei_dev_pxp_mode - MEI PXP mode state
  *
- * @MEI_DEV_PXP_DEFAULT: PCH based device, no initailization required
+ * @MEI_DEV_PXP_DEFAULT: PCH based device, no initialization required
  * @MEI_DEV_PXP_INIT:    device requires initialization, send setup message to firmware
- * @MEI_DEV_PXP_SETUP:   device is in setup stage, waiting for firmware repsonse
+ * @MEI_DEV_PXP_SETUP:   device is in setup stage, waiting for firmware response
  * @MEI_DEV_PXP_READY:   device initialized
  */
 enum mei_dev_pxp_mode {
@@ -80,6 +81,19 @@ enum mei_dev_pxp_mode {
 	MEI_DEV_PXP_INIT    = 1,
 	MEI_DEV_PXP_SETUP   = 2,
 	MEI_DEV_PXP_READY   = 3,
+};
+
+/**
+ * enum mei_dev_reset_to_pxp - reset to PXP mode performed
+ *
+ * @MEI_DEV_RESET_TO_PXP_DEFAULT: before reset
+ * @MEI_DEV_RESET_TO_PXP_PERFORMED: reset performed
+ * @MEI_DEV_RESET_TO_PXP_DONE: reset processed
+ */
+enum mei_dev_reset_to_pxp {
+	MEI_DEV_RESET_TO_PXP_DEFAULT = 0,
+	MEI_DEV_RESET_TO_PXP_PERFORMED = 1,
+	MEI_DEV_RESET_TO_PXP_DONE = 2,
 };
 
 const char *mei_dev_state_str(int state);
@@ -452,13 +466,15 @@ struct mei_dev_timeouts {
 	unsigned int d0i3; /* D0i3 set/unset max response time, in jiffies */
 	unsigned long hbm; /* HBM operation timeout, in jiffies */
 	unsigned long mkhi_recv; /* receive timeout, in jiffies */
+	unsigned long link_reset_wait; /* link reset wait timeout, in jiffies */
 };
 
 /**
  * struct mei_device -  MEI private device struct
  *
- * @dev         : device on a bus
- * @cdev        : character device
+ * @parent      : device on a bus
+ * @dev         : device object
+ * @cdev        : character device pointer
  * @minor       : minor number allocated for device
  *
  * @write_list  : write pending list
@@ -481,6 +497,7 @@ struct mei_dev_timeouts {
  *
  * @reset_count : number of consecutive resets
  * @dev_state   : device state
+ * @wait_dev_state: wait queue for device state change
  * @hbm_state   : state of host bus message protocol
  * @pxp_mode    : PXP device mode
  * @init_clients_timer : HBM init handshake timeout
@@ -534,12 +551,15 @@ struct mei_dev_timeouts {
  *
  * @dbgfs_dir   : debugfs mei root directory
  *
+ * @gsc_reset_to_pxp     : state of reset to the PXP mode
+ *
  * @ops:        : hw specific operations
  * @hw          : hw specific data
  */
 struct mei_device {
-	struct device *dev;
-	struct cdev cdev;
+	struct device *parent;
+	struct device dev;
+	struct cdev *cdev;
 	int minor;
 
 	struct list_head write_list;
@@ -567,6 +587,7 @@ struct mei_device {
 	 */
 	unsigned long reset_count;
 	enum mei_dev_state dev_state;
+	wait_queue_head_t wait_dev_state;
 	enum mei_hbm_state hbm_state;
 	enum mei_dev_pxp_mode pxp_mode;
 	u16 init_clients_timer;
@@ -630,6 +651,8 @@ struct mei_device {
 	struct dentry *dbgfs_dir;
 #endif /* CONFIG_DEBUG_FS */
 
+	enum mei_dev_reset_to_pxp gsc_reset_to_pxp;
+
 	const struct mei_hw_ops *ops;
 	char hw[] __aligned(sizeof(void *));
 };
@@ -680,7 +703,7 @@ static inline u32 mei_slots2data(int slots)
  * mei init function prototypes
  */
 void mei_device_init(struct mei_device *dev,
-		     struct device *device,
+		     struct device *parent,
 		     bool slow_fw,
 		     const struct mei_hw_ops *hw_ops);
 int mei_reset(struct mei_device *dev);
@@ -874,5 +897,29 @@ static inline ssize_t mei_fw_status_str(struct mei_device *dev,
 	return ret;
 }
 
+/**
+ * kind_is_gsc - checks whether the device is gsc
+ *
+ * @dev: the device structure
+ *
+ * Return: whether the device is gsc
+ */
+static inline bool kind_is_gsc(struct mei_device *dev)
+{
+	/* check kind for NULL because it may be not set, like at the fist call to hw_start */
+	return dev->kind && (strcmp(dev->kind, "gsc") == 0);
+}
 
+/**
+ * kind_is_gscfi - checks whether the device is gscfi
+ *
+ * @dev: the device structure
+ *
+ * Return: whether the device is gscfi
+ */
+static inline bool kind_is_gscfi(struct mei_device *dev)
+{
+	/* check kind for NULL because it may be not set, like at the fist call to hw_start */
+	return dev->kind && (strcmp(dev->kind, "gscfi") == 0);
+}
 #endif

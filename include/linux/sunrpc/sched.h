@@ -38,6 +38,17 @@ struct rpc_wait {
 };
 
 /*
+ * This describes a timeout strategy
+ */
+struct rpc_timeout {
+	unsigned long		to_initval,		/* initial timeout */
+				to_maxval,		/* max timeout */
+				to_increment;		/* if !exponential */
+	unsigned int		to_retries;		/* max # of retries */
+	unsigned char		to_exponential;
+};
+
+/*
  * This is the RPC task struct
  */
 struct rpc_task {
@@ -123,6 +134,7 @@ struct rpc_task_setup {
 #define RPC_TASK_MOVEABLE	0x0004		/* nfs4.1+ rpc tasks */
 #define RPC_TASK_NULLCREDS	0x0010		/* Use AUTH_NULL credential */
 #define RPC_CALL_MAJORSEEN	0x0020		/* major timeout seen */
+#define RPC_TASK_NETUNREACH_FATAL 0x0040	/* ENETUNREACH is fatal */
 #define RPC_TASK_DYNAMIC	0x0080		/* task was kmalloc'ed */
 #define	RPC_TASK_NO_ROUND_ROBIN	0x0100		/* send requests on "main" xprt */
 #define RPC_TASK_SOFT		0x0200		/* Use soft timeouts */
@@ -206,7 +218,8 @@ struct rpc_wait_queue {
  */
 struct rpc_task *rpc_new_task(const struct rpc_task_setup *);
 struct rpc_task *rpc_run_task(const struct rpc_task_setup *);
-struct rpc_task *rpc_run_bc_task(struct rpc_rqst *req);
+struct rpc_task *rpc_run_bc_task(struct rpc_rqst *req,
+		struct rpc_timeout *timeout);
 void		rpc_put_task(struct rpc_task *);
 void		rpc_put_task_async(struct rpc_task *);
 bool		rpc_task_set_rpc_status(struct rpc_task *task, int rpc_status);

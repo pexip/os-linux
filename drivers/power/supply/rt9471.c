@@ -192,12 +192,12 @@ static const struct reg_field rt9471_reg_fields[F_MAX_FIELDS] = {
 };
 
 static const struct linear_range rt9471_chg_ranges[RT9471_MAX_RANGES] = {
-	[RT9471_RANGE_AICR] = { .min = 50000,	.min_sel = 1, .max_sel = 63, .step = 50000 },
-	[RT9471_RANGE_MIVR] = { .min = 3900000,	.min_sel = 0, .max_sel = 15, .step = 100000 },
-	[RT9471_RANGE_IPRE] = { .min = 50000,	.min_sel = 0, .max_sel = 15, .step = 50000 },
-	[RT9471_RANGE_VCHG] = { .min = 3900000,	.min_sel = 0, .max_sel = 80, .step = 10000 },
-	[RT9471_RANGE_ICHG] = { .min = 0,	.min_sel = 0, .max_sel = 63, .step = 50000 },
-	[RT9471_RANGE_IEOC] = { .min = 50000,	.min_sel = 0, .max_sel = 15, .step = 50000 },
+	[RT9471_RANGE_AICR] = LINEAR_RANGE(50000,	1, 63, 50000),
+	[RT9471_RANGE_MIVR] = LINEAR_RANGE(3900000,	0, 15, 100000),
+	[RT9471_RANGE_IPRE] = LINEAR_RANGE(50000,	0, 15, 50000),
+	[RT9471_RANGE_VCHG] = LINEAR_RANGE(3900000,	0, 80, 10000),
+	[RT9471_RANGE_ICHG] = LINEAR_RANGE(0,		0, 63, 50000),
+	[RT9471_RANGE_IEOC] = LINEAR_RANGE(50000,	0, 15, 50000),
 };
 
 static int rt9471_set_value_by_field_range(struct rt9471_chip *chip,
@@ -345,14 +345,6 @@ static enum power_supply_property rt9471_charger_properties[] = {
 	POWER_SUPPLY_PROP_CHARGE_TERM_CURRENT,
 	POWER_SUPPLY_PROP_MODEL_NAME,
 	POWER_SUPPLY_PROP_MANUFACTURER,
-};
-
-static enum power_supply_usb_type rt9471_charger_usb_types[] = {
-	POWER_SUPPLY_USB_TYPE_UNKNOWN,
-	POWER_SUPPLY_USB_TYPE_SDP,
-	POWER_SUPPLY_USB_TYPE_DCP,
-	POWER_SUPPLY_USB_TYPE_CDP,
-	POWER_SUPPLY_USB_TYPE_APPLE_BRICK_ID,
 };
 
 static int rt9471_charger_property_is_writeable(struct power_supply *psy,
@@ -731,7 +723,7 @@ static int rt9471_register_psy(struct rt9471_chip *chip)
 	char *psy_name;
 
 	cfg.drv_data = chip;
-	cfg.of_node = dev->of_node;
+	cfg.fwnode = dev_fwnode(dev);
 	cfg.attr_grp = rt9471_sysfs_groups;
 
 	psy_name = devm_kasprintf(dev, GFP_KERNEL, "rt9471-%s", dev_name(dev));
@@ -740,8 +732,11 @@ static int rt9471_register_psy(struct rt9471_chip *chip)
 
 	desc->name = psy_name;
 	desc->type = POWER_SUPPLY_TYPE_USB;
-	desc->usb_types = rt9471_charger_usb_types;
-	desc->num_usb_types = ARRAY_SIZE(rt9471_charger_usb_types);
+	desc->usb_types = BIT(POWER_SUPPLY_USB_TYPE_SDP) |
+			  BIT(POWER_SUPPLY_USB_TYPE_CDP) |
+			  BIT(POWER_SUPPLY_USB_TYPE_DCP) |
+			  BIT(POWER_SUPPLY_USB_TYPE_APPLE_BRICK_ID) |
+			  BIT(POWER_SUPPLY_USB_TYPE_UNKNOWN);
 	desc->properties = rt9471_charger_properties;
 	desc->num_properties = ARRAY_SIZE(rt9471_charger_properties);
 	desc->get_property = rt9471_charger_get_property;

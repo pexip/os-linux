@@ -12,9 +12,11 @@
 #include <linux/ratelimit.h>
 #include <linux/uaccess.h>
 #include <linux/sysctl.h>
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
+#include <linux/perf_event.h>
 #include <asm/hardirq.h>
 #include <asm/traps.h>
+#include "unaligned.h"
 
 /* #define DEBUG_UNALIGNED 1 */
 
@@ -104,6 +106,7 @@
 #define ERR_NOTHANDLED	-1
 
 int unaligned_enabled __read_mostly = 1;
+int no_unaligned_warning __read_mostly;
 
 static int emulate_ldh(struct pt_regs *regs, int toreg)
 {
@@ -376,6 +379,7 @@ void handle_unaligned(struct pt_regs *regs)
 	int ret = ERR_NOTHANDLED;
 
 	__inc_irq_stat(irq_unaligned_count);
+	perf_sw_event(PERF_COUNT_SW_ALIGNMENT_FAULTS, 1, regs, regs->ior);
 
 	/* log a message with pacing */
 	if (user_mode(regs)) {
@@ -396,6 +400,14 @@ void handle_unaligned(struct pt_regs *regs)
 
 		if (!unaligned_enabled)
 			goto force_sigbus;
+	} else {
+		static DEFINE_RATELIMIT_STATE(kernel_ratelimit, 5 * HZ, 5);
+		if (!(current->thread.flags & PARISC_UAC_NOPRINT) &&
+			!no_unaligned_warning &&
+			__ratelimit(&kernel_ratelimit))
+			pr_warn("Kernel: unaligned access to " RFMT " in %pS "
+					"(iir " RFMT ")\n",
+				regs->ior, (void *)regs->iaoq[0], regs->iir);
 	}
 
 	/* handle modification - OK, it's ugly, see the instruction manual */

@@ -7,6 +7,8 @@
  *	      Jan Glauber <jang@linux.vnet.ibm.com>
  * 2.6 cio integration by Cornelia Huck <cornelia.huck@de.ibm.com>
  */
+
+#include <linux/export.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -17,6 +19,7 @@
 #include <linux/atomic.h>
 #include <asm/debug.h>
 #include <asm/qdio.h>
+#include <asm/asm.h>
 #include <asm/ipl.h>
 
 #include "cio.h"
@@ -42,13 +45,12 @@ static inline int do_siga_sync(unsigned long schid,
 		"	lgr	2,%[out]\n"
 		"	lgr	3,%[in]\n"
 		"	siga	0\n"
-		"	ipm	%[cc]\n"
-		"	srl	%[cc],28\n"
-		: [cc] "=&d" (cc)
+		CC_IPM(cc)
+		: CC_OUT(cc, cc)
 		: [fc] "d" (fc), [schid] "d" (schid),
 		  [out] "d" (out_mask), [in] "d" (in_mask)
-		: "cc", "0", "1", "2", "3");
-	return cc;
+		: CC_CLOBBER_LIST("0", "1", "2", "3"));
+	return CC_TRANSFORM(cc);
 }
 
 static inline int do_siga_input(unsigned long schid, unsigned long mask,
@@ -61,12 +63,11 @@ static inline int do_siga_input(unsigned long schid, unsigned long mask,
 		"	lgr	1,%[schid]\n"
 		"	lgr	2,%[mask]\n"
 		"	siga	0\n"
-		"	ipm	%[cc]\n"
-		"	srl	%[cc],28\n"
-		: [cc] "=&d" (cc)
+		CC_IPM(cc)
+		: CC_OUT(cc, cc)
 		: [fc] "d" (fc), [schid] "d" (schid), [mask] "d" (mask)
-		: "cc", "0", "1", "2");
-	return cc;
+		: CC_CLOBBER_LIST("0", "1", "2"));
+	return CC_TRANSFORM(cc);
 }
 
 /**
@@ -82,7 +83,7 @@ static inline int do_siga_input(unsigned long schid, unsigned long mask,
  */
 static inline int do_siga_output(unsigned long schid, unsigned long mask,
 				 unsigned int *bb, unsigned long fc,
-				 unsigned long aob)
+				 dma64_t aob)
 {
 	int cc;
 
@@ -93,13 +94,12 @@ static inline int do_siga_output(unsigned long schid, unsigned long mask,
 		"	lgr	3,%[aob]\n"
 		"	siga	0\n"
 		"	lgr	%[fc],0\n"
-		"	ipm	%[cc]\n"
-		"	srl	%[cc],28\n"
-		: [cc] "=&d" (cc), [fc] "+&d" (fc)
+		CC_IPM(cc)
+		: CC_OUT(cc, cc), [fc] "+&d" (fc)
 		: [schid] "d" (schid), [mask] "d" (mask), [aob] "d" (aob)
-		: "cc", "0", "1", "2", "3");
+		: CC_CLOBBER_LIST("0", "1", "2", "3"));
 	*bb = fc >> 31;
-	return cc;
+	return CC_TRANSFORM(cc);
 }
 
 /**
@@ -321,7 +321,7 @@ static inline int qdio_siga_sync_q(struct qdio_q *q)
 }
 
 static int qdio_siga_output(struct qdio_q *q, unsigned int count,
-			    unsigned int *busy_bit, unsigned long aob)
+			    unsigned int *busy_bit, dma64_t aob)
 {
 	unsigned long schid = *((u32 *) &q->irq_ptr->schid);
 	unsigned int fc = QDIO_SIGA_WRITE;
@@ -628,7 +628,7 @@ int qdio_inspect_output_queue(struct ccw_device *cdev, unsigned int nr,
 EXPORT_SYMBOL_GPL(qdio_inspect_output_queue);
 
 static int qdio_kick_outbound_q(struct qdio_q *q, unsigned int count,
-				unsigned long aob)
+				dma64_t aob)
 {
 	int retries = 0, cc;
 	unsigned int busy_bit;
@@ -695,7 +695,7 @@ static void qdio_int_handler_pci(struct qdio_irq *irq_ptr)
 		return;
 
 	qdio_deliver_irq(irq_ptr);
-	irq_ptr->last_data_irq_time = S390_lowcore.int_clock;
+	irq_ptr->last_data_irq_time = get_lowcore()->int_clock;
 }
 
 static void qdio_handle_activate_check(struct qdio_irq *irq_ptr,
@@ -1088,7 +1088,7 @@ int qdio_establish(struct ccw_device *cdev,
 	irq_ptr->ccw->cmd_code = ciw->cmd;
 	irq_ptr->ccw->flags = CCW_FLAG_SLI;
 	irq_ptr->ccw->count = ciw->count;
-	irq_ptr->ccw->cda = (u32) virt_to_phys(irq_ptr->qdr);
+	irq_ptr->ccw->cda = virt_to_dma32(irq_ptr->qdr);
 
 	spin_lock_irq(get_ccwdev_lock(cdev));
 	ccw_device_set_options_mask(cdev, 0);
@@ -1281,9 +1281,9 @@ static int handle_outbound(struct qdio_q *q, unsigned int bufnr, unsigned int co
 		qperf_inc(q, outbound_queue_full);
 
 	if (queue_type(q) == QDIO_IQDIO_QFMT) {
-		unsigned long phys_aob = aob ? virt_to_phys(aob) : 0;
+		dma64_t phys_aob = aob ? virt_to_dma64(aob) : 0;
 
-		WARN_ON_ONCE(!IS_ALIGNED(phys_aob, 256));
+		WARN_ON_ONCE(!IS_ALIGNED(dma64_to_u64(phys_aob), 256));
 		rc = qdio_kick_outbound_q(q, count, phys_aob);
 	} else if (qdio_need_siga_sync(q->irq_ptr)) {
 		rc = qdio_sync_output_queue(q);

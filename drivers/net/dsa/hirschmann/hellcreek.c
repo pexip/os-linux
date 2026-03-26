@@ -294,12 +294,8 @@ static void hellcreek_get_strings(struct dsa_switch *ds, int port,
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(hellcreek_counter); ++i) {
-		const struct hellcreek_counter *counter = &hellcreek_counter[i];
-
-		strscpy(data + i * ETH_GSTRING_LEN,
-			counter->name, ETH_GSTRING_LEN);
-	}
+	for (i = 0; i < ARRAY_SIZE(hellcreek_counter); ++i)
+		ethtool_puts(&data, hellcreek_counter[i].name);
 }
 
 static int hellcreek_get_sset_count(struct dsa_switch *ds, int port, int sset)
@@ -1065,7 +1061,7 @@ static void hellcreek_setup_tc_identity_mapping(struct hellcreek *hellcreek)
 
 static int hellcreek_setup_fdb(struct hellcreek *hellcreek)
 {
-	static struct hellcreek_fdb_entry l2_ptp = {
+	static const struct hellcreek_fdb_entry l2_ptp = {
 		/* MAC: 01-1B-19-00-00-00 */
 		.mac	      = { 0x01, 0x1b, 0x19, 0x00, 0x00, 0x00 },
 		.portmask     = 0x03,	/* Management ports */
@@ -1076,7 +1072,7 @@ static int hellcreek_setup_fdb(struct hellcreek *hellcreek)
 		.reprio_tc    = 6,	/* TC: 6 as per IEEE 802.1AS */
 		.reprio_en    = 1,
 	};
-	static struct hellcreek_fdb_entry udp4_ptp = {
+	static const struct hellcreek_fdb_entry udp4_ptp = {
 		/* MAC: 01-00-5E-00-01-81 */
 		.mac	      = { 0x01, 0x00, 0x5e, 0x00, 0x01, 0x81 },
 		.portmask     = 0x03,	/* Management ports */
@@ -1087,7 +1083,7 @@ static int hellcreek_setup_fdb(struct hellcreek *hellcreek)
 		.reprio_tc    = 6,
 		.reprio_en    = 1,
 	};
-	static struct hellcreek_fdb_entry udp6_ptp = {
+	static const struct hellcreek_fdb_entry udp6_ptp = {
 		/* MAC: 33-33-00-00-01-81 */
 		.mac	      = { 0x33, 0x33, 0x00, 0x00, 0x01, 0x81 },
 		.portmask     = 0x03,	/* Management ports */
@@ -1098,7 +1094,7 @@ static int hellcreek_setup_fdb(struct hellcreek *hellcreek)
 		.reprio_tc    = 6,
 		.reprio_en    = 1,
 	};
-	static struct hellcreek_fdb_entry l2_p2p = {
+	static const struct hellcreek_fdb_entry l2_p2p = {
 		/* MAC: 01-80-C2-00-00-0E */
 		.mac	      = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e },
 		.portmask     = 0x03,	/* Management ports */
@@ -1109,7 +1105,7 @@ static int hellcreek_setup_fdb(struct hellcreek *hellcreek)
 		.reprio_tc    = 6,	/* TC: 6 as per IEEE 802.1AS */
 		.reprio_en    = 1,
 	};
-	static struct hellcreek_fdb_entry udp4_p2p = {
+	static const struct hellcreek_fdb_entry udp4_p2p = {
 		/* MAC: 01-00-5E-00-00-6B */
 		.mac	      = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0x6b },
 		.portmask     = 0x03,	/* Management ports */
@@ -1120,7 +1116,7 @@ static int hellcreek_setup_fdb(struct hellcreek *hellcreek)
 		.reprio_tc    = 6,
 		.reprio_en    = 1,
 	};
-	static struct hellcreek_fdb_entry udp6_p2p = {
+	static const struct hellcreek_fdb_entry udp6_p2p = {
 		/* MAC: 33-33-00-00-00-6B */
 		.mac	      = { 0x33, 0x33, 0x00, 0x00, 0x00, 0x6b },
 		.portmask     = 0x03,	/* Management ports */
@@ -1131,7 +1127,7 @@ static int hellcreek_setup_fdb(struct hellcreek *hellcreek)
 		.reprio_tc    = 6,
 		.reprio_en    = 1,
 	};
-	static struct hellcreek_fdb_entry stp = {
+	static const struct hellcreek_fdb_entry stp = {
 		/* MAC: 01-80-C2-00-00-00 */
 		.mac	      = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 },
 		.portmask     = 0x03,	/* Management ports */
@@ -1324,13 +1320,13 @@ static int hellcreek_devlink_region_fdb_snapshot(struct devlink *dl,
 	return 0;
 }
 
-static struct devlink_region_ops hellcreek_region_vlan_ops = {
+static const struct devlink_region_ops hellcreek_region_vlan_ops = {
 	.name	    = "vlan",
 	.snapshot   = hellcreek_devlink_region_vlan_snapshot,
 	.destructor = kfree,
 };
 
-static struct devlink_region_ops hellcreek_region_fdb_ops = {
+static const struct devlink_region_ops hellcreek_region_fdb_ops = {
 	.name	    = "fdb",
 	.snapshot   = hellcreek_devlink_region_fdb_snapshot,
 	.destructor = kfree,
@@ -1339,7 +1335,7 @@ static struct devlink_region_ops hellcreek_region_fdb_ops = {
 static int hellcreek_setup_devlink_regions(struct dsa_switch *ds)
 {
 	struct hellcreek *hellcreek = ds->priv;
-	struct devlink_region_ops *ops;
+	const struct devlink_region_ops *ops;
 	struct devlink_region *region;
 	u64 size;
 	int ret;
@@ -2060,18 +2056,16 @@ err_ptp_setup:
 	return ret;
 }
 
-static int hellcreek_remove(struct platform_device *pdev)
+static void hellcreek_remove(struct platform_device *pdev)
 {
 	struct hellcreek *hellcreek = platform_get_drvdata(pdev);
 
 	if (!hellcreek)
-		return 0;
+		return;
 
 	hellcreek_hwtstamp_free(hellcreek);
 	hellcreek_ptp_free(hellcreek);
 	dsa_unregister_switch(hellcreek->ds);
-
-	return 0;
 }
 
 static void hellcreek_shutdown(struct platform_device *pdev)

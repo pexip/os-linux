@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0+
 
 #include <linux/ptp_classify.h>
+#include <linux/units.h>
 
 #include "lan966x_main.h"
 #include "vcap_api.h"
 #include "vcap_api_client.h"
+
+#define LAN9X66_CLOCK_RATE	165617754
 
 #define LAN966X_MAX_PTP_ID	512
 
@@ -838,10 +841,6 @@ static int lan966x_ptp_perout(struct ptp_clock_info *ptp,
 	bool pps = false;
 	int pin;
 
-	if (rq->perout.flags & ~(PTP_PEROUT_DUTY_CYCLE |
-				 PTP_PEROUT_PHASE))
-		return -EOPNOTSUPP;
-
 	pin = ptp_find_pin(phc->clock, PTP_PF_PEROUT, rq->perout.index);
 	if (pin == -1 || pin >= LAN966X_PHC_PINS_NUM)
 		return -EINVAL;
@@ -940,12 +939,6 @@ static int lan966x_ptp_extts(struct ptp_clock_info *ptp,
 	if (lan966x->ptp_ext_irq <= 0)
 		return -EOPNOTSUPP;
 
-	/* Reject requests with unsupported flags */
-	if (rq->extts.flags & ~(PTP_ENABLE_FEATURE |
-				PTP_RISING_EDGE |
-				PTP_STRICT_FLAGS))
-		return -EOPNOTSUPP;
-
 	pin = ptp_find_pin(phc->clock, PTP_PF_EXTTS, rq->extts.index);
 	if (pin == -1 || pin >= LAN966X_PHC_PINS_NUM)
 		return -EINVAL;
@@ -1001,6 +994,10 @@ static struct ptp_clock_info lan966x_ptp_clock_info = {
 	.n_per_out	= LAN966X_PHC_PINS_NUM,
 	.n_ext_ts	= LAN966X_PHC_PINS_NUM,
 	.n_pins		= LAN966X_PHC_PINS_NUM,
+	.supported_extts_flags = PTP_RISING_EDGE |
+				 PTP_STRICT_FLAGS,
+	.supported_perout_flags = PTP_PEROUT_DUTY_CYCLE |
+				  PTP_PEROUT_PHASE,
 };
 
 static int lan966x_ptp_phc_init(struct lan966x *lan966x,
@@ -1132,5 +1129,5 @@ void lan966x_ptp_rxtstamp(struct lan966x *lan966x, struct sk_buff *skb,
 u32 lan966x_ptp_get_period_ps(void)
 {
 	/* This represents the system clock period in picoseconds */
-	return 15125;
+	return PICO / LAN9X66_CLOCK_RATE;
 }

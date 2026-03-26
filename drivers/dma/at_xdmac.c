@@ -2033,10 +2033,8 @@ static int at_xdmac_device_terminate_all(struct dma_chan *chan)
 		 * at_xdmac_start_xfer() for this descriptor. Now it's time
 		 * to release it.
 		 */
-		if (desc->active_xfer) {
-			pm_runtime_put_autosuspend(atxdmac->dev);
-			pm_runtime_mark_last_busy(atxdmac->dev);
-		}
+		if (desc->active_xfer)
+			pm_runtime_put_noidle(atxdmac->dev);
 	}
 
 	clear_bit(AT_XDMAC_CHAN_IS_PAUSED, &atchan->status);
@@ -2433,7 +2431,7 @@ err_free_irq:
 	return ret;
 }
 
-static int at_xdmac_remove(struct platform_device *pdev)
+static void at_xdmac_remove(struct platform_device *pdev)
 {
 	struct at_xdmac	*atxdmac = (struct at_xdmac *)platform_get_drvdata(pdev);
 	int		i;
@@ -2454,8 +2452,6 @@ static int at_xdmac_remove(struct platform_device *pdev)
 		tasklet_kill(&atchan->tasklet);
 		at_xdmac_free_chan_resources(&atchan->chan);
 	}
-
-	return 0;
 }
 
 static const struct dev_pm_ops __maybe_unused atmel_xdmac_dev_pm_ops = {

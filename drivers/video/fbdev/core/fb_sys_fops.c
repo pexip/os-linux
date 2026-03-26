@@ -9,6 +9,8 @@
  * for more details.
  *
  */
+
+#include <linux/export.h>
 #include <linux/fb.h>
 #include <linux/module.h>
 #include <linux/uaccess.h>
@@ -21,6 +23,9 @@ ssize_t fb_sys_read(struct fb_info *info, char __user *buf, size_t count,
 	int err = 0;
 	unsigned long total_size, c;
 	ssize_t ret;
+
+	if (!(info->flags & FBINFO_VIRTFB))
+		fb_warn_once(info, "Framebuffer is not in virtual address space.");
 
 	if (!info->screen_buffer)
 		return -ENODEV;
@@ -63,6 +68,9 @@ ssize_t fb_sys_write(struct fb_info *info, const char __user *buf,
 	int err = 0;
 	unsigned long total_size, c;
 	size_t ret;
+
+	if (!(info->flags & FBINFO_VIRTFB))
+		fb_warn_once(info, "Framebuffer is not in virtual address space.");
 
 	if (!info->screen_buffer)
 		return -ENODEV;

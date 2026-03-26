@@ -169,7 +169,7 @@ static void i_usx2y_out04_int(struct urb *urb)
 
 		for (i = 0; i < 10 && usx2y->as04.urb[i] != urb; i++)
 			;
-		snd_printdd("%s urb %i status=%i\n", __func__, i, urb->status);
+		dev_dbg(&urb->dev->dev, "%s urb %i status=%i\n", __func__, i, urb->status);
 	}
 #endif
 }
@@ -185,11 +185,10 @@ static void i_usx2y_in04_int(struct urb *urb)
 	usx2y->in04_int_calls++;
 
 	if (urb->status) {
-		snd_printdd("Interrupt Pipe 4 came back with status=%i\n", urb->status);
+		dev_dbg(&urb->dev->dev, "Interrupt Pipe 4 came back with status=%i\n", urb->status);
 		return;
 	}
 
-	//	printk("%i:0x%02X ", 8, (int)((unsigned char*)usx2y->in04_buf)[8]); Master volume shows 0 here if fader is at max during boot ?!?
 	if (us428ctls) {
 		diff = -1;
 		if (us428ctls->ctl_snapshot_last == -2) {
@@ -245,7 +244,7 @@ static void i_usx2y_in04_int(struct urb *urb)
 	}
 
 	if (err)
-		snd_printk(KERN_ERR "in04_int() usb_submit_urb err=%i\n", err);
+		dev_err(&urb->dev->dev, "in04_int() usb_submit_urb err=%i\n", err);
 
 	urb->dev = usx2y->dev;
 	usb_submit_urb(urb, GFP_ATOMIC);
@@ -383,7 +382,7 @@ static int usx2y_create_card(struct usb_device *device,
 	init_waitqueue_head(&usx2y(card)->us428ctls_wait_queue_head);
 	mutex_init(&usx2y(card)->pcm_mutex);
 	INIT_LIST_HEAD(&usx2y(card)->midi_list);
-	strcpy(card->driver, "USB "NAME_ALLCAPS"");
+	strscpy(card->driver, "USB "NAME_ALLCAPS"");
 	sprintf(card->shortname, "TASCAM "NAME_ALLCAPS"");
 	sprintf(card->longname, "%s (%x:%x if %d at %03d/%03d)",
 		card->shortname,

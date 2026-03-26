@@ -123,7 +123,7 @@ static void idxd_abort_invalid_int_handle_descs(struct idxd_irq_entry *ie)
 
 	list_for_each_entry_safe(d, t, &flist, list) {
 		list_del(&d->list);
-		idxd_dma_complete_txd(d, IDXD_COMPLETE_ABORT, true);
+		idxd_desc_complete(d, IDXD_COMPLETE_ABORT, true);
 	}
 }
 
@@ -383,15 +383,65 @@ static void process_evl_entries(struct idxd_device *idxd)
 	mutex_unlock(&evl->lock);
 }
 
+static void idxd_device_flr(struct work_struct *work)
+{
+	struct idxd_device *idxd = container_of(work, struct idxd_device, work);
+	int rc;
+
+	/*
+	 * IDXD device requires a Function Level Reset (FLR).
+	 * pci_reset_function() will reset the device with FLR.
+	 */
+	rc = pci_reset_function(idxd->pdev);
+	if (rc)
+		dev_err(&idxd->pdev->dev, "FLR failed\n");
+}
+
+static irqreturn_t idxd_halt(struct idxd_device *idxd)
+{
+	union gensts_reg gensts;
+
+	gensts.bits = ioread32(idxd->reg_base + IDXD_GENSTATS_OFFSET);
+	if (gensts.state == IDXD_DEVICE_STATE_HALT) {
+		idxd->state = IDXD_DEV_HALTED;
+		if (gensts.reset_type == IDXD_DEVICE_RESET_SOFTWARE) {
+			/*
+			 * If we need a software reset, we will throw the work
+			 * on a system workqueue in order to allow interrupts
+			 * for the device command completions.
+			 */
+			INIT_WORK(&idxd->work, idxd_device_reinit);
+			queue_work(idxd->wq, &idxd->work);
+		} else if (gensts.reset_type == IDXD_DEVICE_RESET_FLR) {
+			idxd->state = IDXD_DEV_HALTED;
+			idxd_mask_error_interrupts(idxd);
+			dev_dbg(&idxd->pdev->dev,
+				"idxd halted, doing FLR. After FLR, configs are restored\n");
+			INIT_WORK(&idxd->work, idxd_device_flr);
+			queue_work(idxd->wq, &idxd->work);
+
+		} else {
+			idxd->state = IDXD_DEV_HALTED;
+			idxd_wqs_quiesce(idxd);
+			idxd_wqs_unmap_portal(idxd);
+			idxd_device_clear_state(idxd);
+			dev_err(&idxd->pdev->dev,
+				"idxd halted, need system reset");
+
+			return -ENXIO;
+		}
+	}
+
+	return IRQ_HANDLED;
+}
+
 irqreturn_t idxd_misc_thread(int vec, void *data)
 {
 	struct idxd_irq_entry *irq_entry = data;
 	struct idxd_device *idxd = ie_to_idxd(irq_entry);
 	struct device *dev = &idxd->pdev->dev;
-	union gensts_reg gensts;
 	u32 val = 0;
 	int i;
-	bool err = false;
 	u32 cause;
 
 	cause = ioread32(idxd->reg_base + IDXD_INTCAUSE_OFFSET);
@@ -401,7 +451,7 @@ irqreturn_t idxd_misc_thread(int vec, void *data)
 	iowrite32(cause, idxd->reg_base + IDXD_INTCAUSE_OFFSET);
 
 	if (cause & IDXD_INTC_HALT_STATE)
-		goto halt;
+		return idxd_halt(idxd);
 
 	if (cause & IDXD_INTC_ERR) {
 		spin_lock(&idxd->dev_lock);
@@ -433,9 +483,8 @@ irqreturn_t idxd_misc_thread(int vec, void *data)
 		val |= IDXD_INTC_ERR;
 
 		for (i = 0; i < 4; i++)
-			dev_warn(dev, "err[%d]: %#16.16llx\n",
-				 i, idxd->sw_err.bits[i]);
-		err = true;
+			dev_warn_ratelimited(dev, "err[%d]: %#16.16llx\n",
+					     i, idxd->sw_err.bits[i]);
 	}
 
 	if (cause & IDXD_INTC_INT_HANDLE_REVOKED) {
@@ -480,34 +529,6 @@ irqreturn_t idxd_misc_thread(int vec, void *data)
 		dev_warn_once(dev, "Unexpected interrupt cause bits set: %#x\n",
 			      val);
 
-	if (!err)
-		goto out;
-
-halt:
-	gensts.bits = ioread32(idxd->reg_base + IDXD_GENSTATS_OFFSET);
-	if (gensts.state == IDXD_DEVICE_STATE_HALT) {
-		idxd->state = IDXD_DEV_HALTED;
-		if (gensts.reset_type == IDXD_DEVICE_RESET_SOFTWARE) {
-			/*
-			 * If we need a software reset, we will throw the work
-			 * on a system workqueue in order to allow interrupts
-			 * for the device command completions.
-			 */
-			INIT_WORK(&idxd->work, idxd_device_reinit);
-			queue_work(idxd->wq, &idxd->work);
-		} else {
-			idxd->state = IDXD_DEV_HALTED;
-			idxd_wqs_quiesce(idxd);
-			idxd_wqs_unmap_portal(idxd);
-			idxd_device_clear_state(idxd);
-			dev_err(&idxd->pdev->dev,
-				"idxd halted, need %s.\n",
-				gensts.reset_type == IDXD_DEVICE_RESET_FLR ?
-				"FLR" : "system reset");
-		}
-	}
-
-out:
 	return IRQ_HANDLED;
 }
 
@@ -533,7 +554,7 @@ static void idxd_int_handle_resubmit_work(struct work_struct *work)
 		 */
 		if (rc != -EAGAIN) {
 			desc->completion->status = IDXD_COMP_DESC_ABORT;
-			idxd_dma_complete_txd(desc, IDXD_COMPLETE_ABORT, false);
+			idxd_desc_complete(desc, IDXD_COMPLETE_ABORT, false);
 		}
 		idxd_free_desc(wq, desc);
 	}
@@ -574,11 +595,11 @@ static void irq_process_pending_llist(struct idxd_irq_entry *irq_entry)
 			 * and 0xff, which DSA_COMP_STATUS_MASK can mask out.
 			 */
 			if (unlikely(desc->completion->status == IDXD_COMP_DESC_ABORT)) {
-				idxd_dma_complete_txd(desc, IDXD_COMPLETE_ABORT, true);
+				idxd_desc_complete(desc, IDXD_COMPLETE_ABORT, true);
 				continue;
 			}
 
-			idxd_dma_complete_txd(desc, IDXD_COMPLETE_NORMAL, true);
+			idxd_desc_complete(desc, IDXD_COMPLETE_NORMAL, true);
 		} else {
 			spin_lock(&irq_entry->list_lock);
 			list_add_tail(&desc->list,
@@ -619,11 +640,11 @@ static void irq_process_work_list(struct idxd_irq_entry *irq_entry)
 		list_del(&desc->list);
 
 		if (unlikely(desc->completion->status == IDXD_COMP_DESC_ABORT)) {
-			idxd_dma_complete_txd(desc, IDXD_COMPLETE_ABORT, true);
+			idxd_desc_complete(desc, IDXD_COMPLETE_ABORT, true);
 			continue;
 		}
 
-		idxd_dma_complete_txd(desc, IDXD_COMPLETE_NORMAL, true);
+		idxd_desc_complete(desc, IDXD_COMPLETE_NORMAL, true);
 	}
 }
 

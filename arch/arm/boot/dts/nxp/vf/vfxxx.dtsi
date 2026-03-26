@@ -111,8 +111,7 @@
 				interrupts = <61 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clks VF610_CLK_UART0>;
 				clock-names = "ipg";
-				dmas = <&edma0 0 2>,
-					<&edma0 0 3>;
+				dmas = <&edma0 0 2>, <&edma0 0 3>;
 				dma-names = "rx","tx";
 				status = "disabled";
 			};
@@ -123,8 +122,7 @@
 				interrupts = <62 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clks VF610_CLK_UART1>;
 				clock-names = "ipg";
-				dmas = <&edma0 0 4>,
-					<&edma0 0 5>;
+				dmas = <&edma0 0 4>, <&edma0 0 5>;
 				dma-names = "rx","tx";
 				status = "disabled";
 			};
@@ -135,8 +133,7 @@
 				interrupts = <63 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clks VF610_CLK_UART2>;
 				clock-names = "ipg";
-				dmas = <&edma0 0 6>,
-					<&edma0 0 7>;
+				dmas = <&edma0 0 6>, <&edma0 0 7>;
 				dma-names = "rx","tx";
 				status = "disabled";
 			};
@@ -147,8 +144,7 @@
 				interrupts = <64 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clks VF610_CLK_UART3>;
 				clock-names = "ipg";
-				dmas = <&edma0 0 8>,
-					<&edma0 0 9>;
+				dmas = <&edma0 0 8>, <&edma0 0 9>;
 				dma-names = "rx","tx";
 				status = "disabled";
 			};
@@ -162,9 +158,8 @@
 				clocks = <&clks VF610_CLK_DSPI0>;
 				clock-names = "dspi";
 				spi-num-chipselects = <6>;
-				dmas = <&edma1 1 12>,
-					<&edma1 1 13>;
-				dma-names = "rx", "tx";
+				dmas = <&edma1 1 13>, <&edma1 1 12>;
+				dma-names = "tx", "rx";
 				status = "disabled";
 			};
 
@@ -177,9 +172,8 @@
 				clocks = <&clks VF610_CLK_DSPI1>;
 				clock-names = "dspi";
 				spi-num-chipselects = <4>;
-				dmas = <&edma1 1 14>,
-					<&edma1 1 15>;
-				dma-names = "rx", "tx";
+				dmas = <&edma1 1 15>, <&edma1 1 14>;
+				dma-names = "tx", "rx";
 				status = "disabled";
 			};
 
@@ -310,7 +304,7 @@
 				status = "disabled";
 			};
 
-			iomuxc: iomuxc@40048000 {
+			iomuxc: pinctrl@40048000 {
 				compatible = "fsl,vf610-iomuxc";
 				reg = <0x40048000 0x1000>;
 			};
@@ -324,6 +318,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				gpio-ranges = <&iomuxc 0 0 32>;
+				ngpios = <32>;
 			};
 
 			gpio1: gpio@4004a000 {
@@ -335,6 +330,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				gpio-ranges = <&iomuxc 0 32 32>;
+				ngpios = <32>;
 			};
 
 			gpio2: gpio@4004b000 {
@@ -346,6 +342,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				gpio-ranges = <&iomuxc 0 64 32>;
+				ngpios = <32>;
 			};
 
 			gpio3: gpio@4004c000 {
@@ -357,6 +354,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				gpio-ranges = <&iomuxc 0 96 32>;
+				ngpios = <32>;
 			};
 
 			gpio4: gpio@4004d000 {
@@ -368,6 +366,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				gpio-ranges = <&iomuxc 0 128 7>;
+				ngpios = <7>;
 			};
 
 			anatop: anatop@40050000 {
@@ -426,8 +425,7 @@
 				interrupts = <72 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clks VF610_CLK_I2C1>;
 				clock-names = "ipg";
-				dmas = <&edma0 0 52>,
-					<&edma0 0 53>;
+				dmas = <&edma0 0 52>, <&edma0 0 53>;
 				dma-names = "rx","tx";
 				status = "disabled";
 			};
@@ -536,9 +534,8 @@
 				clocks = <&clks VF610_CLK_DSPI2>;
 				clock-names = "dspi";
 				spi-num-chipselects = <2>;
-				dmas = <&edma1 0 10>,
-					<&edma1 0 11>;
-				dma-names = "rx", "tx";
+				dmas = <&edma1 0 11>, <&edma1 0 10>;
+				dma-names = "tx", "rx";
 				status = "disabled";
 			};
 
@@ -551,9 +548,8 @@
 				clocks = <&clks VF610_CLK_DSPI3>;
 				clock-names = "dspi";
 				spi-num-chipselects = <2>;
-				dmas = <&edma1 0 12>,
-					<&edma1 0 13>;
-				dma-names = "rx", "tx";
+				dmas = <&edma1 0 13>, <&edma1 0 12>;
+				dma-names = "tx", "rx";
 				status = "disabled";
 			};
 
@@ -612,7 +608,7 @@
 
 			ftm: ftm@400b8000 {
 				compatible = "fsl,ftm-timer";
-				reg = <0x400b8000 0x1000 0x400b9000 0x1000>;
+				reg = <0x400b8000 0x1000>, <0x400b9000 0x1000>;
 				interrupts = <44 IRQ_TYPE_LEVEL_HIGH>;
 				clock-names = "ftm-evt", "ftm-src",
 					"ftm-evt-counter-en", "ftm-src-counter-en";
@@ -686,7 +682,7 @@
 				status = "disabled";
 			};
 
-			nfc: nand@400e0000 {
+			nfc: nand-controller@400e0000 {
 				#address-cells = <1>;
 				#size-cells = <0>;
 				compatible = "fsl,vf610-nfc";
@@ -719,8 +715,7 @@
 				interrupts = <74 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clks VF610_CLK_I2C3>;
 				clock-names = "ipg";
-				dmas = <&edma0 1 38>,
-					<&edma0 1 39>;
+				dmas = <&edma0 1 38>, <&edma0 1 39>;
 				dma-names = "rx","tx";
 				status = "disabled";
 			};
@@ -734,13 +729,13 @@
 				clocks = <&clks VF610_CLK_CAAM>;
 				clock-names = "ipg";
 
-				sec_jr0: jr0@1000 {
+				sec_jr0: jr@1000 {
 					compatible = "fsl,sec-v4.0-job-ring";
 					reg = <0x1000 0x1000>;
 					interrupts = <102 IRQ_TYPE_LEVEL_HIGH>;
 				};
 
-				sec_jr1: jr1@2000 {
+				sec_jr1: jr@2000 {
 					compatible = "fsl,sec-v4.0-job-ring";
 					reg = <0x2000 0x1000>;
 					interrupts = <102 IRQ_TYPE_LEVEL_HIGH>;

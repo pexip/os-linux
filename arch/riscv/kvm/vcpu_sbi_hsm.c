@@ -9,12 +9,12 @@
 #include <linux/errno.h>
 #include <linux/err.h>
 #include <linux/kvm_host.h>
+#include <linux/wordpart.h>
 #include <asm/sbi.h>
 #include <asm/kvm_vcpu_sbi.h>
 
 static int kvm_sbi_hsm_vcpu_start(struct kvm_vcpu *vcpu)
 {
-	struct kvm_cpu_context *reset_cntx;
 	struct kvm_cpu_context *cp = &vcpu->arch.guest_context;
 	struct kvm_vcpu *target_vcpu;
 	unsigned long target_vcpuid = cp->a0;
@@ -31,14 +31,7 @@ static int kvm_sbi_hsm_vcpu_start(struct kvm_vcpu *vcpu)
 		goto out;
 	}
 
-	reset_cntx = &target_vcpu->arch.guest_reset_context;
-	/* start address */
-	reset_cntx->sepc = cp->a1;
-	/* target vcpu id to start */
-	reset_cntx->a0 = target_vcpuid;
-	/* private data passed from kernel */
-	reset_cntx->a1 = cp->a2;
-	kvm_make_request(KVM_REQ_VCPU_RESET, target_vcpu);
+	kvm_riscv_vcpu_sbi_request_reset(target_vcpu, cp->a1, cp->a2);
 
 	__kvm_riscv_vcpu_power_on(target_vcpu);
 
@@ -106,7 +99,7 @@ static int kvm_sbi_ext_hsm_handler(struct kvm_vcpu *vcpu, struct kvm_run *run,
 		}
 		return 0;
 	case SBI_EXT_HSM_HART_SUSPEND:
-		switch (cp->a0) {
+		switch (lower_32_bits(cp->a0)) {
 		case SBI_HSM_SUSPEND_RET_DEFAULT:
 			kvm_riscv_vcpu_wfi(vcpu);
 			break;

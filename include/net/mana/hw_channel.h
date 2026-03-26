@@ -49,6 +49,15 @@ union hwc_init_type_data {
 	};
 }; /* HW DATA */
 
+union hwc_init_soc_service_type {
+	u32 as_uint32;
+
+	struct {
+		u32 value	: 28;
+		u32 type	:  4;
+	};
+}; /* HW DATA */
+
 struct hwc_rx_oob {
 	u32 type	: 6;
 	u32 eom		: 1;
@@ -121,7 +130,7 @@ struct hwc_dma_buf {
 	u32 gpa_mkey;
 
 	u32 num_reqs;
-	struct hwc_work_request reqs[];
+	struct hwc_work_request reqs[] __counted_by(num_reqs);
 };
 
 typedef void hwc_rx_event_handler_t(void *ctx, u32 gdma_rxq_id,

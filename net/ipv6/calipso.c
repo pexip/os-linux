@@ -29,10 +29,10 @@
 #include <net/calipso.h>
 #include <linux/atomic.h>
 #include <linux/bug.h>
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 #include <linux/crc-ccitt.h>
 
-/* Maximium size of the calipso option including
+/* Maximum size of the calipso option including
  * the two-byte TLV header.
  */
 #define CALIPSO_OPT_LEN_MAX (2 + 252)
@@ -42,13 +42,13 @@
  */
 #define CALIPSO_HDR_LEN (2 + 8)
 
-/* Maximium size of the calipso option including
+/* Maximum size of the calipso option including
  * the two-byte TLV header and upto 3 bytes of
  * leading pad and 7 bytes of trailing pad.
  */
 #define CALIPSO_OPT_LEN_MAX_WITH_PAD (3 + CALIPSO_OPT_LEN_MAX + 7)
 
- /* Maximium size of u32 aligned buffer required to hold calipso
+ /* Maximum size of u32 aligned buffer required to hold calipso
   * option.  Max of 3 initial pad bytes starting from buffer + 3.
   * i.e. the worst case is when the previous tlv finishes on 4n + 3.
   */
@@ -657,11 +657,8 @@ static int calipso_map_cat_ntoh(const struct calipso_doi *doi_def,
 					  net_clen_bits,
 					  spot + 1,
 					  1);
-		if (spot < 0) {
-			if (spot == -2)
-				return -EFAULT;
+		if (spot < 0)
 			return 0;
-		}
 
 		ret_val = netlbl_catmap_setbit(&secattr->attr.mls.cat,
 					       spot,
@@ -1345,7 +1342,8 @@ static int calipso_skbuff_setattr(struct sk_buff *skb,
 	/* At this point new_end aligns to 4n, so (new_end & 4) pads to 8n */
 	pad = ((new_end & 4) + (end & 7)) & 7;
 	len_delta = new_end - (int)end + pad;
-	ret_val = skb_cow(skb, skb_headroom(skb) + len_delta);
+	ret_val = skb_cow(skb,
+			  skb_headroom(skb) + (len_delta > 0 ? len_delta : 0));
 	if (ret_val < 0)
 		return ret_val;
 

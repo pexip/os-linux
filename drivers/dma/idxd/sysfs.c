@@ -91,7 +91,7 @@ static void idxd_conf_engine_release(struct device *dev)
 	kfree(engine);
 }
 
-struct device_type idxd_engine_device_type = {
+const struct device_type idxd_engine_device_type = {
 	.name = "engine",
 	.release = idxd_conf_engine_release,
 	.groups = idxd_engine_attribute_groups,
@@ -577,7 +577,7 @@ static void idxd_conf_group_release(struct device *dev)
 	kfree(group);
 }
 
-struct device_type idxd_group_device_type = {
+const struct device_type idxd_group_device_type = {
 	.name = "group",
 	.release = idxd_conf_group_release,
 	.groups = idxd_group_attribute_groups,
@@ -1208,9 +1208,11 @@ static ssize_t op_cap_show_common(struct device *dev, char *buf, unsigned long *
 
 		/* On systems where direct user submissions are not safe, we need to clear out
 		 * the BATCH capability from the capability mask in sysfs since we cannot support
-		 * that command on such systems.
+		 * that command on such systems. Narrow the restriction of operations with the
+		 * BATCH opcode to only DSA version 1 devices.
 		 */
-		if (i == DSA_OPCODE_BATCH/64 && !confdev_to_idxd(dev)->user_submission_safe)
+		if (i == DSA_OPCODE_BATCH/64 && !confdev_to_idxd(dev)->user_submission_safe &&
+		    confdev_to_idxd(dev)->hw.version == DEVICE_VERSION_1)
 			clear_bit(DSA_OPCODE_BATCH % 64, &val);
 
 		pos += sysfs_emit_at(buf, pos, "%*pb", 64, &val);
@@ -1392,7 +1394,7 @@ static void idxd_conf_wq_release(struct device *dev)
 	kfree(wq);
 }
 
-struct device_type idxd_wq_device_type = {
+const struct device_type idxd_wq_device_type = {
 	.name = "wq",
 	.release = idxd_conf_wq_release,
 	.groups = idxd_wq_attribute_groups,
@@ -1821,13 +1823,13 @@ static void idxd_conf_device_release(struct device *dev)
 	kfree(idxd);
 }
 
-struct device_type dsa_device_type = {
+const struct device_type dsa_device_type = {
 	.name = "dsa",
 	.release = idxd_conf_device_release,
 	.groups = idxd_attribute_groups,
 };
 
-struct device_type iax_device_type = {
+const struct device_type iax_device_type = {
 	.name = "iax",
 	.release = idxd_conf_device_release,
 	.groups = idxd_attribute_groups,
@@ -1978,14 +1980,4 @@ void idxd_unregister_devices(struct idxd_device *idxd)
 
 		device_unregister(group_confdev(group));
 	}
-}
-
-int idxd_register_bus_type(void)
-{
-	return bus_register(&dsa_bus_type);
-}
-
-void idxd_unregister_bus_type(void)
-{
-	bus_unregister(&dsa_bus_type);
 }

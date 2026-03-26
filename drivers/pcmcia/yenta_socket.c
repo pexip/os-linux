@@ -539,7 +539,8 @@ static irqreturn_t yenta_interrupt(int irq, void *dev_id)
 
 static void yenta_interrupt_wrapper(struct timer_list *t)
 {
-	struct yenta_socket *socket = from_timer(socket, t, poll_timer);
+	struct yenta_socket *socket = timer_container_of(socket, t,
+							 poll_timer);
 
 	yenta_interrupt(0, (void *)socket);
 	socket->poll_timer.expires = jiffies + HZ;
@@ -1452,4 +1453,5 @@ static struct pci_driver yenta_cardbus_driver = {
 
 module_pci_driver(yenta_cardbus_driver);
 
+MODULE_DESCRIPTION("Driver for CardBus yenta-compatible bridges");
 MODULE_LICENSE("GPL");

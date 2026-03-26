@@ -18,9 +18,11 @@ description: The SOCTHERM IP block contains thermal sensors, support for
 properties:
   compatible:
     enum:
+      - nvidia,tegra114-soctherm
       - nvidia,tegra124-soctherm
       - nvidia,tegra132-soctherm
       - nvidia,tegra210-soctherm
+      - nvidia,tegra210b01-soctherm
 
   reg:
     maxItems: 2
@@ -68,7 +70,12 @@ properties:
     patternProperties:
       "^(light|heavy|oc1)$":
         type: object
+        additionalProperties: false
+
         properties:
+          "#cooling-cells":
+            const: 2
+
           nvidia,priority:
             $ref: /schemas/types.yaml#/definitions/uint32
             minimum: 1
@@ -192,7 +199,6 @@ required:
   - clock-names
   - resets
   - reset-names
-  - "#thermal-sensor-cells"
 
 allOf:
   - $ref: thermal-sensor.yaml
@@ -201,8 +207,10 @@ allOf:
         compatible:
           contains:
             enum:
+              - nvidia,tegra114-soctherm
               - nvidia,tegra124-soctherm
               - nvidia,tegra210-soctherm
+              - nvidia,tegra210b01-soctherm
     then:
       properties:
         reg:

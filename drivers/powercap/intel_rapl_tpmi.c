@@ -9,9 +9,10 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/auxiliary_bus.h>
-#include <linux/io.h>
-#include <linux/intel_tpmi.h>
 #include <linux/intel_rapl.h>
+#include <linux/intel_tpmi.h>
+#include <linux/intel_vsec.h>
+#include <linux/io.h>
 #include <linux/module.h>
 #include <linux/slab.h>
 
@@ -48,7 +49,7 @@ enum tpmi_rapl_register {
 
 struct tpmi_rapl_package {
 	struct rapl_if_priv priv;
-	struct intel_tpmi_plat_info *tpmi_info;
+	struct oobmsm_plat_info *tpmi_info;
 	struct rapl_package *rp;
 	void __iomem *base;
 	struct list_head node;
@@ -156,7 +157,7 @@ static int parse_one_domain(struct tpmi_rapl_package *trp, u32 offset)
 	tpmi_domain_flags = tpmi_domain_header >> 32 & 0xffff;
 
 	if (tpmi_domain_version == TPMI_VERSION_INVALID) {
-		pr_warn(FW_BUG "Invalid version\n");
+		pr_debug("Invalid version, other instances may be valid\n");
 		return -ENODEV;
 	}
 
@@ -253,7 +254,7 @@ static int intel_rapl_tpmi_probe(struct auxiliary_device *auxdev,
 				 const struct auxiliary_device_id *id)
 {
 	struct tpmi_rapl_package *trp;
-	struct intel_tpmi_plat_info *info;
+	struct oobmsm_plat_info *info;
 	struct resource *res;
 	u32 offset;
 	int ret;
@@ -313,6 +314,8 @@ static int intel_rapl_tpmi_probe(struct auxiliary_device *auxdev,
 		goto err;
 	}
 
+	rapl_package_add_pmu(trp->rp);
+
 	auxiliary_set_drvdata(auxdev, trp);
 
 	return 0;
@@ -325,6 +328,7 @@ static void intel_rapl_tpmi_remove(struct auxiliary_device *auxdev)
 {
 	struct tpmi_rapl_package *trp = auxiliary_get_drvdata(auxdev);
 
+	rapl_package_remove_pmu(trp->rp);
 	rapl_remove_package(trp->rp);
 	trp_release(trp);
 }
@@ -344,7 +348,7 @@ static struct auxiliary_driver intel_rapl_tpmi_driver = {
 
 module_auxiliary_driver(intel_rapl_tpmi_driver)
 
-MODULE_IMPORT_NS(INTEL_TPMI);
+MODULE_IMPORT_NS("INTEL_TPMI");
 
 MODULE_DESCRIPTION("Intel RAPL TPMI Driver");
 MODULE_LICENSE("GPL");

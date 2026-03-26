@@ -109,7 +109,9 @@ static int virtsnd_pcm_build_hw(struct virtio_pcm_substream *vss,
 		SNDRV_PCM_INFO_BATCH |
 		SNDRV_PCM_INFO_BLOCK_TRANSFER |
 		SNDRV_PCM_INFO_INTERLEAVED |
-		SNDRV_PCM_INFO_PAUSE;
+		SNDRV_PCM_INFO_PAUSE |
+		SNDRV_PCM_INFO_NO_REWINDS |
+		SNDRV_PCM_INFO_SYNC_APPLPTR;
 
 	if (!info->channels_min || info->channels_min > info->channels_max) {
 		dev_err(&vdev->dev,
@@ -480,7 +482,7 @@ int virtsnd_pcm_build_devs(struct virtio_snd *snd)
 			for (kss = ks->substream; kss; kss = kss->next)
 				vs->substreams[kss->number]->substream = kss;
 
-			snd_pcm_set_ops(vpcm->pcm, i, &virtsnd_pcm_ops);
+			snd_pcm_set_ops(vpcm->pcm, i, &virtsnd_pcm_ops[i]);
 		}
 
 		snd_pcm_set_managed_buffer_all(vpcm->pcm,
@@ -513,10 +515,10 @@ void virtsnd_pcm_event(struct virtio_snd *snd, struct virtio_snd_event *event)
 		/* TODO: deal with shmem elapsed period */
 		break;
 	case VIRTIO_SND_EVT_PCM_XRUN:
-		spin_lock(&vss->lock);
-		if (vss->xfer_enabled)
-			vss->xfer_xrun = true;
-		spin_unlock(&vss->lock);
+		scoped_guard(spinlock, &vss->lock) {
+			if (vss->xfer_enabled)
+				vss->xfer_xrun = true;
+		}
 		break;
 	}
 }

@@ -148,6 +148,9 @@
  * @__reserved1:	    Reserved field.
  * @cfg8b_w1:		    Compound descriptor command queue origin produced
  *			    by qDMA and dynamic debug field.
+ * @__reserved2:	    Reserved field.
+ * @cmd:		    Command for QDMA (see FSL_QDMA_CMD_RWTTYPE and
+ *			     others).
  * @data:		    Pointer to the memory 40-bit address, describes DMA
  *			    source information and DMA destination information.
  */
@@ -160,6 +163,10 @@ struct fsl_qdma_format {
 			u8 addr_hi;
 			u8 __reserved1[2];
 			u8 cfg8b_w1;
+		} __packed;
+		struct {
+			__le32 __reserved2;
+			__le32 cmd;
 		} __packed;
 		__le64 data;
 	};
@@ -355,7 +362,6 @@ static void fsl_qdma_free_chan_resources(struct dma_chan *chan)
 static void fsl_qdma_comp_fill_memcpy(struct fsl_qdma_comp *fsl_comp,
 				      dma_addr_t dst, dma_addr_t src, u32 len)
 {
-	u32 cmd;
 	struct fsl_qdma_format *sdf, *ddf;
 	struct fsl_qdma_format *ccdf, *csgf_desc, *csgf_src, *csgf_dest;
 
@@ -384,15 +390,11 @@ static void fsl_qdma_comp_fill_memcpy(struct fsl_qdma_comp *fsl_comp,
 	/* This entry is the last entry. */
 	qdma_csgf_set_f(csgf_dest, len);
 	/* Descriptor Buffer */
-	cmd = cpu_to_le32(FSL_QDMA_CMD_RWTTYPE <<
-			  FSL_QDMA_CMD_RWTTYPE_OFFSET) |
-			  FSL_QDMA_CMD_PF;
-	sdf->data = QDMA_SDDF_CMD(cmd);
+	sdf->cmd = cpu_to_le32((FSL_QDMA_CMD_RWTTYPE << FSL_QDMA_CMD_RWTTYPE_OFFSET) |
+			       FSL_QDMA_CMD_PF);
 
-	cmd = cpu_to_le32(FSL_QDMA_CMD_RWTTYPE <<
-			  FSL_QDMA_CMD_RWTTYPE_OFFSET);
-	cmd |= cpu_to_le32(FSL_QDMA_CMD_LWC << FSL_QDMA_CMD_LWC_OFFSET);
-	ddf->data = QDMA_SDDF_CMD(cmd);
+	ddf->cmd = cpu_to_le32((FSL_QDMA_CMD_RWTTYPE << FSL_QDMA_CMD_RWTTYPE_OFFSET) |
+			       (FSL_QDMA_CMD_LWC << FSL_QDMA_CMD_LWC_OFFSET));
 }
 
 /*
@@ -570,10 +572,9 @@ static struct fsl_qdma_queue
 					      status_size,
 					      &status_head->bus_addr,
 					      GFP_KERNEL);
-	if (!status_head->cq) {
-		devm_kfree(&pdev->dev, status_head);
+	if (!status_head->cq)
 		return NULL;
-	}
+
 	status_head->n_cq = status_size;
 	status_head->virt_head = status_head->cq;
 	status_head->virt_tail = status_head->cq;
@@ -627,7 +628,7 @@ static int fsl_qdma_halt(struct fsl_qdma_engine *fsl_qdma)
 
 static int
 fsl_qdma_queue_transfer_complete(struct fsl_qdma_engine *fsl_qdma,
-				 void *block,
+				 __iomem void *block,
 				 int id)
 {
 	bool duplicate;
@@ -1267,7 +1268,7 @@ static void fsl_qdma_cleanup_vchan(struct dma_device *dmadev)
 	}
 }
 
-static int fsl_qdma_remove(struct platform_device *pdev)
+static void fsl_qdma_remove(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
 	struct fsl_qdma_engine *fsl_qdma = platform_get_drvdata(pdev);
@@ -1276,8 +1277,6 @@ static int fsl_qdma_remove(struct platform_device *pdev)
 	fsl_qdma_cleanup_vchan(&fsl_qdma->dma_dev);
 	of_dma_controller_free(np);
 	dma_async_device_unregister(&fsl_qdma->dma_dev);
-
-	return 0;
 }
 
 static const struct of_device_id fsl_qdma_dt_ids[] = {

@@ -45,7 +45,6 @@
 			gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_VOLUMEDOWN>;
 			debounce-interval = <50>;
-			wakeup-source;
 		};
 
 		key-vol-up {
@@ -53,7 +52,6 @@
 			gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_VOLUMEUP>;
 			debounce-interval = <50>;
-			wakeup-source;
 		};
 	};
 
@@ -243,7 +241,7 @@
 			"Headset Mic", "MICBIAS",
 			"IN3R", "Headset Mic",
 			"DMICDAT", "Digital Mic";
-		simple-audio-card,hp-det-gpio = <&gpio3 9 GPIO_ACTIVE_HIGH>;
+		simple-audio-card,hp-det-gpios = <&gpio3 9 GPIO_ACTIVE_HIGH>;
 
 		simple-audio-card,cpu {
 			sound-dai = <&sai2>;
@@ -381,7 +379,7 @@
 		gpio-hog;
 		gpios = <1 GPIO_ACTIVE_HIGH>;
 		input;
-		lane-mapping = "pmic-5v";
+		line-name = "pmic-5v";
 	};
 };
 
@@ -796,7 +794,6 @@
 		interrupt-parent = <&gpio1>;
 		interrupts = <10 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-names = "irq";
-		extcon = <&usb3_phy0>;
 		wakeup-source;
 
 		connector {
@@ -1001,7 +998,7 @@
 	};
 
 	regulator@3e {
-		compatible = "tps65132";
+		compatible = "ti,tps65132";
 		reg = <0x3e>;
 
 		reg_lcd_avdd: outp {
@@ -1154,15 +1151,12 @@
 		pinctrl-0 = <&pinctrl_charger_in>;
 		interrupt-parent = <&gpio3>;
 		interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
-		phys = <&usb3_phy0>;
 		ti,battery-regulation-voltage = <4208000>; /* uV */
 		ti,termination-current = <128000>;  /* uA */
 		ti,precharge-current = <128000>; /* uA */
 		ti,minimum-sys-voltage = <3700000>; /* uV */
 		ti,boost-voltage = <5000000>; /* uV */
 		ti,boost-max-current = <1500000>; /* uA */
-		ti,use-vinmin-threshold = <1>; /* enable VINDPM */
-		ti,vinmin-threshold = <3900000>; /* uV */
 		monitored-battery = <&bat>;
 		power-supplies = <&typec_pd>;
 	};
@@ -1327,25 +1321,28 @@
 };
 
 &usb_dwc3_0 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	dr_mode = "otg";
 	usb-role-switch;
 	status = "okay";
 
-	port@0 {
-		reg = <0>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-		typec_hs: endpoint {
-			remote-endpoint = <&usb_con_hs>;
+		port@0 {
+			reg = <0>;
+
+			typec_hs: endpoint {
+				remote-endpoint = <&usb_con_hs>;
+			};
 		};
-	};
 
-	port@1 {
-		reg = <1>;
+		port@1 {
+			reg = <1>;
 
-		typec_ss: endpoint {
-			remote-endpoint = <&usb_con_ss>;
+			typec_ss: endpoint {
+				remote-endpoint = <&usb_con_ss>;
+			};
 		};
 	};
 };

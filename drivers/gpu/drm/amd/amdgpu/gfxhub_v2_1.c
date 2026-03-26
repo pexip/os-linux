@@ -155,6 +155,9 @@ static void gfxhub_v2_1_init_system_aperture_regs(struct amdgpu_device *adev)
 {
 	uint64_t value;
 
+	if (amdgpu_sriov_vf(adev))
+		return;
+
 	/* Program the AGP BAR */
 	WREG32_SOC15(GC, 0, mmGCMC_VM_AGP_BASE, 0);
 	WREG32_SOC15(GC, 0, mmGCMC_VM_AGP_BOT, adev->gmc.agp_start >> 24);
@@ -296,7 +299,7 @@ static void gfxhub_v2_1_setup_vmid_config(struct amdgpu_device *adev)
 	uint32_t tmp;
 
 	for (i = 0; i <= 14; i++) {
-		tmp = RREG32_SOC15_OFFSET(GC, 0, mmGCVM_CONTEXT1_CNTL, i);
+		tmp = RREG32_SOC15_OFFSET(GC, 0, mmGCVM_CONTEXT1_CNTL, i * hub->ctx_distance);
 		tmp = REG_SET_FIELD(tmp, GCVM_CONTEXT1_CNTL, ENABLE_CONTEXT, 1);
 		tmp = REG_SET_FIELD(tmp, GCVM_CONTEXT1_CNTL, PAGE_TABLE_DEPTH,
 				    adev->vm_manager.num_level);
@@ -502,42 +505,6 @@ static void gfxhub_v2_1_init(struct amdgpu_device *adev)
 	hub->vmhub_funcs = &gfxhub_v2_1_vmhub_funcs;
 }
 
-static int gfxhub_v2_1_get_xgmi_info(struct amdgpu_device *adev)
-{
-	u32 xgmi_lfb_cntl = RREG32_SOC15(GC, 0, mmGCMC_VM_XGMI_LFB_CNTL);
-	u32 max_region =
-		REG_GET_FIELD(xgmi_lfb_cntl, GCMC_VM_XGMI_LFB_CNTL, PF_MAX_REGION);
-	u32 max_num_physical_nodes   = 0;
-	u32 max_physical_node_id     = 0;
-
-	switch (adev->ip_versions[XGMI_HWIP][0]) {
-	case IP_VERSION(4, 8, 0):
-		max_num_physical_nodes   = 4;
-		max_physical_node_id     = 3;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	/* PF_MAX_REGION=0 means xgmi is disabled */
-	if (max_region) {
-		adev->gmc.xgmi.num_physical_nodes = max_region + 1;
-		if (adev->gmc.xgmi.num_physical_nodes > max_num_physical_nodes)
-			return -EINVAL;
-
-		adev->gmc.xgmi.physical_node_id =
-			REG_GET_FIELD(xgmi_lfb_cntl, GCMC_VM_XGMI_LFB_CNTL, PF_LFB_REGION);
-		if (adev->gmc.xgmi.physical_node_id > max_physical_node_id)
-			return -EINVAL;
-
-		adev->gmc.xgmi.node_segment_size = REG_GET_FIELD(
-			RREG32_SOC15(GC, 0, mmGCMC_VM_XGMI_LFB_SIZE),
-			GCMC_VM_XGMI_LFB_SIZE, PF_LFB_SIZE) << 24;
-	}
-
-	return 0;
-}
-
 static void gfxhub_v2_1_utcl2_harvest(struct amdgpu_device *adev)
 {
 	int i;
@@ -548,7 +515,7 @@ static void gfxhub_v2_1_utcl2_harvest(struct amdgpu_device *adev)
 		adev->gfx.config.max_sh_per_se *
 		adev->gfx.config.max_shader_engines);
 
-	switch (adev->ip_versions[GC_HWIP][0]) {
+	switch (amdgpu_ip_version(adev, GC_HWIP, 0)) {
 	case IP_VERSION(10, 3, 1):
 	case IP_VERSION(10, 3, 3):
 		/* Get SA disabled bitmap from eFuse setting */
@@ -693,7 +660,6 @@ const struct amdgpu_gfxhub_funcs gfxhub_v2_1_funcs = {
 	.gart_disable = gfxhub_v2_1_gart_disable,
 	.set_fault_enable_default = gfxhub_v2_1_set_fault_enable_default,
 	.init = gfxhub_v2_1_init,
-	.get_xgmi_info = gfxhub_v2_1_get_xgmi_info,
 	.utcl2_harvest = gfxhub_v2_1_utcl2_harvest,
 	.mode2_save_regs = gfxhub_v2_1_save_regs,
 	.mode2_restore_regs = gfxhub_v2_1_restore_regs,

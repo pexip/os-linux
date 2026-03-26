@@ -477,7 +477,7 @@ static int wm5110_in_pga_get(struct snd_kcontrol *kcontrol,
 	 */
 	snd_soc_dapm_mutex_lock(dapm);
 
-	ret = snd_soc_get_volsw_range(kcontrol, ucontrol);
+	ret = snd_soc_get_volsw(kcontrol, ucontrol);
 
 	snd_soc_dapm_mutex_unlock(dapm);
 
@@ -497,7 +497,7 @@ static int wm5110_in_pga_put(struct snd_kcontrol *kcontrol,
 	 */
 	snd_soc_dapm_mutex_lock(dapm);
 
-	ret = snd_soc_put_volsw_range(kcontrol, ucontrol);
+	ret = snd_soc_put_volsw(kcontrol, ucontrol);
 
 	snd_soc_dapm_mutex_unlock(dapm);
 
@@ -2253,14 +2253,14 @@ static int wm5110_open(struct snd_soc_component *component,
 	struct arizona *arizona = priv->core.arizona;
 	int n_adsp;
 
-	if (strcmp(asoc_rtd_to_codec(rtd, 0)->name, "wm5110-dsp-voicectrl") == 0) {
+	if (strcmp(snd_soc_rtd_to_codec(rtd, 0)->name, "wm5110-dsp-voicectrl") == 0) {
 		n_adsp = 2;
-	} else if (strcmp(asoc_rtd_to_codec(rtd, 0)->name, "wm5110-dsp-trace") == 0) {
+	} else if (strcmp(snd_soc_rtd_to_codec(rtd, 0)->name, "wm5110-dsp-trace") == 0) {
 		n_adsp = 0;
 	} else {
 		dev_err(arizona->dev,
 			"No suitable compressed stream for DAI '%s'\n",
-			asoc_rtd_to_codec(rtd, 0)->name);
+			snd_soc_rtd_to_codec(rtd, 0)->name);
 		return -EINVAL;
 	}
 
@@ -2534,7 +2534,7 @@ static struct platform_driver wm5110_codec_driver = {
 		.name = "wm5110-codec",
 	},
 	.probe = wm5110_probe,
-	.remove_new = wm5110_remove,
+	.remove = wm5110_remove,
 };
 
 module_platform_driver(wm5110_codec_driver);

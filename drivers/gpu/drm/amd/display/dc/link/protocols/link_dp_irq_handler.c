@@ -37,7 +37,10 @@
 #include "link/accessories/link_dp_trace.h"
 #include "link/link_dpms.h"
 #include "dm_helpers.h"
+#include "link_dp_dpia_bw.h"
 
+#define DC_LOGGER \
+	link->ctx->logger
 #define DC_LOGGER_INIT(logger)
 
 bool dp_parse_link_loss_status(
@@ -118,7 +121,7 @@ bool dp_parse_link_loss_status(
 
 static bool handle_hpd_irq_psr_sink(struct dc_link *link)
 {
-	union dpcd_psr_configuration psr_configuration;
+	union dpcd_psr_configuration psr_configuration = {0};
 
 	if (!link->psr_settings.psr_feature_enabled)
 		return false;
@@ -182,21 +185,35 @@ static bool handle_hpd_irq_psr_sink(struct dc_link *link)
 	return false;
 }
 
-static bool handle_hpd_irq_replay_sink(struct dc_link *link)
+static void handle_hpd_irq_replay_sink(struct dc_link *link)
 {
-	union dpcd_replay_configuration replay_configuration;
+	union dpcd_replay_configuration replay_configuration = {0};
 	/*AMD Replay version reuse DP_PSR_ERROR_STATUS for REPLAY_ERROR status.*/
-	union psr_error_status replay_error_status;
+	union psr_error_status replay_error_status = {0};
+	bool ret = false;
+	int retries = 0;
 
 	if (!link->replay_settings.replay_feature_enabled)
-		return false;
+		return;
 
-	dm_helpers_dp_read_dpcd(
-		link->ctx,
-		link,
-		DP_SINK_PR_REPLAY_STATUS,
-		&replay_configuration.raw,
-		sizeof(replay_configuration.raw));
+	while (retries < 10) {
+		ret = dm_helpers_dp_read_dpcd(
+			link->ctx,
+			link,
+			DP_SINK_PR_REPLAY_STATUS,
+			&replay_configuration.raw,
+			sizeof(replay_configuration.raw));
+
+		if (ret)
+			break;
+
+		retries++;
+	}
+
+	if (!ret)
+		DC_LOG_WARNING("[%s][%d] DPCD read addr.0x%x failed with %d retries\n",
+					__func__, __LINE__,
+					DP_SINK_PR_REPLAY_STATUS, retries);
 
 	dm_helpers_dp_read_dpcd(
 		link->ctx,
@@ -205,17 +222,19 @@ static bool handle_hpd_irq_replay_sink(struct dc_link *link)
 		&replay_error_status.raw,
 		sizeof(replay_error_status.raw));
 
-	link->replay_settings.config.replay_error_status.bits.LINK_CRC_ERROR =
-		replay_error_status.bits.LINK_CRC_ERROR;
-	link->replay_settings.config.replay_error_status.bits.DESYNC_ERROR =
-		replay_configuration.bits.DESYNC_ERROR_STATUS;
-	link->replay_settings.config.replay_error_status.bits.STATE_TRANSITION_ERROR =
-		replay_configuration.bits.STATE_TRANSITION_ERROR_STATUS;
-
-	if (link->replay_settings.config.replay_error_status.bits.LINK_CRC_ERROR ||
-		link->replay_settings.config.replay_error_status.bits.DESYNC_ERROR ||
-		link->replay_settings.config.replay_error_status.bits.STATE_TRANSITION_ERROR) {
+	if (replay_error_status.bits.LINK_CRC_ERROR ||
+		replay_configuration.bits.DESYNC_ERROR_STATUS ||
+		replay_configuration.bits.STATE_TRANSITION_ERROR_STATUS) {
 		bool allow_active;
+
+		link->replay_settings.config.replay_error_status.raw |= replay_error_status.raw;
+
+		/* Increment desync error counter if a desync error is detected */
+		if (replay_configuration.bits.DESYNC_ERROR_STATUS)
+			link->replay_settings.replay_desync_error_fail_count++;
+
+		if (link->replay_settings.config.force_disable_desync_error_check)
+			return;
 
 		/* Acknowledge and clear configuration bits */
 		dm_helpers_dp_write_dpcd(
@@ -241,7 +260,6 @@ static bool handle_hpd_irq_replay_sink(struct dc_link *link)
 			edp_set_replay_allow_active(link, &allow_active, true, false, NULL);
 		}
 	}
-	return true;
 }
 
 void dp_handle_link_loss(struct dc_link *link)
@@ -258,7 +276,7 @@ void dp_handle_link_loss(struct dc_link *link)
 
 	for (i = count - 1; i >= 0; i--) {
 		// Always use max settings here for DP 1.4a LL Compliance CTS
-		if (link->is_automated) {
+		if (link->skip_fallback_on_link_loss) {
 			pipes[i]->link_config.dp_link_settings.lane_count =
 					link->verified_link_cap.lane_count;
 			pipes[i]->link_config.dp_link_settings.link_rate =
@@ -270,10 +288,34 @@ void dp_handle_link_loss(struct dc_link *link)
 	}
 }
 
+static void dp_handle_tunneling_irq(struct dc_link *link)
+{
+	enum dc_status retval;
+	uint8_t tunneling_status = 0;
+
+	retval = core_link_read_dpcd(
+			link, DP_TUNNELING_STATUS,
+			&tunneling_status,
+			sizeof(tunneling_status));
+
+	if (retval == DC_OK) {
+		DC_LOG_HW_HPD_IRQ("%s: Got DP tunneling status on link %d status=0x%x",
+				__func__, link->link_index, tunneling_status);
+
+		if (tunneling_status & DP_TUNNELING_BW_ALLOC_BITS_MASK)
+			link_dp_dpia_handle_bw_alloc_status(link, tunneling_status);
+	}
+
+	tunneling_status = DP_TUNNELING_IRQ;
+	core_link_write_dpcd(
+		link, DP_LINK_SERVICE_IRQ_VECTOR_ESI0,
+		&tunneling_status, 1);
+}
+
 static void read_dpcd204h_on_irq_hpd(struct dc_link *link, union hpd_irq_data *irq_data)
 {
 	enum dc_status retval;
-	union lane_align_status_updated dpcd_lane_status_updated;
+	union lane_align_status_updated dpcd_lane_status_updated = {0};
 
 	retval = core_link_read_dpcd(
 			link,
@@ -303,17 +345,23 @@ enum dc_status dp_read_hpd_rx_irq_data(
 	 *
 	 * For DP 1.4 we need to read those from 2002h range.
 	 */
-	if (link->dpcd_caps.dpcd_rev.raw < DPCD_REV_14)
+	if (link->dpcd_caps.dpcd_rev.raw < DPCD_REV_14) {
 		retval = core_link_read_dpcd(
 			link,
 			DP_SINK_COUNT,
 			irq_data->raw,
-			sizeof(union hpd_irq_data));
-	else {
+			DP_SINK_STATUS - DP_SINK_COUNT + 1);
+
+		if (link->dpcd_caps.usb4_dp_tun_info.dp_tun_cap.bits.dp_tunneling) {
+			retval = core_link_read_dpcd(
+					link, DP_LINK_SERVICE_IRQ_VECTOR_ESI0,
+					&irq_data->bytes.link_service_irq_esi0.raw, 1);
+		}
+	} else {
 		/* Read 14 bytes in a single read and then copy only the required fields.
 		 * This is more efficient than doing it in two separate AUX reads. */
 
-		uint8_t tmp[DP_SINK_STATUS_ESI - DP_SINK_COUNT_ESI + 1];
+		uint8_t tmp[DP_SINK_STATUS_ESI - DP_SINK_COUNT_ESI + 1] = {0};
 
 		retval = core_link_read_dpcd(
 			link,
@@ -330,6 +378,7 @@ enum dc_status dp_read_hpd_rx_irq_data(
 		irq_data->bytes.lane23_status.raw = tmp[DP_LANE2_3_STATUS_ESI - DP_SINK_COUNT_ESI];
 		irq_data->bytes.lane_status_updated.raw = tmp[DP_LANE_ALIGN_STATUS_UPDATED_ESI - DP_SINK_COUNT_ESI];
 		irq_data->bytes.sink_status.raw = tmp[DP_SINK_STATUS_ESI - DP_SINK_COUNT_ESI];
+		irq_data->bytes.link_service_irq_esi0.raw = tmp[DP_LINK_SERVICE_IRQ_VECTOR_ESI0 - DP_SINK_COUNT_ESI];
 
 		/*
 		 * This display doesn't have correct values in DPCD200Eh.
@@ -397,7 +446,10 @@ bool dp_handle_hpd_rx_irq(struct dc_link *link,
 
 	if (hpd_irq_dpcd_data.bytes.device_service_irq.bits.AUTOMATED_TEST) {
 		// Workaround for DP 1.4a LL Compliance CTS as USB4 has to share encoders unlike DP and USBC
-		link->is_automated = true;
+		if (link->ep_type == DISPLAY_ENDPOINT_USB4_DPIA &&
+				!link->dc->config.enable_dpia_pre_training)
+			link->skip_fallback_on_link_loss = true;
+
 		device_service_clear.bits.AUTOMATED_TEST = 1;
 		core_link_write_dpcd(
 			link,
@@ -422,9 +474,7 @@ bool dp_handle_hpd_rx_irq(struct dc_link *link,
 		/* PSR-related error was detected and handled */
 		return true;
 
-	if (handle_hpd_irq_replay_sink(link))
-		/* Replay-related error was detected and handled */
-		return true;
+	handle_hpd_irq_replay_sink(link);
 
 	/* If PSR-related error handled, Main link may be off,
 	 * so do not handle as a normal sink status change interrupt.
@@ -447,7 +497,8 @@ bool dp_handle_hpd_rx_irq(struct dc_link *link,
 	 * If we got sink count changed it means
 	 * Downstream port status changed,
 	 * then DM should call DC to do the detection.
-	 * NOTE: Do not handle link loss on eDP since it is internal link*/
+	 * NOTE: Do not handle link loss on eDP since it is internal link
+	 */
 	if ((link->connector_signal != SIGNAL_TYPE_EDP) &&
 			dp_parse_link_loss_status(
 					link,
@@ -468,6 +519,11 @@ bool dp_handle_hpd_rx_irq(struct dc_link *link,
 			*out_link_loss = true;
 
 		dp_trace_link_loss_increment(link);
+	}
+
+	if (link->dpcd_caps.usb4_dp_tun_info.dp_tun_cap.bits.dp_tunneling) {
+		if (hpd_irq_dpcd_data.bytes.link_service_irq_esi0.bits.DP_LINK_TUNNELING_IRQ)
+			dp_handle_tunneling_irq(link);
 	}
 
 	if (link->type == dc_connection_sst_branch &&

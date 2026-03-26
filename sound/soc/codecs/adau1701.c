@@ -13,7 +13,6 @@
 #include <linux/delay.h>
 #include <linux/slab.h>
 #include <linux/of.h>
-#include <linux/of_device.h>
 #include <linux/gpio/consumer.h>
 #include <linux/regulator/consumer.h>
 #include <linux/regmap.h>
@@ -22,7 +21,7 @@
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 
 #include "sigmadsp.h"
 #include "adau1701.h"
@@ -326,9 +325,7 @@ static int adau1701_reset(struct snd_soc_component *component, unsigned int clkd
 			__assign_bit(1, values, 1);
 			break;
 		}
-		gpiod_set_array_value_cansleep(adau1701->gpio_pll_mode->ndescs,
-				adau1701->gpio_pll_mode->desc, adau1701->gpio_pll_mode->info,
-				values);
+		gpiod_multi_set_value_cansleep(adau1701->gpio_pll_mode, values);
 	}
 
 	adau1701->pll_clkdiv = clkdiv;
@@ -863,10 +860,10 @@ exit_regulators_disable:
 }
 
 static const struct i2c_device_id adau1701_i2c_id[] = {
-	{ "adau1401", 0 },
-	{ "adau1401a", 0 },
-	{ "adau1701", 0 },
-	{ "adau1702", 0 },
+	{ "adau1401" },
+	{ "adau1401a" },
+	{ "adau1701" },
+	{ "adau1702" },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, adau1701_i2c_id);

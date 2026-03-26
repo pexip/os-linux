@@ -11,6 +11,7 @@
 
 #include <linux/anon_inodes.h>
 #include <linux/cdev.h>
+#include <linux/cleanup.h>
 #include <linux/debugfs.h>
 #include <linux/device.h>
 #include <linux/err.h>
@@ -25,6 +26,7 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/wait.h>
+#include <linux/wordpart.h>
 
 #include <linux/iio/buffer.h>
 #include <linux/iio/buffer_impl.h>
@@ -42,7 +44,7 @@ static DEFINE_IDA(iio_ida);
 static dev_t iio_devt;
 
 #define IIO_DEV_MAX 256
-struct bus_type iio_bus_type = {
+const struct bus_type iio_bus_type = {
 	.name = "iio",
 };
 EXPORT_SYMBOL(iio_bus_type);
@@ -90,6 +92,12 @@ static const char * const iio_chan_type_name_spec[] = {
 	[IIO_POSITIONRELATIVE]  = "positionrelative",
 	[IIO_PHASE] = "phase",
 	[IIO_MASSCONCENTRATION] = "massconcentration",
+	[IIO_DELTA_ANGL] = "deltaangl",
+	[IIO_DELTA_VELOCITY] = "deltavelocity",
+	[IIO_COLORTEMP] = "colortemp",
+	[IIO_CHROMATICITY] = "chromaticity",
+	[IIO_ATTENTION] = "attention",
+	[IIO_ALTCURRENT] = "altcurrent",
 };
 
 static const char * const iio_modifier_names[] = {
@@ -113,6 +121,8 @@ static const char * const iio_modifier_names[] = {
 	[IIO_MOD_LIGHT_GREEN] = "green",
 	[IIO_MOD_LIGHT_BLUE] = "blue",
 	[IIO_MOD_LIGHT_UV] = "uv",
+	[IIO_MOD_LIGHT_UVA] = "uva",
+	[IIO_MOD_LIGHT_UVB] = "uvb",
 	[IIO_MOD_LIGHT_DUV] = "duv",
 	[IIO_MOD_QUATERNION] = "quaternion",
 	[IIO_MOD_TEMP_AMBIENT] = "ambient",
@@ -143,6 +153,10 @@ static const char * const iio_modifier_names[] = {
 	[IIO_MOD_PITCH] = "pitch",
 	[IIO_MOD_YAW] = "yaw",
 	[IIO_MOD_ROLL] = "roll",
+	[IIO_MOD_RMS] = "rms",
+	[IIO_MOD_ACTIVE] = "active",
+	[IIO_MOD_REACTIVE] = "reactive",
+	[IIO_MOD_APPARENT] = "apparent",
 };
 
 /* relies on pairs of these shared then separate */
@@ -178,6 +192,9 @@ static const char * const iio_chan_info_postfix[] = {
 	[IIO_CHAN_INFO_THERMOCOUPLE_TYPE] = "thermocouple_type",
 	[IIO_CHAN_INFO_CALIBAMBIENT] = "calibambient",
 	[IIO_CHAN_INFO_ZEROPOINT] = "zeropoint",
+	[IIO_CHAN_INFO_TROUGH] = "trough_raw",
+	[IIO_CHAN_INFO_CONVDELAY] = "convdelay",
+	[IIO_CHAN_INFO_POWERFACTOR] = "powerfactor",
 };
 /**
  * iio_device_id() - query the unique ID for the device
@@ -206,9 +223,7 @@ bool iio_buffer_enabled(struct iio_dev *indio_dev)
 {
 	struct iio_dev_opaque *iio_dev_opaque = to_iio_dev_opaque(indio_dev);
 
-	return iio_dev_opaque->currentmode &
-	       (INDIO_BUFFER_HARDWARE | INDIO_BUFFER_SOFTWARE |
-		INDIO_BUFFER_TRIGGERED);
+	return iio_dev_opaque->currentmode & INDIO_ALL_BUFFER_MODES;
 }
 EXPORT_SYMBOL_GPL(iio_buffer_enabled);
 
@@ -403,11 +418,15 @@ static ssize_t iio_debugfs_write_reg(struct file *file,
 	char buf[80];
 	int ret;
 
-	count = min(count, sizeof(buf) - 1);
-	if (copy_from_user(buf, userbuf, count))
-		return -EFAULT;
+	if (count >= sizeof(buf))
+		return -EINVAL;
 
-	buf[count] = 0;
+	ret = simple_write_to_buffer(buf, sizeof(buf) - 1, ppos, userbuf,
+				     count);
+	if (ret < 0)
+		return ret;
+
+	buf[ret] = '\0';
 
 	ret = sscanf(buf, "%i %i", &reg, &val);
 
@@ -661,7 +680,6 @@ static ssize_t __iio_format_value(char *buf, size_t offset, unsigned int type,
 					     vals[1]);
 	case IIO_VAL_FRACTIONAL:
 		tmp2 = div_s64((s64)vals[0] * 1000000000LL, vals[1]);
-		tmp1 = vals[1];
 		tmp0 = (int)div_s64_rem(tmp2, 1000000000, &tmp1);
 		if ((tmp2 < 0) && (tmp0 == 0))
 			return sysfs_emit_at(buf, offset, "-0.%09u", abs(tmp1));
@@ -721,20 +739,25 @@ ssize_t iio_format_value(char *buf, unsigned int type, int size, int *vals)
 }
 EXPORT_SYMBOL_GPL(iio_format_value);
 
+ssize_t do_iio_read_channel_label(struct iio_dev *indio_dev,
+				  const struct iio_chan_spec *c,
+				  char *buf)
+{
+	if (indio_dev->info->read_label)
+		return indio_dev->info->read_label(indio_dev, c, buf);
+
+	if (c->extend_name)
+		return sysfs_emit(buf, "%s\n", c->extend_name);
+
+	return -EINVAL;
+}
+
 static ssize_t iio_read_channel_label(struct device *dev,
 				      struct device_attribute *attr,
 				      char *buf)
 {
-	struct iio_dev *indio_dev = dev_to_iio_dev(dev);
-	struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
-
-	if (indio_dev->info->read_label)
-		return indio_dev->info->read_label(indio_dev, this_attr->c, buf);
-
-	if (this_attr->c->extend_name)
-		return sysfs_emit(buf, "%s\n", this_attr->c->extend_name);
-
-	return -EINVAL;
+	return do_iio_read_channel_label(dev_to_iio_dev(dev),
+					 to_iio_dev_attr(attr)->c, buf);
 }
 
 static ssize_t iio_read_channel_info(struct device *dev,
@@ -773,6 +796,7 @@ static ssize_t iio_format_list(char *buf, const int *vals, int type, int length,
 
 	switch (type) {
 	case IIO_VAL_INT:
+	case IIO_VAL_CHAR:
 		stride = 1;
 		break;
 	default:
@@ -954,8 +978,10 @@ static ssize_t iio_write_channel_info(struct device *dev,
 	struct iio_dev_attr *this_attr = to_iio_dev_attr(attr);
 	int ret, fract_mult = 100000;
 	int integer, fract = 0;
+	long long integer64;
 	bool is_char = false;
 	bool scale_db = false;
+	bool is_64bit = false;
 
 	/* Assumes decimal - precision based on number of digits */
 	if (!indio_dev->info->write_raw)
@@ -979,6 +1005,9 @@ static ssize_t iio_write_channel_info(struct device *dev,
 		case IIO_VAL_CHAR:
 			is_char = true;
 			break;
+		case IIO_VAL_INT_64:
+			is_64bit = true;
+			break;
 		default:
 			return -EINVAL;
 		}
@@ -989,6 +1018,13 @@ static ssize_t iio_write_channel_info(struct device *dev,
 		if (sscanf(buf, "%c", &ch) != 1)
 			return -EINVAL;
 		integer = ch;
+	} else if (is_64bit) {
+		ret = kstrtoll(buf, 0, &integer64);
+		if (ret)
+			return ret;
+
+		fract = upper_32_bits(integer64);
+		integer = lower_32_bits(integer64);
 	} else {
 		ret = __iio_str_to_fixpoint(buf, fract_mult, &integer, &fract,
 					    scale_db);
@@ -1214,7 +1250,7 @@ static int iio_device_add_channel_label(struct iio_dev *indio_dev,
 static int iio_device_add_info_mask_type(struct iio_dev *indio_dev,
 					 struct iio_chan_spec const *chan,
 					 enum iio_shared_by shared_by,
-					 const long *infomask)
+					 const unsigned long *infomask)
 {
 	struct iio_dev_opaque *iio_dev_opaque = to_iio_dev_opaque(indio_dev);
 	int i, ret, attrcount = 0;
@@ -1244,7 +1280,7 @@ static int iio_device_add_info_mask_type(struct iio_dev *indio_dev,
 static int iio_device_add_info_mask_type_avail(struct iio_dev *indio_dev,
 					       struct iio_chan_spec const *chan,
 					       enum iio_shared_by shared_by,
-					       const long *infomask)
+					       const unsigned long *infomask)
 {
 	struct iio_dev_opaque *iio_dev_opaque = to_iio_dev_opaque(indio_dev);
 	int i, ret, attrcount = 0;
@@ -1618,6 +1654,10 @@ static void iio_dev_release(struct device *device)
 
 	iio_device_detach_buffers(indio_dev);
 
+	mutex_destroy(&iio_dev_opaque->info_exist_lock);
+	mutex_destroy(&iio_dev_opaque->mlock);
+
+	lockdep_unregister_key(&iio_dev_opaque->info_exist_key);
 	lockdep_unregister_key(&iio_dev_opaque->mlock_key);
 
 	ida_free(&iio_ida, iio_dev_opaque->id);
@@ -1643,11 +1683,10 @@ struct iio_dev *iio_device_alloc(struct device *parent, int sizeof_priv)
 	struct iio_dev *indio_dev;
 	size_t alloc_size;
 
-	alloc_size = sizeof(struct iio_dev_opaque);
-	if (sizeof_priv) {
-		alloc_size = ALIGN(alloc_size, IIO_DMA_MINALIGN);
-		alloc_size += sizeof_priv;
-	}
+	if (sizeof_priv)
+		alloc_size = ALIGN(sizeof(*iio_dev_opaque), IIO_DMA_MINALIGN) + sizeof_priv;
+	else
+		alloc_size = sizeof(*iio_dev_opaque);
 
 	iio_dev_opaque = kzalloc(alloc_size, GFP_KERNEL);
 	if (!iio_dev_opaque)
@@ -1656,15 +1695,9 @@ struct iio_dev *iio_device_alloc(struct device *parent, int sizeof_priv)
 	indio_dev = &iio_dev_opaque->indio_dev;
 
 	if (sizeof_priv)
-		indio_dev->priv = (char *)iio_dev_opaque +
+		ACCESS_PRIVATE(indio_dev, priv) = (char *)iio_dev_opaque +
 			ALIGN(sizeof(*iio_dev_opaque), IIO_DMA_MINALIGN);
 
-	indio_dev->dev.parent = parent;
-	indio_dev->dev.type = &iio_device_type;
-	indio_dev->dev.bus = &iio_bus_type;
-	device_initialize(&indio_dev->dev);
-	mutex_init(&iio_dev_opaque->mlock);
-	mutex_init(&iio_dev_opaque->info_exist_lock);
 	INIT_LIST_HEAD(&iio_dev_opaque->channel_attr_list);
 
 	iio_dev_opaque->id = ida_alloc(&iio_ida, GFP_KERNEL);
@@ -1685,7 +1718,15 @@ struct iio_dev *iio_device_alloc(struct device *parent, int sizeof_priv)
 	INIT_LIST_HEAD(&iio_dev_opaque->ioctl_handlers);
 
 	lockdep_register_key(&iio_dev_opaque->mlock_key);
-	lockdep_set_class(&iio_dev_opaque->mlock, &iio_dev_opaque->mlock_key);
+	lockdep_register_key(&iio_dev_opaque->info_exist_key);
+
+	mutex_init_with_key(&iio_dev_opaque->mlock, &iio_dev_opaque->mlock_key);
+	mutex_init_with_key(&iio_dev_opaque->info_exist_lock, &iio_dev_opaque->info_exist_key);
+
+	indio_dev->dev.parent = parent;
+	indio_dev->dev.type = &iio_device_type;
+	indio_dev->dev.bus = &iio_bus_type;
+	device_initialize(&indio_dev->dev);
 
 	return indio_dev;
 }
@@ -1811,31 +1852,24 @@ static long iio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	struct iio_dev *indio_dev = ib->indio_dev;
 	struct iio_dev_opaque *iio_dev_opaque = to_iio_dev_opaque(indio_dev);
 	struct iio_ioctl_handler *h;
-	int ret = -ENODEV;
+	int ret;
 
-	mutex_lock(&iio_dev_opaque->info_exist_lock);
-
+	guard(mutex)(&iio_dev_opaque->info_exist_lock);
 	/*
 	 * The NULL check here is required to prevent crashing when a device
 	 * is being removed while userspace would still have open file handles
 	 * to try to access this device.
 	 */
 	if (!indio_dev->info)
-		goto out_unlock;
+		return -ENODEV;
 
 	list_for_each_entry(h, &iio_dev_opaque->ioctl_handlers, entry) {
 		ret = h->ioctl(indio_dev, filp, cmd, arg);
 		if (ret != IIO_IOCTL_UNHANDLED)
-			break;
+			return ret;
 	}
 
-	if (ret == IIO_IOCTL_UNHANDLED)
-		ret = -ENODEV;
-
-out_unlock:
-	mutex_unlock(&iio_dev_opaque->info_exist_lock);
-
-	return ret;
+	return -ENODEV;
 }
 
 static const struct file_operations iio_buffer_fileops = {
@@ -1902,6 +1936,109 @@ static int iio_check_extended_name(const struct iio_dev *indio_dev)
 
 static const struct iio_buffer_setup_ops noop_ring_setup_ops;
 
+static void iio_sanity_check_avail_scan_masks(struct iio_dev *indio_dev)
+{
+	unsigned int num_masks, masklength, longs_per_mask;
+	const unsigned long *av_masks;
+	int i;
+
+	av_masks = indio_dev->available_scan_masks;
+	masklength = iio_get_masklength(indio_dev);
+	longs_per_mask = BITS_TO_LONGS(masklength);
+
+	/*
+	 * The code determining how many available_scan_masks is in the array
+	 * will be assuming the end of masks when first long with all bits
+	 * zeroed is encountered. This is incorrect for masks where mask
+	 * consists of more than one long, and where some of the available masks
+	 * has long worth of bits zeroed (but has subsequent bit(s) set). This
+	 * is a safety measure against bug where array of masks is terminated by
+	 * a single zero while mask width is greater than width of a long.
+	 */
+	if (longs_per_mask > 1)
+		dev_warn(indio_dev->dev.parent,
+			 "multi long available scan masks not fully supported\n");
+
+	if (bitmap_empty(av_masks, masklength))
+		dev_warn(indio_dev->dev.parent, "empty scan mask\n");
+
+	for (num_masks = 0; *av_masks; num_masks++)
+		av_masks += longs_per_mask;
+
+	if (num_masks < 2)
+		return;
+
+	av_masks = indio_dev->available_scan_masks;
+
+	/*
+	 * Go through all the masks from first to one before the last, and see
+	 * that no mask found later from the available_scan_masks array is a
+	 * subset of mask found earlier. If this happens, then the mask found
+	 * later will never get used because scanning the array is stopped when
+	 * the first suitable mask is found. Drivers should order the array of
+	 * available masks in the order of preference (presumably the least
+	 * costy to access masks first).
+	 */
+	for (i = 0; i < num_masks - 1; i++) {
+		const unsigned long *mask1;
+		int j;
+
+		mask1 = av_masks + i * longs_per_mask;
+		for (j = i + 1; j < num_masks; j++) {
+			const unsigned long *mask2;
+
+			mask2 = av_masks + j * longs_per_mask;
+			if (bitmap_subset(mask2, mask1, masklength))
+				dev_warn(indio_dev->dev.parent,
+					 "available_scan_mask %d subset of %d. Never used\n",
+					 j, i);
+		}
+	}
+}
+
+/**
+ * iio_active_scan_mask_index - Get index of the active scan mask inside the
+ * available scan masks array
+ * @indio_dev: the IIO device containing the active and available scan masks
+ *
+ * Returns: the index or -EINVAL if  active_scan_mask is not set
+ */
+int iio_active_scan_mask_index(struct iio_dev *indio_dev)
+
+{
+	const unsigned long *av_masks;
+	unsigned int masklength = iio_get_masklength(indio_dev);
+	int i = 0;
+
+	if (!indio_dev->active_scan_mask)
+		return -EINVAL;
+
+	/*
+	 * As in iio_scan_mask_match and iio_sanity_check_avail_scan_masks,
+	 * the condition here do not handle multi-long masks correctly.
+	 * It only checks the first long to be zero, and will use such mask
+	 * as a terminator even if there was bits set after the first long.
+	 *
+	 * This should be fine since the available_scan_mask has already been
+	 * sanity tested using iio_sanity_check_avail_scan_masks.
+	 *
+	 * See iio_scan_mask_match and iio_sanity_check_avail_scan_masks for
+	 * more details
+	 */
+	av_masks = indio_dev->available_scan_masks;
+	while (*av_masks) {
+		if (indio_dev->active_scan_mask == av_masks)
+			return i;
+		av_masks += BITS_TO_LONGS(masklength);
+		i++;
+	}
+
+	dev_warn(indio_dev->dev.parent,
+		 "active scan mask is not part of the available scan masks\n");
+	return -EINVAL;
+}
+EXPORT_SYMBOL_GPL(iio_active_scan_mask_index);
+
 int __iio_device_register(struct iio_dev *indio_dev, struct module *this_mod)
 {
 	struct iio_dev_opaque *iio_dev_opaque = to_iio_dev_opaque(indio_dev);
@@ -1939,6 +2076,9 @@ int __iio_device_register(struct iio_dev *indio_dev, struct module *this_mod)
 			"Failed to create buffer sysfs interfaces\n");
 		goto error_unreg_debugfs;
 	}
+
+	if (indio_dev->available_scan_masks)
+		iio_sanity_check_avail_scan_masks(indio_dev);
 
 	ret = iio_device_register_sysfs(indio_dev);
 	if (ret) {
@@ -2000,18 +2140,16 @@ void iio_device_unregister(struct iio_dev *indio_dev)
 
 	cdev_device_del(&iio_dev_opaque->chrdev, &indio_dev->dev);
 
-	mutex_lock(&iio_dev_opaque->info_exist_lock);
+	scoped_guard(mutex, &iio_dev_opaque->info_exist_lock) {
+		iio_device_unregister_debugfs(indio_dev);
 
-	iio_device_unregister_debugfs(indio_dev);
+		iio_disable_all_buffers(indio_dev);
 
-	iio_disable_all_buffers(indio_dev);
+		indio_dev->info = NULL;
 
-	indio_dev->info = NULL;
-
-	iio_device_wakeup_eventset(indio_dev);
-	iio_buffer_wakeup_poll(indio_dev);
-
-	mutex_unlock(&iio_dev_opaque->info_exist_lock);
+		iio_device_wakeup_eventset(indio_dev);
+		iio_buffer_wakeup_poll(indio_dev);
+	}
 
 	iio_buffers_free_sysfs_and_mask(indio_dev);
 }
@@ -2036,17 +2174,19 @@ int __devm_iio_device_register(struct device *dev, struct iio_dev *indio_dev,
 EXPORT_SYMBOL_GPL(__devm_iio_device_register);
 
 /**
- * iio_device_claim_direct_mode - Keep device in direct mode
+ * __iio_device_claim_direct - Keep device in direct mode
  * @indio_dev:	the iio_dev associated with the device
  *
  * If the device is in direct mode it is guaranteed to stay
- * that way until iio_device_release_direct_mode() is called.
+ * that way until __iio_device_release_direct() is called.
  *
- * Use with iio_device_release_direct_mode()
+ * Use with __iio_device_release_direct().
  *
- * Returns: 0 on success, -EBUSY on failure.
+ * Drivers should only call iio_device_claim_direct().
+ *
+ * Returns: true on success, false on failure.
  */
-int iio_device_claim_direct_mode(struct iio_dev *indio_dev)
+bool __iio_device_claim_direct(struct iio_dev *indio_dev)
 {
 	struct iio_dev_opaque *iio_dev_opaque = to_iio_dev_opaque(indio_dev);
 
@@ -2054,26 +2194,28 @@ int iio_device_claim_direct_mode(struct iio_dev *indio_dev)
 
 	if (iio_buffer_enabled(indio_dev)) {
 		mutex_unlock(&iio_dev_opaque->mlock);
-		return -EBUSY;
+		return false;
 	}
-	return 0;
+	return true;
 }
-EXPORT_SYMBOL_GPL(iio_device_claim_direct_mode);
+EXPORT_SYMBOL_GPL(__iio_device_claim_direct);
 
 /**
- * iio_device_release_direct_mode - releases claim on direct mode
+ * __iio_device_release_direct - releases claim on direct mode
  * @indio_dev:	the iio_dev associated with the device
  *
  * Release the claim. Device is no longer guaranteed to stay
  * in direct mode.
  *
- * Use with iio_device_claim_direct_mode()
+ * Drivers should only call iio_device_release_direct().
+ *
+ * Use with __iio_device_claim_direct()
  */
-void iio_device_release_direct_mode(struct iio_dev *indio_dev)
+void __iio_device_release_direct(struct iio_dev *indio_dev)
 {
 	mutex_unlock(&to_iio_dev_opaque(indio_dev)->mlock);
 }
-EXPORT_SYMBOL_GPL(iio_device_release_direct_mode);
+EXPORT_SYMBOL_GPL(__iio_device_release_direct);
 
 /**
  * iio_device_claim_buffer_mode - Keep device in buffer mode

@@ -21,8 +21,6 @@
 #include <linux/clk.h>
 #include <linux/pm_runtime.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
-#include <linux/of_device.h>
 #include <linux/platform_data/davinci_asp.h>
 #include <linux/math64.h>
 #include <linux/bitmap.h>
@@ -1887,9 +1885,10 @@ static bool davinci_mcasp_have_gpiochip(struct davinci_mcasp *mcasp)
 static int davinci_mcasp_get_config(struct davinci_mcasp *mcasp,
 				    struct platform_device *pdev)
 {
-	const struct of_device_id *match = of_match_device(mcasp_dt_ids, &pdev->dev);
 	struct device_node *np = pdev->dev.of_node;
 	struct davinci_mcasp_pdata *pdata = NULL;
+	const struct davinci_mcasp_pdata *match_pdata =
+		device_get_match_data(&pdev->dev);
 	const u32 *of_serial_dir32;
 	u32 val;
 	int i;
@@ -1898,8 +1897,8 @@ static int davinci_mcasp_get_config(struct davinci_mcasp *mcasp,
 		pdata = pdev->dev.platform_data;
 		pdata->dismod = DISMOD_LOW;
 		goto out;
-	} else if (match) {
-		pdata = devm_kmemdup(&pdev->dev, match->data, sizeof(*pdata),
+	} else if (match_pdata) {
+		pdata = devm_kmemdup(&pdev->dev, match_pdata, sizeof(*pdata),
 				     GFP_KERNEL);
 		if (!pdata)
 			return -ENOMEM;
@@ -2158,8 +2157,8 @@ static int davinci_mcasp_gpio_direction_out(struct gpio_chip *chip,
 	return 0;
 }
 
-static void davinci_mcasp_gpio_set(struct gpio_chip *chip, unsigned offset,
-				  int value)
+static int davinci_mcasp_gpio_set(struct gpio_chip *chip, unsigned int offset,
+				 int value)
 {
 	struct davinci_mcasp *mcasp = gpiochip_get_data(chip);
 
@@ -2167,6 +2166,8 @@ static void davinci_mcasp_gpio_set(struct gpio_chip *chip, unsigned offset,
 		mcasp_set_bits(mcasp, DAVINCI_MCASP_PDOUT_REG, BIT(offset));
 	else
 		mcasp_clr_bits(mcasp, DAVINCI_MCASP_PDOUT_REG, BIT(offset));
+
+	return 0;
 }
 
 static int davinci_mcasp_gpio_direction_in(struct gpio_chip *chip,
@@ -2536,7 +2537,7 @@ static const struct dev_pm_ops davinci_mcasp_pm_ops = {
 
 static struct platform_driver davinci_mcasp_driver = {
 	.probe		= davinci_mcasp_probe,
-	.remove_new	= davinci_mcasp_remove,
+	.remove		= davinci_mcasp_remove,
 	.driver		= {
 		.name	= "davinci-mcasp",
 		.pm     = &davinci_mcasp_pm_ops,

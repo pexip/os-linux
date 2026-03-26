@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0+
 #include <linux/extcon.h>
+#include <linux/gpio/consumer.h>
 #include <linux/iio/consumer.h>
 #include <linux/input-event-codes.h>
 #include <linux/mfd/wm8994/registers.h>
 #include <linux/module.h>
 #include <linux/of.h>
-#include <linux/of_device.h>
-#include <linux/of_gpio.h>
 #include <linux/regulator/consumer.h>
 #include <sound/jack.h>
 #include <sound/pcm_params.h>
@@ -166,7 +165,7 @@ static int aries_spk_cfg(struct snd_soc_dapm_widget *w,
 	int ret = 0;
 
 	rtd = snd_soc_get_pcm_runtime(card, &card->dai_link[0]);
-	component = asoc_rtd_to_codec(rtd, 0)->component;
+	component = snd_soc_rtd_to_codec(rtd, 0)->component;
 
 	/**
 	 * We have an odd setup - the SPKMODE pin is pulled up so
@@ -259,8 +258,8 @@ static const struct snd_soc_dapm_widget aries_dapm_widgets[] = {
 static int aries_hw_params(struct snd_pcm_substream *substream,
 	struct snd_pcm_hw_params *params)
 {
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
-	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct snd_soc_dai *codec_dai = snd_soc_rtd_to_codec(rtd, 0);
 	unsigned int pll_out;
 	int ret;
 
@@ -287,8 +286,8 @@ static int aries_hw_params(struct snd_pcm_substream *substream,
 
 static int aries_hw_free(struct snd_pcm_substream *substream)
 {
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
-	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct snd_soc_dai *codec_dai = snd_soc_rtd_to_codec(rtd, 0);
 	int ret;
 
 	/* Switch sysclk to MCLK1 */
@@ -316,7 +315,7 @@ static const struct snd_soc_ops aries_ops = {
 
 static int aries_baseband_init(struct snd_soc_pcm_runtime *rtd)
 {
-	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_dai *codec_dai = snd_soc_rtd_to_codec(rtd, 0);
 	unsigned int pll_out;
 	int ret;
 
@@ -475,7 +474,7 @@ static struct snd_soc_dai_link aries_dai[] = {
 		.name = "WM8994 AIF1",
 		.stream_name = "HiFi",
 		.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
-			SND_SOC_DAIFMT_CBM_CFM,
+			SND_SOC_DAIFMT_CBP_CFP,
 		.ops = &aries_ops,
 		SND_SOC_DAILINK_REG(aif1),
 	},
@@ -511,13 +510,13 @@ static struct snd_soc_card aries_card = {
 };
 
 static const struct aries_wm8994_variant fascinate4g_variant = {
-	.modem_dai_fmt = SND_SOC_DAIFMT_DSP_A | SND_SOC_DAIFMT_CBS_CFS
+	.modem_dai_fmt = SND_SOC_DAIFMT_DSP_A | SND_SOC_DAIFMT_CBC_CFC
 		| SND_SOC_DAIFMT_IB_NF,
 	.has_fm_radio = false,
 };
 
 static const struct aries_wm8994_variant aries_variant = {
-	.modem_dai_fmt = SND_SOC_DAIFMT_DSP_A | SND_SOC_DAIFMT_CBM_CFM
+	.modem_dai_fmt = SND_SOC_DAIFMT_DSP_A | SND_SOC_DAIFMT_CBP_CFP
 		| SND_SOC_DAIFMT_IB_NF,
 	.has_fm_radio = true,
 };

@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 or Linux-OpenIB */
+/* SPDX-License-Identifier: GPL-2.0 OR Linux-OpenIB */
 /* Copyright (c) 2015 - 2021 Intel Corporation */
 #ifndef I40IW_HW_H
 #define I40IW_HW_H
@@ -123,6 +123,8 @@
 #define I40E_CQPSQ_CQ_CQID GENMASK_ULL(15, 0)
 #define I40E_COMMIT_FPM_CQCNT_S 0
 #define I40E_COMMIT_FPM_CQCNT GENMASK_ULL(17, 0)
+#define I40E_CQPSQ_UPESD_HMCFNID_S 0
+#define I40E_CQPSQ_UPESD_HMCFNID GENMASK_ULL(5, 0)
 
 #define I40E_VSIQF_CTL(_VSI)             (0x0020D800 + ((_VSI) * 4))
 

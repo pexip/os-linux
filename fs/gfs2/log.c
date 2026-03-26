@@ -31,6 +31,7 @@
 #include "dir.h"
 #include "trace_gfs2.h"
 #include "trans.h"
+#include "aops.h"
 
 static void gfs2_log_shutdown(struct gfs2_sbd *sdp);
 
@@ -78,15 +79,6 @@ void gfs2_remove_from_ail(struct gfs2_bufdata *bd)
 	list_del_init(&bd->bd_ail_gl_list);
 	atomic_dec(&bd->bd_gl->gl_ail_count);
 	brelse(bd->bd_bh);
-}
-
-static int __gfs2_writepage(struct folio *folio, struct writeback_control *wbc,
-		       void *data)
-{
-	struct address_space *mapping = data;
-	int ret = mapping->a_ops->writepage(&folio->page, wbc);
-	mapping_set_error(mapping, ret);
-	return ret;
 }
 
 /**
@@ -140,7 +132,11 @@ __acquires(&sdp->sd_ail_lock)
 		if (!mapping)
 			continue;
 		spin_unlock(&sdp->sd_ail_lock);
-		ret = write_cache_pages(mapping, wbc, __gfs2_writepage, mapping);
+		BUG_ON(GFS2_SB(mapping->host) != sdp);
+		if (gfs2_is_jdata(GFS2_I(mapping->host)))
+			ret = gfs2_jdata_writeback(mapping, wbc);
+		else
+			ret = mapping->a_ops->writepages(mapping, wbc);
 		if (need_resched()) {
 			blk_finish_plug(plug);
 			cond_resched();
@@ -149,6 +145,7 @@ __acquires(&sdp->sd_ail_lock)
 		spin_lock(&sdp->sd_ail_lock);
 		if (ret == -ENODATA) /* if a jdata write into a new hole */
 			ret = 0; /* ignore it */
+		mapping_set_error(mapping, ret);
 		if (ret || wbc->nr_to_write <= 0)
 			break;
 		return -EBUSY;
@@ -352,14 +349,15 @@ static int gfs2_ail1_empty_one(struct gfs2_sbd *sdp, struct gfs2_trans *tr,
  * @sdp: The superblock
  * @max_revokes: If non-zero, add revokes where appropriate
  *
- * Tries to empty the ail1 lists, starting with the oldest first
+ * Tries to empty the ail1 lists, starting with the oldest first.
+ * Returns %true if the ail1 list is now empty.
  */
 
-static int gfs2_ail1_empty(struct gfs2_sbd *sdp, int max_revokes)
+static bool gfs2_ail1_empty(struct gfs2_sbd *sdp, int max_revokes)
 {
 	struct gfs2_trans *tr, *s;
 	int oldest_tr = 1;
-	int ret;
+	bool empty;
 
 	spin_lock(&sdp->sd_ail_lock);
 	list_for_each_entry_safe_reverse(tr, s, &sdp->sd_ail1_list, tr_list) {
@@ -369,15 +367,10 @@ static int gfs2_ail1_empty(struct gfs2_sbd *sdp, int max_revokes)
 			oldest_tr = 0;
 	}
 	gfs2_log_update_flush_tail(sdp);
-	ret = list_empty(&sdp->sd_ail1_list);
+	empty = list_empty(&sdp->sd_ail1_list);
 	spin_unlock(&sdp->sd_ail_lock);
 
-	if (test_bit(SDF_WITHDRAWING, &sdp->sd_flags)) {
-		gfs2_lm(sdp, "fatal: I/O error(s)\n");
-		gfs2_withdraw(sdp);
-	}
-
-	return ret;
+	return empty;
 }
 
 static void gfs2_ail1_wait(struct gfs2_sbd *sdp)
@@ -814,6 +807,9 @@ void gfs2_flush_revokes(struct gfs2_sbd *sdp)
 	gfs2_log_lock(sdp);
 	gfs2_ail1_empty(sdp, max_revokes);
 	gfs2_log_unlock(sdp);
+
+	if (gfs2_withdrawing(sdp))
+		gfs2_withdraw(sdp);
 }
 
 /**
@@ -914,8 +910,9 @@ void gfs2_write_log_header(struct gfs2_sbd *sdp, struct gfs2_jdesc *jd,
 static void log_write_header(struct gfs2_sbd *sdp, u32 flags)
 {
 	blk_opf_t op_flags = REQ_PREFLUSH | REQ_FUA | REQ_META | REQ_SYNC;
+	struct super_block *sb = sdp->sd_vfs;
 
-	gfs2_assert_withdraw(sdp, !test_bit(SDF_FROZEN, &sdp->sd_flags));
+	gfs2_assert_withdraw(sdp, sb->s_writers.frozen != SB_FREEZE_COMPLETE);
 
 	if (test_bit(SDF_NOBARRIERS, &sdp->sd_flags)) {
 		gfs2_ordered_wait(sdp);
@@ -974,8 +971,9 @@ void gfs2_ail_drain(struct gfs2_sbd *sdp)
 static void empty_ail1_list(struct gfs2_sbd *sdp)
 {
 	unsigned long start = jiffies;
+	bool empty = false;
 
-	for (;;) {
+	while (!empty) {
 		if (time_after(jiffies, start + (HZ * 600))) {
 			fs_err(sdp, "Error: In %s for 10 minutes! t=%d\n",
 			       __func__, current->journal_info ? 1 : 0);
@@ -984,9 +982,14 @@ static void empty_ail1_list(struct gfs2_sbd *sdp)
 		}
 		gfs2_ail1_start(sdp);
 		gfs2_ail1_wait(sdp);
-		if (gfs2_ail1_empty(sdp, 0))
-			return;
+		empty = gfs2_ail1_empty(sdp, 0);
+
+		if (gfs2_withdrawing_or_withdrawn(sdp))
+			break;
 	}
+
+	if (gfs2_withdrawing(sdp))
+		gfs2_withdraw(sdp);
 }
 
 /**
@@ -1299,6 +1302,7 @@ int gfs2_logd(void *data)
 	struct gfs2_sbd *sdp = data;
 	unsigned long t = 1;
 
+	set_freezable();
 	while (!kthread_should_stop()) {
 		if (gfs2_withdrawing_or_withdrawn(sdp))
 			break;
@@ -1332,9 +1336,7 @@ int gfs2_logd(void *data)
 
 		t = gfs2_tune_get(sdp, gt_logd_secs) * HZ;
 
-		try_to_freeze();
-
-		t = wait_event_interruptible_timeout(sdp->sd_logd_waitq,
+		t = wait_event_freezable_timeout(sdp->sd_logd_waitq,
 				test_bit(SDF_FORCE_AIL_FLUSH, &sdp->sd_flags) ||
 				gfs2_ail_flush_reqd(sdp) ||
 				gfs2_jrnl_flush_reqd(sdp) ||
@@ -1343,6 +1345,9 @@ int gfs2_logd(void *data)
 				kthread_should_stop(),
 				t);
 	}
+
+	if (gfs2_withdrawing(sdp))
+		gfs2_withdraw(sdp);
 
 	return 0;
 }

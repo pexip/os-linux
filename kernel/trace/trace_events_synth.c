@@ -49,16 +49,11 @@ static char *last_cmd;
 
 static int errpos(const char *str)
 {
-	int ret = 0;
-
-	mutex_lock(&lastcmd_mutex);
+	guard(mutex)(&lastcmd_mutex);
 	if (!str || !last_cmd)
-		goto out;
+		return 0;
 
-	ret = err_pos(last_cmd, str);
- out:
-	mutex_unlock(&lastcmd_mutex);
-	return ret;
+	return err_pos(last_cmd, str);
 }
 
 static void last_cmd_set(const char *str)
@@ -74,14 +69,12 @@ static void last_cmd_set(const char *str)
 
 static void synth_err(u8 err_type, u16 err_pos)
 {
-	mutex_lock(&lastcmd_mutex);
+	guard(mutex)(&lastcmd_mutex);
 	if (!last_cmd)
-		goto out;
+		return;
 
 	tracing_log_err(NULL, "synthetic_events", last_cmd, err_text,
 			err_type, err_pos);
- out:
-	mutex_unlock(&lastcmd_mutex);
 }
 
 static int create_synth_event(const char *raw_command);
@@ -137,7 +130,9 @@ static int synth_event_define_fields(struct trace_event_call *call)
 	struct synth_event *event = call->data;
 	unsigned int i, size, n_u64;
 	char *name, *type;
+	int filter_type;
 	bool is_signed;
+	bool is_stack;
 	int ret = 0;
 
 	for (i = 0, n_u64 = 0; i < event->n_fields; i++) {
@@ -145,8 +140,12 @@ static int synth_event_define_fields(struct trace_event_call *call)
 		is_signed = event->fields[i]->is_signed;
 		type = event->fields[i]->type;
 		name = event->fields[i]->name;
+		is_stack = event->fields[i]->is_stack;
+
+		filter_type = is_stack ? FILTER_STACKTRACE : FILTER_OTHER;
+
 		ret = trace_define_field(call, type, name, offset, size,
-					 is_signed, FILTER_OTHER);
+					 is_signed, filter_type);
 		if (ret)
 			break;
 
@@ -214,7 +213,7 @@ static int synth_field_string_size(char *type)
 	if (len == 0)
 		return 0; /* variable-length string */
 
-	strncpy(buf, start, len);
+	memcpy(buf, start, len);
 	buf[len] = '\0';
 
 	err = kstrtouint(buf, 0, &size);
@@ -382,7 +381,6 @@ static enum print_line_t print_synth_event(struct trace_iterator *iter,
 				n_u64++;
 			} else {
 				trace_seq_printf(s, print_fmt, se->fields[i]->name,
-						 STR_VAR_LEN_MAX,
 						 (char *)&entry->fields[n_u64].as_u64,
 						 i == se->n_fields - 1 ? "" : " ");
 				n_u64 += STR_VAR_LEN_MAX / sizeof(u64);
@@ -543,12 +541,12 @@ static notrace void trace_event_raw_event_synth(void *__data,
 	 * is being performed within another event.
 	 */
 	buffer = trace_file->tr->array_buffer.buffer;
-	ring_buffer_nest_start(buffer);
+	guard(ring_buffer_nest)(buffer);
 
 	entry = trace_event_buffer_reserve(&fbuffer, trace_file,
 					   sizeof(*entry) + fields_size);
 	if (!entry)
-		goto out;
+		return;
 
 	for (i = 0, n_u64 = 0; i < event->n_fields; i++) {
 		val_idx = var_ref_idx[i];
@@ -591,8 +589,6 @@ static notrace void trace_event_raw_event_synth(void *__data,
 	}
 
 	trace_event_buffer_commit(&fbuffer);
-out:
-	ring_buffer_nest_end(buffer);
 }
 
 static void free_synth_event_print_fmt(struct trace_event_call *call)
@@ -618,7 +614,7 @@ static int __set_synth_event_print_fmt(struct synth_event *event,
 		fmt = synth_field_fmt(event->fields[i]->type);
 		pos += snprintf(buf + pos, LEN_OR_ZERO, "%s=%s%s",
 				event->fields[i]->name, fmt,
-				i == event->n_fields - 1 ? "" : ", ");
+				i == event->n_fields - 1 ? "" : " ");
 	}
 	pos += snprintf(buf + pos, LEN_OR_ZERO, "\"");
 
@@ -1169,7 +1165,7 @@ EXPORT_SYMBOL_GPL(synth_event_add_fields);
  * @cmd: A pointer to the dynevent_cmd struct representing the new event
  * @name: The name of the synthetic event
  * @mod: The module creating the event, NULL if not created from a module
- * @args: Variable number of arg (pairs), one pair for each field
+ * @...: Variable number of arg (pairs), one pair for each field
  *
  * NOTE: Users normally won't want to call this function directly, but
  * rather use the synth_event_gen_cmd_start() wrapper, which
@@ -1727,7 +1723,7 @@ __synth_event_trace_end(struct synth_event_trace_state *trace_state)
  * synth_event_trace - Trace a synthetic event
  * @file: The trace_event_file representing the synthetic event
  * @n_vals: The number of values in vals
- * @args: Variable number of args containing the event values
+ * @...: Variable number of args containing the event values
  *
  * Trace a synthetic event using the values passed in the variable
  * argument list.

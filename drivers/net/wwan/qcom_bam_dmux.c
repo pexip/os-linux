@@ -851,7 +851,7 @@ err_disable_pm:
 	return ret;
 }
 
-static int bam_dmux_remove(struct platform_device *pdev)
+static void bam_dmux_remove(struct platform_device *pdev)
 {
 	struct bam_dmux *dmux = platform_get_drvdata(pdev);
 	struct device *dev = dmux->dev;
@@ -882,8 +882,6 @@ static int bam_dmux_remove(struct platform_device *pdev)
 	disable_irq(dmux->pc_irq);
 	bam_dmux_power_off(dmux);
 	bam_dmux_free_skbs(dmux->tx_skbs, DMA_TO_DEVICE);
-
-	return 0;
 }
 
 static const struct dev_pm_ops bam_dmux_pm_ops = {

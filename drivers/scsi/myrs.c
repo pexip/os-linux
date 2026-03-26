@@ -17,7 +17,7 @@
 #include <linux/interrupt.h>
 #include <linux/pci.h>
 #include <linux/raid_class.h>
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 #include <scsi/scsi.h>
 #include <scsi/scsi_host.h>
 #include <scsi/scsi_device.h>
@@ -498,14 +498,14 @@ static bool myrs_enable_mmio_mbox(struct myrs_hba *cs,
 	/* Temporary dma mapping, used only in the scope of this function */
 	mbox = dma_alloc_coherent(&pdev->dev, sizeof(union myrs_cmd_mbox),
 				  &mbox_addr, GFP_KERNEL);
-	if (dma_mapping_error(&pdev->dev, mbox_addr))
+	if (!mbox)
 		return false;
 
 	/* These are the base addresses for the command memory mailbox array */
 	cs->cmd_mbox_size = MYRS_MAX_CMD_MBOX * sizeof(union myrs_cmd_mbox);
 	cmd_mbox = dma_alloc_coherent(&pdev->dev, cs->cmd_mbox_size,
 				      &cs->cmd_mbox_addr, GFP_KERNEL);
-	if (dma_mapping_error(&pdev->dev, cs->cmd_mbox_addr)) {
+	if (!cmd_mbox) {
 		dev_err(&pdev->dev, "Failed to map command mailbox\n");
 		goto out_free;
 	}
@@ -520,7 +520,7 @@ static bool myrs_enable_mmio_mbox(struct myrs_hba *cs,
 	cs->stat_mbox_size = MYRS_MAX_STAT_MBOX * sizeof(struct myrs_stat_mbox);
 	stat_mbox = dma_alloc_coherent(&pdev->dev, cs->stat_mbox_size,
 				       &cs->stat_mbox_addr, GFP_KERNEL);
-	if (dma_mapping_error(&pdev->dev, cs->stat_mbox_addr)) {
+	if (!stat_mbox) {
 		dev_err(&pdev->dev, "Failed to map status mailbox\n");
 		goto out_free;
 	}
@@ -533,7 +533,7 @@ static bool myrs_enable_mmio_mbox(struct myrs_hba *cs,
 	cs->fwstat_buf = dma_alloc_coherent(&pdev->dev,
 					    sizeof(struct myrs_fwstat),
 					    &cs->fwstat_addr, GFP_KERNEL);
-	if (dma_mapping_error(&pdev->dev, cs->fwstat_addr)) {
+	if (!cs->fwstat_buf) {
 		dev_err(&pdev->dev, "Failed to map firmware health buffer\n");
 		cs->fwstat_buf = NULL;
 		goto out_free;
@@ -1786,7 +1786,7 @@ static unsigned short myrs_translate_ldev(struct myrs_hba *cs,
 	return ldev_num;
 }
 
-static int myrs_slave_alloc(struct scsi_device *sdev)
+static int myrs_sdev_init(struct scsi_device *sdev)
 {
 	struct myrs_hba *cs = shost_priv(sdev->host);
 	unsigned char status;
@@ -1882,7 +1882,8 @@ static int myrs_slave_alloc(struct scsi_device *sdev)
 	return 0;
 }
 
-static int myrs_slave_configure(struct scsi_device *sdev)
+static int myrs_sdev_configure(struct scsi_device *sdev,
+			       struct queue_limits *lim)
 {
 	struct myrs_hba *cs = shost_priv(sdev->host);
 	struct myrs_ldev_info *ldev_info;
@@ -1910,7 +1911,7 @@ static int myrs_slave_configure(struct scsi_device *sdev)
 	return 0;
 }
 
-static void myrs_slave_destroy(struct scsi_device *sdev)
+static void myrs_sdev_destroy(struct scsi_device *sdev)
 {
 	kfree(sdev->hostdata);
 }
@@ -1921,9 +1922,9 @@ static const struct scsi_host_template myrs_template = {
 	.proc_name		= "myrs",
 	.queuecommand		= myrs_queuecommand,
 	.eh_host_reset_handler	= myrs_host_reset,
-	.slave_alloc		= myrs_slave_alloc,
-	.slave_configure	= myrs_slave_configure,
-	.slave_destroy		= myrs_slave_destroy,
+	.sdev_init		= myrs_sdev_init,
+	.sdev_configure		= myrs_sdev_configure,
+	.sdev_destroy		= myrs_sdev_destroy,
 	.cmd_size		= sizeof(struct myrs_cmdblk),
 	.shost_groups		= myrs_shost_groups,
 	.sdev_groups		= myrs_sdev_groups,
@@ -2206,9 +2207,8 @@ static bool myrs_create_mempools(struct pci_dev *pdev, struct myrs_hba *cs)
 		return false;
 	}
 
-	snprintf(cs->work_q_name, sizeof(cs->work_q_name),
-		 "myrs_wq_%d", shost->host_no);
-	cs->work_q = create_singlethread_workqueue(cs->work_q_name);
+	cs->work_q = alloc_ordered_workqueue("myrs_wq_%d", WQ_MEM_RECLAIM,
+					     shost->host_no);
 	if (!cs->work_q) {
 		dma_pool_destroy(cs->dcdb_pool);
 		cs->dcdb_pool = NULL;

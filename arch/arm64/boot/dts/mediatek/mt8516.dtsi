@@ -165,7 +165,7 @@
 	};
 
 	pmu {
-		compatible = "arm,armv8-pmuv3";
+		compatible = "arm,cortex-a35-pmu";
 		interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL_LOW>,
 			     <GIC_SPI 5 IRQ_TYPE_LEVEL_LOW>,
 			     <GIC_SPI 6 IRQ_TYPE_LEVEL_LOW>,
@@ -218,6 +218,17 @@
 			clocks = <&topckgen CLK_TOP_CLK26M_D2>,
 				 <&topckgen CLK_TOP_APXGPT>;
 			clock-names = "clk13m", "bus";
+		};
+
+		keypad: keypad@10002000 {
+			compatible = "mediatek,mt8516-keypad",
+				     "mediatek,mt6779-keypad";
+			reg = <0 0x10002000 0 0x1000>;
+			wakeup-source;
+			interrupts = <GIC_SPI 149 IRQ_TYPE_EDGE_FALLING>;
+			clocks = <&clk26m>;
+			clock-names = "kpd";
+			status = "disabled";
 		};
 
 		syscfg_pctl: syscfg-pctl@10005000 {

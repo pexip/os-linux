@@ -12,7 +12,7 @@
 
 /*
  * task_struct *__switch_to(task_struct *prev, task_struct *next,
- *			    struct thread_info *next_ti)
+ *			    struct thread_info *next_ti, void *sched_ra, void *sched_cfa)
  */
 	.align	5
 SYM_FUNC_START(__switch_to)
@@ -25,8 +25,8 @@ SYM_FUNC_START(__switch_to)
 	stptr.d a4, a0, THREAD_SCHED_CFA
 #if defined(CONFIG_STACKPROTECTOR) && !defined(CONFIG_SMP)
 	la	t7, __stack_chk_guard
-	LONG_L	t8, a1, TASK_STACK_CANARY
-	LONG_S	t8, t7, 0
+	ldptr.d	t8, a1, TASK_STACK_CANARY
+	stptr.d	t8, t7, 0
 #endif
 	move	tp, a2
 	cpu_restore_nonscratch a1

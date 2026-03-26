@@ -8,6 +8,7 @@ title: U-blox GNSS Receiver
 
 allOf:
   - $ref: gnss-common.yaml#
+  - $ref: /schemas/serial/serial-peripheral-props.yaml#
 
 maintainers:
   - Johan Hovold <johan@kernel.org>
@@ -17,16 +18,23 @@ description: >
 
 properties:
   compatible:
-    enum:
-      - u-blox,neo-6m
-      - u-blox,neo-8
-      - u-blox,neo-m8
+    oneOf:
+      - enum:
+          - u-blox,neo-6m
+          - u-blox,neo-8
+          - u-blox,neo-m8
+      - items:
+          - const: u-blox,neo-m9
+          - const: u-blox,neo-m8
 
   reg:
     description: >
       The DDC Slave Address, SPI chip select address, the number of the USB hub
       port or the USB host-controller port to which this device is attached,
       depending on the bus used. Required for the DDC, SPI or USB busses.
+
+  reset-gpios:
+    maxItems: 1
 
   vcc-supply:
     description: >
@@ -49,10 +57,13 @@ unevaluatedProperties: false
 
 examples:
   - |
+    #include <dt-bindings/gpio/gpio.h>
+
     serial {
         gnss {
             compatible = "u-blox,neo-8";
             v-bckp-supply = <&gnss_v_bckp_reg>;
             vcc-supply = <&gnss_vcc_reg>;
+            reset-gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
         };
     };

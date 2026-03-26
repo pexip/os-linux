@@ -44,7 +44,7 @@ mt7603_rx_loopback_skb(struct mt7603_dev *dev, struct sk_buff *skb)
 	if (idx >= MT7603_WTBL_STA - 1)
 		goto free;
 
-	wcid = rcu_dereference(dev->mt76.wcid[idx]);
+	wcid = mt76_wcid_ptr(dev, idx);
 	if (!wcid)
 		goto free;
 
@@ -191,13 +191,14 @@ int mt7603_dma_init(struct mt7603_dev *dev)
 
 	for (i = 0; i < ARRAY_SIZE(wmm_queue_map); i++) {
 		ret = mt76_init_tx_queue(&dev->mphy, i, wmm_queue_map[i],
-					 MT7603_TX_RING_SIZE, MT_TX_RING_BASE, 0);
+					 MT7603_TX_RING_SIZE, MT_TX_RING_BASE,
+					 NULL, 0);
 		if (ret)
 			return ret;
 	}
 
 	ret = mt76_init_tx_queue(&dev->mphy, MT_TXQ_PSD, MT_TX_HW_QUEUE_MGMT,
-				 MT7603_PSD_RING_SIZE, MT_TX_RING_BASE, 0);
+				 MT7603_PSD_RING_SIZE, MT_TX_RING_BASE, NULL, 0);
 	if (ret)
 		return ret;
 
@@ -207,12 +208,12 @@ int mt7603_dma_init(struct mt7603_dev *dev)
 		return ret;
 
 	ret = mt76_init_tx_queue(&dev->mphy, MT_TXQ_BEACON, MT_TX_HW_QUEUE_BCN,
-				 MT_MCU_RING_SIZE, MT_TX_RING_BASE, 0);
+				 MT_MCU_RING_SIZE, MT_TX_RING_BASE, NULL, 0);
 	if (ret)
 		return ret;
 
 	ret = mt76_init_tx_queue(&dev->mphy, MT_TXQ_CAB, MT_TX_HW_QUEUE_BMC,
-				 MT_MCU_RING_SIZE, MT_TX_RING_BASE, 0);
+				 MT_MCU_RING_SIZE, MT_TX_RING_BASE, NULL, 0);
 	if (ret)
 		return ret;
 
@@ -241,7 +242,7 @@ int mt7603_dma_init(struct mt7603_dev *dev)
 	if (ret)
 		return ret;
 
-	netif_napi_add_tx(&dev->mt76.tx_napi_dev, &dev->mt76.tx_napi,
+	netif_napi_add_tx(dev->mt76.tx_napi_dev, &dev->mt76.tx_napi,
 			  mt7603_poll_tx);
 	napi_enable(&dev->mt76.tx_napi);
 

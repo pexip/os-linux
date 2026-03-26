@@ -223,8 +223,8 @@ unlock:
 	return err ?: len;
 }
 
-static int hash_accept(struct socket *sock, struct socket *newsock, int flags,
-		       bool kern)
+static int hash_accept(struct socket *sock, struct socket *newsock,
+		       struct proto_accept_arg *arg)
 {
 	struct sock *sk = sock->sk;
 	struct alg_sock *ask = alg_sk(sk);
@@ -252,7 +252,7 @@ static int hash_accept(struct socket *sock, struct socket *newsock, int flags,
 	if (err)
 		goto out_free_state;
 
-	err = af_alg_accept(ask->parent, newsock, kern);
+	err = af_alg_accept(ask->parent, newsock, arg);
 	if (err)
 		goto out_free_state;
 
@@ -351,7 +351,7 @@ static int hash_recvmsg_nokey(struct socket *sock, struct msghdr *msg,
 }
 
 static int hash_accept_nokey(struct socket *sock, struct socket *newsock,
-			     int flags, bool kern)
+			     struct proto_accept_arg *arg)
 {
 	int err;
 
@@ -359,7 +359,7 @@ static int hash_accept_nokey(struct socket *sock, struct socket *newsock,
 	if (err)
 		return err;
 
-	return hash_accept(sock, newsock, flags, kern);
+	return hash_accept(sock, newsock, arg);
 }
 
 static struct proto_ops algif_hash_ops_nokey = {
@@ -416,9 +416,8 @@ static int hash_accept_parent_nokey(void *private, struct sock *sk)
 	if (!ctx)
 		return -ENOMEM;
 
-	ctx->result = NULL;
+	memset(ctx, 0, len);
 	ctx->len = len;
-	ctx->more = false;
 	crypto_init_wait(&ctx->wait);
 
 	ask->private = ctx;
@@ -467,4 +466,5 @@ static void __exit algif_hash_exit(void)
 
 module_init(algif_hash_init);
 module_exit(algif_hash_exit);
+MODULE_DESCRIPTION("Userspace interface for hash algorithms");
 MODULE_LICENSE("GPL");

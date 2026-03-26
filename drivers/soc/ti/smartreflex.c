@@ -933,7 +933,7 @@ err_list_del:
 	return ret;
 }
 
-static int omap_sr_remove(struct platform_device *pdev)
+static void omap_sr_remove(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct omap_sr *sr_info = platform_get_drvdata(pdev);
@@ -945,7 +945,6 @@ static int omap_sr_remove(struct platform_device *pdev)
 	pm_runtime_disable(dev);
 	clk_unprepare(sr_info->fck);
 	list_del(&sr_info->node);
-	return 0;
 }
 
 static void omap_sr_shutdown(struct platform_device *pdev)

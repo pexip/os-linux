@@ -8,7 +8,7 @@
  * Copyright (C) 2001,2002  Andi Kleen, SuSE Labs
  * Copyright (C) 2003       Pavel Machek (pavel@ucw.cz)
  * Copyright (C) 2005       Philippe De Muyter (phdm@macqel.be)
- * Copyright (C) 2008       Hans Verkuil <hverkuil@xs4all.nl>
+ * Copyright (C) 2008       Hans Verkuil <hverkuil@kernel.org>
  *
  * These routines maintain argument size conversion between 32bit and 64bit
  * ioctls.
@@ -116,6 +116,9 @@ struct v4l2_format32 {
  * @flags:	additional buffer management attributes (ignored unless the
  *		queue has V4L2_BUF_CAP_SUPPORTS_MMAP_CACHE_HINTS capability and
  *		configured for MMAP streaming I/O).
+ * @max_num_buffers: if V4L2_BUF_CAP_SUPPORTS_MAX_NUM_BUFFERS capability flag is set
+ *		this field indicate the maximum possible number of buffers
+ *		for this queue.
  * @reserved:	future extensions
  */
 struct v4l2_create_buffers32 {
@@ -125,7 +128,8 @@ struct v4l2_create_buffers32 {
 	struct v4l2_format32	format;
 	__u32			capabilities;
 	__u32			flags;
-	__u32			reserved[6];
+	__u32			max_num_buffers;
+	__u32			reserved[5];
 };
 
 static int get_v4l2_format32(struct v4l2_format *p64,
@@ -175,6 +179,9 @@ static int get_v4l2_create32(struct v4l2_create_buffers *p64,
 		return -EFAULT;
 	if (copy_from_user(&p64->flags, &p32->flags, sizeof(p32->flags)))
 		return -EFAULT;
+	if (copy_from_user(&p64->max_num_buffers, &p32->max_num_buffers,
+			   sizeof(p32->max_num_buffers)))
+		return -EFAULT;
 	return get_v4l2_format32(&p64->format, &p32->format);
 }
 
@@ -221,6 +228,7 @@ static int put_v4l2_create32(struct v4l2_create_buffers *p64,
 			 offsetof(struct v4l2_create_buffers32, format)) ||
 	    put_user(p64->capabilities, &p32->capabilities) ||
 	    put_user(p64->flags, &p32->flags) ||
+	    put_user(p64->max_num_buffers, &p32->max_num_buffers) ||
 	    copy_to_user(p32->reserved, p64->reserved, sizeof(p64->reserved)))
 		return -EFAULT;
 	return put_v4l2_format32(&p64->format, &p32->format);
@@ -664,15 +672,12 @@ struct v4l2_ext_control32 {
 static inline bool ctrl_is_pointer(struct file *file, u32 id)
 {
 	struct video_device *vdev = video_devdata(file);
-	struct v4l2_fh *fh = NULL;
+	struct v4l2_fh *fh = file_to_v4l2_fh(file);
 	struct v4l2_ctrl_handler *hdl = NULL;
 	struct v4l2_query_ext_ctrl qec = { id };
 	const struct v4l2_ioctl_ops *ops = vdev->ioctl_ops;
 
-	if (test_bit(V4L2_FL_USES_V4L2_FH, &vdev->flags))
-		fh = file->private_data;
-
-	if (fh && fh->ctrl_handler)
+	if (fh->ctrl_handler)
 		hdl = fh->ctrl_handler;
 	else if (vdev->ctrl_handler)
 		hdl = vdev->ctrl_handler;
@@ -686,7 +691,7 @@ static inline bool ctrl_is_pointer(struct file *file, u32 id)
 	if (!ops || !ops->vidioc_query_ext_ctrl)
 		return false;
 
-	return !ops->vidioc_query_ext_ctrl(file, fh, &qec) &&
+	return !ops->vidioc_query_ext_ctrl(file, NULL, &qec) &&
 		(qec.flags & V4L2_CTRL_FLAG_HAS_PAYLOAD);
 }
 

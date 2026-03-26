@@ -40,6 +40,7 @@
 
 #include <linux/ip.h>
 #include <linux/tcp.h>
+#include <net/netdev_lock.h>
 #include <rdma/ib_cache.h>
 
 #include "ipoib.h"
@@ -488,7 +489,7 @@ poll_more:
 		if (unlikely(ib_req_notify_cq(priv->recv_cq,
 					      IB_CQ_NEXT_COMP |
 					      IB_CQ_REPORT_MISSED_EVENTS)) &&
-		    napi_reschedule(napi))
+		    napi_schedule(napi))
 			goto poll_more;
 	}
 
@@ -518,7 +519,7 @@ poll_more:
 		napi_complete(napi);
 		if (unlikely(ib_req_notify_cq(priv->send_cq, IB_CQ_NEXT_COMP |
 					      IB_CQ_REPORT_MISSED_EVENTS)) &&
-		    napi_reschedule(napi))
+		    napi_schedule(napi))
 			goto poll_more;
 	}
 	return n < 0 ? 0 : n;
@@ -531,11 +532,35 @@ void ipoib_ib_rx_completion(struct ib_cq *cq, void *ctx_ptr)
 	napi_schedule(&priv->recv_napi);
 }
 
+/* The function will force napi_schedule */
+void ipoib_napi_schedule_work(struct work_struct *work)
+{
+	struct ipoib_dev_priv *priv =
+		container_of(work, struct ipoib_dev_priv, reschedule_napi_work);
+	bool ret;
+
+	do {
+		ret = napi_schedule(&priv->send_napi);
+		if (!ret)
+			msleep(3);
+	} while (!ret && netif_queue_stopped(priv->dev) &&
+		 test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags));
+}
+
 void ipoib_ib_tx_completion(struct ib_cq *cq, void *ctx_ptr)
 {
 	struct ipoib_dev_priv *priv = ctx_ptr;
+	bool ret;
 
-	napi_schedule(&priv->send_napi);
+	ret = napi_schedule(&priv->send_napi);
+	/*
+	 * if the queue is closed the driver must be able to schedule napi,
+	 * otherwise we can end with closed queue forever, because no new
+	 * packets to send and napi callback might not get new event after
+	 * its re-arm of the napi.
+	 */
+	if (!ret && netif_queue_stopped(priv->dev))
+		schedule_work(&priv->reschedule_napi_work);
 }
 
 static inline int post_send(struct ipoib_dev_priv *priv,
@@ -757,16 +782,20 @@ static void ipoib_napi_enable(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 
-	napi_enable(&priv->recv_napi);
-	napi_enable(&priv->send_napi);
+	netdev_lock_ops_to_full(dev);
+	napi_enable_locked(&priv->recv_napi);
+	napi_enable_locked(&priv->send_napi);
+	netdev_unlock_full_to_ops(dev);
 }
 
 static void ipoib_napi_disable(struct net_device *dev)
 {
 	struct ipoib_dev_priv *priv = ipoib_priv(dev);
 
-	napi_disable(&priv->recv_napi);
-	napi_disable(&priv->send_napi);
+	netdev_lock_ops_to_full(dev);
+	napi_disable_locked(&priv->recv_napi);
+	napi_disable_locked(&priv->send_napi);
+	netdev_unlock_full_to_ops(dev);
 }
 
 int ipoib_ib_dev_stop_default(struct net_device *dev)
@@ -1148,23 +1177,10 @@ out:
 }
 
 static void __ipoib_ib_dev_flush(struct ipoib_dev_priv *priv,
-				enum ipoib_flush_level level,
-				int nesting)
+				enum ipoib_flush_level level)
 {
-	struct ipoib_dev_priv *cpriv;
 	struct net_device *dev = priv->dev;
 	int result;
-
-	down_read_nested(&priv->vlan_rwsem, nesting);
-
-	/*
-	 * Flush any child interfaces too -- they might be up even if
-	 * the parent is down.
-	 */
-	list_for_each_entry(cpriv, &priv->child_intfs, list)
-		__ipoib_ib_dev_flush(cpriv, level, nesting + 1);
-
-	up_read(&priv->vlan_rwsem);
 
 	if (!test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags) &&
 	    level != IPOIB_FLUSH_HEAVY) {
@@ -1229,10 +1245,14 @@ static void __ipoib_ib_dev_flush(struct ipoib_dev_priv *priv,
 		ipoib_ib_dev_down(dev);
 
 	if (level == IPOIB_FLUSH_HEAVY) {
+		netdev_lock_ops(dev);
 		if (test_bit(IPOIB_FLAG_INITIALIZED, &priv->flags))
 			ipoib_ib_dev_stop(dev);
 
-		if (ipoib_ib_dev_open(dev))
+		result = ipoib_ib_dev_open(dev);
+		netdev_unlock_ops(dev);
+
+		if (result)
 			return;
 
 		if (netif_queue_stopped(dev))
@@ -1256,7 +1276,7 @@ void ipoib_ib_dev_flush_light(struct work_struct *work)
 	struct ipoib_dev_priv *priv =
 		container_of(work, struct ipoib_dev_priv, flush_light);
 
-	__ipoib_ib_dev_flush(priv, IPOIB_FLUSH_LIGHT, 0);
+	__ipoib_ib_dev_flush(priv, IPOIB_FLUSH_LIGHT);
 }
 
 void ipoib_ib_dev_flush_normal(struct work_struct *work)
@@ -1264,7 +1284,7 @@ void ipoib_ib_dev_flush_normal(struct work_struct *work)
 	struct ipoib_dev_priv *priv =
 		container_of(work, struct ipoib_dev_priv, flush_normal);
 
-	__ipoib_ib_dev_flush(priv, IPOIB_FLUSH_NORMAL, 0);
+	__ipoib_ib_dev_flush(priv, IPOIB_FLUSH_NORMAL);
 }
 
 void ipoib_ib_dev_flush_heavy(struct work_struct *work)
@@ -1273,8 +1293,33 @@ void ipoib_ib_dev_flush_heavy(struct work_struct *work)
 		container_of(work, struct ipoib_dev_priv, flush_heavy);
 
 	rtnl_lock();
-	__ipoib_ib_dev_flush(priv, IPOIB_FLUSH_HEAVY, 0);
+	__ipoib_ib_dev_flush(priv, IPOIB_FLUSH_HEAVY);
 	rtnl_unlock();
+}
+
+void ipoib_queue_work(struct ipoib_dev_priv *priv,
+		      enum ipoib_flush_level level)
+{
+	if (!test_bit(IPOIB_FLAG_SUBINTERFACE, &priv->flags)) {
+		struct ipoib_dev_priv *cpriv;
+
+		netdev_lock(priv->dev);
+		list_for_each_entry(cpriv, &priv->child_intfs, list)
+			ipoib_queue_work(cpriv, level);
+		netdev_unlock(priv->dev);
+	}
+
+	switch (level) {
+	case IPOIB_FLUSH_LIGHT:
+		queue_work(ipoib_workqueue, &priv->flush_light);
+		break;
+	case IPOIB_FLUSH_NORMAL:
+		queue_work(ipoib_workqueue, &priv->flush_normal);
+		break;
+	case IPOIB_FLUSH_HEAVY:
+		queue_work(ipoib_workqueue, &priv->flush_heavy);
+		break;
+	}
 }
 
 void ipoib_ib_dev_cleanup(struct net_device *dev)

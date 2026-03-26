@@ -39,6 +39,7 @@ struct token_sysfs_data {
 struct smbios_device {
 	struct list_head list;
 	struct device *device;
+	int priority;
 	int (*call_fn)(struct calling_interface_buffer *arg);
 };
 
@@ -77,6 +78,7 @@ static struct smbios_call call_blacklist[] = {
 	/* handled by kernel: dell-laptop */
 	{0x0000, CLASS_INFO, SELECT_RFKILL},
 	{0x0000, CLASS_KBD_BACKLIGHT, SELECT_KBD_BACKLIGHT},
+	{0x0000, CLASS_INFO, SELECT_THERMAL_MANAGEMENT},
 };
 
 struct token_range {
@@ -144,7 +146,7 @@ int dell_smbios_error(int value)
 }
 EXPORT_SYMBOL_GPL(dell_smbios_error);
 
-int dell_smbios_register_device(struct device *d, void *call_fn)
+int dell_smbios_register_device(struct device *d, int priority, void *call_fn)
 {
 	struct smbios_device *priv;
 
@@ -153,6 +155,7 @@ int dell_smbios_register_device(struct device *d, void *call_fn)
 		return -ENOMEM;
 	get_device(d);
 	priv->device = d;
+	priv->priority = priority;
 	priv->call_fn = call_fn;
 	mutex_lock(&smbios_mutex);
 	list_add_tail(&priv->list, &smbios_device_list);
@@ -291,34 +294,56 @@ EXPORT_SYMBOL_GPL(dell_smbios_call_filter);
 
 int dell_smbios_call(struct calling_interface_buffer *buffer)
 {
-	int (*call_fn)(struct calling_interface_buffer *) = NULL;
-	struct device *selected_dev = NULL;
+	struct smbios_device *selected = NULL;
 	struct smbios_device *priv;
 	int ret;
 
 	mutex_lock(&smbios_mutex);
 	list_for_each_entry(priv, &smbios_device_list, list) {
-		if (!selected_dev || priv->device->id >= selected_dev->id) {
-			dev_dbg(priv->device, "Trying device ID: %d\n",
-				priv->device->id);
-			call_fn = priv->call_fn;
-			selected_dev = priv->device;
+		if (!selected || priv->priority >= selected->priority) {
+			dev_dbg(priv->device, "Trying device ID: %d\n", priv->priority);
+			selected = priv;
 		}
 	}
 
-	if (!selected_dev) {
+	if (!selected) {
 		ret = -ENODEV;
 		pr_err("No dell-smbios drivers are loaded\n");
 		goto out_smbios_call;
 	}
 
-	ret = call_fn(buffer);
+	ret = selected->call_fn(buffer);
 
 out_smbios_call:
 	mutex_unlock(&smbios_mutex);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(dell_smbios_call);
+
+void dell_fill_request(struct calling_interface_buffer *buffer,
+			       u32 arg0, u32 arg1, u32 arg2, u32 arg3)
+{
+	memset(buffer, 0, sizeof(struct calling_interface_buffer));
+	buffer->input[0] = arg0;
+	buffer->input[1] = arg1;
+	buffer->input[2] = arg2;
+	buffer->input[3] = arg3;
+}
+EXPORT_SYMBOL_GPL(dell_fill_request);
+
+int dell_send_request(struct calling_interface_buffer *buffer,
+			     u16 class, u16 select)
+{
+	int ret;
+
+	buffer->cmd_class = class;
+	buffer->cmd_select = select;
+	ret = dell_smbios_call(buffer);
+	if (ret != 0)
+		return ret;
+	return dell_smbios_error(buffer->output[0]);
+}
+EXPORT_SYMBOL_GPL(dell_send_request);
 
 struct calling_interface_token *dell_smbios_find_token(int tokenid)
 {
@@ -355,6 +380,15 @@ void dell_laptop_call_notifier(unsigned long action, void *data)
 	blocking_notifier_call_chain(&dell_laptop_chain_head, action, data);
 }
 EXPORT_SYMBOL_GPL(dell_laptop_call_notifier);
+
+bool dell_smbios_class_is_supported(u16 class)
+{
+	/* Classes over 30 always unsupported */
+	if (class > 30)
+		return false;
+	return da_supported_commands & (1 << class);
+}
+EXPORT_SYMBOL_GPL(dell_smbios_class_is_supported);
 
 static void __init parse_da_table(const struct dmi_header *dm)
 {
@@ -492,19 +526,16 @@ static int build_tokens_sysfs(struct platform_device *dev)
 		/* add value */
 		value_name = kasprintf(GFP_KERNEL, "%04x_value",
 				       da_tokens[i].tokenID);
-		if (value_name == NULL)
-			goto loop_fail_create_value;
+		if (!value_name) {
+			kfree(location_name);
+			goto out_unwind_strings;
+		}
 
 		sysfs_attr_init(&token_entries[i].value_attr.attr);
 		token_entries[i].value_attr.attr.name = value_name;
 		token_entries[i].value_attr.attr.mode = 0444;
 		token_entries[i].value_attr.show = value_show;
 		token_attrs[j++] = &token_entries[i].value_attr.attr;
-		continue;
-
-loop_fail_create_value:
-		kfree(location_name);
-		goto out_unwind_strings;
 	}
 	smbios_attribute_group.attrs = token_attrs;
 

@@ -207,8 +207,8 @@ static irqreturn_t ad7923_trigger_handler(int irq, void *p)
 	if (b_sent)
 		goto done;
 
-	iio_push_to_buffers_with_timestamp(indio_dev, st->rx_buf,
-					   iio_get_time_ns(indio_dev));
+	iio_push_to_buffers_with_ts(indio_dev, st->rx_buf, sizeof(st->rx_buf),
+				    iio_get_time_ns(indio_dev));
 
 done:
 	iio_trigger_notify_done(indio_dev->trig);
@@ -260,11 +260,10 @@ static int ad7923_read_raw(struct iio_dev *indio_dev,
 
 	switch (m) {
 	case IIO_CHAN_INFO_RAW:
-		ret = iio_device_claim_direct_mode(indio_dev);
-		if (ret)
-			return ret;
+		if (!iio_device_claim_direct(indio_dev))
+			return -EBUSY;
 		ret = ad7923_scan_direct(st, chan->address);
-		iio_device_release_direct_mode(indio_dev);
+		iio_device_release_direct(indio_dev);
 
 		if (ret < 0)
 			return ret;
@@ -361,14 +360,14 @@ static int ad7923_probe(struct spi_device *spi)
 }
 
 static const struct spi_device_id ad7923_id[] = {
-	{"ad7904", AD7904},
-	{"ad7914", AD7914},
-	{"ad7923", AD7924},
-	{"ad7924", AD7924},
-	{"ad7908", AD7908},
-	{"ad7918", AD7918},
-	{"ad7928", AD7928},
-	{}
+	{ "ad7904", AD7904 },
+	{ "ad7914", AD7914 },
+	{ "ad7923", AD7924 },
+	{ "ad7924", AD7924 },
+	{ "ad7908", AD7908 },
+	{ "ad7918", AD7918 },
+	{ "ad7928", AD7928 },
+	{ }
 };
 MODULE_DEVICE_TABLE(spi, ad7923_id);
 
@@ -380,7 +379,7 @@ static const struct of_device_id ad7923_of_match[] = {
 	{ .compatible = "adi,ad7908", },
 	{ .compatible = "adi,ad7918", },
 	{ .compatible = "adi,ad7928", },
-	{ },
+	{ }
 };
 MODULE_DEVICE_TABLE(of, ad7923_of_match);
 

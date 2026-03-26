@@ -25,6 +25,10 @@
 #include <linux/binfmts.h>
 #include <linux/personality.h>
 #include <linux/mnt_idmapping.h>
+#include <uapi/linux/lsm.h>
+
+#define CREATE_TRACE_POINTS
+#include <trace/events/capability.h>
 
 /*
  * If a non-root user executes a setuid-root binary in
@@ -49,24 +53,24 @@ static void warn_setuid_and_fcaps_mixed(const char *fname)
 }
 
 /**
- * cap_capable - Determine whether a task has a particular effective capability
+ * cap_capable_helper - Determine whether a task has a particular effective
+ * capability.
  * @cred: The credentials to use
- * @targ_ns:  The user namespace in which we need the capability
+ * @target_ns:  The user namespace of the resource being accessed
+ * @cred_ns:  The user namespace of the credentials
  * @cap: The capability to check for
- * @opts: Bitmask of options defined in include/linux/security.h
  *
  * Determine whether the nominated task has the specified capability amongst
  * its effective set, returning 0 if it does, -ve if it does not.
  *
- * NOTE WELL: cap_has_capability() cannot be used like the kernel's capable()
- * and has_capability() functions.  That is, it has the reverse semantics:
- * cap_has_capability() returns 0 when a task has a capability, but the
- * kernel's capable() and has_capability() returns 1 for this case.
+ * See cap_capable for more details.
  */
-int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
-		int cap, unsigned int opts)
+static inline int cap_capable_helper(const struct cred *cred,
+				     struct user_namespace *target_ns,
+				     const struct user_namespace *cred_ns,
+				     int cap)
 {
-	struct user_namespace *ns = targ_ns;
+	struct user_namespace *ns = target_ns;
 
 	/* See if cred has the capability in the target user namespace
 	 * by examining the target user namespace and all of the target
@@ -74,21 +78,21 @@ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
 	 */
 	for (;;) {
 		/* Do we have the necessary capabilities? */
-		if (ns == cred->user_ns)
+		if (likely(ns == cred_ns))
 			return cap_raised(cred->cap_effective, cap) ? 0 : -EPERM;
 
 		/*
 		 * If we're already at a lower level than we're looking for,
 		 * we're done searching.
 		 */
-		if (ns->level <= cred->user_ns->level)
+		if (ns->level <= cred_ns->level)
 			return -EPERM;
 
 		/* 
 		 * The owner of the user namespace in the parent of the
 		 * user namespace has all caps.
 		 */
-		if ((ns->parent == cred->user_ns) && uid_eq(ns->owner, cred->euid))
+		if ((ns->parent == cred_ns) && uid_eq(ns->owner, cred->euid))
 			return 0;
 
 		/*
@@ -99,6 +103,32 @@ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
 	}
 
 	/* We never get here */
+}
+
+/**
+ * cap_capable - Determine whether a task has a particular effective capability
+ * @cred: The credentials to use
+ * @target_ns:  The user namespace of the resource being accessed
+ * @cap: The capability to check for
+ * @opts: Bitmask of options defined in include/linux/security.h (unused)
+ *
+ * Determine whether the nominated task has the specified capability amongst
+ * its effective set, returning 0 if it does, -ve if it does not.
+ *
+ * NOTE WELL: cap_capable() has reverse semantics to the capable() call
+ * and friends. That is cap_capable() returns an int 0 when a task has
+ * a capability, while the kernel's capable(), has_ns_capability(),
+ * has_ns_capability_noaudit(), and has_capability_noaudit() return a
+ * bool true (1) for this case.
+ */
+int cap_capable(const struct cred *cred, struct user_namespace *target_ns,
+		int cap, unsigned int opts)
+{
+	const struct user_namespace *cred_ns = cred->user_ns;
+	int ret = cap_capable_helper(cred, target_ns, cred_ns, cap);
+
+	trace_cap_capable(cred, target_ns, cred_ns, cap, ret);
+	return ret;
 }
 
 /**
@@ -720,7 +750,7 @@ int get_vfs_caps_from_disk(struct mnt_idmap *idmap,
  * its xattrs and, if present, apply them to the proposed credentials being
  * constructed by execve().
  */
-static int get_file_caps(struct linux_binprm *bprm, struct file *file,
+static int get_file_caps(struct linux_binprm *bprm, const struct file *file,
 			 bool *effective, bool *has_fcap)
 {
 	int rc = 0;
@@ -826,12 +856,6 @@ static void handle_privileged_root(struct linux_binprm *bprm, bool has_fcap,
 #define __cap_full(field, cred) \
 	cap_issubset(CAP_FULL_SET, cred->cap_##field)
 
-static inline bool __is_setuid(struct cred *new, const struct cred *old)
-{ return !uid_eq(new->euid, old->uid); }
-
-static inline bool __is_setgid(struct cred *new, const struct cred *old)
-{ return !gid_eq(new->egid, old->gid); }
-
 /*
  * 1) Audit candidate if current->cap_effective is set
  *
@@ -861,7 +885,7 @@ static inline bool nonroot_raised_pE(struct cred *new, const struct cred *old,
 	    (root_privileged() &&
 	     __is_suid(root, new) &&
 	     !__cap_full(effective, new)) ||
-	    (!__is_setuid(new, old) &&
+	    (uid_eq(new->euid, old->euid) &&
 	     ((has_fcap &&
 	       __cap_gained(permitted, new, old)) ||
 	      __cap_gained(ambient, new, old))))
@@ -882,12 +906,12 @@ static inline bool nonroot_raised_pE(struct cred *new, const struct cred *old,
  *
  * Return: 0 if successful, -ve on error.
  */
-int cap_bprm_creds_from_file(struct linux_binprm *bprm, struct file *file)
+int cap_bprm_creds_from_file(struct linux_binprm *bprm, const struct file *file)
 {
 	/* Process setpcap binaries and capabilities for uid 0 */
 	const struct cred *old = current_cred();
 	struct cred *new = bprm->cred;
-	bool effective = false, has_fcap = false, is_setid;
+	bool effective = false, has_fcap = false, id_changed;
 	int ret;
 	kuid_t root_uid;
 
@@ -911,9 +935,9 @@ int cap_bprm_creds_from_file(struct linux_binprm *bprm, struct file *file)
 	 *
 	 * In addition, if NO_NEW_PRIVS, then ensure we get no new privs.
 	 */
-	is_setid = __is_setuid(new, old) || __is_setgid(new, old);
+	id_changed = !uid_eq(new->euid, old->euid) || !in_group_p(new->egid);
 
-	if ((is_setid || __cap_gained(permitted, new, old)) &&
+	if ((id_changed || __cap_gained(permitted, new, old)) &&
 	    ((bprm->unsafe & ~LSM_UNSAFE_PTRACE) ||
 	     !ptracer_capable(current, new->user_ns))) {
 		/* downgrade; they get no more than they had, and maybe less */
@@ -930,7 +954,7 @@ int cap_bprm_creds_from_file(struct linux_binprm *bprm, struct file *file)
 	new->sgid = new->fsgid = new->egid;
 
 	/* File caps or setid cancels ambient. */
-	if (has_fcap || is_setid)
+	if (has_fcap || id_changed)
 		cap_clear(new->cap_ambient);
 
 	/*
@@ -963,7 +987,9 @@ int cap_bprm_creds_from_file(struct linux_binprm *bprm, struct file *file)
 		return -EPERM;
 
 	/* Check for privilege-elevated exec. */
-	if (is_setid ||
+	if (id_changed ||
+	    !uid_eq(new->euid, old->uid) ||
+	    !gid_eq(new->egid, old->gid) ||
 	    (!__is_real(root_uid, new) &&
 	     (effective ||
 	      __cap_grew(permitted, ambient, new))))
@@ -1301,20 +1327,37 @@ int cap_task_prctl(int option, unsigned long arg2, unsigned long arg3,
 		     & (old->securebits ^ arg2))			/*[1]*/
 		    || ((old->securebits & SECURE_ALL_LOCKS & ~arg2))	/*[2]*/
 		    || (arg2 & ~(SECURE_ALL_LOCKS | SECURE_ALL_BITS))	/*[3]*/
-		    || (cap_capable(current_cred(),
-				    current_cred()->user_ns,
-				    CAP_SETPCAP,
-				    CAP_OPT_NONE) != 0)			/*[4]*/
 			/*
 			 * [1] no changing of bits that are locked
 			 * [2] no unlocking of locks
 			 * [3] no setting of unsupported bits
-			 * [4] doing anything requires privilege (go read about
-			 *     the "sendmail capabilities bug")
 			 */
 		    )
 			/* cannot change a locked bit */
 			return -EPERM;
+
+		/*
+		 * Doing anything requires privilege (go read about the
+		 * "sendmail capabilities bug"), except for unprivileged bits.
+		 * Indeed, the SECURE_ALL_UNPRIVILEGED bits are not
+		 * restrictions enforced by the kernel but by user space on
+		 * itself.
+		 */
+		if (cap_capable(current_cred(), current_cred()->user_ns,
+				CAP_SETPCAP, CAP_OPT_NONE) != 0) {
+			const unsigned long unpriv_and_locks =
+				SECURE_ALL_UNPRIVILEGED |
+				SECURE_ALL_UNPRIVILEGED << 1;
+			const unsigned long changed = old->securebits ^ arg2;
+
+			/* For legacy reason, denies non-change. */
+			if (!changed)
+				return -EPERM;
+
+			/* Denies privileged changes. */
+			if (changed & ~unpriv_and_locks)
+				return -EPERM;
+		}
 
 		new = prepare_creds();
 		if (!new)
@@ -1395,17 +1438,12 @@ int cap_task_prctl(int option, unsigned long arg2, unsigned long arg3,
  * Determine whether the allocation of a new virtual mapping by the current
  * task is permitted.
  *
- * Return: 1 if permission is granted, 0 if not.
+ * Return: 0 if permission granted, negative error code if not.
  */
 int cap_vm_enough_memory(struct mm_struct *mm, long pages)
 {
-	int cap_sys_admin = 0;
-
-	if (cap_capable(current_cred(), &init_user_ns,
-				CAP_SYS_ADMIN, CAP_OPT_NOAUDIT) == 0)
-		cap_sys_admin = 1;
-
-	return cap_sys_admin;
+	return cap_capable(current_cred(), &init_user_ns, CAP_SYS_ADMIN,
+			   CAP_OPT_NOAUDIT);
 }
 
 /**
@@ -1432,13 +1470,12 @@ int cap_mmap_addr(unsigned long addr)
 	return ret;
 }
 
-int cap_mmap_file(struct file *file, unsigned long reqprot,
-		  unsigned long prot, unsigned long flags)
-{
-	return 0;
-}
-
 #ifdef CONFIG_SECURITY
+
+static const struct lsm_id capability_lsmid = {
+	.name = "capability",
+	.id = LSM_ID_CAPABILITY,
+};
 
 static struct security_hook_list capability_hooks[] __ro_after_init = {
 	LSM_HOOK_INIT(capable, cap_capable),
@@ -1452,7 +1489,6 @@ static struct security_hook_list capability_hooks[] __ro_after_init = {
 	LSM_HOOK_INIT(inode_killpriv, cap_inode_killpriv),
 	LSM_HOOK_INIT(inode_getsecurity, cap_inode_getsecurity),
 	LSM_HOOK_INIT(mmap_addr, cap_mmap_addr),
-	LSM_HOOK_INIT(mmap_file, cap_mmap_file),
 	LSM_HOOK_INIT(task_fix_setuid, cap_task_fix_setuid),
 	LSM_HOOK_INIT(task_prctl, cap_task_prctl),
 	LSM_HOOK_INIT(task_setscheduler, cap_task_setscheduler),
@@ -1464,7 +1500,7 @@ static struct security_hook_list capability_hooks[] __ro_after_init = {
 static int __init capability_init(void)
 {
 	security_add_hooks(capability_hooks, ARRAY_SIZE(capability_hooks),
-				"capability");
+			   &capability_lsmid);
 	return 0;
 }
 

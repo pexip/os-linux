@@ -5,7 +5,7 @@
 
 /*
  * AM335x Starter Kit
- * http://www.ti.com/tool/tmdssk3358
+ * https://www.ti.com/tool/tmdssk3358
  */
 
 /dts-v1/;
@@ -30,7 +30,7 @@
 	};
 
 	chosen {
-		stdout-path = &uart0;
+		stdout-path = "serial0:115200n8";
 	};
 
 	vbat: fixedregulator0 {

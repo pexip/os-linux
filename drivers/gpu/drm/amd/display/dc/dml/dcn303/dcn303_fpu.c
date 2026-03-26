@@ -266,6 +266,17 @@ void dcn303_fpu_update_bw_bounding_box(struct dc *dc, struct clk_bw_params *bw_p
 					optimal_uclk_for_dcfclk_sta_targets[i] =
 							bw_params->clk_table.entries[j].memclk_mhz * 16;
 					break;
+				} else {
+					/* condition where (dcfclk_sta_targets[i] >= optimal_dcfclk_for_uclk[j]):
+					 * This is required for dcn303 because it just so happens that the memory
+					 * bandwidth is low enough such that all the optimal DCFCLK for each UCLK
+					 * is lower than the smallest DCFCLK STA target. In this case we need to
+					 * populate the optimal UCLK for each DCFCLK STA target to be the max UCLK.
+					 */
+					if (j == num_uclk_states - 1) {
+						optimal_uclk_for_dcfclk_sta_targets[i] =
+								bw_params->clk_table.entries[j].memclk_mhz * 16;
+					}
 				}
 			}
 		}
@@ -274,7 +285,7 @@ void dcn303_fpu_update_bw_bounding_box(struct dc *dc, struct clk_bw_params *bw_p
 		j = 0;
 		/* create the final dcfclk and uclk table */
 		while (i < num_dcfclk_sta_targets && j < num_uclk_states && num_states < DC__VOLTAGE_STATES) {
-			if (dcfclk_sta_targets[i] < optimal_dcfclk_for_uclk[j] && i < num_dcfclk_sta_targets) {
+			if (dcfclk_sta_targets[i] < optimal_dcfclk_for_uclk[j]) {
 				dcfclk_mhz[num_states] = dcfclk_sta_targets[i];
 				dram_speed_mts[num_states++] = optimal_uclk_for_dcfclk_sta_targets[i++];
 			} else {

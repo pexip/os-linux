@@ -56,6 +56,7 @@ enum ingenic_mac_version {
 
 struct ingenic_mac {
 	const struct ingenic_soc_info *soc_info;
+	struct plat_stmmacenet_data *plat_dat;
 	struct device *dev;
 	struct regmap *regmap;
 
@@ -70,13 +71,13 @@ struct ingenic_soc_info {
 	int (*set_mode)(struct plat_stmmacenet_data *plat_dat);
 };
 
-static int ingenic_mac_init(struct plat_stmmacenet_data *plat_dat)
+static int ingenic_mac_init(struct platform_device *pdev, void *bsp_priv)
 {
-	struct ingenic_mac *mac = plat_dat->bsp_priv;
+	struct ingenic_mac *mac = bsp_priv;
 	int ret;
 
 	if (mac->soc_info->set_mode) {
-		ret = mac->soc_info->set_mode(plat_dat);
+		ret = mac->soc_info->set_mode(mac->plat_dat);
 		if (ret)
 			return ret;
 	}
@@ -89,7 +90,7 @@ static int jz4775_mac_set_mode(struct plat_stmmacenet_data *plat_dat)
 	struct ingenic_mac *mac = plat_dat->bsp_priv;
 	unsigned int val;
 
-	switch (plat_dat->mac_interface) {
+	switch (plat_dat->phy_interface) {
 	case PHY_INTERFACE_MODE_MII:
 		val = FIELD_PREP(MACPHYC_TXCLK_SEL_MASK, MACPHYC_TXCLK_SEL_INPUT) |
 			  FIELD_PREP(MACPHYC_PHY_INFT_MASK, MACPHYC_PHY_INFT_MII);
@@ -118,7 +119,8 @@ static int jz4775_mac_set_mode(struct plat_stmmacenet_data *plat_dat)
 		break;
 
 	default:
-		dev_err(mac->dev, "Unsupported interface %d", plat_dat->mac_interface);
+		dev_err(mac->dev, "Unsupported interface %s\n",
+			phy_modes(plat_dat->phy_interface));
 		return -EINVAL;
 	}
 
@@ -130,13 +132,14 @@ static int x1000_mac_set_mode(struct plat_stmmacenet_data *plat_dat)
 {
 	struct ingenic_mac *mac = plat_dat->bsp_priv;
 
-	switch (plat_dat->mac_interface) {
+	switch (plat_dat->phy_interface) {
 	case PHY_INTERFACE_MODE_RMII:
 		dev_dbg(mac->dev, "MAC PHY Control Register: PHY_INTERFACE_MODE_RMII\n");
 		break;
 
 	default:
-		dev_err(mac->dev, "Unsupported interface %d", plat_dat->mac_interface);
+		dev_err(mac->dev, "Unsupported interface %s\n",
+			phy_modes(plat_dat->phy_interface));
 		return -EINVAL;
 	}
 
@@ -149,14 +152,15 @@ static int x1600_mac_set_mode(struct plat_stmmacenet_data *plat_dat)
 	struct ingenic_mac *mac = plat_dat->bsp_priv;
 	unsigned int val;
 
-	switch (plat_dat->mac_interface) {
+	switch (plat_dat->phy_interface) {
 	case PHY_INTERFACE_MODE_RMII:
 		val = FIELD_PREP(MACPHYC_PHY_INFT_MASK, MACPHYC_PHY_INFT_RMII);
 		dev_dbg(mac->dev, "MAC PHY Control Register: PHY_INTERFACE_MODE_RMII\n");
 		break;
 
 	default:
-		dev_err(mac->dev, "Unsupported interface %d", plat_dat->mac_interface);
+		dev_err(mac->dev, "Unsupported interface %s\n",
+			phy_modes(plat_dat->phy_interface));
 		return -EINVAL;
 	}
 
@@ -169,7 +173,7 @@ static int x1830_mac_set_mode(struct plat_stmmacenet_data *plat_dat)
 	struct ingenic_mac *mac = plat_dat->bsp_priv;
 	unsigned int val;
 
-	switch (plat_dat->mac_interface) {
+	switch (plat_dat->phy_interface) {
 	case PHY_INTERFACE_MODE_RMII:
 		val = FIELD_PREP(MACPHYC_MODE_SEL_MASK, MACPHYC_MODE_SEL_RMII) |
 			  FIELD_PREP(MACPHYC_PHY_INFT_MASK, MACPHYC_PHY_INFT_RMII);
@@ -177,7 +181,8 @@ static int x1830_mac_set_mode(struct plat_stmmacenet_data *plat_dat)
 		break;
 
 	default:
-		dev_err(mac->dev, "Unsupported interface %d", plat_dat->mac_interface);
+		dev_err(mac->dev, "Unsupported interface %s\n",
+			phy_modes(plat_dat->phy_interface));
 		return -EINVAL;
 	}
 
@@ -190,7 +195,7 @@ static int x2000_mac_set_mode(struct plat_stmmacenet_data *plat_dat)
 	struct ingenic_mac *mac = plat_dat->bsp_priv;
 	unsigned int val;
 
-	switch (plat_dat->mac_interface) {
+	switch (plat_dat->phy_interface) {
 	case PHY_INTERFACE_MODE_RMII:
 		val = FIELD_PREP(MACPHYC_TX_SEL_MASK, MACPHYC_TX_SEL_ORIGIN) |
 			  FIELD_PREP(MACPHYC_RX_SEL_MASK, MACPHYC_RX_SEL_ORIGIN) |
@@ -220,7 +225,8 @@ static int x2000_mac_set_mode(struct plat_stmmacenet_data *plat_dat)
 		break;
 
 	default:
-		dev_err(mac->dev, "Unsupported interface %d", plat_dat->mac_interface);
+		dev_err(mac->dev, "Unsupported interface %s\n",
+			phy_modes(plat_dat->phy_interface));
 		return -EINVAL;
 	}
 
@@ -241,29 +247,25 @@ static int ingenic_mac_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	plat_dat = stmmac_probe_config_dt(pdev, stmmac_res.mac);
+	plat_dat = devm_stmmac_probe_config_dt(pdev, stmmac_res.mac);
 	if (IS_ERR(plat_dat))
 		return PTR_ERR(plat_dat);
 
 	mac = devm_kzalloc(&pdev->dev, sizeof(*mac), GFP_KERNEL);
-	if (!mac) {
-		ret = -ENOMEM;
-		goto err_remove_config_dt;
-	}
+	if (!mac)
+		return -ENOMEM;
 
 	data = of_device_get_match_data(&pdev->dev);
 	if (!data) {
 		dev_err(&pdev->dev, "No of match data provided\n");
-		ret = -EINVAL;
-		goto err_remove_config_dt;
+		return -EINVAL;
 	}
 
 	/* Get MAC PHY control register */
 	mac->regmap = syscon_regmap_lookup_by_phandle(pdev->dev.of_node, "mode-reg");
 	if (IS_ERR(mac->regmap)) {
 		dev_err(&pdev->dev, "%s: Failed to get syscon regmap\n", __func__);
-		ret = PTR_ERR(mac->regmap);
-		goto err_remove_config_dt;
+		return PTR_ERR(mac->regmap);
 	}
 
 	if (!of_property_read_u32(pdev->dev.of_node, "tx-clk-delay-ps", &tx_delay_ps)) {
@@ -272,8 +274,7 @@ static int ingenic_mac_probe(struct platform_device *pdev)
 			mac->tx_delay = tx_delay_ps * 1000;
 		} else {
 			dev_err(&pdev->dev, "Invalid TX clock delay: %dps\n", tx_delay_ps);
-			ret = -EINVAL;
-			goto err_remove_config_dt;
+			return -EINVAL;
 		}
 	}
 
@@ -283,59 +284,19 @@ static int ingenic_mac_probe(struct platform_device *pdev)
 			mac->rx_delay = rx_delay_ps * 1000;
 		} else {
 			dev_err(&pdev->dev, "Invalid RX clock delay: %dps\n", rx_delay_ps);
-			ret = -EINVAL;
-			goto err_remove_config_dt;
+			return -EINVAL;
 		}
 	}
 
 	mac->soc_info = data;
 	mac->dev = &pdev->dev;
+	mac->plat_dat = plat_dat;
 
 	plat_dat->bsp_priv = mac;
+	plat_dat->init = ingenic_mac_init;
 
-	ret = ingenic_mac_init(plat_dat);
-	if (ret)
-		goto err_remove_config_dt;
-
-	ret = stmmac_dvr_probe(&pdev->dev, plat_dat, &stmmac_res);
-	if (ret)
-		goto err_remove_config_dt;
-
-	return 0;
-
-err_remove_config_dt:
-	stmmac_remove_config_dt(pdev, plat_dat);
-
-	return ret;
+	return devm_stmmac_pltfr_probe(pdev, plat_dat, &stmmac_res);
 }
-
-#ifdef CONFIG_PM_SLEEP
-static int ingenic_mac_suspend(struct device *dev)
-{
-	int ret;
-
-	ret = stmmac_suspend(dev);
-
-	return ret;
-}
-
-static int ingenic_mac_resume(struct device *dev)
-{
-	struct net_device *ndev = dev_get_drvdata(dev);
-	struct stmmac_priv *priv = netdev_priv(ndev);
-	int ret;
-
-	ret = ingenic_mac_init(priv->plat);
-	if (ret)
-		return ret;
-
-	ret = stmmac_resume(dev);
-
-	return ret;
-}
-#endif /* CONFIG_PM_SLEEP */
-
-static SIMPLE_DEV_PM_OPS(ingenic_mac_pm_ops, ingenic_mac_suspend, ingenic_mac_resume);
 
 static struct ingenic_soc_info jz4775_soc_info = {
 	.version = ID_JZ4775,
@@ -385,10 +346,9 @@ MODULE_DEVICE_TABLE(of, ingenic_mac_of_matches);
 
 static struct platform_driver ingenic_mac_driver = {
 	.probe		= ingenic_mac_probe,
-	.remove_new	= stmmac_pltfr_remove,
 	.driver		= {
 		.name	= "ingenic-mac",
-		.pm		= pm_ptr(&ingenic_mac_pm_ops),
+		.pm		= &stmmac_pltfr_pm_ops,
 		.of_match_table = ingenic_mac_of_matches,
 	},
 };

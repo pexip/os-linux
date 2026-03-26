@@ -10,6 +10,7 @@
 #include <linux/mmc/host.h>
 #include <linux/mmc/sdio_func.h>
 #include "main.h"
+#include "mac.h"
 #include "debug.h"
 #include "fw.h"
 #include "ps.h"
@@ -143,6 +144,12 @@ static u32 rtw_sdio_to_io_address(struct rtw_dev *rtwdev, u32 addr,
 
 static bool rtw_sdio_use_direct_io(struct rtw_dev *rtwdev, u32 addr)
 {
+	bool might_indirect_under_power_off = rtwdev->chip->id == RTW_CHIP_TYPE_8822C;
+
+	if (!test_bit(RTW_FLAG_POWERON, rtwdev->flags) &&
+	    !rtw_sdio_is_bus_addr(addr) && might_indirect_under_power_off)
+		return false;
+
 	return !rtw_sdio_is_sdio30_supported(rtwdev) ||
 		rtw_sdio_is_bus_addr(addr);
 }
@@ -546,7 +553,7 @@ static int rtw_sdio_check_free_txpg(struct rtw_dev *rtwdev, u8 queue,
 {
 	unsigned int pages_free, pages_needed;
 
-	if (rtw_chip_wcpu_11n(rtwdev)) {
+	if (rtw_chip_wcpu_8051(rtwdev)) {
 		u32 free_txpg;
 
 		free_txpg = rtw_sdio_read32(rtwdev, REG_SDIO_FREE_TXPG);
@@ -677,12 +684,22 @@ static void rtw_sdio_enable_rx_aggregation(struct rtw_dev *rtwdev)
 {
 	u8 size, timeout;
 
-	if (rtw_chip_wcpu_11n(rtwdev)) {
+	switch (rtwdev->chip->id) {
+	case RTW_CHIP_TYPE_8703B:
+	case RTW_CHIP_TYPE_8821A:
+	case RTW_CHIP_TYPE_8812A:
 		size = 0x6;
 		timeout = 0x6;
-	} else {
+		break;
+	case RTW_CHIP_TYPE_8723D:
+		size = 0xa;
+		timeout = 0x3;
+		rtw_write8_set(rtwdev, REG_RXDMA_AGG_PG_TH + 3, BIT(7));
+		break;
+	default:
 		size = 0xff;
 		timeout = 0x1;
+		break;
 	}
 
 	/* Make the firmware honor the size limit configured below */
@@ -861,7 +878,7 @@ static void rtw_sdio_tx_skb_prepare(struct rtw_dev *rtwdev,
 
 	pkt_info->qsel = rtw_sdio_get_tx_qsel(rtwdev, skb, queue);
 
-	rtw_tx_fill_tx_desc(pkt_info, skb);
+	rtw_tx_fill_tx_desc(rtwdev, pkt_info, skb);
 	rtw_tx_fill_txdesc_checksum(rtwdev, pkt_info, pkt_desc);
 }
 
@@ -945,6 +962,7 @@ static void rtw_sdio_rx_skb(struct rtw_dev *rtwdev, struct sk_buff *skb,
 	skb_put(skb, pkt_stat->pkt_len);
 	skb_reserve(skb, pkt_offset);
 
+	rtw_update_rx_freq_for_invalid(rtwdev, skb, rx_status, pkt_stat);
 	rtw_rx_stats(rtwdev, pkt_stat->vif, skb);
 
 	ieee80211_rx_irqsafe(rtwdev->hw, skb);
@@ -977,8 +995,7 @@ static void rtw_sdio_rxfifo_recv(struct rtw_dev *rtwdev, u32 rx_len)
 
 	while (true) {
 		rx_desc = skb->data;
-		chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
-					 &rx_status);
+		rtw_rx_query_rx_desc(rtwdev, rx_desc, &pkt_stat, &rx_status);
 		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
 			     pkt_stat.shift;
 
@@ -1019,7 +1036,7 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 	u32 rx_len, hisr, total_rx_bytes = 0;
 
 	do {
-		if (rtw_chip_wcpu_11n(rtwdev))
+		if (rtw_chip_wcpu_8051(rtwdev))
 			rx_len = rtw_read16(rtwdev, REG_SDIO_RX0_REQ_LEN);
 		else
 			rx_len = rtw_read32(rtwdev, REG_SDIO_RX0_REQ_LEN);
@@ -1031,7 +1048,7 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 
 		total_rx_bytes += rx_len;
 
-		if (rtw_chip_wcpu_11n(rtwdev)) {
+		if (rtw_chip_wcpu_8051(rtwdev)) {
 			/* Stop if no more RX requests are pending, even if
 			 * rx_len could be greater than zero in the next
 			 * iteration. This is needed because the RX buffer may
@@ -1043,7 +1060,7 @@ static void rtw_sdio_rx_isr(struct rtw_dev *rtwdev)
 			 */
 			hisr = rtw_read32(rtwdev, REG_SDIO_HISR);
 		} else {
-			/* RTW_WCPU_11AC chips have improved hardware or
+			/* RTW_WCPU_3081 chips have improved hardware or
 			 * firmware and can use rx_len unconditionally.
 			 */
 			hisr = REG_SDIO_HISR_RX_REQUEST;
@@ -1144,7 +1161,7 @@ static void rtw_sdio_declaim(struct rtw_dev *rtwdev,
 	sdio_release_host(sdio_func);
 }
 
-static struct rtw_hci_ops rtw_sdio_ops = {
+static const struct rtw_hci_ops rtw_sdio_ops = {
 	.tx_write = rtw_sdio_tx_write,
 	.tx_kick_off = rtw_sdio_tx_kick_off,
 	.setup = rtw_sdio_setup,
@@ -1153,6 +1170,8 @@ static struct rtw_hci_ops rtw_sdio_ops = {
 	.deep_ps = rtw_sdio_deep_ps,
 	.link_ps = rtw_sdio_link_ps,
 	.interface_cfg = rtw_sdio_interface_cfg,
+	.dynamic_rx_agg = NULL,
+	.write_firmware_page = rtw_write_firmware_page,
 
 	.read8 = rtw_sdio_read8,
 	.read16 = rtw_sdio_read16,
@@ -1291,7 +1310,6 @@ static void rtw_sdio_deinit_tx(struct rtw_dev *rtwdev)
 	struct rtw_sdio *rtwsdio = (struct rtw_sdio *)rtwdev->priv;
 	int i;
 
-	flush_workqueue(rtwsdio->txwq);
 	destroy_workqueue(rtwsdio->txwq);
 	kfree(rtwsdio->tx_handler_data);
 

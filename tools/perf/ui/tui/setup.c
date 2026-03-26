@@ -2,12 +2,14 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <termios.h>
 #include <unistd.h>
 #include <linux/kernel.h>
 #ifdef HAVE_BACKTRACE_SUPPORT
 #include <execinfo.h>
 #endif
 
+#include "../../util/color.h"
 #include "../../util/debug.h"
 #include "../browser.h"
 #include "../helpline.h"
@@ -106,7 +108,7 @@ static void ui__signal_backtrace(int sig)
 
 	printf("-------- backtrace --------\n");
 	size = backtrace(stackdump, ARRAY_SIZE(stackdump));
-	backtrace_symbols_fd(stackdump, size, STDOUT_FILENO);
+	__dump_stack(stdout, stackdump, size);
 
 	exit(0);
 }
@@ -119,6 +121,23 @@ static void ui__signal(int sig)
 	ui__exit(false);
 	psignal(sig, "perf");
 	exit(0);
+}
+
+static void ui__sigcont(int sig)
+{
+	static struct termios tty;
+
+	if (sig == SIGTSTP) {
+		while (tcgetattr(SLang_TT_Read_FD, &tty) == -1 && errno == EINTR)
+			;
+		while (write(SLang_TT_Read_FD, PERF_COLOR_RESET, sizeof(PERF_COLOR_RESET) - 1) == -1 && errno == EINTR)
+			;
+		raise(SIGSTOP);
+	} else {
+		while (tcsetattr(SLang_TT_Read_FD, TCSADRAIN, &tty) == -1 && errno == EINTR)
+			;
+		raise(SIGWINCH);
+	}
 }
 
 int ui__init(void)
@@ -135,6 +154,7 @@ int ui__init(void)
 	err = SLang_init_tty(-1, 0, 0);
 	if (err < 0)
 		goto out;
+	SLtty_set_suspend_state(true);
 
 	err = SLkp_init();
 	if (err < 0) {
@@ -149,6 +169,8 @@ int ui__init(void)
 	signal(SIGINT, ui__signal);
 	signal(SIGQUIT, ui__signal);
 	signal(SIGTERM, ui__signal);
+	signal(SIGTSTP, ui__sigcont);
+	signal(SIGCONT, ui__sigcont);
 
 	perf_error__register(&perf_tui_eops);
 

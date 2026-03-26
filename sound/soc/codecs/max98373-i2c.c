@@ -3,12 +3,10 @@
 
 #include <linux/acpi.h>
 #include <linux/delay.h>
-#include <linux/gpio.h>
 #include <linux/i2c.h>
 #include <linux/module.h>
 #include <linux/mod_devicetable.h>
 #include <linux/of.h>
-#include <linux/of_gpio.h>
 #include <linux/pm.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
@@ -25,7 +23,7 @@ static const u32 max98373_i2c_cache_reg[] = {
 	MAX98373_R20B6_BDE_CUR_STATE_READBACK,
 };
 
-static struct reg_default max98373_reg[] = {
+static const struct reg_default max98373_reg[] = {
 	{MAX98373_R2000_SW_RESET, 0x00},
 	{MAX98373_R2001_INT_RAW1, 0x00},
 	{MAX98373_R2002_INT_RAW2, 0x00},
@@ -474,7 +472,6 @@ static struct snd_soc_dai_driver max98373_dai[] = {
 	}
 };
 
-#ifdef CONFIG_PM_SLEEP
 static int max98373_suspend(struct device *dev)
 {
 	struct max98373_priv *max98373 = dev_get_drvdata(dev);
@@ -498,10 +495,9 @@ static int max98373_resume(struct device *dev)
 	regcache_sync(max98373->regmap);
 	return 0;
 }
-#endif
 
 static const struct dev_pm_ops max98373_pm = {
-	SET_SYSTEM_SLEEP_PM_OPS(max98373_suspend, max98373_resume)
+	SYSTEM_SLEEP_PM_OPS(max98373_suspend, max98373_resume)
 };
 
 static const struct regmap_config max98373_regmap = {
@@ -560,21 +556,6 @@ static int max98373_i2c_probe(struct i2c_client *i2c)
 	/* voltage/current slot & gpio configuration */
 	max98373_slot_config(&i2c->dev, max98373);
 
-	/* Power on device */
-	if (gpio_is_valid(max98373->reset_gpio)) {
-		ret = devm_gpio_request(&i2c->dev, max98373->reset_gpio,
-					"MAX98373_RESET");
-		if (ret) {
-			dev_err(&i2c->dev, "%s: Failed to request gpio %d\n",
-				__func__, max98373->reset_gpio);
-			return -EINVAL;
-		}
-		gpio_direction_output(max98373->reset_gpio, 0);
-		msleep(50);
-		gpio_direction_output(max98373->reset_gpio, 1);
-		msleep(20);
-	}
-
 	/* Check Revision ID */
 	ret = regmap_read(max98373->regmap,
 			  MAX98373_R21FF_REV_ID, &reg);
@@ -595,7 +576,7 @@ static int max98373_i2c_probe(struct i2c_client *i2c)
 }
 
 static const struct i2c_device_id max98373_i2c_id[] = {
-	{ "max98373", 0},
+	{ "max98373"},
 	{ },
 };
 
@@ -622,7 +603,7 @@ static struct i2c_driver max98373_i2c_driver = {
 		.name = "max98373",
 		.of_match_table = of_match_ptr(max98373_of_match),
 		.acpi_match_table = ACPI_PTR(max98373_acpi_match),
-		.pm = &max98373_pm,
+		.pm = pm_ptr(&max98373_pm),
 	},
 	.probe = max98373_i2c_probe,
 	.id_table = max98373_i2c_id,

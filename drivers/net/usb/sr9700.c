@@ -52,7 +52,7 @@ static int sr_read_reg(struct usbnet *dev, u8 reg, u8 *value)
 
 static int sr_write_reg(struct usbnet *dev, u8 reg, u8 value)
 {
-	return usbnet_write_cmd(dev, SR_WR_REGS, SR_REQ_WR_REG,
+	return usbnet_write_cmd(dev, SR_WR_REG, SR_REQ_WR_REG,
 				value, reg, NULL, 0);
 }
 
@@ -65,7 +65,7 @@ static void sr_write_async(struct usbnet *dev, u8 reg, u16 length,
 
 static void sr_write_reg_async(struct usbnet *dev, u8 reg, u8 value)
 {
-	usbnet_write_cmd_async(dev, SR_WR_REGS, SR_REQ_WR_REG,
+	usbnet_write_cmd_async(dev, SR_WR_REG, SR_REQ_WR_REG,
 			       value, reg, NULL, 0);
 }
 
@@ -177,9 +177,9 @@ static int sr9700_get_eeprom(struct net_device *netdev,
 static int sr_mdio_read(struct net_device *netdev, int phy_id, int loc)
 {
 	struct usbnet *dev = netdev_priv(netdev);
-	__le16 res;
+	int err, res;
+	__le16 word;
 	int rc = 0;
-	int err;
 
 	if (phy_id) {
 		netdev_dbg(netdev, "Only internal phy supported\n");
@@ -197,14 +197,14 @@ static int sr_mdio_read(struct net_device *netdev, int phy_id, int loc)
 		if (value & NSR_LINKST)
 			rc = 1;
 	}
-	err = sr_share_read_word(dev, 1, loc, &res);
+	err = sr_share_read_word(dev, 1, loc, &word);
 	if (err < 0)
 		return err;
 
 	if (rc == 1)
-		res = le16_to_cpu(res) | BMSR_LSTATUS;
+		res = le16_to_cpu(word) | BMSR_LSTATUS;
 	else
-		res = le16_to_cpu(res) & ~BMSR_LSTATUS;
+		res = le16_to_cpu(word) & ~BMSR_LSTATUS;
 
 	netdev_dbg(netdev, "sr_mdio_read() phy_id=0x%02x, loc=0x%02x, returns=0x%04x\n",
 		   phy_id, loc, res);
@@ -537,6 +537,11 @@ static const struct driver_info sr9700_driver_info = {
 static const struct usb_device_id products[] = {
 	{
 		USB_DEVICE(0x0fe6, 0x9700),	/* SR9700 device */
+		.driver_info = (unsigned long)&sr9700_driver_info,
+	},
+	{
+		/* SR9700 with virtual driver CD-ROM - interface 0 is the CD-ROM device */
+		USB_DEVICE_INTERFACE_NUMBER(0x0fe6, 0x9702, 1),
 		.driver_info = (unsigned long)&sr9700_driver_info,
 	},
 	{},			/* END */

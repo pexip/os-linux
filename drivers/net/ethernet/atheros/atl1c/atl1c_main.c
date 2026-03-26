@@ -231,8 +231,8 @@ static u32 atl1c_wait_until_idle(struct atl1c_hw *hw, u32 modu_ctrl)
  */
 static void atl1c_phy_config(struct timer_list *t)
 {
-	struct atl1c_adapter *adapter = from_timer(adapter, t,
-						   phy_config_timer);
+	struct atl1c_adapter *adapter = timer_container_of(adapter, t,
+							   phy_config_timer);
 	struct atl1c_hw *hw = &adapter->hw;
 	unsigned long flags;
 
@@ -357,7 +357,7 @@ static void atl1c_common_task(struct work_struct *work)
 
 static void atl1c_del_timer(struct atl1c_adapter *adapter)
 {
-	del_timer_sync(&adapter->phy_config_timer);
+	timer_delete_sync(&adapter->phy_config_timer);
 }
 
 
@@ -561,7 +561,7 @@ static int atl1c_change_mtu(struct net_device *netdev, int new_mtu)
 	if (netif_running(netdev)) {
 		while (test_and_set_bit(__AT_RESETTING, &adapter->flags))
 			msleep(1);
-		netdev->mtu = new_mtu;
+		WRITE_ONCE(netdev->mtu, new_mtu);
 		adapter->hw.max_frame_size = new_mtu;
 		atl1c_set_rxbufsize(adapter, netdev);
 		atl1c_down(adapter);
@@ -842,7 +842,8 @@ static int atl1c_sw_init(struct atl1c_adapter *adapter)
 }
 
 static inline void atl1c_clean_buffer(struct pci_dev *pdev,
-				struct atl1c_buffer *buffer_info)
+				      struct atl1c_buffer *buffer_info,
+				      int budget)
 {
 	u16 pci_driection;
 	if (buffer_info->flags & ATL1C_BUFFER_FREE)
@@ -861,7 +862,7 @@ static inline void atl1c_clean_buffer(struct pci_dev *pdev,
 				       buffer_info->length, pci_driection);
 	}
 	if (buffer_info->skb)
-		dev_consume_skb_any(buffer_info->skb);
+		napi_consume_skb(buffer_info->skb, budget);
 	buffer_info->dma = 0;
 	buffer_info->skb = NULL;
 	ATL1C_SET_BUFFER_STATE(buffer_info, ATL1C_BUFFER_FREE);
@@ -882,7 +883,7 @@ static void atl1c_clean_tx_ring(struct atl1c_adapter *adapter,
 	ring_count = tpd_ring->count;
 	for (index = 0; index < ring_count; index++) {
 		buffer_info = &tpd_ring->buffer_info[index];
-		atl1c_clean_buffer(pdev, buffer_info);
+		atl1c_clean_buffer(pdev, buffer_info, 0);
 	}
 
 	netdev_tx_reset_queue(netdev_get_tx_queue(adapter->netdev, queue));
@@ -909,7 +910,7 @@ static void atl1c_clean_rx_ring(struct atl1c_adapter *adapter, u32 queue)
 
 	for (j = 0; j < rfd_ring->count; j++) {
 		buffer_info = &rfd_ring->buffer_info[j];
-		atl1c_clean_buffer(pdev, buffer_info);
+		atl1c_clean_buffer(pdev, buffer_info, 0);
 	}
 	/* zero out the descriptor ring */
 	memset(rfd_ring->desc, 0, rfd_ring->size);
@@ -1607,7 +1608,7 @@ static int atl1c_clean_tx(struct napi_struct *napi, int budget)
 			total_bytes += buffer_info->skb->len;
 			total_packets++;
 		}
-		atl1c_clean_buffer(pdev, buffer_info);
+		atl1c_clean_buffer(pdev, buffer_info, budget);
 		if (++next_to_clean == tpd_ring->count)
 			next_to_clean = 0;
 		atomic_set(&tpd_ring->next_to_clean, next_to_clean);
@@ -2151,7 +2152,7 @@ static void atl1c_tx_rollback(struct atl1c_adapter *adpt,
 	while (index != tpd_ring->next_to_use) {
 		tpd = ATL1C_TPD_DESC(tpd_ring, index);
 		buffer_info = &tpd_ring->buffer_info[index];
-		atl1c_clean_buffer(adpt->pdev, buffer_info);
+		atl1c_clean_buffer(adpt->pdev, buffer_info, 0);
 		memset(tpd, 0, sizeof(struct atl1c_tpd_desc));
 		if (++index == tpd_ring->count)
 			index = 0;
@@ -2687,7 +2688,7 @@ static int atl1c_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	adapter->mii.mdio_write = atl1c_mdio_write;
 	adapter->mii.phy_id_mask = 0x1f;
 	adapter->mii.reg_num_mask = MDIO_CTRL_REG_MASK;
-	dev_set_threaded(netdev, true);
+	netif_threaded_enable(netdev);
 	for (i = 0; i < adapter->rx_queue_count; ++i)
 		netif_napi_add(netdev, &adapter->rrd_ring[i].napi,
 			       atl1c_clean_rx);

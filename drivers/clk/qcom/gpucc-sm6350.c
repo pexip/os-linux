@@ -5,6 +5,7 @@
  */
 
 #include <linux/clk-provider.h>
+#include <linux/mod_devicetable.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
@@ -66,7 +67,7 @@ static struct clk_alpha_pll gpu_cc_pll0 = {
 	.clkr = {
 		.hw.init = &(struct clk_init_data){
 			.name = "gpu_cc_pll0",
-			.parent_data =  &(const struct clk_parent_data){
+			.parent_data = &(const struct clk_parent_data){
 				.index = DT_BI_TCXO,
 				.fw_name = "bi_tcxo",
 			},
@@ -110,7 +111,7 @@ static struct clk_alpha_pll gpu_cc_pll1 = {
 	.clkr = {
 		.hw.init = &(struct clk_init_data){
 			.name = "gpu_cc_pll1",
-			.parent_data =  &(const struct clk_parent_data){
+			.parent_data = &(const struct clk_parent_data){
 				.index = DT_BI_TCXO,
 				.fw_name = "bi_tcxo",
 			},
@@ -508,7 +509,7 @@ static int gpu_cc_sm6350_probe(struct platform_device *pdev)
 	value = 0xF << CX_GMU_CBCR_WAKE_SHIFT | 0xF << CX_GMU_CBCR_SLEEP_SHIFT;
 	regmap_update_bits(regmap, 0x1098, mask, value);
 
-	return qcom_cc_really_probe(pdev, &gpu_cc_sm6350_desc, regmap);
+	return qcom_cc_really_probe(&pdev->dev, &gpu_cc_sm6350_desc, regmap);
 }
 
 static struct platform_driver gpu_cc_sm6350_driver = {

@@ -230,20 +230,20 @@ static int cros_typec_register_switches(struct cros_typec_switch_data *sdata)
 
 		adev = to_acpi_device_node(fwnode);
 		if (!adev) {
-			dev_err(fwnode->dev, "Couldn't get ACPI device handle\n");
+			dev_err(dev, "Couldn't get ACPI device handle for %pfwP\n", fwnode);
 			ret = -ENODEV;
 			goto err_switch;
 		}
 
 		ret = acpi_evaluate_integer(adev->handle, "_ADR", NULL, &index);
 		if (ACPI_FAILURE(ret)) {
-			dev_err(fwnode->dev, "_ADR wasn't evaluated\n");
+			dev_err(dev, "_ADR wasn't evaluated for %pfwP\n", fwnode);
 			ret = -ENODATA;
 			goto err_switch;
 		}
 
 		if (index >= EC_USB_PD_MAX_PORTS) {
-			dev_err(fwnode->dev, "Invalid port index number: %llu\n", index);
+			dev_err(dev, "%pfwP: Invalid port index number: %llu\n", fwnode, index);
 			ret = -EINVAL;
 			goto err_switch;
 		}
@@ -297,12 +297,11 @@ static int cros_typec_switch_probe(struct platform_device *pdev)
 	return cros_typec_register_switches(sdata);
 }
 
-static int cros_typec_switch_remove(struct platform_device *pdev)
+static void cros_typec_switch_remove(struct platform_device *pdev)
 {
 	struct cros_typec_switch_data *sdata = platform_get_drvdata(pdev);
 
 	cros_typec_unregister_switches(sdata);
-	return 0;
 }
 
 #ifdef CONFIG_ACPI

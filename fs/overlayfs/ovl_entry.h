@@ -40,6 +40,8 @@ struct ovl_layer {
 	int idx;
 	/* One fsid per unique underlying sb (upper fsid == 0) */
 	int fsid;
+	/* xwhiteouts were found on this layer */
+	bool has_xwhiteouts;
 };
 
 struct ovl_path {
@@ -49,7 +51,7 @@ struct ovl_path {
 
 struct ovl_entry {
 	unsigned int __numlower;
-	struct ovl_path __lowerstack[];
+	struct ovl_path __lowerstack[] __counted_by(__numlower);
 };
 
 /* private information held for overlayfs's superblock */
@@ -59,14 +61,12 @@ struct ovl_fs {
 	unsigned int numfs;
 	/* Number of data-only lower layers */
 	unsigned int numdatalayer;
-	const struct ovl_layer *layers;
+	struct ovl_layer *layers;
 	struct ovl_sb *fs;
 	/* workbasedir is the path at workdir= mount option */
 	struct dentry *workbasedir;
-	/* workdir is the 'work' directory under workbasedir */
+	/* workdir is the 'work' or 'index' directory under workbasedir */
 	struct dentry *workdir;
-	/* index directory listing overlay inodes by origin file handle */
-	struct dentry *indexdir;
 	long namelen;
 	/* pathnames of lower and upper dirs, for show_options */
 	struct ovl_config config;
@@ -81,7 +81,6 @@ struct ovl_fs {
 	/* Traps in ovl inode cache */
 	struct inode *workbasedir_trap;
 	struct inode *workdir_trap;
-	struct inode *indexdir_trap;
 	/* -1: disabled, 0: same fs, 1..32: number of unused ino bits */
 	int xino_mode;
 	/* For allocation of non-persistent inode numbers */
@@ -89,8 +88,10 @@ struct ovl_fs {
 	/* Shared whiteout cache */
 	struct dentry *whiteout;
 	bool no_shared_whiteout;
+	struct mutex whiteout_lock;
 	/* r/o snapshot of upperdir sb's only taken on volatile mounts */
 	errseq_t errseq;
+	bool casefold;
 };
 
 /* Number of lower layers, not including data-only layers */

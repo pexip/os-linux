@@ -27,7 +27,7 @@
  * cache size, the idea being that when the cache is at its maximum number
  * of entries, then this should be the average number of entries per bucket.
  */
-#define TARGET_BUCKET_SIZE	64
+#define TARGET_BUCKET_SIZE	8
 
 struct nfsd_drc_bucket {
 	struct rb_root rb_head;
@@ -166,8 +166,7 @@ nfsd_reply_cache_free(struct nfsd_drc_bucket *b, struct nfsd_cacherep *rp,
 
 int nfsd_drc_slab_create(void)
 {
-	drc_slab = kmem_cache_create("nfsd_drc",
-				sizeof(struct nfsd_cacherep), 0, 0, NULL);
+	drc_slab = KMEM_CACHE(nfsd_cacherep, 0);
 	return drc_slab ? 0: -ENOMEM;
 }
 
@@ -180,25 +179,28 @@ int nfsd_reply_cache_init(struct nfsd_net *nn)
 {
 	unsigned int hashsize;
 	unsigned int i;
-	int status = 0;
 
 	nn->max_drc_entries = nfsd_cache_size_limit();
 	atomic_set(&nn->num_drc_entries, 0);
 	hashsize = nfsd_hashsize(nn->max_drc_entries);
 	nn->maskbits = ilog2(hashsize);
 
-	nn->nfsd_reply_cache_shrinker.scan_objects = nfsd_reply_cache_scan;
-	nn->nfsd_reply_cache_shrinker.count_objects = nfsd_reply_cache_count;
-	nn->nfsd_reply_cache_shrinker.seeks = 1;
-	status = register_shrinker(&nn->nfsd_reply_cache_shrinker,
-				   "nfsd-reply:%s", nn->nfsd_name);
-	if (status)
-		return status;
-
 	nn->drc_hashtbl = kvzalloc(array_size(hashsize,
 				sizeof(*nn->drc_hashtbl)), GFP_KERNEL);
 	if (!nn->drc_hashtbl)
+		return -ENOMEM;
+
+	nn->nfsd_reply_cache_shrinker = shrinker_alloc(0, "nfsd-reply:%s",
+						       nn->nfsd_name);
+	if (!nn->nfsd_reply_cache_shrinker)
 		goto out_shrinker;
+
+	nn->nfsd_reply_cache_shrinker->scan_objects = nfsd_reply_cache_scan;
+	nn->nfsd_reply_cache_shrinker->count_objects = nfsd_reply_cache_count;
+	nn->nfsd_reply_cache_shrinker->seeks = 1;
+	nn->nfsd_reply_cache_shrinker->private_data = nn;
+
+	shrinker_register(nn->nfsd_reply_cache_shrinker);
 
 	for (i = 0; i < hashsize; i++) {
 		INIT_LIST_HEAD(&nn->drc_hashtbl[i].lru_head);
@@ -208,7 +210,7 @@ int nfsd_reply_cache_init(struct nfsd_net *nn)
 
 	return 0;
 out_shrinker:
-	unregister_shrinker(&nn->nfsd_reply_cache_shrinker);
+	kvfree(nn->drc_hashtbl);
 	printk(KERN_ERR "nfsd: failed to allocate reply cache\n");
 	return -ENOMEM;
 }
@@ -218,7 +220,7 @@ void nfsd_reply_cache_shutdown(struct nfsd_net *nn)
 	struct nfsd_cacherep *rp;
 	unsigned int i;
 
-	unregister_shrinker(&nn->nfsd_reply_cache_shrinker);
+	shrinker_free(nn->nfsd_reply_cache_shrinker);
 
 	for (i = 0; i < nn->drc_hashsize; i++) {
 		struct list_head *head = &nn->drc_hashtbl[i].lru_head;
@@ -235,10 +237,6 @@ void nfsd_reply_cache_shutdown(struct nfsd_net *nn)
 
 }
 
-/*
- * Move cache entry to end of LRU list, and queue the cleaner to run if it's
- * not already scheduled.
- */
 static void
 lru_put_end(struct nfsd_drc_bucket *b, struct nfsd_cacherep *rp)
 {
@@ -270,13 +268,6 @@ nfsd_prune_bucket_locked(struct nfsd_net *nn, struct nfsd_drc_bucket *b,
 
 	/* The bucket LRU is ordered oldest-first. */
 	list_for_each_entry_safe(rp, tmp, &b->lru_head, c_lru) {
-		/*
-		 * Don't free entries attached to calls that are still
-		 * in-progress, but do keep scanning the list.
-		 */
-		if (rp->c_state == RC_INPROG)
-			continue;
-
 		if (atomic_read(&nn->num_drc_entries) <= nn->max_drc_entries &&
 		    time_before(expiry, rp->c_timestamp))
 			break;
@@ -302,8 +293,7 @@ nfsd_prune_bucket_locked(struct nfsd_net *nn, struct nfsd_drc_bucket *b,
 static unsigned long
 nfsd_reply_cache_count(struct shrinker *shrink, struct shrink_control *sc)
 {
-	struct nfsd_net *nn = container_of(shrink,
-				struct nfsd_net, nfsd_reply_cache_shrinker);
+	struct nfsd_net *nn = shrink->private_data;
 
 	return atomic_read(&nn->num_drc_entries);
 }
@@ -322,8 +312,7 @@ nfsd_reply_cache_count(struct shrinker *shrink, struct shrink_control *sc)
 static unsigned long
 nfsd_reply_cache_scan(struct shrinker *shrink, struct shrink_control *sc)
 {
-	struct nfsd_net *nn = container_of(shrink,
-				struct nfsd_net, nfsd_reply_cache_shrinker);
+	struct nfsd_net *nn = shrink->private_data;
 	unsigned long freed = 0;
 	LIST_HEAD(dispose);
 	unsigned int i;
@@ -342,8 +331,6 @@ nfsd_reply_cache_scan(struct shrinker *shrink, struct shrink_control *sc)
 		if (freed > sc->nr_to_scan)
 			break;
 	}
-
-	trace_nfsd_drc_gc(nn, freed);
 	return freed;
 }
 
@@ -455,8 +442,6 @@ out:
 				nn->longest_chain_cachesize,
 				atomic_read(&nn->num_drc_entries));
 	}
-
-	lru_put_end(b, ret);
 	return ret;
 }
 
@@ -486,7 +471,6 @@ int nfsd_cache_lookup(struct svc_rqst *rqstp, unsigned int start,
 	__wsum			csum;
 	struct nfsd_drc_bucket	*b;
 	int type = rqstp->rq_cachetype;
-	unsigned long freed;
 	LIST_HEAD(dispose);
 	int rtn = RC_DOIT;
 
@@ -515,8 +499,7 @@ int nfsd_cache_lookup(struct svc_rqst *rqstp, unsigned int start,
 	nfsd_prune_bucket_locked(nn, b, 3, &dispose);
 	spin_unlock(&b->cache_lock);
 
-	freed = nfsd_cacherep_dispose(&dispose);
-	trace_nfsd_drc_gc(nn, freed);
+	nfsd_cacherep_dispose(&dispose);
 
 	nfsd_stats_rc_misses_inc(nn);
 	atomic_inc(&nn->num_drc_entries);

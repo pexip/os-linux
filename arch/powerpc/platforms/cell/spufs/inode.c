@@ -86,7 +86,7 @@ spufs_new_inode(struct super_block *sb, umode_t mode)
 	inode->i_mode = mode;
 	inode->i_uid = current_fsuid();
 	inode->i_gid = current_fsgid();
-	inode->i_atime = inode->i_mtime = inode_set_ctime_current(inode);
+	simple_inode_init_ts(inode);
 out:
 	return inode;
 }
@@ -143,41 +143,13 @@ spufs_evict_inode(struct inode *inode)
 		put_spu_gang(ei->i_gang);
 }
 
-static void spufs_prune_dir(struct dentry *dir)
-{
-	struct dentry *dentry, *tmp;
-
-	inode_lock(d_inode(dir));
-	list_for_each_entry_safe(dentry, tmp, &dir->d_subdirs, d_child) {
-		spin_lock(&dentry->d_lock);
-		if (simple_positive(dentry)) {
-			dget_dlock(dentry);
-			__d_drop(dentry);
-			spin_unlock(&dentry->d_lock);
-			simple_unlink(d_inode(dir), dentry);
-			/* XXX: what was dcache_lock protecting here? Other
-			 * filesystems (IB, configfs) release dcache_lock
-			 * before unlink */
-			dput(dentry);
-		} else {
-			spin_unlock(&dentry->d_lock);
-		}
-	}
-	shrink_dcache_parent(dir);
-	inode_unlock(d_inode(dir));
-}
-
 /* Caller must hold parent->i_mutex */
-static int spufs_rmdir(struct inode *parent, struct dentry *dir)
+static void spufs_rmdir(struct inode *parent, struct dentry *dir)
 {
-	/* remove all entries */
-	int res;
-	spufs_prune_dir(dir);
-	d_drop(dir);
-	res = simple_rmdir(parent, dir);
-	/* We have to give up the mm_struct */
-	spu_forget(SPUFS_I(d_inode(dir))->i_ctx);
-	return res;
+	struct spu_context *ctx = SPUFS_I(d_inode(dir))->i_ctx;
+
+	locked_recursive_removal(dir, NULL);
+	spu_forget(ctx);
 }
 
 static int spufs_fill_dir(struct dentry *dir,
@@ -221,15 +193,13 @@ static int spufs_dir_close(struct inode *inode, struct file *file)
 {
 	struct inode *parent;
 	struct dentry *dir;
-	int ret;
 
 	dir = file->f_path.dentry;
 	parent = d_inode(dir->d_parent);
 
 	inode_lock_nested(parent, I_MUTEX_PARENT);
-	ret = spufs_rmdir(parent, dir);
+	spufs_rmdir(parent, dir);
 	inode_unlock(parent);
-	WARN_ON(ret);
 
 	unuse_gang(dir->d_parent);
 	return dcache_dir_close(inode, file);
@@ -287,10 +257,10 @@ spufs_mkdir(struct inode *dir, struct dentry *dentry, unsigned int flags,
 		ret = spufs_fill_dir(dentry, spufs_dir_debug_contents,
 				mode, ctx);
 
+	inode_unlock(inode);
+
 	if (ret)
 		spufs_rmdir(dir, dentry);
-
-	inode_unlock(inode);
 
 	return ret;
 }
@@ -474,7 +444,7 @@ spufs_create_context(struct inode *inode, struct dentry *dentry,
 
 	ret = spufs_context_open(&path);
 	if (ret < 0)
-		WARN_ON(spufs_rmdir(inode, dentry));
+		spufs_rmdir(inode, dentry);
 
 out_aff_unlock:
 	if (affinity)
@@ -864,6 +834,7 @@ static void __exit spufs_exit(void)
 }
 module_exit(spufs_exit);
 
+MODULE_DESCRIPTION("SPU file system");
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Arnd Bergmann <arndb@de.ibm.com>");
 

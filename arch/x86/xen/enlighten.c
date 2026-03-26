@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
 
-#ifdef CONFIG_XEN_BALLOON_MEMORY_HOTPLUG
-#include <linux/memblock.h>
-#endif
 #include <linux/console.h>
 #include <linux/cpu.h>
 #include <linux/instrumentation.h>
@@ -24,8 +21,6 @@
 #include <asm/setup.h>
 
 #include "xen-ops.h"
-#include "smp.h"
-#include "pmu.h"
 
 DEFINE_STATIC_CALL(xen_hypercall, xen_hypercall_hvm);
 EXPORT_STATIC_CALL_TRAMP(xen_hypercall);
@@ -108,10 +103,6 @@ noinstr void *__xen_hypercall_setfunc(void)
 	void (*func)(void);
 
 	/*
-	 * Xen is supported only on CPUs with CPUID, so testing for
-	 * X86_FEATURE_CPUID is a test for early_cpu_init() having been
-	 * run.
-	 *
 	 * Note that __xen_hypercall_setfunc() is noinstr only due to a nasty
 	 * dependency chain: it is being called via the xen_hypercall static
 	 * call when running as a PVH or HVM guest. Hypercalls need to be
@@ -123,8 +114,7 @@ noinstr void *__xen_hypercall_setfunc(void)
 	 */
 	instrumentation_begin();
 
-	if (!boot_cpu_has(X86_FEATURE_CPUID))
-		xen_get_vendor();
+	xen_get_vendor();
 
 	if ((boot_cpu_data.x86_vendor == X86_VENDOR_AMD ||
 	     boot_cpu_data.x86_vendor == X86_VENDOR_HYGON))
@@ -480,7 +470,7 @@ int __init arch_xen_unpopulated_init(struct resource **res)
 		 * driver to know how much of the physmap is unpopulated and
 		 * set an accurate initial memory target.
 		 */
-		xen_released_pages += xen_extra_mem[i].n_pfns;
+		xen_unpopulated_pages += xen_extra_mem[i].n_pfns;
 		/* Zero so region is not also added to the balloon driver. */
 		xen_extra_mem[i].n_pfns = 0;
 	}

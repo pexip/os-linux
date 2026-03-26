@@ -78,7 +78,7 @@ static bool check_generated_interrupt(struct ishtp_device *dev)
 	bool interrupt_generated = true;
 	uint32_t pisr_val = 0;
 
-	if (dev->pdev->device == CHV_DEVICE_ID) {
+	if (dev->pdev->device == PCI_DEVICE_ID_INTEL_ISH_CHV) {
 		pisr_val = ish_reg_read(dev, IPC_REG_PISR_CHV_AB);
 		interrupt_generated =
 			IPC_INT_FROM_ISH_TO_HOST_CHV_AB(pisr_val);
@@ -117,7 +117,7 @@ static bool ish_is_input_ready(struct ishtp_device *dev)
  */
 static void set_host_ready(struct ishtp_device *dev)
 {
-	if (dev->pdev->device == CHV_DEVICE_ID) {
+	if (dev->pdev->device == PCI_DEVICE_ID_INTEL_ISH_CHV) {
 		if (dev->pdev->revision == REVISION_ID_CHT_A0 ||
 				(dev->pdev->revision & REVISION_ID_SI_MASK) ==
 				REVISION_ID_CHT_Ax_SI)
@@ -498,6 +498,7 @@ static int ish_fw_reset_handler(struct ishtp_device *dev)
 {
 	uint32_t	reset_id;
 	unsigned long	flags;
+	int ret;
 
 	/* Read reset ID */
 	reset_id = ish_reg_read(dev, IPC_REG_ISH2HOST_MSG) & 0xFFFF;
@@ -510,12 +511,11 @@ static int ish_fw_reset_handler(struct ishtp_device *dev)
 	/* ISHTP notification in IPC_RESET */
 	ishtp_reset_handler(dev);
 
-	if (!ish_is_input_ready(dev))
-		timed_wait_for_timeout(dev, WAIT_FOR_INPUT_RDY,
-			TIME_SLICE_FOR_INPUT_RDY_MS, TIMEOUT_FOR_INPUT_RDY_MS);
-
+	ret = timed_wait_for_timeout(dev, WAIT_FOR_INPUT_RDY,
+				     TIME_SLICE_FOR_INPUT_RDY_MS,
+				     TIMEOUT_FOR_INPUT_RDY_MS);
 	/* ISH FW is dead */
-	if (!ish_is_input_ready(dev))
+	if (ret)
 		return	-EPIPE;
 
 	/* Send clock sync at once after reset */
@@ -531,9 +531,10 @@ static int ish_fw_reset_handler(struct ishtp_device *dev)
 			 sizeof(uint32_t));
 
 	/* Wait for ISH FW'es ILUP and ISHTP_READY */
-	timed_wait_for_timeout(dev, WAIT_FOR_FW_RDY,
-			TIME_SLICE_FOR_FW_RDY_MS, TIMEOUT_FOR_FW_RDY_MS);
-	if (!ishtp_fw_is_ready(dev)) {
+	ret = timed_wait_for_timeout(dev, WAIT_FOR_FW_RDY,
+				     TIME_SLICE_FOR_FW_RDY_MS,
+				     TIMEOUT_FOR_FW_RDY_MS);
+	if (ret) {
 		/* ISH FW is dead */
 		uint32_t	ish_status;
 
@@ -550,11 +551,11 @@ static int ish_fw_reset_handler(struct ishtp_device *dev)
 
 /**
  * fw_reset_work_fn() - FW reset worker function
- * @unused: not used
+ * @work: Work item
  *
  * Call ish_fw_reset_handler to complete FW reset
  */
-static void fw_reset_work_fn(struct work_struct *unused)
+static void fw_reset_work_fn(struct work_struct *work)
 {
 	int	rv;
 
@@ -566,7 +567,8 @@ static void fw_reset_work_fn(struct work_struct *unused)
 		wake_up_interruptible(&ishtp_dev->wait_hw_ready);
 
 		/* ISHTP notification in IPC_RESET sequence completion */
-		ishtp_reset_compl_handler(ishtp_dev);
+		if (!work_pending(work))
+			ishtp_reset_compl_handler(ishtp_dev);
 	} else
 		dev_err(ishtp_dev->devc, "[ishtp-ish]: FW reset failed (%d)\n",
 			rv);
@@ -626,7 +628,7 @@ static void	recv_ipc(struct ishtp_device *dev, uint32_t doorbell_val)
 		if (!ishtp_dev) {
 			ishtp_dev = dev;
 		}
-		schedule_work(&fw_reset_work);
+		queue_work(dev->unbound_wq, &fw_reset_work);
 		break;
 
 	case MNG_RESET_NOTIFY_ACK:
@@ -912,11 +914,11 @@ static uint32_t ish_ipc_get_header(struct ishtp_device *dev, int length,
  */
 static bool _dma_no_cache_snooping(struct ishtp_device *dev)
 {
-	return (dev->pdev->device == EHL_Ax_DEVICE_ID ||
-		dev->pdev->device == TGL_LP_DEVICE_ID ||
-		dev->pdev->device == TGL_H_DEVICE_ID ||
-		dev->pdev->device == ADL_S_DEVICE_ID ||
-		dev->pdev->device == ADL_P_DEVICE_ID);
+	return (dev->pdev->device == PCI_DEVICE_ID_INTEL_ISH_EHL_Ax ||
+		dev->pdev->device == PCI_DEVICE_ID_INTEL_ISH_TGL_LP ||
+		dev->pdev->device == PCI_DEVICE_ID_INTEL_ISH_TGL_H ||
+		dev->pdev->device == PCI_DEVICE_ID_INTEL_ISH_ADL_S ||
+		dev->pdev->device == PCI_DEVICE_ID_INTEL_ISH_ADL_P);
 }
 
 static const struct ishtp_hw_ops ish_hw_ops = {
@@ -930,6 +932,25 @@ static const struct ishtp_hw_ops ish_hw_ops = {
 	.ishtp_read_hdr = _ishtp_read_hdr,
 	.dma_no_cache_snooping = _dma_no_cache_snooping
 };
+
+static void ishtp_free_workqueue(void *wq)
+{
+	destroy_workqueue(wq);
+}
+
+static struct workqueue_struct *devm_ishtp_alloc_workqueue(struct device *dev)
+{
+	struct workqueue_struct *wq;
+
+	wq = alloc_workqueue("ishtp_unbound_%d", WQ_UNBOUND, 0, dev->id);
+	if (!wq)
+		return NULL;
+
+	if (devm_add_action_or_reset(dev, ishtp_free_workqueue, wq))
+		return NULL;
+
+	return wq;
+}
 
 /**
  * ish_dev_init() -Initialize ISH devoce
@@ -949,6 +970,10 @@ struct ishtp_device *ish_dev_init(struct pci_dev *pdev)
 			   sizeof(struct ishtp_device) + sizeof(struct ish_hw),
 			   GFP_KERNEL);
 	if (!dev)
+		return NULL;
+
+	dev->unbound_wq = devm_ishtp_alloc_workqueue(&pdev->dev);
+	if (!dev->unbound_wq)
 		return NULL;
 
 	dev->devc = &pdev->dev;

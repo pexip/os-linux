@@ -249,13 +249,11 @@ static int bgmac_probe(struct platform_device *pdev)
 	return bgmac_enet_probe(bgmac);
 }
 
-static int bgmac_remove(struct platform_device *pdev)
+static void bgmac_remove(struct platform_device *pdev)
 {
 	struct bgmac *bgmac = platform_get_drvdata(pdev);
 
 	bgmac_enet_remove(bgmac);
-
-	return 0;
 }
 
 #ifdef CONFIG_PM
@@ -303,4 +301,5 @@ static struct platform_driver bgmac_enet_driver = {
 };
 
 module_platform_driver(bgmac_enet_driver);
+MODULE_DESCRIPTION("Broadcom iProc GBit platform interface driver");
 MODULE_LICENSE("GPL");
