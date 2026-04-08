@@ -64,7 +64,7 @@ static int smc_diag_msg_attrs_fill(struct sock *sk, struct sk_buff *skb,
 	if (nla_put_u8(skb, SMC_DIAG_SHUTDOWN, sk->sk_shutdown))
 		return 1;
 
-	r->diag_uid = from_kuid_munged(user_ns, sock_i_uid(sk));
+	r->diag_uid = from_kuid_munged(user_ns, sk_uid(sk));
 	r->diag_inode = sock_i_ino(sk);
 	return 0;
 }
@@ -174,8 +174,10 @@ static int __smc_diag_dump(struct sock *sk, struct sk_buff *skb,
 
 		dinfo.linkid = *((u32 *)conn->lgr->id);
 		dinfo.peer_gid = conn->lgr->peer_gid.gid;
-		smcd->ops->get_local_gid(smcd, &smcd_gid);
+		dinfo.peer_gid_ext = conn->lgr->peer_gid.gid_ext;
+		copy_to_smcdgid(&smcd_gid, &smcd->dibs->gid);
 		dinfo.my_gid = smcd_gid.gid;
+		dinfo.my_gid_ext = smcd_gid.gid_ext;
 		dinfo.token = conn->rmb_desc->token;
 		dinfo.peer_token = conn->peer_token;
 
@@ -271,5 +273,6 @@ static void __exit smc_diag_exit(void)
 module_init(smc_diag_init);
 module_exit(smc_diag_exit);
 MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("SMC socket monitoring via SOCK_DIAG");
 MODULE_ALIAS_NET_PF_PROTO_TYPE(PF_NETLINK, NETLINK_SOCK_DIAG, 43 /* AF_SMC */);
 MODULE_ALIAS_GENL_FAMILY(SMCR_GENL_FAMILY_NAME);

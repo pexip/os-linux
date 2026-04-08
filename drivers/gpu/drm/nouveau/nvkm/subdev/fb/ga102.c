@@ -22,9 +22,10 @@
 #include "gf100.h"
 #include "ram.h"
 
+#include <subdev/gsp.h>
 #include <engine/nvdec.h>
 
-static u64
+u64
 ga102_fb_vidmem_size(struct nvkm_fb *fb)
 {
 	return (u64)nvkm_rd32(fb->subdev.device, 0x1183a4) << 20;
@@ -59,6 +60,9 @@ ga102_fb = {
 int
 ga102_fb_new(struct nvkm_device *device, enum nvkm_subdev_type type, int inst, struct nvkm_fb **pfb)
 {
+	if (nvkm_gsp_rm(device->gsp))
+		return r535_fb_new(&ga102_fb, device, type, inst, pfb);
+
 	return gf100_fb_new_(&ga102_fb, device, type, inst, pfb);
 }
 

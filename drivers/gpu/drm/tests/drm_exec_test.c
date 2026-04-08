@@ -46,7 +46,7 @@ static void sanitycheck(struct kunit *test)
 {
 	struct drm_exec exec;
 
-	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT);
+	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT, 0);
 	drm_exec_fini(&exec);
 	KUNIT_SUCCEED(test);
 }
@@ -60,7 +60,7 @@ static void test_lock(struct kunit *test)
 
 	drm_gem_private_object_init(priv->drm, &gobj, PAGE_SIZE);
 
-	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT);
+	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT, 0);
 	drm_exec_until_all_locked(&exec) {
 		ret = drm_exec_lock_obj(&exec, &gobj);
 		drm_exec_retry_on_contention(&exec);
@@ -80,7 +80,7 @@ static void test_lock_unlock(struct kunit *test)
 
 	drm_gem_private_object_init(priv->drm, &gobj, PAGE_SIZE);
 
-	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT);
+	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT, 0);
 	drm_exec_until_all_locked(&exec) {
 		ret = drm_exec_lock_obj(&exec, &gobj);
 		drm_exec_retry_on_contention(&exec);
@@ -107,7 +107,7 @@ static void test_duplicates(struct kunit *test)
 
 	drm_gem_private_object_init(priv->drm, &gobj, PAGE_SIZE);
 
-	drm_exec_init(&exec, DRM_EXEC_IGNORE_DUPLICATES);
+	drm_exec_init(&exec, DRM_EXEC_IGNORE_DUPLICATES, 0);
 	drm_exec_until_all_locked(&exec) {
 		ret = drm_exec_lock_obj(&exec, &gobj);
 		drm_exec_retry_on_contention(&exec);
@@ -134,7 +134,7 @@ static void test_prepare(struct kunit *test)
 
 	drm_gem_private_object_init(priv->drm, &gobj, PAGE_SIZE);
 
-	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT);
+	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT, 0);
 	drm_exec_until_all_locked(&exec) {
 		ret = drm_exec_prepare_obj(&exec, &gobj, 1);
 		drm_exec_retry_on_contention(&exec);
@@ -150,38 +150,46 @@ static void test_prepare(struct kunit *test)
 static void test_prepare_array(struct kunit *test)
 {
 	struct drm_exec_priv *priv = test->priv;
-	struct drm_gem_object gobj1 = { };
-	struct drm_gem_object gobj2 = { };
-	struct drm_gem_object *array[] = { &gobj1, &gobj2 };
+	struct drm_gem_object *gobj1;
+	struct drm_gem_object *gobj2;
+	struct drm_gem_object *array[] = {
+		(gobj1 = kunit_kzalloc(test, sizeof(*gobj1), GFP_KERNEL)),
+		(gobj2 = kunit_kzalloc(test, sizeof(*gobj2), GFP_KERNEL)),
+	};
 	struct drm_exec exec;
 	int ret;
 
-	drm_gem_private_object_init(priv->drm, &gobj1, PAGE_SIZE);
-	drm_gem_private_object_init(priv->drm, &gobj2, PAGE_SIZE);
+	if (!gobj1 || !gobj2) {
+		KUNIT_FAIL(test, "Failed to allocate GEM objects.\n");
+		return;
+	}
 
-	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT);
+	drm_gem_private_object_init(priv->drm, gobj1, PAGE_SIZE);
+	drm_gem_private_object_init(priv->drm, gobj2, PAGE_SIZE);
+
+	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT, 0);
 	drm_exec_until_all_locked(&exec)
 		ret = drm_exec_prepare_array(&exec, array, ARRAY_SIZE(array),
 					     1);
 	KUNIT_EXPECT_EQ(test, ret, 0);
 	drm_exec_fini(&exec);
 
-	drm_gem_private_object_fini(&gobj1);
-	drm_gem_private_object_fini(&gobj2);
+	drm_gem_private_object_fini(gobj1);
+	drm_gem_private_object_fini(gobj2);
 }
 
 static void test_multiple_loops(struct kunit *test)
 {
 	struct drm_exec exec;
 
-	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT);
+	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT, 0);
 	drm_exec_until_all_locked(&exec)
 	{
 		break;
 	}
 	drm_exec_fini(&exec);
 
-	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT);
+	drm_exec_init(&exec, DRM_EXEC_INTERRUPTIBLE_WAIT, 0);
 	drm_exec_until_all_locked(&exec)
 	{
 		break;
@@ -210,4 +218,5 @@ static struct kunit_suite drm_exec_test_suite = {
 kunit_test_suite(drm_exec_test_suite);
 
 MODULE_AUTHOR("AMD");
+MODULE_DESCRIPTION("Kunit test for drm_exec functions");
 MODULE_LICENSE("GPL and additional rights");

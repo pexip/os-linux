@@ -14,7 +14,6 @@
 
 #include <drm/drm_mm.h>
 
-#include "display/intel_display_device.h"
 #include "gt/intel_engine.h"
 #include "gt/intel_engine_types.h"
 #include "gt/intel_gt_types.h"
@@ -30,7 +29,7 @@
 struct drm_i915_private;
 struct i915_vma_compress;
 struct intel_engine_capture_vma;
-struct intel_overlay_error_state;
+struct intel_display_snapshot;
 
 struct i915_vma_coredump {
 	struct i915_vma_coredump *next;
@@ -147,7 +146,6 @@ struct intel_gt_coredump {
 	/* Generic register state */
 	u32 eir;
 	u32 pgtbl_er;
-	u32 ier;
 	u32 gtier[6], ngtier;
 	u32 forcewake;
 	u32 error; /* gen6+ */
@@ -165,8 +163,6 @@ struct intel_gt_coredump {
 	u32 clock_frequency;
 	u32 clock_period_ns;
 
-	/* Display related */
-	u32 derrmr;
 	u32 sfc_done[I915_MAX_SFC]; /* gen12 */
 
 	u32 nfence;
@@ -181,6 +177,7 @@ struct intel_gt_coredump {
 			struct intel_ctb_coredump ctb[2];
 			struct i915_vma_coredump *vma_ctb;
 			struct i915_vma_coredump *vma_log;
+			u32 *hw_state;
 			u32 timestamp;
 			u16 last_fence;
 			bool is_guc_capture;
@@ -211,14 +208,12 @@ struct i915_gpu_coredump {
 
 	struct intel_device_info device_info;
 	struct intel_runtime_info runtime_info;
-	struct intel_display_device_info display_device_info;
-	struct intel_display_runtime_info display_runtime_info;
 	struct intel_driver_caps driver_caps;
 	struct i915_params params;
 
-	struct intel_overlay_error_state *overlay;
-
 	struct scatterlist *sgl, *fit;
+
+	struct intel_display_snapshot *display_snapshot;
 };
 
 struct i915_gpu_error {
@@ -226,8 +221,6 @@ struct i915_gpu_error {
 	spinlock_t lock;
 	/* Protected by the above dev->gpu_error.lock. */
 	struct i915_gpu_coredump *first_error;
-
-	atomic_t pending_fb_pin;
 
 	/** Number of times the device has been reset (global) */
 	atomic_t reset_count;
@@ -283,14 +276,7 @@ static inline void intel_klog_error_capture(struct intel_gt *gt,
 
 __printf(2, 3)
 void i915_error_printf(struct drm_i915_error_state_buf *e, const char *f, ...);
-void intel_gpu_error_print_vma(struct drm_i915_error_state_buf *m,
-			       const struct intel_engine_cs *engine,
-			       const struct i915_vma_coredump *vma);
-struct i915_vma_coredump *
-intel_gpu_error_find_batch(const struct intel_engine_coredump *ee);
 
-struct i915_gpu_coredump *i915_gpu_coredump(struct intel_gt *gt,
-					    intel_engine_mask_t engine_mask, u32 dump_flags);
 void i915_capture_error_state(struct intel_gt *gt,
 			      intel_engine_mask_t engine_mask, u32 dump_flags);
 
@@ -338,9 +324,12 @@ static inline void i915_gpu_coredump_put(struct i915_gpu_coredump *gpu)
 		kref_put(&gpu->ref, __i915_gpu_coredump_free);
 }
 
-struct i915_gpu_coredump *i915_first_error_state(struct drm_i915_private *i915);
 void i915_reset_error_state(struct drm_i915_private *i915);
 void i915_disable_error_state(struct drm_i915_private *i915, int err);
+
+void i915_gpu_error_debugfs_register(struct drm_i915_private *i915);
+void i915_gpu_error_sysfs_setup(struct drm_i915_private *i915);
+void i915_gpu_error_sysfs_teardown(struct drm_i915_private *i915);
 
 #else
 
@@ -409,18 +398,24 @@ static inline void i915_gpu_coredump_put(struct i915_gpu_coredump *gpu)
 {
 }
 
-static inline struct i915_gpu_coredump *
-i915_first_error_state(struct drm_i915_private *i915)
-{
-	return ERR_PTR(-ENODEV);
-}
-
 static inline void i915_reset_error_state(struct drm_i915_private *i915)
 {
 }
 
 static inline void i915_disable_error_state(struct drm_i915_private *i915,
 					    int err)
+{
+}
+
+static inline void i915_gpu_error_debugfs_register(struct drm_i915_private *i915)
+{
+}
+
+static inline void i915_gpu_error_sysfs_setup(struct drm_i915_private *i915)
+{
+}
+
+static inline void i915_gpu_error_sysfs_teardown(struct drm_i915_private *i915)
 {
 }
 

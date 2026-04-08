@@ -19,6 +19,7 @@
 #include <linux/firmware.h>
 #include <linux/i2c.h>
 #include <linux/input/mt.h>
+#include <linux/input/touchscreen.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/of.h>
@@ -26,7 +27,7 @@
 #include <linux/slab.h>
 #include <linux/regulator/consumer.h>
 #include <linux/gpio/consumer.h>
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-ioctl.h>
 #include <media/videobuf2-v4l2.h>
@@ -355,6 +356,8 @@ struct mxt_data {
 	enum mxt_suspend_mode suspend_mode;
 
 	u32 wakeup_method;
+
+	struct touchscreen_properties prop;
 };
 
 struct mxt_vb2_buffer {
@@ -888,8 +891,7 @@ static void mxt_proc_t9_message(struct mxt_data *data, u8 *message)
 
 		/* Touch active */
 		input_mt_report_slot_state(input_dev, MT_TOOL_FINGER, 1);
-		input_report_abs(input_dev, ABS_MT_POSITION_X, x);
-		input_report_abs(input_dev, ABS_MT_POSITION_Y, y);
+		touchscreen_report_pos(input_dev, &data->prop, x, y, true);
 		input_report_abs(input_dev, ABS_MT_PRESSURE, amplitude);
 		input_report_abs(input_dev, ABS_MT_TOUCH_MAJOR, area);
 	} else {
@@ -1010,8 +1012,7 @@ static void mxt_proc_t100_message(struct mxt_data *data, u8 *message)
 			id, type, x, y, major, pressure, orientation);
 
 		input_mt_report_slot_state(input_dev, tool, 1);
-		input_report_abs(input_dev, ABS_MT_POSITION_X, x);
-		input_report_abs(input_dev, ABS_MT_POSITION_Y, y);
+		touchscreen_report_pos(input_dev, &data->prop, x, y, true);
 		input_report_abs(input_dev, ABS_MT_TOUCH_MAJOR, major);
 		input_report_abs(input_dev, ABS_MT_PRESSURE, pressure);
 		input_report_abs(input_dev, ABS_MT_DISTANCE, distance);
@@ -2212,6 +2213,8 @@ static int mxt_initialize_input_device(struct mxt_data *data)
 				     0, 255, 0, 0);
 	}
 
+	touchscreen_parse_properties(input_dev, true, &data->prop);
+
 	/* For T15 and T97 Key Array */
 	if (data->T15_reportid_min || data->T97_reportid_min) {
 		for (i = 0; i < data->t15_num_keys; i++)
@@ -2535,8 +2538,6 @@ fault:
 static const struct vb2_ops mxt_queue_ops = {
 	.queue_setup		= mxt_queue_setup,
 	.buf_queue		= mxt_buffer_queue,
-	.wait_prepare		= vb2_ops_wait_prepare,
-	.wait_finish		= vb2_ops_wait_finish,
 };
 
 static const struct vb2_queue mxt_queue = {
@@ -2546,7 +2547,7 @@ static const struct vb2_queue mxt_queue = {
 	.ops = &mxt_queue_ops,
 	.mem_ops = &vb2_vmalloc_memops,
 	.timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC,
-	.min_buffers_needed = 1,
+	.min_queued_buffers = 1,
 };
 
 static int mxt_vidioc_querycap(struct file *file, void *priv,
@@ -2818,8 +2819,8 @@ static ssize_t mxt_fw_version_show(struct device *dev,
 {
 	struct mxt_data *data = dev_get_drvdata(dev);
 	struct mxt_info *info = data->info;
-	return scnprintf(buf, PAGE_SIZE, "%u.%u.%02X\n",
-			 info->version >> 4, info->version & 0xf, info->build);
+	return sysfs_emit(buf, "%u.%u.%02X\n",
+			  info->version >> 4, info->version & 0xf, info->build);
 }
 
 /* Hardware Version is returned as FamilyID.VariantID */
@@ -2828,8 +2829,7 @@ static ssize_t mxt_hw_version_show(struct device *dev,
 {
 	struct mxt_data *data = dev_get_drvdata(dev);
 	struct mxt_info *info = data->info;
-	return scnprintf(buf, PAGE_SIZE, "%u.%u\n",
-			 info->family_id, info->variant_id);
+	return sysfs_emit(buf, "%u.%u\n", info->family_id, info->variant_id);
 }
 
 static ssize_t mxt_show_instance(char *buf, int count,
@@ -2839,19 +2839,18 @@ static ssize_t mxt_show_instance(char *buf, int count,
 	int i;
 
 	if (mxt_obj_instances(object) > 1)
-		count += scnprintf(buf + count, PAGE_SIZE - count,
-				   "Instance %u\n", instance);
+		count += sysfs_emit_at(buf, count, "Instance %u\n", instance);
 
 	for (i = 0; i < mxt_obj_size(object); i++)
-		count += scnprintf(buf + count, PAGE_SIZE - count,
-				"\t[%2u]: %02x (%d)\n", i, val[i], val[i]);
-	count += scnprintf(buf + count, PAGE_SIZE - count, "\n");
+		count += sysfs_emit_at(buf, count, "\t[%2u]: %02x (%d)\n",
+				       i, val[i], val[i]);
+	count += sysfs_emit_at(buf, count, "\n");
 
 	return count;
 }
 
 static ssize_t mxt_object_show(struct device *dev,
-				    struct device_attribute *attr, char *buf)
+			       struct device_attribute *attr, char *buf)
 {
 	struct mxt_data *data = dev_get_drvdata(dev);
 	struct mxt_object *object;
@@ -2872,8 +2871,7 @@ static ssize_t mxt_object_show(struct device *dev,
 		if (!mxt_object_readable(object->type))
 			continue;
 
-		count += scnprintf(buf + count, PAGE_SIZE - count,
-				"T%u:\n", object->type);
+		count += sysfs_emit_at(buf, count, "T%u:\n", object->type);
 
 		for (j = 0; j < mxt_obj_instances(object); j++) {
 			u16 size = mxt_obj_size(object);
@@ -3072,9 +3070,7 @@ static struct attribute *mxt_attrs[] = {
 	NULL
 };
 
-static const struct attribute_group mxt_attr_group = {
-	.attrs = mxt_attrs,
-};
+ATTRIBUTE_GROUPS(mxt);
 
 static void mxt_start(struct mxt_data *data)
 {
@@ -3324,7 +3320,7 @@ static int mxt_probe(struct i2c_client *client)
 	if (data->reset_gpio) {
 		/* Wait a while and then de-assert the RESET GPIO line */
 		msleep(MXT_RESET_GPIO_TIME);
-		gpiod_set_value(data->reset_gpio, 0);
+		gpiod_set_value_cansleep(data->reset_gpio, 0);
 		msleep(MXT_RESET_INVALID_CHG);
 	}
 
@@ -3351,18 +3347,8 @@ static int mxt_probe(struct i2c_client *client)
 	if (error)
 		goto err_disable_regulators;
 
-	error = sysfs_create_group(&client->dev.kobj, &mxt_attr_group);
-	if (error) {
-		dev_err(&client->dev, "Failure %d creating sysfs group\n",
-			error);
-		goto err_free_object;
-	}
-
 	return 0;
 
-err_free_object:
-	mxt_free_input_device(data);
-	mxt_free_object_table(data);
 err_disable_regulators:
 	regulator_bulk_disable(ARRAY_SIZE(data->regulators),
 			       data->regulators);
@@ -3374,7 +3360,6 @@ static void mxt_remove(struct i2c_client *client)
 	struct mxt_data *data = i2c_get_clientdata(client);
 
 	disable_irq(data->irq);
-	sysfs_remove_group(&client->dev.kobj, &mxt_attr_group);
 	mxt_free_input_device(data);
 	mxt_free_object_table(data);
 	regulator_bulk_disable(ARRAY_SIZE(data->regulators),
@@ -3446,11 +3431,11 @@ MODULE_DEVICE_TABLE(acpi, mxt_acpi_id);
 #endif
 
 static const struct i2c_device_id mxt_id[] = {
-	{ "qt602240_ts", 0 },
-	{ "atmel_mxt_ts", 0 },
-	{ "atmel_mxt_tp", 0 },
-	{ "maxtouch", 0 },
-	{ "mXT224", 0 },
+	{ "qt602240_ts" },
+	{ "atmel_mxt_ts" },
+	{ "atmel_mxt_tp" },
+	{ "maxtouch" },
+	{ "mXT224" },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, mxt_id);
@@ -3458,6 +3443,7 @@ MODULE_DEVICE_TABLE(i2c, mxt_id);
 static struct i2c_driver mxt_driver = {
 	.driver = {
 		.name	= "atmel_mxt_ts",
+		.dev_groups = mxt_groups,
 		.of_match_table = mxt_of_match,
 		.acpi_match_table = ACPI_PTR(mxt_acpi_id),
 		.pm	= pm_sleep_ptr(&mxt_pm_ops),

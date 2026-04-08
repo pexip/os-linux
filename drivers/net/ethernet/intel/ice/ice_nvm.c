@@ -18,15 +18,14 @@
  *
  * Read the NVM using the admin queue commands (0x0701)
  */
-static int
-ice_aq_read_nvm(struct ice_hw *hw, u16 module_typeid, u32 offset, u16 length,
-		void *data, bool last_command, bool read_shadow_ram,
-		struct ice_sq_cd *cd)
+int ice_aq_read_nvm(struct ice_hw *hw, u16 module_typeid, u32 offset,
+		    u16 length, void *data, bool last_command,
+		    bool read_shadow_ram, struct ice_sq_cd *cd)
 {
-	struct ice_aq_desc desc;
+	struct libie_aq_desc desc;
 	struct ice_aqc_nvm *cmd;
 
-	cmd = &desc.params.nvm;
+	cmd = libie_aq_raw(&desc);
 
 	if (offset > ICE_AQC_NVM_MAX_OFFSET)
 		return -EINVAL;
@@ -126,10 +125,10 @@ ice_aq_update_nvm(struct ice_hw *hw, u16 module_typeid, u32 offset,
 		  u16 length, void *data, bool last_command, u8 command_flags,
 		  struct ice_sq_cd *cd)
 {
-	struct ice_aq_desc desc;
+	struct libie_aq_desc desc;
 	struct ice_aqc_nvm *cmd;
 
-	cmd = &desc.params.nvm;
+	cmd = libie_aq_raw(&desc);
 
 	/* In offset the highest byte must be zeroed. */
 	if (offset & 0xFF000000)
@@ -147,7 +146,7 @@ ice_aq_update_nvm(struct ice_hw *hw, u16 module_typeid, u32 offset,
 	cmd->offset_high = (offset >> 16) & 0xFF;
 	cmd->length = cpu_to_le16(length);
 
-	desc.flags |= cpu_to_le16(ICE_AQ_FLAG_RD);
+	desc.flags |= cpu_to_le16(LIBIE_AQ_FLAG_RD);
 
 	return ice_aq_send_cmd(hw, &desc, data, length, cd);
 }
@@ -162,10 +161,10 @@ ice_aq_update_nvm(struct ice_hw *hw, u16 module_typeid, u32 offset,
  */
 int ice_aq_erase_nvm(struct ice_hw *hw, u16 module_typeid, struct ice_sq_cd *cd)
 {
-	struct ice_aq_desc desc;
+	struct libie_aq_desc desc;
 	struct ice_aqc_nvm *cmd;
 
-	cmd = &desc.params.nvm;
+	cmd = libie_aq_raw(&desc);
 
 	ice_fill_dflt_direct_cmd_desc(&desc, ice_aqc_opc_nvm_erase);
 
@@ -375,11 +374,25 @@ ice_read_nvm_module(struct ice_hw *hw, enum ice_bank_select bank, u32 offset, u1
  *
  * Read the specified word from the copy of the Shadow RAM found in the
  * specified NVM module.
+ *
+ * Note that the Shadow RAM copy is always located after the CSS header, and
+ * is aligned to 64-byte (32-word) offsets.
  */
 static int
 ice_read_nvm_sr_copy(struct ice_hw *hw, enum ice_bank_select bank, u32 offset, u16 *data)
 {
-	return ice_read_nvm_module(hw, bank, ICE_NVM_SR_COPY_WORD_OFFSET + offset, data);
+	u32 sr_copy;
+
+	switch (bank) {
+	case ICE_ACTIVE_FLASH_BANK:
+		sr_copy = roundup(hw->flash.banks.active_css_hdr_len, 32);
+		break;
+	case ICE_INACTIVE_FLASH_BANK:
+		sr_copy = roundup(hw->flash.banks.inactive_css_hdr_len, 32);
+		break;
+	}
+
+	return ice_read_nvm_module(hw, bank, sr_copy + offset, data);
 }
 
 /**
@@ -585,8 +598,8 @@ ice_get_nvm_ver_info(struct ice_hw *hw, enum ice_bank_select bank, struct ice_nv
 		return status;
 	}
 
-	nvm->major = (ver & ICE_NVM_VER_HI_MASK) >> ICE_NVM_VER_HI_SHIFT;
-	nvm->minor = (ver & ICE_NVM_VER_LO_MASK) >> ICE_NVM_VER_LO_SHIFT;
+	nvm->major = FIELD_GET(ICE_NVM_VER_HI_MASK, ver);
+	nvm->minor = FIELD_GET(ICE_NVM_VER_LO_MASK, ver);
 
 	status = ice_read_nvm_sr_copy(hw, bank, ICE_SR_NVM_EETRACK_LO, &eetrack_lo);
 	if (status) {
@@ -720,9 +733,9 @@ ice_get_orom_ver_info(struct ice_hw *hw, enum ice_bank_select bank, struct ice_o
 
 	combo_ver = le32_to_cpu(civd.combo_ver);
 
-	orom->major = (u8)((combo_ver & ICE_OROM_VER_MASK) >> ICE_OROM_VER_SHIFT);
-	orom->patch = (u8)(combo_ver & ICE_OROM_VER_PATCH_MASK);
-	orom->build = (u16)((combo_ver & ICE_OROM_VER_BUILD_MASK) >> ICE_OROM_VER_BUILD_SHIFT);
+	orom->major = FIELD_GET(ICE_OROM_VER_MASK, combo_ver);
+	orom->patch = FIELD_GET(ICE_OROM_VER_PATCH_MASK, combo_ver);
+	orom->build = FIELD_GET(ICE_OROM_VER_BUILD_MASK, combo_ver);
 
 	return 0;
 }
@@ -856,7 +869,7 @@ static int ice_discover_flash_size(struct ice_hw *hw)
 
 		status = ice_read_flat_nvm(hw, offset, &len, &data, false);
 		if (status == -EIO &&
-		    hw->adminq.sq_last_status == ICE_AQ_RC_EINVAL) {
+		    hw->adminq.sq_last_status == LIBIE_AQ_RC_EINVAL) {
 			ice_debug(hw, ICE_DBG_NVM, "%s: New upper bound of %u bytes\n",
 				  __func__, offset);
 			status = 0;
@@ -964,7 +977,8 @@ static int ice_determine_active_flash_banks(struct ice_hw *hw)
 	}
 
 	/* Check that the control word indicates validity */
-	if ((ctrl_word & ICE_SR_CTRL_WORD_1_M) >> ICE_SR_CTRL_WORD_1_S != ICE_SR_CTRL_WORD_VALID) {
+	if (FIELD_GET(ICE_SR_CTRL_WORD_1_M, ctrl_word) !=
+	    ICE_SR_CTRL_WORD_VALID) {
 		ice_debug(hw, ICE_DBG_NVM, "Shadow RAM control word is invalid\n");
 		return -EIO;
 	}
@@ -1024,6 +1038,72 @@ static int ice_determine_active_flash_banks(struct ice_hw *hw)
 }
 
 /**
+ * ice_get_nvm_css_hdr_len - Read the CSS header length from the NVM CSS header
+ * @hw: pointer to the HW struct
+ * @bank: whether to read from the active or inactive flash bank
+ * @hdr_len: storage for header length in words
+ *
+ * Read the CSS header length from the NVM CSS header and add the Authentication
+ * header size, and then convert to words.
+ *
+ * Return: zero on success, or a negative error code on failure.
+ */
+static int
+ice_get_nvm_css_hdr_len(struct ice_hw *hw, enum ice_bank_select bank,
+			u32 *hdr_len)
+{
+	u16 hdr_len_l, hdr_len_h;
+	u32 hdr_len_dword;
+	int status;
+
+	status = ice_read_nvm_module(hw, bank, ICE_NVM_CSS_HDR_LEN_L,
+				     &hdr_len_l);
+	if (status)
+		return status;
+
+	status = ice_read_nvm_module(hw, bank, ICE_NVM_CSS_HDR_LEN_H,
+				     &hdr_len_h);
+	if (status)
+		return status;
+
+	/* CSS header length is in DWORD, so convert to words and add
+	 * authentication header size
+	 */
+	hdr_len_dword = hdr_len_h << 16 | hdr_len_l;
+	*hdr_len = (hdr_len_dword * 2) + ICE_NVM_AUTH_HEADER_LEN;
+
+	return 0;
+}
+
+/**
+ * ice_determine_css_hdr_len - Discover CSS header length for the device
+ * @hw: pointer to the HW struct
+ *
+ * Determine the size of the CSS header at the start of the NVM module. This
+ * is useful for locating the Shadow RAM copy in the NVM, as the Shadow RAM is
+ * always located just after the CSS header.
+ *
+ * Return: zero on success, or a negative error code on failure.
+ */
+static int ice_determine_css_hdr_len(struct ice_hw *hw)
+{
+	struct ice_bank_info *banks = &hw->flash.banks;
+	int status;
+
+	status = ice_get_nvm_css_hdr_len(hw, ICE_ACTIVE_FLASH_BANK,
+					 &banks->active_css_hdr_len);
+	if (status)
+		return status;
+
+	status = ice_get_nvm_css_hdr_len(hw, ICE_INACTIVE_FLASH_BANK,
+					 &banks->inactive_css_hdr_len);
+	if (status)
+		return status;
+
+	return 0;
+}
+
+/**
  * ice_init_nvm - initializes NVM setting
  * @hw: pointer to the HW struct
  *
@@ -1041,7 +1121,7 @@ int ice_init_nvm(struct ice_hw *hw)
 	 * as the blank mode may be used in the factory line.
 	 */
 	gens_stat = rd32(hw, GLNVM_GENS);
-	sr_size = (gens_stat & GLNVM_GENS_SR_SIZE_M) >> GLNVM_GENS_SR_SIZE_S;
+	sr_size = FIELD_GET(GLNVM_GENS_SR_SIZE_M, gens_stat);
 
 	/* Switching to words (sr_size contains power of 2) */
 	flash->sr_words = BIT(sr_size) * ICE_SR_WORDS_IN_1KB;
@@ -1066,6 +1146,12 @@ int ice_init_nvm(struct ice_hw *hw)
 	status = ice_determine_active_flash_banks(hw);
 	if (status) {
 		ice_debug(hw, ICE_DBG_NVM, "Failed to determine active flash banks.\n");
+		return status;
+	}
+
+	status = ice_determine_css_hdr_len(hw);
+	if (status) {
+		ice_debug(hw, ICE_DBG_NVM, "Failed to determine Shadow RAM copy offsets.\n");
 		return status;
 	}
 
@@ -1096,14 +1182,14 @@ int ice_init_nvm(struct ice_hw *hw)
 int ice_nvm_validate_checksum(struct ice_hw *hw)
 {
 	struct ice_aqc_nvm_checksum *cmd;
-	struct ice_aq_desc desc;
+	struct libie_aq_desc desc;
 	int status;
 
 	status = ice_acquire_nvm(hw, ICE_RES_READ);
 	if (status)
 		return status;
 
-	cmd = &desc.params.nvm_checksum;
+	cmd = libie_aq_raw(&desc);
 
 	ice_fill_dflt_direct_cmd_desc(&desc, ice_aqc_opc_nvm_checksum);
 	cmd->flags = ICE_AQC_NVM_CHECKSUM_VERIFY;
@@ -1140,11 +1226,11 @@ int ice_nvm_validate_checksum(struct ice_hw *hw)
  */
 int ice_nvm_write_activate(struct ice_hw *hw, u16 cmd_flags, u8 *response_flags)
 {
+	struct libie_aq_desc desc;
 	struct ice_aqc_nvm *cmd;
-	struct ice_aq_desc desc;
 	int err;
 
-	cmd = &desc.params.nvm;
+	cmd = libie_aq_raw(&desc);
 	ice_fill_dflt_direct_cmd_desc(&desc, ice_aqc_opc_nvm_write_activate);
 
 	cmd->cmd_flags = (u8)(cmd_flags & 0xFF);
@@ -1166,7 +1252,7 @@ int ice_nvm_write_activate(struct ice_hw *hw, u16 cmd_flags, u8 *response_flags)
  */
 int ice_aq_nvm_update_empr(struct ice_hw *hw)
 {
-	struct ice_aq_desc desc;
+	struct libie_aq_desc desc;
 
 	ice_fill_dflt_direct_cmd_desc(&desc, ice_aqc_opc_nvm_update_empr);
 
@@ -1192,15 +1278,15 @@ ice_nvm_set_pkg_data(struct ice_hw *hw, bool del_pkg_data_flag, u8 *data,
 		     u16 length, struct ice_sq_cd *cd)
 {
 	struct ice_aqc_nvm_pkg_data *cmd;
-	struct ice_aq_desc desc;
+	struct libie_aq_desc desc;
 
 	if (length != 0 && !data)
 		return -EINVAL;
 
-	cmd = &desc.params.pkg_data;
+	cmd = libie_aq_raw(&desc);
 
 	ice_fill_dflt_direct_cmd_desc(&desc, ice_aqc_opc_nvm_pkg_data);
-	desc.flags |= cpu_to_le16(ICE_AQ_FLAG_RD);
+	desc.flags |= cpu_to_le16(LIBIE_AQ_FLAG_RD);
 
 	if (del_pkg_data_flag)
 		cmd->cmd_flags |= ICE_AQC_NVM_PKG_DELETE;
@@ -1230,17 +1316,17 @@ ice_nvm_pass_component_tbl(struct ice_hw *hw, u8 *data, u16 length,
 			   u8 *comp_response_code, struct ice_sq_cd *cd)
 {
 	struct ice_aqc_nvm_pass_comp_tbl *cmd;
-	struct ice_aq_desc desc;
+	struct libie_aq_desc desc;
 	int status;
 
 	if (!data || !comp_response || !comp_response_code)
 		return -EINVAL;
 
-	cmd = &desc.params.pass_comp_tbl;
+	cmd = libie_aq_raw(&desc);
 
 	ice_fill_dflt_direct_cmd_desc(&desc,
 				      ice_aqc_opc_nvm_pass_component_tbl);
-	desc.flags |= cpu_to_le16(ICE_AQ_FLAG_RD);
+	desc.flags |= cpu_to_le16(LIBIE_AQ_FLAG_RD);
 
 	cmd->transfer_flag = transfer_flag;
 	status = ice_aq_send_cmd(hw, &desc, data, length, cd);

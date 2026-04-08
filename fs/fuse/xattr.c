@@ -164,9 +164,10 @@ int fuse_removexattr(struct inode *inode, const char *name)
 
 	args.opcode = FUSE_REMOVEXATTR;
 	args.nodeid = get_node_id(inode);
-	args.in_numargs = 1;
-	args.in_args[0].size = strlen(name) + 1;
-	args.in_args[0].value = name;
+	args.in_numargs = 2;
+	fuse_set_zero_arg0(&args);
+	args.in_args[1].size = strlen(name) + 1;
+	args.in_args[1].value = name;
 	err = fuse_simple_request(fm, &args);
 	if (err == -ENOSYS) {
 		fm->fc->no_removexattr = 1;
@@ -209,7 +210,7 @@ static const struct xattr_handler fuse_xattr_handler = {
 	.set    = fuse_xattr_set,
 };
 
-const struct xattr_handler *fuse_xattr_handlers[] = {
+const struct xattr_handler * const fuse_xattr_handlers[] = {
 	&fuse_xattr_handler,
 	NULL
 };

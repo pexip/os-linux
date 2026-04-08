@@ -167,11 +167,36 @@ static int tb_port_clx(struct tb_port *port)
  * @port: USB4 port to check
  * @clx: Mask of CL states to check
  *
- * Returns true if any of the given CL states is enabled for @port.
+ * Return: %true if any of the given CL states is enabled for @port,
+ * %false otherwise.
  */
 bool tb_port_clx_is_enabled(struct tb_port *port, unsigned int clx)
 {
 	return !!(tb_port_clx(port) & clx);
+}
+
+/**
+ * tb_switch_clx_is_supported() - Is CLx supported on this type of router
+ * @sw: The router to check CLx support for
+ *
+ * Return: %true if CLx is supported, %false otherwise.
+ */
+static bool tb_switch_clx_is_supported(const struct tb_switch *sw)
+{
+	if (!clx_enabled)
+		return false;
+
+	if (sw->quirks & QUIRK_NO_CLX)
+		return false;
+
+	/*
+	 * CLx is not enabled and validated on Intel USB4 platforms
+	 * before Alder Lake.
+	 */
+	if (tb_switch_is_tiger_lake(sw))
+		return false;
+
+	return tb_switch_is_usb4(sw) || tb_switch_is_titan_ridge(sw);
 }
 
 /**
@@ -181,7 +206,7 @@ bool tb_port_clx_is_enabled(struct tb_port *port, unsigned int clx)
  * Can be called for any router. Initializes the current CL state by
  * reading it from the hardware.
  *
- * Returns %0 in case of success and negative errno in case of failure.
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_clx_init(struct tb_switch *sw)
 {
@@ -273,28 +298,6 @@ static int tb_switch_mask_clx_objections(struct tb_switch *sw)
 			   sw->cap_lp + offset, ARRAY_SIZE(val));
 }
 
-/**
- * tb_switch_clx_is_supported() - Is CLx supported on this type of router
- * @sw: The router to check CLx support for
- */
-bool tb_switch_clx_is_supported(const struct tb_switch *sw)
-{
-	if (!clx_enabled)
-		return false;
-
-	if (sw->quirks & QUIRK_NO_CLX)
-		return false;
-
-	/*
-	 * CLx is not enabled and validated on Intel USB4 platforms
-	 * before Alder Lake.
-	 */
-	if (tb_switch_is_tiger_lake(sw))
-		return false;
-
-	return tb_switch_is_usb4(sw) || tb_switch_is_titan_ridge(sw);
-}
-
 static bool validate_mask(unsigned int clx)
 {
 	/* Previous states need to be enabled */
@@ -313,7 +316,7 @@ static bool validate_mask(unsigned int clx)
  * is not inter-domain link. The complete set of conditions is described in CM
  * Guide 1.0 section 8.1.
  *
- * Returns %0 on success or an error code on failure.
+ * Return: %0 on success, negative errno otherwise.
  */
 int tb_switch_clx_enable(struct tb_switch *sw, unsigned int clx)
 {
@@ -390,8 +393,7 @@ int tb_switch_clx_enable(struct tb_switch *sw, unsigned int clx)
  * Disables all CL states of the given router. Can be called on any
  * router and if the states were not enabled already does nothing.
  *
- * Returns the CL states that were disabled or negative errno in case of
- * failure.
+ * Return: CL states that were disabled or negative errno otherwise.
  */
 int tb_switch_clx_disable(struct tb_switch *sw)
 {
@@ -404,6 +406,9 @@ int tb_switch_clx_disable(struct tb_switch *sw)
 
 	if (!clx)
 		return 0;
+
+	if (sw->is_unplugged)
+		return clx;
 
 	up = tb_upstream_port(sw);
 	down = tb_switch_downstream_port(sw);

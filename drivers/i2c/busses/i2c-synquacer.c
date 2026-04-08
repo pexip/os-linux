@@ -310,7 +310,7 @@ static int synquacer_i2c_doxfer(struct synquacer_i2c *i2c,
 				struct i2c_msg *msgs, int num)
 {
 	unsigned char bsr;
-	unsigned long timeout;
+	unsigned long time_left;
 	int ret;
 
 	synquacer_i2c_hw_init(i2c);
@@ -334,9 +334,9 @@ static int synquacer_i2c_doxfer(struct synquacer_i2c *i2c,
 		return ret;
 	}
 
-	timeout = wait_for_completion_timeout(&i2c->completion,
-					msecs_to_jiffies(i2c->timeout_ms));
-	if (timeout == 0) {
+	time_left = wait_for_completion_timeout(&i2c->completion,
+						msecs_to_jiffies(i2c->timeout_ms));
+	if (time_left == 0) {
 		dev_dbg(i2c->dev, "timeout\n");
 		return -EAGAIN;
 	}
@@ -520,8 +520,8 @@ static u32 synquacer_i2c_functionality(struct i2c_adapter *adap)
 }
 
 static const struct i2c_algorithm synquacer_i2c_algo = {
-	.master_xfer	= synquacer_i2c_xfer,
-	.functionality	= synquacer_i2c_functionality,
+	.xfer = synquacer_i2c_xfer,
+	.functionality = synquacer_i2c_functionality,
 };
 
 static const struct i2c_adapter synquacer_i2c_ops = {
@@ -629,7 +629,7 @@ MODULE_DEVICE_TABLE(acpi, synquacer_i2c_acpi_ids);
 
 static struct platform_driver synquacer_i2c_driver = {
 	.probe	= synquacer_i2c_probe,
-	.remove_new = synquacer_i2c_remove,
+	.remove = synquacer_i2c_remove,
 	.driver	= {
 		.name = "synquacer_i2c",
 		.of_match_table = of_match_ptr(synquacer_i2c_dt_ids),

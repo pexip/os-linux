@@ -10,22 +10,17 @@ Updating the upstream source
 In addition to the build-dependencies, you will need the rsync package
 installed.
 
-1) Run: ./debian/bin/genorig.py <repository>
+1) Run: uscan --download-current-version --vcs-export-uncompressed
 
-   where <repository> is a local or remote git repository with the
-   upstream release tag in it.
-
-   If you do not have a local repository, use the appropriate one of:
-
-   * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-   * https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
-   * git://kernel.ubuntu.com/ubuntu/linux.git
-
-   This will produce ../orig/linux_<version>.orig.tar.xz
-   (e.g. linux_3.5~rc1.orig.tar.xz).
+   This will produce ../linux-<version>.tar (e.g. linux-6.11.tar) and
+   ../linux_<version>.orig.tar.xz (e.g. linux_6.11.orig.tar.xz).  You
+   can delete the first of these.
 
    It involves deleting files for DFSG compliance, as listed in the
    Files-Excluded field in debian/copyright.
+
+Populate the current directory with all files from the unpacked upstream
+tarball. This is also needed after git cloning this repo.
 
 2) Run: make -f debian/rules orig
 
@@ -114,30 +109,30 @@ number of files under debian/config and (if it exists)
 debian/config.local.  They are read in the following order, such that
 files later on the list can override settings from earlier files.
 Files in debian/config.local can also override settings from the
-corresponding file in debian/config.  Most of the files are optional
-and the filenames can generally be overridden by explicit lists
-(possibly empty) specified in the 'defines' files.
+corresponding file in debian/config.
 
 1. Common:
    - Default filename: config
-   - Filename list: [image]configs in defines
+   - Filename list: [build.config]
 2. Per kernel architecture:
-   - Filename: kernelarch-<karch>/config (optional)
-3. Per architecture:
+   - Default filename: kernelarch-<karch>/config
+   - Filename list: [kernelarch.build.config]
+3. Per Debian architecture:
    - Default filename: <arch>/config
-   - Filename list: [image]configs in <arch>/defines
-4. Per architecture and flavour:
-   - Default filename: <arch>/config.<flavour> (optional)
-   - Filename list: [<flavour>_image]configs in <arch>/defines
+   - Filename list: [kernelarch.debianarch.build.config]
+4. Per Debian architecture and flavour:
+   - Default filename: <arch>/config.<flavour>
+   - Filename list: [kernelarch.debianarch.flavour.build.config]
 5. Per featureset:
-   - Default filename: featureset-<fset>/config (optional)
-   - Filename list: [image]configs in featureset-<fset>/defines
-6. Per architecture and featureset:
-   - Default filename: <arch>/<fset>/config (optional)
-   - Filename list: [image]configs in <arch>/<fset>/defines
-7. Per architecture, featureset, and flavour:
-   - Default filename: <arch>/<fset>/config.<flavour> (optional)
-   - Filename list: [<flavour>_image]configs in <arch>/<fset>/defines
+   - Default filename: featureset-<fset>/config
+   - Filename list: [featureset.build.config]
+6. Per Debian architecture and featureset:
+   - Default filename: <arch>/<fset>/config
+   - Filename list: [kernelarch.debianarch.featureset.build.config]
+7. Per Debian architecture, featureset, and flavour:
+   - Default filename: <arch>/<fset>/config.<flavour>
+   - Filename list:
+     [kernelarch.debianarch.featureset.flavour.build.config]
 
 You can check the final list of configuration files by reading
 debian/rules.gen.  Each binary-arch_<arch>_<fset>_<flavour>_image
@@ -145,7 +140,8 @@ rule passes the list to debian/rules.real as the KCONFIG variable.
 
 These files should be kept in order using the kconfigeditor2
 utility from <https://salsa.debian.org/kernel-team/kernel-team>.
-With this source package as your working directory, run:
+With this source package as your working directory (see Updating the upstream
+source point 2 above), run:
 
     debian/rules source
     .../kernel-team/utils/kconfigeditor2/process.py .
@@ -155,19 +151,31 @@ cannot be explicitly configured.
 
 Control file
 ============
-The master control file debian/control must be generated before
-the package is uploaded. debian/rules contains the debian/control 
-target, which generates the control file by invoking the 
-debian/bin/gencontrol.py script, which combines the templates from
-the templates directory and architecture-specific defines file to
-produce the debian/control file. Note that this target is intentionally
-made to fail with a non-zero exit code to make sure that it is never
-run during an automatic build. The following variables are substituted
-into the templates:
+The master control file debian/control must be generated before the package is
+uploaded. debian/rules contains various targets to facilitate this task:
+
+debian/control  Generates the control file by invoking the
+                debian/bin/gencontrol.py script, which combines the templates
+                from the templates directory and architecture-specific
+                defines.toml file to produce the debian/control file. Note that
+                this target is intentionally made to fail with a non-zero exit
+                code to make sure that it is never run during an automatic
+                build.
+
+orig            Populate the current directory with all files from the unpacked
+                upstream tarball in ../orig/linux_${ver} and apply the Debian
+                quilt patch stack.
+
+clean-generated Clean up all auto-generated files inside the ./debian directory
+
+maintainerclean What clean-generated does and additionally also cleans up all
+                files other than the ./debian and ./.git directories.
+
+The following variables are substituted into the templates:
 
 @version@      Upstream kernel version, for example 2.6.11.
-@arch@         The Debian arch name, such as powerpc or i386.
-@flavour@      The build flavour, such as 686 or k7-smp.
+@arch@         The Debian arch name, such as powerpc or amd64.
+@flavour@      The build flavour, such as cloud-amd64.
 @class@        The CPU/architecture class; displayed in synopsis.  It should
                be fairly short, as the synopsis is supposed to be <80 chars.
                It should be in the form "foo class", and will show up in the
@@ -179,7 +187,7 @@ into the templates:
                -image descriptions.
 
 Normally, the arch-specific contents should be controlled by
-adjusting the corresponding defines file.
+adjusting the corresponding defines.toml file.
 
 Build-dependencies that relate to specific binary packages can be
 specified in a Build-Depends field in the template for that binary
@@ -233,6 +241,7 @@ Several build profiles are understood and supported:
 - pkg.linux.nokerneldbg: Exclude kernel debug packages
 - pkg.linux.nokerneldbginfo: Build kernel without debug symbols (also disables
   BTF)
+- pkg.linux.norust: Build without a Rust compiler
 - pkg.linux.nosource: Exclude source binary package (linux-source-<version>)
 - cross: Needed when cross-building.
 - nopython: Disable Python bindings.  This currently disables building the

@@ -27,6 +27,7 @@ properties:
       - renesas,r9a07g043-cpg # RZ/G2UL{Type-1,Type-2} and RZ/Five
       - renesas,r9a07g044-cpg # RZ/G2{L,LC}
       - renesas,r9a07g054-cpg # RZ/V2L
+      - renesas,r9a08g045-cpg # RZ/G3S
       - renesas,r9a09g011-cpg # RZ/V2M
 
   reg:
@@ -60,7 +61,7 @@ properties:
 
   '#reset-cells':
     description:
-      The single reset specifier cell must be the module number, as defined in
+      The single reset specifier cell must be the reset number, as defined in
       <dt-bindings/clock/r9a0*-cpg.h>.
     const: 1
 

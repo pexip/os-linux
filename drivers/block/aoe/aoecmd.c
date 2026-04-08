@@ -14,7 +14,7 @@
 #include <linux/workqueue.h>
 #include <linux/kthread.h>
 #include <net/net_namespace.h>
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 #include <linux/uio.h>
 #include "aoe.h"
 
@@ -745,7 +745,7 @@ rexmit_timer(struct timer_list *timer)
 	int utgts;	/* number of aoetgt descriptors (not slots) */
 	int since;
 
-	d = from_timer(d, timer, timer);
+	d = timer_container_of(d, timer, timer);
 
 	spin_lock_irqsave(&d->lock, flags);
 
@@ -1761,6 +1761,6 @@ aoecmd_exit(void)
 	kfree(kts);
 	kfree(ktiowq);
 
-	free_page((unsigned long) page_address(empty_page));
+	__free_page(empty_page);
 	empty_page = NULL;
 }

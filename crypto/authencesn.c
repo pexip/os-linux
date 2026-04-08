@@ -12,7 +12,6 @@
 #include <crypto/internal/hash.h>
 #include <crypto/internal/skcipher.h>
 #include <crypto/authenc.h>
-#include <crypto/null.h>
 #include <crypto/scatterwalk.h>
 #include <linux/err.h>
 #include <linux/init.h>
@@ -31,7 +30,6 @@ struct crypto_authenc_esn_ctx {
 	unsigned int reqoff;
 	struct crypto_ahash *auth;
 	struct crypto_skcipher *enc;
-	struct crypto_sync_skcipher *null;
 };
 
 struct authenc_esn_request_ctx {
@@ -87,11 +85,8 @@ static int crypto_authenc_esn_genicv_tail(struct aead_request *req,
 					  unsigned int flags)
 {
 	struct crypto_aead *authenc_esn = crypto_aead_reqtfm(req);
-	struct crypto_authenc_esn_ctx *ctx = crypto_aead_ctx(authenc_esn);
 	struct authenc_esn_request_ctx *areq_ctx = aead_request_ctx(req);
-	struct crypto_ahash *auth = ctx->auth;
-	u8 *hash = PTR_ALIGN((u8 *)areq_ctx->tail,
-			     crypto_ahash_alignmask(auth) + 1);
+	u8 *hash = areq_ctx->tail;
 	unsigned int authsize = crypto_aead_authsize(authenc_esn);
 	unsigned int assoclen = req->assoclen;
 	unsigned int cryptlen = req->cryptlen;
@@ -122,8 +117,7 @@ static int crypto_authenc_esn_genicv(struct aead_request *req,
 	struct authenc_esn_request_ctx *areq_ctx = aead_request_ctx(req);
 	struct crypto_authenc_esn_ctx *ctx = crypto_aead_ctx(authenc_esn);
 	struct crypto_ahash *auth = ctx->auth;
-	u8 *hash = PTR_ALIGN((u8 *)areq_ctx->tail,
-			     crypto_ahash_alignmask(auth) + 1);
+	u8 *hash = areq_ctx->tail;
 	struct ahash_request *ahreq = (void *)(areq_ctx->tail + ctx->reqoff);
 	unsigned int authsize = crypto_aead_authsize(authenc_esn);
 	unsigned int assoclen = req->assoclen;
@@ -162,20 +156,6 @@ static void crypto_authenc_esn_encrypt_done(void *data, int err)
 	authenc_esn_request_complete(areq, err);
 }
 
-static int crypto_authenc_esn_copy(struct aead_request *req, unsigned int len)
-{
-	struct crypto_aead *authenc_esn = crypto_aead_reqtfm(req);
-	struct crypto_authenc_esn_ctx *ctx = crypto_aead_ctx(authenc_esn);
-	SYNC_SKCIPHER_REQUEST_ON_STACK(skreq, ctx->null);
-
-	skcipher_request_set_sync_tfm(skreq, ctx->null);
-	skcipher_request_set_callback(skreq, aead_request_flags(req),
-				      NULL, NULL);
-	skcipher_request_set_crypt(skreq, req->src, req->dst, len, NULL);
-
-	return crypto_skcipher_encrypt(skreq);
-}
-
 static int crypto_authenc_esn_encrypt(struct aead_request *req)
 {
 	struct crypto_aead *authenc_esn = crypto_aead_reqtfm(req);
@@ -189,15 +169,15 @@ static int crypto_authenc_esn_encrypt(struct aead_request *req)
 	struct scatterlist *src, *dst;
 	int err;
 
+	if (assoclen < 8)
+		return -EINVAL;
+
 	sg_init_table(areq_ctx->src, 2);
 	src = scatterwalk_ffwd(areq_ctx->src, req->src, assoclen);
 	dst = src;
 
 	if (req->src != req->dst) {
-		err = crypto_authenc_esn_copy(req, assoclen);
-		if (err)
-			return err;
-
+		memcpy_sglist(req->dst, req->src, assoclen);
 		sg_init_table(areq_ctx->dst, 2);
 		dst = scatterwalk_ffwd(areq_ctx->dst, req->dst, assoclen);
 	}
@@ -224,8 +204,7 @@ static int crypto_authenc_esn_decrypt_tail(struct aead_request *req,
 	struct skcipher_request *skreq = (void *)(areq_ctx->tail +
 						  ctx->reqoff);
 	struct crypto_ahash *auth = ctx->auth;
-	u8 *ohash = PTR_ALIGN((u8 *)areq_ctx->tail,
-			      crypto_ahash_alignmask(auth) + 1);
+	u8 *ohash = areq_ctx->tail;
 	unsigned int cryptlen = req->cryptlen - authsize;
 	unsigned int assoclen = req->assoclen;
 	struct scatterlist *dst = req->dst;
@@ -272,8 +251,7 @@ static int crypto_authenc_esn_decrypt(struct aead_request *req)
 	struct ahash_request *ahreq = (void *)(areq_ctx->tail + ctx->reqoff);
 	unsigned int authsize = crypto_aead_authsize(authenc_esn);
 	struct crypto_ahash *auth = ctx->auth;
-	u8 *ohash = PTR_ALIGN((u8 *)areq_ctx->tail,
-			      crypto_ahash_alignmask(auth) + 1);
+	u8 *ohash = areq_ctx->tail;
 	unsigned int assoclen = req->assoclen;
 	unsigned int cryptlen = req->cryptlen;
 	u8 *ihash = ohash + crypto_ahash_digestsize(auth);
@@ -281,13 +259,13 @@ static int crypto_authenc_esn_decrypt(struct aead_request *req)
 	u32 tmp[2];
 	int err;
 
+	if (assoclen < 8)
+		return -EINVAL;
+
 	cryptlen -= authsize;
 
-	if (req->src != dst) {
-		err = crypto_authenc_esn_copy(req, assoclen + cryptlen);
-		if (err)
-			return err;
-	}
+	if (req->src != dst)
+		memcpy_sglist(dst, req->src, assoclen + cryptlen);
 
 	scatterwalk_map_and_copy(ihash, req->src, assoclen + cryptlen,
 				 authsize, 0);
@@ -323,7 +301,6 @@ static int crypto_authenc_esn_init_tfm(struct crypto_aead *tfm)
 	struct crypto_authenc_esn_ctx *ctx = crypto_aead_ctx(tfm);
 	struct crypto_ahash *auth;
 	struct crypto_skcipher *enc;
-	struct crypto_sync_skcipher *null;
 	int err;
 
 	auth = crypto_spawn_ahash(&ictx->auth);
@@ -335,17 +312,10 @@ static int crypto_authenc_esn_init_tfm(struct crypto_aead *tfm)
 	if (IS_ERR(enc))
 		goto err_free_ahash;
 
-	null = crypto_get_default_null_skcipher();
-	err = PTR_ERR(null);
-	if (IS_ERR(null))
-		goto err_free_skcipher;
-
 	ctx->auth = auth;
 	ctx->enc = enc;
-	ctx->null = null;
 
-	ctx->reqoff = ALIGN(2 * crypto_ahash_digestsize(auth),
-			    crypto_ahash_alignmask(auth) + 1);
+	ctx->reqoff = 2 * crypto_ahash_digestsize(auth);
 
 	crypto_aead_set_reqsize(
 		tfm,
@@ -359,8 +329,6 @@ static int crypto_authenc_esn_init_tfm(struct crypto_aead *tfm)
 
 	return 0;
 
-err_free_skcipher:
-	crypto_free_skcipher(enc);
 err_free_ahash:
 	crypto_free_ahash(auth);
 	return err;
@@ -372,7 +340,6 @@ static void crypto_authenc_esn_exit_tfm(struct crypto_aead *tfm)
 
 	crypto_free_ahash(ctx->auth);
 	crypto_free_skcipher(ctx->enc);
-	crypto_put_default_null_skcipher();
 }
 
 static void crypto_authenc_esn_free(struct aead_instance *inst)
@@ -390,9 +357,9 @@ static int crypto_authenc_esn_create(struct crypto_template *tmpl,
 	u32 mask;
 	struct aead_instance *inst;
 	struct authenc_esn_instance_ctx *ctx;
+	struct skcipher_alg_common *enc;
 	struct hash_alg_common *auth;
 	struct crypto_alg *auth_base;
-	struct skcipher_alg *enc;
 	int err;
 
 	err = crypto_check_attr_type(tb, CRYPTO_ALG_TYPE_AEAD, &mask);
@@ -415,7 +382,7 @@ static int crypto_authenc_esn_create(struct crypto_template *tmpl,
 				   crypto_attr_alg_name(tb[2]), 0, mask);
 	if (err)
 		goto err_free_inst;
-	enc = crypto_spawn_skcipher_alg(&ctx->enc);
+	enc = crypto_spawn_skcipher_alg_common(&ctx->enc);
 
 	err = -ENAMETOOLONG;
 	if (snprintf(inst->alg.base.cra_name, CRYPTO_MAX_ALG_NAME,
@@ -431,12 +398,11 @@ static int crypto_authenc_esn_create(struct crypto_template *tmpl,
 	inst->alg.base.cra_priority = enc->base.cra_priority * 10 +
 				      auth_base->cra_priority;
 	inst->alg.base.cra_blocksize = enc->base.cra_blocksize;
-	inst->alg.base.cra_alignmask = auth_base->cra_alignmask |
-				       enc->base.cra_alignmask;
+	inst->alg.base.cra_alignmask = enc->base.cra_alignmask;
 	inst->alg.base.cra_ctxsize = sizeof(struct crypto_authenc_esn_ctx);
 
-	inst->alg.ivsize = crypto_skcipher_alg_ivsize(enc);
-	inst->alg.chunksize = crypto_skcipher_alg_chunksize(enc);
+	inst->alg.ivsize = enc->ivsize;
+	inst->alg.chunksize = enc->chunksize;
 	inst->alg.maxauthsize = auth->digestsize;
 
 	inst->alg.init = crypto_authenc_esn_init_tfm;
@@ -473,7 +439,7 @@ static void __exit crypto_authenc_esn_module_exit(void)
 	crypto_unregister_template(&crypto_authenc_esn_tmpl);
 }
 
-subsys_initcall(crypto_authenc_esn_module_init);
+module_init(crypto_authenc_esn_module_init);
 module_exit(crypto_authenc_esn_module_exit);
 
 MODULE_LICENSE("GPL");

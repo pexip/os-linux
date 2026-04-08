@@ -37,7 +37,6 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include <crypto/hash.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/wait.h>
@@ -67,6 +66,7 @@
 #include <net/sctp/sctp.h>
 #include <net/sctp/sm.h>
 #include <net/sctp/stream_sched.h>
+#include <net/rps.h>
 
 /* Forward declarations for internal helper functions. */
 static bool sctp_writeable(const struct sock *sk);
@@ -1553,8 +1553,6 @@ static void sctp_close(struct sock *sk, long timeout)
 	spin_unlock_bh(&net->sctp.addr_wq_lock);
 
 	sock_put(sk);
-
-	SCTP_DBG_OBJCNT_DEC(sock);
 }
 
 /* Handle EPIPE error. */
@@ -4834,10 +4832,14 @@ int sctp_inet_connect(struct socket *sock, struct sockaddr *uaddr,
 	return sctp_connect(sock->sk, uaddr, addr_len, flags);
 }
 
-/* FIXME: Write comments. */
+/* Only called when shutdown a listening SCTP socket. */
 static int sctp_disconnect(struct sock *sk, int flags)
 {
-	return -EOPNOTSUPP; /* STUB */
+	if (!sctp_style(sk, TCP))
+		return -EOPNOTSUPP;
+
+	sk->sk_shutdown |= RCV_SHUTDOWN;
+	return 0;
 }
 
 /* 4.1.4 accept() - TCP Style Syntax
@@ -4847,7 +4849,7 @@ static int sctp_disconnect(struct sock *sk, int flags)
  * descriptor will be returned from accept() to represent the newly
  * formed association.
  */
-static struct sock *sctp_accept(struct sock *sk, int flags, int *err, bool kern)
+static struct sock *sctp_accept(struct sock *sk, struct proto_accept_arg *arg)
 {
 	struct sctp_sock *sp;
 	struct sctp_endpoint *ep;
@@ -4866,12 +4868,13 @@ static struct sock *sctp_accept(struct sock *sk, int flags, int *err, bool kern)
 		goto out;
 	}
 
-	if (!sctp_sstate(sk, LISTENING)) {
+	if (!sctp_sstate(sk, LISTENING) ||
+	    (sk->sk_shutdown & RCV_SHUTDOWN)) {
 		error = -EINVAL;
 		goto out;
 	}
 
-	timeo = sock_rcvtimeo(sk, flags & O_NONBLOCK);
+	timeo = sock_rcvtimeo(sk, arg->flags & O_NONBLOCK);
 
 	error = sctp_wait_for_accept(sk, timeo);
 	if (error)
@@ -4882,7 +4885,7 @@ static struct sock *sctp_accept(struct sock *sk, int flags, int *err, bool kern)
 	 */
 	asoc = list_entry(ep->asocs.next, struct sctp_association, asocs);
 
-	newsk = sp->pf->create_accept_sk(sk, asoc, kern);
+	newsk = sp->pf->create_accept_sk(sk, asoc, arg->kern);
 	if (!newsk) {
 		error = -ENOMEM;
 		goto out;
@@ -4899,7 +4902,7 @@ static struct sock *sctp_accept(struct sock *sk, int flags, int *err, bool kern)
 
 out:
 	release_sock(sk);
-	*err = error;
+	arg->err = error;
 	return newsk;
 }
 
@@ -4981,7 +4984,7 @@ static int sctp_init_sock(struct sock *sk)
 	sp->default_rcv_context = 0;
 	sp->max_burst = net->sctp.max_burst;
 
-	sp->sctp_hmac_alg = net->sctp.sctp_hmac_alg;
+	sp->cookie_auth_enable = net->sctp.cookie_auth_enable;
 
 	/* Initialize default setup parameters. These parameters
 	 * can be modified with the SCTP_INITMSG socket option or
@@ -5073,8 +5076,6 @@ static int sctp_init_sock(struct sock *sk)
 	if (!sp->ep)
 		return -ENOMEM;
 
-	sp->hmac = NULL;
-
 	sk->sk_destruct = sctp_destruct_sock;
 
 	SCTP_DBG_OBJCNT_INC(sock);
@@ -5106,23 +5107,16 @@ static void sctp_destroy_sock(struct sock *sk)
 		sp->do_auto_asconf = 0;
 		list_del(&sp->auto_asconf_list);
 	}
+
 	sctp_endpoint_free(sp->ep);
+
 	sk_sockets_allocated_dec(sk);
 	sock_prot_inuse_add(sock_net(sk), sk->sk_prot, -1);
-}
-
-/* Triggered when there are no references on the socket anymore */
-static void sctp_destruct_common(struct sock *sk)
-{
-	struct sctp_sock *sp = sctp_sk(sk);
-
-	/* Free up the HMAC transform. */
-	crypto_free_shash(sp->hmac);
+	SCTP_DBG_OBJCNT_DEC(sock);
 }
 
 static void sctp_destruct_sock(struct sock *sk)
 {
-	sctp_destruct_common(sk);
 	inet_sock_destruct(sk);
 }
 
@@ -5621,7 +5615,8 @@ static int sctp_getsockopt_autoclose(struct sock *sk, int len, char __user *optv
 }
 
 /* Helper routine to branch off an association to a new socket.  */
-int sctp_do_peeloff(struct sock *sk, sctp_assoc_t id, struct socket **sockp)
+static int sctp_do_peeloff(struct sock *sk, sctp_assoc_t id,
+		struct socket **sockp)
 {
 	struct sctp_association *asoc = sctp_id2assoc(sk, id);
 	struct sctp_sock *sp = sctp_sk(sk);
@@ -5669,7 +5664,6 @@ int sctp_do_peeloff(struct sock *sk, sctp_assoc_t id, struct socket **sockp)
 
 	return err;
 }
-EXPORT_SYMBOL(sctp_do_peeloff);
 
 static int sctp_getsockopt_peeloff_common(struct sock *sk, sctp_peeloff_arg_t *peeloff,
 					  struct file **newfile, unsigned flags)
@@ -8315,7 +8309,7 @@ static int sctp_hash(struct sock *sk)
 
 static void sctp_unhash(struct sock *sk)
 {
-	/* STUB */
+	sock_rps_delete_flow(sk);
 }
 
 /* Check if port is acceptable.  Possibly find first available port.
@@ -8339,8 +8333,8 @@ static int sctp_get_port_local(struct sock *sk, union sctp_addr *addr)
 	bool reuse = (sk->sk_reuse || sp->reuse);
 	struct sctp_bind_hashbucket *head; /* hash list */
 	struct net *net = sock_net(sk);
-	kuid_t uid = sock_i_uid(sk);
 	struct sctp_bind_bucket *pp;
+	kuid_t uid = sk_uid(sk);
 	unsigned short snum;
 	int ret;
 
@@ -8438,7 +8432,7 @@ pp_found:
 			    (reuse && (sk2->sk_reuse || sp2->reuse) &&
 			     sk2->sk_state != SCTP_SS_LISTENING) ||
 			    (sk->sk_reuseport && sk2->sk_reuseport &&
-			     uid_eq(uid, sock_i_uid(sk2))))
+			     uid_eq(uid, sk_uid(sk2))))
 				continue;
 
 			if ((!sk->sk_bound_dev_if || !bound_dev_if2 ||
@@ -8524,21 +8518,7 @@ static int sctp_listen_start(struct sock *sk, int backlog)
 {
 	struct sctp_sock *sp = sctp_sk(sk);
 	struct sctp_endpoint *ep = sp->ep;
-	struct crypto_shash *tfm = NULL;
-	char alg[32];
 	int err;
-
-	/* Allocate HMAC for generating cookie. */
-	if (!sp->hmac && sp->sctp_hmac_alg) {
-		sprintf(alg, "hmac(%s)", sp->sctp_hmac_alg);
-		tfm = crypto_alloc_shash(alg, 0, 0);
-		if (IS_ERR(tfm)) {
-			net_info_ratelimited("failed to load transform for %s: %ld\n",
-					     sp->sctp_hmac_alg, PTR_ERR(tfm));
-			return -ENOSYS;
-		}
-		sctp_sk(sk)->hmac = tfm;
-	}
 
 	/*
 	 * If a bind() or sctp_bindx() is not called prior to a listen()
@@ -9293,7 +9273,7 @@ void sctp_data_ready(struct sock *sk)
 	if (skwq_has_sleeper(wq))
 		wake_up_interruptible_sync_poll(&wq->wait, EPOLLIN |
 						EPOLLRDNORM | EPOLLRDBAND);
-	sk_wake_async(sk, SOCK_WAKE_WAITD, POLL_IN);
+	sk_wake_async_rcu(sk, SOCK_WAKE_WAITD, POLL_IN);
 	rcu_read_unlock();
 }
 
@@ -9409,7 +9389,8 @@ static int sctp_wait_for_accept(struct sock *sk, long timeo)
 		}
 
 		err = -EINVAL;
-		if (!sctp_sstate(sk, LISTENING))
+		if (!sctp_sstate(sk, LISTENING) ||
+		    (sk->sk_shutdown & RCV_SHUTDOWN))
 			break;
 
 		err = 0;
@@ -9485,8 +9466,8 @@ void sctp_copy_sock(struct sock *newsk, struct sock *sk,
 	newsk->sk_sndbuf = sk->sk_sndbuf;
 	newsk->sk_rcvbuf = sk->sk_rcvbuf;
 	newsk->sk_lingertime = sk->sk_lingertime;
-	newsk->sk_rcvtimeo = sk->sk_rcvtimeo;
-	newsk->sk_sndtimeo = sk->sk_sndtimeo;
+	newsk->sk_rcvtimeo = READ_ONCE(sk->sk_rcvtimeo);
+	newsk->sk_sndtimeo = READ_ONCE(sk->sk_sndtimeo);
 	newsk->sk_rxhash = sk->sk_rxhash;
 
 	newinet = inet_sk(newsk);
@@ -9554,7 +9535,6 @@ static int sctp_sock_migrate(struct sock *oldsk, struct sock *newsk,
 	 * copy.
 	 */
 	newsp->ep = newep;
-	newsp->hmac = NULL;
 
 	/* Hook this new socket in to the bind_hash list. */
 	head = &sctp_port_hashtable[sctp_phashfn(sock_net(oldsk),
@@ -9573,16 +9553,6 @@ static int sctp_sock_migrate(struct sock *oldsk, struct sock *newsk,
 				 &oldsp->ep->base.bind_addr, GFP_KERNEL);
 	if (err)
 		return err;
-
-	/* New ep's auth_hmacs should be set if old ep's is set, in case
-	 * that net->sctp.auth_enable has been changed to 0 by users and
-	 * new ep's auth_hmacs couldn't be set in sctp_endpoint_init().
-	 */
-	if (oldsp->ep->auth_hmacs) {
-		err = sctp_auth_init_hmacs(newsp->ep, GFP_KERNEL);
-		if (err)
-			return err;
-	}
 
 	sctp_auto_asconf_init(newsp);
 
@@ -9716,7 +9686,6 @@ struct proto sctp_prot = {
 
 static void sctp_v6_destruct_sock(struct sock *sk)
 {
-	sctp_destruct_common(sk);
 	inet6_sock_destruct(sk);
 }
 

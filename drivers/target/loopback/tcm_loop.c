@@ -83,7 +83,7 @@ static int tcm_loop_show_info(struct seq_file *m, struct Scsi_Host *host)
 static int tcm_loop_driver_probe(struct device *);
 static void tcm_loop_driver_remove(struct device *);
 
-static struct bus_type tcm_loop_lld_bus = {
+static const struct bus_type tcm_loop_lld_bus = {
 	.name			= "tcm_loop_bus",
 	.probe			= tcm_loop_driver_probe,
 	.remove			= tcm_loop_driver_remove,
@@ -154,7 +154,7 @@ static void tcm_loop_target_queue_cmd(struct tcm_loop_cmd *tl_cmd)
 			       GFP_ATOMIC))
 		return;
 
-	target_queue_submission(se_cmd);
+	target_submit(se_cmd);
 	return;
 
 out_done:
@@ -176,7 +176,7 @@ static int tcm_loop_queuecommand(struct Scsi_Host *sh, struct scsi_cmnd *sc)
 
 	memset(tl_cmd, 0, sizeof(*tl_cmd));
 	tl_cmd->sc = sc;
-	tl_cmd->sc_cmd_tag = scsi_cmd_to_rq(sc)->tag;
+	tl_cmd->sc_cmd_tag = blk_mq_unique_tag(scsi_cmd_to_rq(sc));
 
 	tcm_loop_target_queue_cmd(tl_cmd);
 	return 0;
@@ -242,7 +242,8 @@ static int tcm_loop_abort_task(struct scsi_cmnd *sc)
 	tl_hba = *(struct tcm_loop_hba **)shost_priv(sc->device->host);
 	tl_tpg = &tl_hba->tl_hba_tpgs[sc->device->id];
 	ret = tcm_loop_issue_tmr(tl_tpg, sc->device->lun,
-				 scsi_cmd_to_rq(sc)->tag, TMR_ABORT_TASK);
+				 blk_mq_unique_tag(scsi_cmd_to_rq(sc)),
+				 TMR_ABORT_TASK);
 	return (ret == TMR_FUNCTION_COMPLETE) ? SUCCESS : FAILED;
 }
 
@@ -893,6 +894,9 @@ static ssize_t tcm_loop_tpg_address_show(struct config_item *item,
 			struct tcm_loop_tpg, tl_se_tpg);
 	struct tcm_loop_hba *tl_hba = tl_tpg->tl_hba;
 
+	if (!tl_hba->sh)
+		return -ENODEV;
+
 	return snprintf(page, PAGE_SIZE, "%d:0:%d\n",
 			tl_hba->sh->host_no, tl_tpg->tl_tpgt);
 }
@@ -1102,6 +1106,8 @@ static const struct target_core_fabric_ops loop_ops = {
 	.tfc_wwn_attrs			= tcm_loop_wwn_attrs,
 	.tfc_tpg_base_attrs		= tcm_loop_tpg_attrs,
 	.tfc_tpg_attrib_attrs		= tcm_loop_tpg_attrib_attrs,
+	.default_submit_type		= TARGET_QUEUE_SUBMIT,
+	.direct_submit_supp		= 0,
 };
 
 static int __init tcm_loop_fabric_init(void)

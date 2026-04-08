@@ -171,6 +171,7 @@ static const struct atmdev_ops atm_ops = {
 static struct timer_list ns_timer;
 static char *mac[NS_MAX_CARDS];
 module_param_array(mac, charp, NULL, 0);
+MODULE_DESCRIPTION("ATM NIC driver for IDT 77201/77211 \"NICStAR\" and Fore ForeRunnerLE.");
 MODULE_LICENSE("GPL");
 
 /* Functions */
@@ -299,7 +300,7 @@ static void __exit nicstar_cleanup(void)
 {
 	XPRINTK("nicstar: nicstar_cleanup() called.\n");
 
-	del_timer_sync(&ns_timer);
+	timer_delete_sync(&ns_timer);
 
 	pci_unregister_driver(&nicstar_driver);
 

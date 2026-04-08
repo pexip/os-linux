@@ -481,11 +481,9 @@ static int therm_of_probe(struct platform_device *dev)
 	return -ENODEV;
 }
 
-static int
-therm_of_remove( struct platform_device *dev )
+static void therm_of_remove(struct platform_device *dev)
 {
 	i2c_del_driver( &g4fan_driver );
-	return 0;
 }
 
 static const struct of_device_id therm_of_match[] = {{

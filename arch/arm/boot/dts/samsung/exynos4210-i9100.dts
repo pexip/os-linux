@@ -130,7 +130,7 @@
 		reset-gpios = <&gpl1 2 GPIO_ACTIVE_LOW>;
 	};
 
-	i2c_max17042_fuel: i2c-gpio-0 {
+	i2c_max17042_fuel: i2c-9 {
 		compatible = "i2c-gpio";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -154,7 +154,7 @@
 		};
 	};
 
-	i2c_s5k5baf: i2c-gpio-1 {
+	i2c_s5k5baf: i2c-10 {
 		compatible = "i2c-gpio";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -181,6 +181,28 @@
 					data-lanes = <1>;
 				};
 			};
+		};
+	};
+
+	i2c-11 {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sda-gpios = <&gpk1 2 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpk1 0 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+
+		touchscreen@20 {
+			compatible = "cypress,aries-touchkey";
+			reg = <0x20>;
+
+			interrupt-parent = <&gpl0>;
+			interrupts = <5 IRQ_TYPE_EDGE_FALLING>;
+
+			vdd-supply = <&vtouchled_reg>;
+			vcc-supply = <&vtouch_reg>;
+			linux,keycodes = <KEY_MENU>, <KEY_BACK>;
 		};
 	};
 
@@ -380,6 +402,23 @@
 	vusb_a-supply = <&vusbdac_reg>;
 };
 
+&i2c_1 {
+	status = "okay";
+
+	samsung,i2c-sda-delay = <100>;
+	samsung,i2c-slave-addr = <0x10>;
+	samsung,i2c-max-bus-freq = <100000>;
+
+	lis3dh: accelerometer@19 {
+		compatible = "st,lis3dh-accel";
+		reg = <0x19>;
+
+		mount-matrix = "0", "-1", "0",
+			       "1", "0", "0",
+			       "0", "0", "1";
+	};
+};
+
 &i2c_3 {
 	status = "okay";
 
@@ -513,7 +552,6 @@
 				regulator-name = "TOUCH_2.8V";
 				regulator-min-microvolt = <2800000>;
 				regulator-max-microvolt = <2800000>;
-				regulator-always-on;
 			};
 
 			vpll_reg: LDO10 {
@@ -815,6 +853,7 @@
 	#size-cells = <0>;
 
 	non-removable;
+	cap-power-off-card;
 	bus-width = <4>;
 	mmc-pwrseq = <&wlan_pwrseq>;
 	vmmc-supply = <&vtf_reg>;

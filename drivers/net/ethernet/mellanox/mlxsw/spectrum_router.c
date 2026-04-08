@@ -19,6 +19,7 @@
 #include <linux/net_namespace.h>
 #include <linux/mutex.h>
 #include <linux/genalloc.h>
+#include <linux/xarray.h>
 #include <net/netevent.h>
 #include <net/neighbour.h>
 #include <net/arp.h>
@@ -2251,7 +2252,7 @@ int mlxsw_sp_neigh_counter_get(struct mlxsw_sp *mlxsw_sp,
 		return -EINVAL;
 
 	return mlxsw_sp_flow_counter_get(mlxsw_sp, neigh_entry->counter_index,
-					 p_counter, NULL);
+					 false, p_counter, NULL);
 }
 
 static struct mlxsw_sp_neigh_entry *
@@ -2264,6 +2265,7 @@ mlxsw_sp_neigh_entry_alloc(struct mlxsw_sp *mlxsw_sp, struct neighbour *n,
 	if (!neigh_entry)
 		return NULL;
 
+	neigh_hold(n);
 	neigh_entry->key.n = n;
 	neigh_entry->rif = rif;
 	INIT_LIST_HEAD(&neigh_entry->nexthop_list);
@@ -2273,6 +2275,7 @@ mlxsw_sp_neigh_entry_alloc(struct mlxsw_sp *mlxsw_sp, struct neighbour *n,
 
 static void mlxsw_sp_neigh_entry_free(struct mlxsw_sp_neigh_entry *neigh_entry)
 {
+	neigh_release(neigh_entry->key.n);
 	kfree(neigh_entry);
 }
 
@@ -2857,6 +2860,11 @@ static int mlxsw_sp_router_schedule_work(struct net *net,
 	if (!net_work)
 		return NOTIFY_BAD;
 
+	/* Take a reference to ensure the neighbour won't be destructed until
+	 * we drop the reference in the work item.
+	 */
+	neigh_clone(n);
+
 	INIT_WORK(&net_work->work, cb);
 	net_work->mlxsw_sp = router->mlxsw_sp;
 	net_work->n = n;
@@ -2880,11 +2888,6 @@ static int mlxsw_sp_router_schedule_neigh_work(struct mlxsw_sp_router *router,
 	struct net *net;
 
 	net = neigh_parms_net(n->parms);
-
-	/* Take a reference to ensure the neighbour won't be destructed until we
-	 * drop the reference in delayed work.
-	 */
-	neigh_clone(n);
 	return mlxsw_sp_router_schedule_work(net, router, n,
 					     mlxsw_sp_router_neigh_event_work);
 }
@@ -3052,6 +3055,8 @@ struct mlxsw_sp_nexthop_key {
 	struct fib_nh *fib_nh;
 };
 
+struct mlxsw_sp_nexthop_counter;
+
 struct mlxsw_sp_nexthop {
 	struct list_head neigh_list_node; /* member of neigh entry list */
 	struct list_head crif_list_node;
@@ -3083,8 +3088,8 @@ struct mlxsw_sp_nexthop {
 		struct mlxsw_sp_neigh_entry *neigh_entry;
 		struct mlxsw_sp_ipip_entry *ipip_entry;
 	};
-	unsigned int counter_index;
-	bool counter_valid;
+	struct mlxsw_sp_nexthop_counter *counter;
+	u32 id;		/* NH ID for members of a NH object group. */
 };
 
 static struct net_device *
@@ -3109,9 +3114,11 @@ struct mlxsw_sp_nexthop_group_info {
 	int sum_norm_weight;
 	u8 adj_index_valid:1,
 	   gateway:1, /* routes using the group use a gateway */
-	   is_resilient:1;
+	   is_resilient:1,
+	   hw_stats:1;
 	struct list_head list; /* member in nh_res_grp_list */
-	struct mlxsw_sp_nexthop nexthops[];
+	struct xarray nexthop_counters;
+	struct mlxsw_sp_nexthop nexthops[] __counted_by(count);
 };
 
 static struct mlxsw_sp_rif *
@@ -3154,39 +3161,145 @@ struct mlxsw_sp_nexthop_group {
 	bool can_destroy;
 };
 
-void mlxsw_sp_nexthop_counter_alloc(struct mlxsw_sp *mlxsw_sp,
-				    struct mlxsw_sp_nexthop *nh)
+struct mlxsw_sp_nexthop_counter {
+	unsigned int counter_index;
+	refcount_t ref_count;
+};
+
+static struct mlxsw_sp_nexthop_counter *
+mlxsw_sp_nexthop_counter_alloc(struct mlxsw_sp *mlxsw_sp)
 {
-	struct devlink *devlink;
+	struct mlxsw_sp_nexthop_counter *nhct;
+	int err;
 
-	devlink = priv_to_devlink(mlxsw_sp->core);
-	if (!devlink_dpipe_table_counter_enabled(devlink,
-						 MLXSW_SP_DPIPE_TABLE_NAME_ADJ))
-		return;
+	nhct = kzalloc(sizeof(*nhct), GFP_KERNEL);
+	if (!nhct)
+		return ERR_PTR(-ENOMEM);
 
-	if (mlxsw_sp_flow_counter_alloc(mlxsw_sp, &nh->counter_index))
-		return;
+	err = mlxsw_sp_flow_counter_alloc(mlxsw_sp, &nhct->counter_index);
+	if (err)
+		goto err_counter_alloc;
 
-	nh->counter_valid = true;
+	refcount_set(&nhct->ref_count, 1);
+	return nhct;
+
+err_counter_alloc:
+	kfree(nhct);
+	return ERR_PTR(err);
 }
 
-void mlxsw_sp_nexthop_counter_free(struct mlxsw_sp *mlxsw_sp,
-				   struct mlxsw_sp_nexthop *nh)
+static void
+mlxsw_sp_nexthop_counter_free(struct mlxsw_sp *mlxsw_sp,
+			      struct mlxsw_sp_nexthop_counter *nhct)
 {
-	if (!nh->counter_valid)
+	mlxsw_sp_flow_counter_free(mlxsw_sp, nhct->counter_index);
+	kfree(nhct);
+}
+
+static struct mlxsw_sp_nexthop_counter *
+mlxsw_sp_nexthop_sh_counter_get(struct mlxsw_sp *mlxsw_sp,
+				struct mlxsw_sp_nexthop *nh)
+{
+	struct mlxsw_sp_nexthop_group *nh_grp = nh->nhgi->nh_grp;
+	struct mlxsw_sp_nexthop_counter *nhct;
+	int err;
+
+	nhct = xa_load(&nh_grp->nhgi->nexthop_counters, nh->id);
+	if (nhct) {
+		refcount_inc(&nhct->ref_count);
+		return nhct;
+	}
+
+	nhct = mlxsw_sp_nexthop_counter_alloc(mlxsw_sp);
+	if (IS_ERR(nhct))
+		return nhct;
+
+	err = xa_err(xa_store(&nh_grp->nhgi->nexthop_counters, nh->id, nhct,
+			      GFP_KERNEL));
+	if (err)
+		goto err_store;
+
+	return nhct;
+
+err_store:
+	mlxsw_sp_nexthop_counter_free(mlxsw_sp, nhct);
+	return ERR_PTR(err);
+}
+
+static void mlxsw_sp_nexthop_sh_counter_put(struct mlxsw_sp *mlxsw_sp,
+					    struct mlxsw_sp_nexthop *nh)
+{
+	struct mlxsw_sp_nexthop_group *nh_grp = nh->nhgi->nh_grp;
+	struct mlxsw_sp_nexthop_counter *nhct;
+
+	nhct = xa_load(&nh_grp->nhgi->nexthop_counters, nh->id);
+	if (WARN_ON(!nhct))
 		return;
-	mlxsw_sp_flow_counter_free(mlxsw_sp, nh->counter_index);
-	nh->counter_valid = false;
+
+	if (!refcount_dec_and_test(&nhct->ref_count))
+		return;
+
+	xa_erase(&nh_grp->nhgi->nexthop_counters, nh->id);
+	mlxsw_sp_nexthop_counter_free(mlxsw_sp, nhct);
+}
+
+int mlxsw_sp_nexthop_counter_enable(struct mlxsw_sp *mlxsw_sp,
+				    struct mlxsw_sp_nexthop *nh)
+{
+	const char *table_adj = MLXSW_SP_DPIPE_TABLE_NAME_ADJ;
+	struct mlxsw_sp_nexthop_counter *nhct;
+	struct devlink *devlink;
+	bool dpipe_stats;
+
+	if (nh->counter)
+		return 0;
+
+	devlink = priv_to_devlink(mlxsw_sp->core);
+	dpipe_stats = devlink_dpipe_table_counter_enabled(devlink, table_adj);
+	if (!(nh->nhgi->hw_stats || dpipe_stats))
+		return 0;
+
+	if (nh->id)
+		nhct = mlxsw_sp_nexthop_sh_counter_get(mlxsw_sp, nh);
+	else
+		nhct = mlxsw_sp_nexthop_counter_alloc(mlxsw_sp);
+	if (IS_ERR(nhct))
+		return PTR_ERR(nhct);
+
+	nh->counter = nhct;
+	return 0;
+}
+
+void mlxsw_sp_nexthop_counter_disable(struct mlxsw_sp *mlxsw_sp,
+				      struct mlxsw_sp_nexthop *nh)
+{
+	if (!nh->counter)
+		return;
+
+	if (nh->id)
+		mlxsw_sp_nexthop_sh_counter_put(mlxsw_sp, nh);
+	else
+		mlxsw_sp_nexthop_counter_free(mlxsw_sp, nh->counter);
+	nh->counter = NULL;
+}
+
+static int mlxsw_sp_nexthop_counter_update(struct mlxsw_sp *mlxsw_sp,
+					   struct mlxsw_sp_nexthop *nh)
+{
+	if (nh->nhgi->hw_stats)
+		return mlxsw_sp_nexthop_counter_enable(mlxsw_sp, nh);
+	mlxsw_sp_nexthop_counter_disable(mlxsw_sp, nh);
+	return 0;
 }
 
 int mlxsw_sp_nexthop_counter_get(struct mlxsw_sp *mlxsw_sp,
 				 struct mlxsw_sp_nexthop *nh, u64 *p_counter)
 {
-	if (!nh->counter_valid)
+	if (!nh->counter)
 		return -EINVAL;
 
-	return mlxsw_sp_flow_counter_get(mlxsw_sp, nh->counter_index,
-					 p_counter, NULL);
+	return mlxsw_sp_flow_counter_get(mlxsw_sp, nh->counter->counter_index,
+					 true, p_counter, NULL);
 }
 
 struct mlxsw_sp_nexthop *mlxsw_sp_nexthop_next(struct mlxsw_sp_router *router,
@@ -3659,8 +3772,9 @@ static int __mlxsw_sp_nexthop_eth_update(struct mlxsw_sp *mlxsw_sp,
 		WARN_ON_ONCE(1);
 		return -EINVAL;
 	}
-	if (nh->counter_valid)
-		mlxsw_reg_ratr_counter_pack(ratr_pl, nh->counter_index, true);
+	if (nh->counter)
+		mlxsw_reg_ratr_counter_pack(ratr_pl, nh->counter->counter_index,
+					    true);
 	else
 		mlxsw_reg_ratr_counter_pack(ratr_pl, 0, false);
 
@@ -3747,12 +3861,17 @@ mlxsw_sp_nexthop_group_update(struct mlxsw_sp *mlxsw_sp,
 		nh = &nhgi->nexthops[i];
 
 		if (!nh->should_offload) {
+			mlxsw_sp_nexthop_counter_disable(mlxsw_sp, nh);
 			nh->offloaded = 0;
 			continue;
 		}
 
 		if (nh->update || reallocate) {
 			int err = 0;
+
+			err = mlxsw_sp_nexthop_counter_update(mlxsw_sp, nh);
+			if (err)
+				return err;
 
 			err = mlxsw_sp_nexthop_update(mlxsw_sp, adj_index, nh,
 						      true, ratr_pl);
@@ -4203,6 +4322,8 @@ mlxsw_sp_nexthop_dead_neigh_replace(struct mlxsw_sp *mlxsw_sp,
 	if (err)
 		goto err_neigh_entry_insert;
 
+	neigh_release(old_n);
+
 	read_lock_bh(&n->lock);
 	nud_state = n->nud_state;
 	dead = n->dead;
@@ -4211,13 +4332,9 @@ mlxsw_sp_nexthop_dead_neigh_replace(struct mlxsw_sp *mlxsw_sp,
 
 	list_for_each_entry(nh, &neigh_entry->nexthop_list,
 			    neigh_list_node) {
-		neigh_release(old_n);
-		neigh_clone(n);
 		__mlxsw_sp_nexthop_neigh_update(nh, !entry_connected);
 		mlxsw_sp_nexthop_group_refresh(mlxsw_sp, nh->nhgi->nh_grp);
 	}
-
-	neigh_release(n);
 
 	return 0;
 
@@ -4311,6 +4428,11 @@ static int mlxsw_sp_nexthop_neigh_init(struct mlxsw_sp *mlxsw_sp,
 		}
 	}
 
+	/* Release the reference taken by neigh_lookup() / neigh_create() since
+	 * neigh_entry already holds one.
+	 */
+	neigh_release(n);
+
 	/* If that is the first nexthop connected to that neigh, add to
 	 * nexthop_neighs_list
 	 */
@@ -4337,11 +4459,9 @@ static void mlxsw_sp_nexthop_neigh_fini(struct mlxsw_sp *mlxsw_sp,
 					struct mlxsw_sp_nexthop *nh)
 {
 	struct mlxsw_sp_neigh_entry *neigh_entry = nh->neigh_entry;
-	struct neighbour *n;
 
 	if (!neigh_entry)
 		return;
-	n = neigh_entry->key.n;
 
 	__mlxsw_sp_nexthop_neigh_update(nh, true);
 	list_del(&nh->neigh_list_node);
@@ -4355,8 +4475,6 @@ static void mlxsw_sp_nexthop_neigh_fini(struct mlxsw_sp *mlxsw_sp,
 
 	if (!neigh_entry->connected && list_empty(&neigh_entry->nexthop_list))
 		mlxsw_sp_neigh_entry_destroy(mlxsw_sp, neigh_entry);
-
-	neigh_release(n);
 }
 
 static bool mlxsw_sp_ipip_netdev_ul_up(struct net_device *ol_dev)
@@ -4510,7 +4628,10 @@ static int mlxsw_sp_nexthop4_init(struct mlxsw_sp *mlxsw_sp,
 	if (err)
 		return err;
 
-	mlxsw_sp_nexthop_counter_alloc(mlxsw_sp, nh);
+	err = mlxsw_sp_nexthop_counter_enable(mlxsw_sp, nh);
+	if (err)
+		goto err_counter_enable;
+
 	list_add_tail(&nh->router_list_node, &mlxsw_sp->router->nexthop_list);
 
 	if (!dev)
@@ -4534,7 +4655,8 @@ static int mlxsw_sp_nexthop4_init(struct mlxsw_sp *mlxsw_sp,
 
 err_nexthop_neigh_init:
 	list_del(&nh->router_list_node);
-	mlxsw_sp_nexthop_counter_free(mlxsw_sp, nh);
+	mlxsw_sp_nexthop_counter_disable(mlxsw_sp, nh);
+err_counter_enable:
 	mlxsw_sp_nexthop_remove(mlxsw_sp, nh);
 	return err;
 }
@@ -4544,7 +4666,7 @@ static void mlxsw_sp_nexthop4_fini(struct mlxsw_sp *mlxsw_sp,
 {
 	mlxsw_sp_nexthop_type_fini(mlxsw_sp, nh);
 	list_del(&nh->router_list_node);
-	mlxsw_sp_nexthop_counter_free(mlxsw_sp, nh);
+	mlxsw_sp_nexthop_counter_disable(mlxsw_sp, nh);
 	mlxsw_sp_nexthop_remove(mlxsw_sp, nh);
 }
 
@@ -5009,9 +5131,9 @@ mlxsw_sp_nexthop_obj_init(struct mlxsw_sp *mlxsw_sp,
 		break;
 	}
 
-	mlxsw_sp_nexthop_counter_alloc(mlxsw_sp, nh);
 	list_add_tail(&nh->router_list_node, &mlxsw_sp->router->nexthop_list);
 	nh->ifindex = dev->ifindex;
+	nh->id = nh_obj->id;
 
 	err = mlxsw_sp_nexthop_type_init(mlxsw_sp, nh, dev);
 	if (err)
@@ -5033,7 +5155,6 @@ mlxsw_sp_nexthop_obj_init(struct mlxsw_sp *mlxsw_sp,
 
 err_type_init:
 	list_del(&nh->router_list_node);
-	mlxsw_sp_nexthop_counter_free(mlxsw_sp, nh);
 	return err;
 }
 
@@ -5044,7 +5165,7 @@ static void mlxsw_sp_nexthop_obj_fini(struct mlxsw_sp *mlxsw_sp,
 		mlxsw_sp_nexthop_obj_blackhole_fini(mlxsw_sp, nh);
 	mlxsw_sp_nexthop_type_fini(mlxsw_sp, nh);
 	list_del(&nh->router_list_node);
-	mlxsw_sp_nexthop_counter_free(mlxsw_sp, nh);
+	mlxsw_sp_nexthop_counter_disable(mlxsw_sp, nh);
 	nh->should_offload = 0;
 }
 
@@ -5056,6 +5177,7 @@ mlxsw_sp_nexthop_obj_group_info_init(struct mlxsw_sp *mlxsw_sp,
 	struct mlxsw_sp_nexthop_group_info *nhgi;
 	struct mlxsw_sp_nexthop *nh;
 	bool is_resilient = false;
+	bool hw_stats = false;
 	unsigned int nhs;
 	int err, i;
 
@@ -5065,9 +5187,11 @@ mlxsw_sp_nexthop_obj_group_info_init(struct mlxsw_sp *mlxsw_sp,
 		break;
 	case NH_NOTIFIER_INFO_TYPE_GRP:
 		nhs = info->nh_grp->num_nh;
+		hw_stats = info->nh_grp->hw_stats;
 		break;
 	case NH_NOTIFIER_INFO_TYPE_RES_TABLE:
 		nhs = info->nh_res_table->num_nh_buckets;
+		hw_stats = info->nh_res_table->hw_stats;
 		is_resilient = true;
 		break;
 	default:
@@ -5082,6 +5206,10 @@ mlxsw_sp_nexthop_obj_group_info_init(struct mlxsw_sp *mlxsw_sp,
 	nhgi->gateway = mlxsw_sp_nexthop_obj_is_gateway(mlxsw_sp, info);
 	nhgi->is_resilient = is_resilient;
 	nhgi->count = nhs;
+	nhgi->hw_stats = hw_stats;
+
+	xa_init_flags(&nhgi->nexthop_counters, XA_FLAGS_ALLOC1);
+
 	for (i = 0; i < nhgi->count; i++) {
 		struct nh_notifier_single_info *nh_obj;
 		int weight;
@@ -5164,6 +5292,8 @@ mlxsw_sp_nexthop_obj_group_info_fini(struct mlxsw_sp *mlxsw_sp,
 	}
 	mlxsw_sp_nexthop_group_refresh(mlxsw_sp, nh_grp);
 	WARN_ON_ONCE(nhgi->adj_index_valid);
+	WARN_ON(!xa_empty(&nhgi->nexthop_counters));
+	xa_destroy(&nhgi->nexthop_counters);
 	kfree(nhgi);
 }
 
@@ -5300,6 +5430,43 @@ err_out:
 	nh_grp->nhgi = new_nhgi;
 	new_nhgi->nh_grp = nh_grp;
 	old_nh_grp->nhgi = old_nhgi;
+	return err;
+}
+
+static int mlxsw_sp_nexthop_obj_res_group_pre(struct mlxsw_sp *mlxsw_sp,
+					      struct nh_notifier_info *info)
+{
+	struct nh_notifier_grp_info *grp_info = info->nh_grp;
+	struct mlxsw_sp_nexthop_group_info *nhgi;
+	struct mlxsw_sp_nexthop_group *nh_grp;
+	int err;
+	int i;
+
+	nh_grp = mlxsw_sp_nexthop_obj_group_lookup(mlxsw_sp, info->id);
+	if (!nh_grp)
+		return 0;
+	nhgi = nh_grp->nhgi;
+
+	if (nhgi->hw_stats == grp_info->hw_stats)
+		return 0;
+
+	nhgi->hw_stats = grp_info->hw_stats;
+
+	for (i = 0; i < nhgi->count; i++) {
+		struct mlxsw_sp_nexthop *nh = &nhgi->nexthops[i];
+
+		if (nh->offloaded)
+			nh->update = 1;
+	}
+
+	err = mlxsw_sp_nexthop_group_refresh(mlxsw_sp, nh_grp);
+	if (err)
+		goto err_group_refresh;
+
+	return 0;
+
+err_group_refresh:
+	nhgi->hw_stats = !grp_info->hw_stats;
 	return err;
 }
 
@@ -5479,6 +5646,79 @@ err_nexthop_obj_init:
 	return err;
 }
 
+static void
+mlxsw_sp_nexthop_obj_mp_hw_stats_get(struct mlxsw_sp *mlxsw_sp,
+				     struct mlxsw_sp_nexthop_group_info *nhgi,
+				     struct nh_notifier_grp_hw_stats_info *info)
+{
+	int nhi;
+
+	for (nhi = 0; nhi < info->num_nh; nhi++) {
+		struct mlxsw_sp_nexthop *nh = &nhgi->nexthops[nhi];
+		u64 packets;
+		int err;
+
+		err = mlxsw_sp_nexthop_counter_get(mlxsw_sp, nh, &packets);
+		if (err)
+			continue;
+
+		nh_grp_hw_stats_report_delta(info, nhi, packets);
+	}
+}
+
+static void
+mlxsw_sp_nexthop_obj_res_hw_stats_get(struct mlxsw_sp *mlxsw_sp,
+				      struct mlxsw_sp_nexthop_group_info *nhgi,
+				      struct nh_notifier_grp_hw_stats_info *info)
+{
+	int nhi = -1;
+	int bucket;
+
+	for (bucket = 0; bucket < nhgi->count; bucket++) {
+		struct mlxsw_sp_nexthop *nh = &nhgi->nexthops[bucket];
+		u64 packets;
+		int err;
+
+		if (nhi == -1 || info->stats[nhi].id != nh->id) {
+			for (nhi = 0; nhi < info->num_nh; nhi++)
+				if (info->stats[nhi].id == nh->id)
+					break;
+			if (WARN_ON_ONCE(nhi == info->num_nh)) {
+				nhi = -1;
+				continue;
+			}
+		}
+
+		err = mlxsw_sp_nexthop_counter_get(mlxsw_sp, nh, &packets);
+		if (err)
+			continue;
+
+		nh_grp_hw_stats_report_delta(info, nhi, packets);
+	}
+}
+
+static void mlxsw_sp_nexthop_obj_hw_stats_get(struct mlxsw_sp *mlxsw_sp,
+					      struct nh_notifier_info *info)
+{
+	struct mlxsw_sp_nexthop_group_info *nhgi;
+	struct mlxsw_sp_nexthop_group *nh_grp;
+
+	if (info->type != NH_NOTIFIER_INFO_TYPE_GRP_HW_STATS)
+		return;
+
+	nh_grp = mlxsw_sp_nexthop_obj_group_lookup(mlxsw_sp, info->id);
+	if (!nh_grp)
+		return;
+	nhgi = nh_grp->nhgi;
+
+	if (nhgi->is_resilient)
+		mlxsw_sp_nexthop_obj_res_hw_stats_get(mlxsw_sp, nhgi,
+						      info->nh_grp_hw_stats);
+	else
+		mlxsw_sp_nexthop_obj_mp_hw_stats_get(mlxsw_sp, nhgi,
+						     info->nh_grp_hw_stats);
+}
+
 static int mlxsw_sp_nexthop_obj_event(struct notifier_block *nb,
 				      unsigned long event, void *ptr)
 {
@@ -5494,6 +5734,10 @@ static int mlxsw_sp_nexthop_obj_event(struct notifier_block *nb,
 	mutex_lock(&router->lock);
 
 	switch (event) {
+	case NEXTHOP_EVENT_RES_TABLE_PRE_REPLACE:
+		err = mlxsw_sp_nexthop_obj_res_group_pre(router->mlxsw_sp,
+							 info);
+		break;
 	case NEXTHOP_EVENT_REPLACE:
 		err = mlxsw_sp_nexthop_obj_new(router->mlxsw_sp, info);
 		break;
@@ -5503,6 +5747,9 @@ static int mlxsw_sp_nexthop_obj_event(struct notifier_block *nb,
 	case NEXTHOP_EVENT_BUCKET_REPLACE:
 		err = mlxsw_sp_nexthop_obj_bucket_replace(router->mlxsw_sp,
 							  info);
+		break;
+	case NEXTHOP_EVENT_HW_STATS_REPORT_DELTA:
+		mlxsw_sp_nexthop_obj_hw_stats_get(router->mlxsw_sp, info);
 		break;
 	default:
 		break;
@@ -6737,7 +6984,10 @@ static int mlxsw_sp_nexthop6_init(struct mlxsw_sp *mlxsw_sp,
 #if IS_ENABLED(CONFIG_IPV6)
 	nh->neigh_tbl = &nd_tbl;
 #endif
-	mlxsw_sp_nexthop_counter_alloc(mlxsw_sp, nh);
+
+	err = mlxsw_sp_nexthop_counter_enable(mlxsw_sp, nh);
+	if (err)
+		return err;
 
 	list_add_tail(&nh->router_list_node, &mlxsw_sp->router->nexthop_list);
 
@@ -6753,7 +7003,7 @@ static int mlxsw_sp_nexthop6_init(struct mlxsw_sp *mlxsw_sp,
 
 err_nexthop_type_init:
 	list_del(&nh->router_list_node);
-	mlxsw_sp_nexthop_counter_free(mlxsw_sp, nh);
+	mlxsw_sp_nexthop_counter_disable(mlxsw_sp, nh);
 	return err;
 }
 
@@ -6762,7 +7012,7 @@ static void mlxsw_sp_nexthop6_fini(struct mlxsw_sp *mlxsw_sp,
 {
 	mlxsw_sp_nexthop_type_fini(mlxsw_sp, nh);
 	list_del(&nh->router_list_node);
-	mlxsw_sp_nexthop_counter_free(mlxsw_sp, nh);
+	mlxsw_sp_nexthop_counter_disable(mlxsw_sp, nh);
 }
 
 static bool mlxsw_sp_rt6_is_gateway(const struct mlxsw_sp *mlxsw_sp,
@@ -7938,41 +8188,6 @@ mlxsw_sp_rif_find_by_dev(const struct mlxsw_sp *mlxsw_sp,
 	return NULL;
 }
 
-bool mlxsw_sp_rif_exists(struct mlxsw_sp *mlxsw_sp,
-			 const struct net_device *dev)
-{
-	struct mlxsw_sp_rif *rif;
-
-	mutex_lock(&mlxsw_sp->router->lock);
-	rif = mlxsw_sp_rif_find_by_dev(mlxsw_sp, dev);
-	mutex_unlock(&mlxsw_sp->router->lock);
-
-	return rif;
-}
-
-u16 mlxsw_sp_rif_vid(struct mlxsw_sp *mlxsw_sp, const struct net_device *dev)
-{
-	struct mlxsw_sp_rif *rif;
-	u16 vid = 0;
-
-	mutex_lock(&mlxsw_sp->router->lock);
-	rif = mlxsw_sp_rif_find_by_dev(mlxsw_sp, dev);
-	if (!rif)
-		goto out;
-
-	/* We only return the VID for VLAN RIFs. Otherwise we return an
-	 * invalid value (0).
-	 */
-	if (rif->ops->type != MLXSW_SP_RIF_TYPE_VLAN)
-		goto out;
-
-	vid = mlxsw_sp_fid_8021q_vid(rif->fid);
-
-out:
-	mutex_unlock(&mlxsw_sp->router->lock);
-	return vid;
-}
-
 static int mlxsw_sp_router_rif_disable(struct mlxsw_sp *mlxsw_sp, u16 rif)
 {
 	char ritr_pl[MLXSW_REG_RITR_LEN];
@@ -8169,19 +8384,6 @@ u16 mlxsw_sp_rif_index(const struct mlxsw_sp_rif *rif)
 u16 mlxsw_sp_ipip_lb_rif_index(const struct mlxsw_sp_rif_ipip_lb *lb_rif)
 {
 	return lb_rif->common.rif_index;
-}
-
-u16 mlxsw_sp_ipip_lb_ul_vr_id(const struct mlxsw_sp_rif_ipip_lb *lb_rif)
-{
-	struct net_device *dev = mlxsw_sp_rif_dev(&lb_rif->common);
-	u32 ul_tb_id = mlxsw_sp_ipip_dev_ul_tb_id(dev);
-	struct mlxsw_sp_vr *ul_vr;
-
-	ul_vr = mlxsw_sp_vr_get(lb_rif->common.mlxsw_sp, ul_tb_id, NULL);
-	if (WARN_ON(IS_ERR(ul_vr)))
-		return 0;
-
-	return ul_vr->id;
 }
 
 u16 mlxsw_sp_ipip_lb_ul_rif_id(const struct mlxsw_sp_rif_ipip_lb *lb_rif)
@@ -8423,6 +8625,9 @@ mlxsw_sp_rif_create(struct mlxsw_sp *mlxsw_sp,
 	rif->ops = ops;
 	rif->rif_entries = rif_entries;
 
+	if (ops->setup)
+		ops->setup(rif, params);
+
 	if (ops->fid_get) {
 		fid = ops->fid_get(rif, params, extack);
 		if (IS_ERR(fid)) {
@@ -8431,9 +8636,6 @@ mlxsw_sp_rif_create(struct mlxsw_sp *mlxsw_sp,
 		}
 		rif->fid = fid;
 	}
-
-	if (ops->setup)
-		ops->setup(rif, params);
 
 	err = ops->configure(rif, extack);
 	if (err)
@@ -8662,6 +8864,20 @@ static struct mlxsw_sp_rif_subport *
 mlxsw_sp_rif_subport_rif(const struct mlxsw_sp_rif *rif)
 {
 	return container_of(rif, struct mlxsw_sp_rif_subport, common);
+}
+
+int mlxsw_sp_rif_subport_port(const struct mlxsw_sp_rif *rif,
+			      u16 *port, bool *is_lag)
+{
+	struct mlxsw_sp_rif_subport *rif_subport;
+
+	if (WARN_ON(rif->ops->type != MLXSW_SP_RIF_TYPE_SUBPORT))
+		return -EINVAL;
+
+	rif_subport = mlxsw_sp_rif_subport_rif(rif);
+	*is_lag = rif_subport->lag;
+	*port = *is_lag ? rif_subport->lag_id : rif_subport->system_port;
+	return 0;
 }
 
 static struct mlxsw_sp_rif *
@@ -11187,12 +11403,16 @@ static int mlxsw_sp_mp_hash_init(struct mlxsw_sp *mlxsw_sp)
 {
 	bool old_inc_parsing_depth, new_inc_parsing_depth;
 	struct mlxsw_sp_mp_hash_config config = {};
+	struct net *net = mlxsw_sp_net(mlxsw_sp);
 	char recr2_pl[MLXSW_REG_RECR2_LEN];
 	unsigned long bit;
 	u32 seed;
 	int err;
 
-	seed = jhash(mlxsw_sp->base_mac, sizeof(mlxsw_sp->base_mac), 0);
+	seed = READ_ONCE(net->ipv4.sysctl_fib_multipath_hash_seed).user_seed;
+	if (!seed)
+		seed = jhash(mlxsw_sp->base_mac, sizeof(mlxsw_sp->base_mac), 0);
+
 	mlxsw_reg_recr2_pack(recr2_pl, seed);
 	mlxsw_sp_mp4_hash_init(mlxsw_sp, &config);
 	mlxsw_sp_mp6_hash_init(mlxsw_sp, &config);

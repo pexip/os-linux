@@ -321,7 +321,7 @@ static int al_pcie_host_init(struct dw_pcie_rp *pp)
 }
 
 static const struct dw_pcie_host_ops al_pcie_host_ops = {
-	.host_init = al_pcie_host_init,
+	.init = al_pcie_host_init,
 };
 
 static int al_pcie_probe(struct platform_device *pdev)
@@ -352,6 +352,7 @@ static int al_pcie_probe(struct platform_device *pdev)
 		return -ENOENT;
 	}
 	al_pcie->ecam_size = resource_size(ecam_res);
+	pci->pp.native_ecam = true;
 
 	controller_res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
 						      "controller");

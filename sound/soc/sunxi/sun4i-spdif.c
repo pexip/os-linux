@@ -14,8 +14,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/regmap.h>
-#include <linux/of_address.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
 #include <linux/ioport.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
@@ -203,6 +202,10 @@ static void sun4i_spdif_configure(struct sun4i_spdif_dev *host)
 	regmap_update_bits(host->regmap, SUN4I_SPDIF_FCTL,
 			   quirks->val_fctl_ftx, quirks->val_fctl_ftx);
 
+	/* Valid data at the MSB of TXFIFO Register */
+	regmap_update_bits(host->regmap, SUN4I_SPDIF_FCTL,
+			   SUN4I_SPDIF_FCTL_TXIM, 0);
+
 	/* clear TX counter */
 	regmap_write(host->regmap, SUN4I_SPDIF_TXCNT, 0);
 }
@@ -247,8 +250,8 @@ static void sun4i_snd_txctrl_off(struct snd_pcm_substream *substream,
 static int sun4i_spdif_startup(struct snd_pcm_substream *substream,
 			       struct snd_soc_dai *cpu_dai)
 {
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
-	struct sun4i_spdif_dev *host = snd_soc_dai_get_drvdata(asoc_rtd_to_cpu(rtd, 0));
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct sun4i_spdif_dev *host = snd_soc_dai_get_drvdata(snd_soc_rtd_to_cpu(rtd, 0));
 
 	if (substream->stream != SNDRV_PCM_STREAM_PLAYBACK)
 		return -EINVAL;
@@ -284,14 +287,17 @@ static int sun4i_spdif_hw_params(struct snd_pcm_substream *substream,
 		return -EINVAL;
 	}
 
+	host->dma_params_tx.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
 	switch (params_format(params)) {
 	case SNDRV_PCM_FORMAT_S16_LE:
 		fmt |= SUN4I_SPDIF_TXCFG_FMT16BIT;
+		host->dma_params_tx.addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
 		break;
 	case SNDRV_PCM_FORMAT_S20_3LE:
 		fmt |= SUN4I_SPDIF_TXCFG_FMT20BIT;
 		break;
 	case SNDRV_PCM_FORMAT_S24_LE:
+	case SNDRV_PCM_FORMAT_S32_LE:
 		fmt |= SUN4I_SPDIF_TXCFG_FMT24BIT;
 		break;
 	default:
@@ -323,9 +329,6 @@ static int sun4i_spdif_hw_params(struct snd_pcm_substream *substream,
 			"Setting SPDIF clock rate for %d Hz failed!\n", mclk);
 		return ret;
 	}
-
-	regmap_update_bits(host->regmap, SUN4I_SPDIF_FCTL,
-			   SUN4I_SPDIF_FCTL_TXIM, SUN4I_SPDIF_FCTL_TXIM);
 
 	switch (rate) {
 	case 22050:
@@ -526,9 +529,10 @@ static const struct regmap_config sun4i_spdif_regmap_config = {
 
 #define SUN4I_RATES	SNDRV_PCM_RATE_8000_192000
 
-#define SUN4I_FORMATS	(SNDRV_PCM_FORMAT_S16_LE | \
-				SNDRV_PCM_FORMAT_S20_3LE | \
-				SNDRV_PCM_FORMAT_S24_LE)
+#define SUN4I_FORMATS	(SNDRV_PCM_FMTBIT_S16_LE | \
+				SNDRV_PCM_FMTBIT_S20_3LE | \
+				SNDRV_PCM_FMTBIT_S24_LE | \
+				SNDRV_PCM_FMTBIT_S32_LE)
 
 static struct snd_soc_dai_driver sun4i_spdif_dai = {
 	.playback = {
@@ -723,18 +727,18 @@ static void sun4i_spdif_remove(struct platform_device *pdev)
 }
 
 static const struct dev_pm_ops sun4i_spdif_pm = {
-	SET_RUNTIME_PM_OPS(sun4i_spdif_runtime_suspend,
-			   sun4i_spdif_runtime_resume, NULL)
+	RUNTIME_PM_OPS(sun4i_spdif_runtime_suspend,
+		       sun4i_spdif_runtime_resume, NULL)
 };
 
 static struct platform_driver sun4i_spdif_driver = {
 	.driver		= {
 		.name	= "sun4i-spdif",
 		.of_match_table = sun4i_spdif_of_match,
-		.pm	= &sun4i_spdif_pm,
+		.pm	= pm_ptr(&sun4i_spdif_pm),
 	},
 	.probe		= sun4i_spdif_probe,
-	.remove_new	= sun4i_spdif_remove,
+	.remove		= sun4i_spdif_remove,
 };
 
 module_platform_driver(sun4i_spdif_driver);

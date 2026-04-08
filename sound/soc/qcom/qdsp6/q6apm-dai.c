@@ -4,15 +4,16 @@
 #include <linux/init.h>
 #include <linux/err.h>
 #include <linux/module.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <sound/soc.h>
 #include <sound/soc-dapm.h>
 #include <linux/spinlock.h>
 #include <sound/pcm.h>
+#include <asm/div64.h>
 #include <asm/dma.h>
 #include <linux/dma-mapping.h>
-#include <linux/of_device.h>
 #include <sound/pcm_params.h>
 #include "q6apm.h"
 
@@ -65,9 +66,9 @@ struct q6apm_dai_rtd {
 	unsigned int pcm_size;
 	unsigned int pcm_count;
 	unsigned int periods;
-	unsigned int bytes_sent;
-	unsigned int bytes_received;
-	unsigned int copied_total;
+	uint64_t bytes_sent;
+	uint64_t bytes_received;
+	uint64_t copied_total;
 	uint16_t bits_per_sample;
 	snd_pcm_uframes_t queue_ptr;
 	bool next_track;
@@ -81,10 +82,11 @@ struct q6apm_dai_data {
 	long long sid;
 };
 
-static struct snd_pcm_hardware q6apm_dai_hardware_capture = {
+static const struct snd_pcm_hardware q6apm_dai_hardware_capture = {
 	.info =                 (SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_BLOCK_TRANSFER |
 				 SNDRV_PCM_INFO_MMAP_VALID | SNDRV_PCM_INFO_INTERLEAVED |
 				 SNDRV_PCM_INFO_PAUSE | SNDRV_PCM_INFO_RESUME |
+				 SNDRV_PCM_INFO_NO_REWINDS | SNDRV_PCM_INFO_SYNC_APPLPTR |
 				 SNDRV_PCM_INFO_BATCH),
 	.formats =              (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE),
 	.rates =                SNDRV_PCM_RATE_8000_48000,
@@ -100,10 +102,11 @@ static struct snd_pcm_hardware q6apm_dai_hardware_capture = {
 	.fifo_size =            0,
 };
 
-static struct snd_pcm_hardware q6apm_dai_hardware_playback = {
+static const struct snd_pcm_hardware q6apm_dai_hardware_playback = {
 	.info =                 (SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_BLOCK_TRANSFER |
 				 SNDRV_PCM_INFO_MMAP_VALID | SNDRV_PCM_INFO_INTERLEAVED |
 				 SNDRV_PCM_INFO_PAUSE | SNDRV_PCM_INFO_RESUME |
+				 SNDRV_PCM_INFO_NO_REWINDS | SNDRV_PCM_INFO_SYNC_APPLPTR |
 				 SNDRV_PCM_INFO_BATCH),
 	.formats =              (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE),
 	.rates =                SNDRV_PCM_RATE_8000_192000,
@@ -119,7 +122,7 @@ static struct snd_pcm_hardware q6apm_dai_hardware_playback = {
 	.fifo_size =            0,
 };
 
-static void event_handler(uint32_t opcode, uint32_t token, uint32_t *payload, void *priv)
+static void event_handler(uint32_t opcode, uint32_t token, void *payload, void *priv)
 {
 	struct q6apm_dai_rtd *prtd = priv;
 	struct snd_pcm_substream *substream = prtd->substream;
@@ -144,7 +147,7 @@ static void event_handler(uint32_t opcode, uint32_t token, uint32_t *payload, vo
 }
 
 static void event_handler_compr(uint32_t opcode, uint32_t token,
-				uint32_t *payload, void *priv)
+				void *payload, void *priv)
 {
 	struct q6apm_dai_rtd *prtd = priv;
 	struct snd_compr_stream *substream = prtd->cstream;
@@ -230,6 +233,7 @@ static int q6apm_dai_prepare(struct snd_soc_component *component,
 	cfg.num_channels = runtime->channels;
 	cfg.bit_width = prtd->bits_per_sample;
 	cfg.fmt = SND_AUDIOCODEC_PCM;
+	audioreach_set_default_channel_mapping(cfg.channel_map, runtime->channels);
 
 	if (prtd->state) {
 		/* clear the previous setup if any  */
@@ -335,7 +339,7 @@ static int q6apm_dai_open(struct snd_soc_component *component,
 			  struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct snd_soc_pcm_runtime *soc_prtd = substream->private_data;
+	struct snd_soc_pcm_runtime *soc_prtd = snd_soc_substream_to_rtd(substream);
 	struct snd_soc_dai *cpu_dai = snd_soc_rtd_to_cpu(soc_prtd, 0);
 	struct device *dev = component->dev;
 	struct q6apm_dai_data *pdata;
@@ -356,7 +360,7 @@ static int q6apm_dai_open(struct snd_soc_component *component,
 
 	spin_lock_init(&prtd->lock);
 	prtd->substream = substream;
-	prtd->graph = q6apm_graph_open(dev, (q6apm_cb)event_handler, prtd, graph_id);
+	prtd->graph = q6apm_graph_open(dev, event_handler, prtd, graph_id);
 	if (IS_ERR(prtd->graph)) {
 		dev_err(dev, "%s: Could not allocate memory\n", __func__);
 		ret = PTR_ERR(prtd->graph);
@@ -497,7 +501,7 @@ static int q6apm_dai_compr_open(struct snd_soc_component *component,
 		return -ENOMEM;
 
 	prtd->cstream = stream;
-	prtd->graph = q6apm_graph_open(dev, (q6apm_cb)event_handler_compr, prtd, graph_id);
+	prtd->graph = q6apm_graph_open(dev, event_handler_compr, prtd, graph_id);
 	if (IS_ERR(prtd->graph)) {
 		ret = PTR_ERR(prtd->graph);
 		kfree(prtd);
@@ -549,10 +553,11 @@ static int q6apm_dai_compr_get_caps(struct snd_soc_component *component,
 	caps->max_fragment_size = COMPR_PLAYBACK_MAX_FRAGMENT_SIZE;
 	caps->min_fragments = COMPR_PLAYBACK_MIN_NUM_FRAGMENTS;
 	caps->max_fragments = COMPR_PLAYBACK_MAX_NUM_FRAGMENTS;
-	caps->num_codecs = 3;
+	caps->num_codecs = 4;
 	caps->codecs[0] = SND_AUDIOCODEC_MP3;
 	caps->codecs[1] = SND_AUDIOCODEC_AAC;
 	caps->codecs[2] = SND_AUDIOCODEC_FLAC;
+	caps->codecs[3] = SND_AUDIOCODEC_OPUS_RAW;
 
 	return 0;
 }
@@ -574,15 +579,17 @@ static int q6apm_dai_compr_get_codec_caps(struct snd_soc_component *component,
 
 static int q6apm_dai_compr_pointer(struct snd_soc_component *component,
 				   struct snd_compr_stream *stream,
-				   struct snd_compr_tstamp *tstamp)
+				   struct snd_compr_tstamp64 *tstamp)
 {
 	struct snd_compr_runtime *runtime = stream->runtime;
 	struct q6apm_dai_rtd *prtd = runtime->private_data;
 	unsigned long flags;
+	uint64_t temp_copied_total;
 
 	spin_lock_irqsave(&prtd->lock, flags);
 	tstamp->copied_total = prtd->copied_total;
-	tstamp->byte_offset = prtd->copied_total % prtd->pcm_size;
+	temp_copied_total = tstamp->copied_total;
+	tstamp->byte_offset = do_div(temp_copied_total, prtd->pcm_size);
 	spin_unlock_irqrestore(&prtd->lock, flags);
 
 	return 0;
@@ -668,6 +675,8 @@ static int q6apm_dai_compr_set_params(struct snd_soc_component *component,
 		cfg.num_channels = 2;
 		cfg.bit_width = prtd->bits_per_sample;
 		cfg.fmt = codec->id;
+		audioreach_set_default_channel_mapping(cfg.channel_map,
+						       cfg.num_channels);
 		memcpy(&cfg.codec, codec, sizeof(*codec));
 
 		ret = q6apm_graph_media_format_shmem(prtd->graph, &cfg);
@@ -757,21 +766,24 @@ static int q6apm_compr_copy(struct snd_soc_component *component,
 	size_t copy;
 	u32 wflags = 0;
 	u32 app_pointer;
-	u32 bytes_received;
+	uint64_t bytes_received;
+	uint64_t temp_bytes_received;
 	uint32_t bytes_to_write;
-	int avail, bytes_in_flight = 0;
+	uint64_t avail, bytes_in_flight = 0;
 
 	bytes_received = prtd->bytes_received;
+	temp_bytes_received = bytes_received;
 
 	/**
 	 * Make sure that next track data pointer is aligned at 32 bit boundary
 	 * This is a Mandatory requirement from DSP data buffers alignment
 	 */
-	if (prtd->next_track)
+	if (prtd->next_track) {
 		bytes_received = ALIGN(prtd->bytes_received, prtd->pcm_count);
+		temp_bytes_received = bytes_received;
+	}
 
-	app_pointer = bytes_received/prtd->pcm_size;
-	app_pointer = bytes_received -  (app_pointer * prtd->pcm_size);
+	app_pointer = do_div(temp_bytes_received, prtd->pcm_size);
 	dstn = prtd->dma_buffer.area + app_pointer;
 
 	if (count < prtd->pcm_size - app_pointer) {

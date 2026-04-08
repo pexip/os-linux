@@ -38,6 +38,15 @@ allOf:
             - items:
                 - const: clk_out_sd1
                 - const: clk_in_sd1
+  - if:
+      properties:
+        compatible:
+          contains:
+            const: renesas,rzn1-sdhci
+    then:
+      properties:
+        interrupts:
+          minItems: 2
 
 properties:
   compatible:
@@ -45,6 +54,10 @@ properties:
       - const: arasan,sdhci-8.9a                # generic Arasan SDHCI 8.9a PHY
       - const: arasan,sdhci-4.9a                # generic Arasan SDHCI 4.9a PHY
       - const: arasan,sdhci-5.1                 # generic Arasan SDHCI 5.1 PHY
+      - items:
+          - const: renesas,r9a06g032-sdhci      # Renesas RZ/N1D SoC
+          - const: renesas,rzn1-sdhci           # Renesas RZ/N1 family
+          - const: arasan,sdhci-8.9a
       - items:
           - const: rockchip,rk3399-sdhci-5.1    # rk3399 eMMC PHY
           - const: arasan,sdhci-5.1
@@ -109,7 +122,14 @@ properties:
       - const: gate
 
   interrupts:
-    maxItems: 1
+    minItems: 1
+    maxItems: 2
+
+  interrupt-names:
+    minItems: 1
+    items:
+      - const: int
+      - const: wakeup
 
   phys:
     maxItems: 1
@@ -226,8 +246,8 @@ examples:
           interrupt-parent = <&gic>;
           interrupts = <0 48 4>;
           reg = <0xff160000 0x1000>;
-          clocks = <&clk200>, <&clk200>;
-          clock-names = "clk_xin", "clk_ahb";
+          clocks = <&clk200>, <&clk200>, <&clk1200>;
+          clock-names = "clk_xin", "clk_ahb", "gate";
           clock-output-names = "clk_out_sd0", "clk_in_sd0";
           #clock-cells = <1>;
           clk-phase-sd-hs = <63>, <72>;
@@ -239,8 +259,8 @@ examples:
           interrupt-parent = <&gic>;
           interrupts = <0 126 4>;
           reg = <0xf1040000 0x10000>;
-          clocks = <&clk200>, <&clk200>;
-          clock-names = "clk_xin", "clk_ahb";
+          clocks = <&clk200>, <&clk200>, <&clk1200>;
+          clock-names = "clk_xin", "clk_ahb", "gate";
           clock-output-names = "clk_out_sd0", "clk_in_sd0";
           #clock-cells = <1>;
           clk-phase-sd-hs = <132>, <60>;

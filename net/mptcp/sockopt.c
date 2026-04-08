@@ -89,7 +89,7 @@ static void mptcp_sol_socket_sync_intval(struct mptcp_sock *msk, int optname, in
 			sock_valbool_flag(ssk, SOCK_KEEPOPEN, !!val);
 			break;
 		case SO_PRIORITY:
-			ssk->sk_priority = val;
+			WRITE_ONCE(ssk->sk_priority, val);
 			break;
 		case SO_SNDBUF:
 		case SO_SNDBUFFORCE:
@@ -438,6 +438,8 @@ static bool mptcp_supported_sockopt(int level, int optname)
 		/* should work fine */
 		case IP_FREEBIND:
 		case IP_TRANSPARENT:
+		case IP_BIND_ADDRESS_NO_PORT:
+		case IP_LOCAL_PORT_RANGE:
 
 		/* the following are control cmsg related */
 		case IP_PKTINFO:
@@ -453,7 +455,6 @@ static bool mptcp_supported_sockopt(int level, int optname)
 		/* common stuff that need some love */
 		case IP_TOS:
 		case IP_TTL:
-		case IP_BIND_ADDRESS_NO_PORT:
 		case IP_MTU_DISCOVER:
 		case IP_RECVERR:
 
@@ -615,7 +616,7 @@ static int mptcp_setsockopt_sol_tcp_congestion(struct mptcp_sock *msk, sockptr_t
 	}
 
 	if (ret == 0)
-		strcpy(msk->ca_name, name);
+		strscpy(msk->ca_name, name, sizeof(msk->ca_name));
 
 	release_sock(sk);
 	return ret;
@@ -685,8 +686,8 @@ static int __mptcp_setsockopt_sol_tcp_nodelay(struct mptcp_sock *msk, int val)
 	return 0;
 }
 
-static int mptcp_setsockopt_sol_ip_set_transparent(struct mptcp_sock *msk, int optname,
-						   sockptr_t optval, unsigned int optlen)
+static int mptcp_setsockopt_sol_ip_set(struct mptcp_sock *msk, int optname,
+				       sockptr_t optval, unsigned int optlen)
 {
 	struct sock *sk = (struct sock *)msk;
 	struct sock *ssk;
@@ -711,6 +712,14 @@ static int mptcp_setsockopt_sol_ip_set_transparent(struct mptcp_sock *msk, int o
 	case IP_TRANSPARENT:
 		inet_assign_bit(TRANSPARENT, ssk,
 				inet_test_bit(TRANSPARENT, sk));
+		break;
+	case IP_BIND_ADDRESS_NO_PORT:
+		inet_assign_bit(BIND_ADDRESS_NO_PORT, ssk,
+				inet_test_bit(BIND_ADDRESS_NO_PORT, sk));
+		break;
+	case IP_LOCAL_PORT_RANGE:
+		WRITE_ONCE(inet_sk(ssk)->local_port_range,
+			   READ_ONCE(inet_sk(sk)->local_port_range));
 		break;
 	default:
 		release_sock(sk);
@@ -737,7 +746,7 @@ static int mptcp_setsockopt_v4_set_tos(struct mptcp_sock *msk, int optname,
 
 	lock_sock(sk);
 	sockopt_seq_inc(msk);
-	val = inet_sk(sk)->tos;
+	val = READ_ONCE(inet_sk(sk)->tos);
 	mptcp_for_each_subflow(msk, subflow) {
 		struct sock *ssk = mptcp_subflow_tcp_sock(subflow);
 		bool slow;
@@ -757,7 +766,9 @@ static int mptcp_setsockopt_v4(struct mptcp_sock *msk, int optname,
 	switch (optname) {
 	case IP_FREEBIND:
 	case IP_TRANSPARENT:
-		return mptcp_setsockopt_sol_ip_set_transparent(msk, optname, optval, optlen);
+	case IP_BIND_ADDRESS_NO_PORT:
+	case IP_LOCAL_PORT_RANGE:
+		return mptcp_setsockopt_sol_ip_set(msk, optname, optval, optlen);
 	case IP_TOS:
 		return mptcp_setsockopt_v4_set_tos(msk, optname, optval, optlen);
 	}
@@ -784,6 +795,23 @@ static int mptcp_setsockopt_first_sf_only(struct mptcp_sock *msk, int level, int
 
 unlock:
 	release_sock(sk);
+	return ret;
+}
+
+static int mptcp_setsockopt_all_sf(struct mptcp_sock *msk, int level,
+				   int optname, sockptr_t optval,
+				   unsigned int optlen)
+{
+	struct mptcp_subflow_context *subflow;
+	int ret = 0;
+
+	mptcp_for_each_subflow(msk, subflow) {
+		struct sock *ssk = mptcp_subflow_tcp_sock(subflow);
+
+		ret = tcp_setsockopt(ssk, level, optname, optval, optlen);
+		if (ret)
+			break;
+	}
 	return ret;
 }
 
@@ -822,6 +850,10 @@ static int mptcp_setsockopt_sol_tcp(struct mptcp_sock *msk, int optname,
 		else
 			msk->recvmsg_inq = !!val;
 		break;
+	case TCP_NOTSENT_LOWAT:
+		WRITE_ONCE(msk->notsent_lowat, val);
+		mptcp_write_space(sk);
+		break;
 	case TCP_CORK:
 		ret = __mptcp_setsockopt_sol_tcp_cork(msk, val);
 		break;
@@ -843,6 +875,11 @@ static int mptcp_setsockopt_sol_tcp(struct mptcp_sock *msk, int optname,
 						 &tcp_sock_set_keepcnt,
 						 &msk->keepalive_cnt,
 						 val);
+		break;
+	case TCP_MAXSEG:
+		msk->maxseg = val;
+		ret = mptcp_setsockopt_all_sf(msk, SOL_TCP, optname, optval,
+					      optlen);
 		break;
 	default:
 		ret = -ENOPROTOOPT;
@@ -899,10 +936,8 @@ static int mptcp_getsockopt_first_sf_only(struct mptcp_sock *msk, int level, int
 
 	lock_sock(sk);
 	ssk = msk->first;
-	if (ssk) {
-		ret = tcp_getsockopt(ssk, level, optname, optval, optlen);
-		goto out;
-	}
+	if (ssk)
+		goto get;
 
 	ssk = __mptcp_nmpc_sk(msk);
 	if (IS_ERR(ssk)) {
@@ -910,6 +945,7 @@ static int mptcp_getsockopt_first_sf_only(struct mptcp_sock *msk, int level, int
 		goto out;
 	}
 
+get:
 	ret = tcp_getsockopt(ssk, level, optname, optval, optlen);
 
 out:
@@ -922,10 +958,11 @@ void mptcp_diag_fill_info(struct mptcp_sock *msk, struct mptcp_info *info)
 	struct sock *sk = (struct sock *)msk;
 	u32 flags = 0;
 	bool slow;
+	u32 now;
 
 	memset(info, 0, sizeof(*info));
 
-	info->mptcpi_subflows = READ_ONCE(msk->pm.subflows);
+	info->mptcpi_extra_subflows = READ_ONCE(msk->pm.extra_subflows);
 	info->mptcpi_add_addr_signal = READ_ONCE(msk->pm.add_addr_signaled);
 	info->mptcpi_add_addr_accepted = READ_ONCE(msk->pm.add_addr_accepted);
 	info->mptcpi_local_addr_used = READ_ONCE(msk->pm.local_addr_used);
@@ -935,36 +972,45 @@ void mptcp_diag_fill_info(struct mptcp_sock *msk, struct mptcp_info *info)
 
 	/* The following limits only make sense for the in-kernel PM */
 	if (mptcp_pm_is_kernel(msk)) {
-		info->mptcpi_subflows_max =
-			mptcp_pm_get_subflows_max(msk);
-		info->mptcpi_add_addr_signal_max =
-			mptcp_pm_get_add_addr_signal_max(msk);
-		info->mptcpi_add_addr_accepted_max =
-			mptcp_pm_get_add_addr_accept_max(msk);
-		info->mptcpi_local_addr_max =
-			mptcp_pm_get_local_addr_max(msk);
+		info->mptcpi_limit_extra_subflows =
+			mptcp_pm_get_limit_extra_subflows(msk);
+		info->mptcpi_endp_signal_max =
+			mptcp_pm_get_endp_signal_max(msk);
+		info->mptcpi_limit_add_addr_accepted =
+			mptcp_pm_get_limit_add_addr_accepted(msk);
+		info->mptcpi_endp_subflow_max =
+			mptcp_pm_get_endp_subflow_max(msk);
+		info->mptcpi_endp_laminar_max =
+			mptcp_pm_get_endp_laminar_max(msk);
 	}
 
-	if (test_bit(MPTCP_FALLBACK_DONE, &msk->flags))
+	if (__mptcp_check_fallback(msk))
 		flags |= MPTCP_INFO_FLAG_FALLBACK;
 	if (READ_ONCE(msk->can_ack))
 		flags |= MPTCP_INFO_FLAG_REMOTE_KEY_RECEIVED;
 	info->mptcpi_flags = flags;
-	mptcp_data_lock(sk);
-	info->mptcpi_snd_una = msk->snd_una;
-	info->mptcpi_rcv_nxt = msk->ack_seq;
-	info->mptcpi_bytes_acked = msk->bytes_acked;
-	mptcp_data_unlock(sk);
 
 	slow = lock_sock_fast(sk);
-	info->mptcpi_csum_enabled = msk->csum_enabled;
+	info->mptcpi_csum_enabled = READ_ONCE(msk->csum_enabled);
 	info->mptcpi_token = msk->token;
 	info->mptcpi_write_seq = msk->write_seq;
 	info->mptcpi_retransmits = inet_csk(sk)->icsk_retransmits;
 	info->mptcpi_bytes_sent = msk->bytes_sent;
 	info->mptcpi_bytes_received = msk->bytes_received;
 	info->mptcpi_bytes_retrans = msk->bytes_retrans;
+	info->mptcpi_subflows_total = info->mptcpi_extra_subflows +
+		__mptcp_has_initial_subflow(msk);
+	now = tcp_jiffies32;
+	info->mptcpi_last_data_sent = jiffies_to_msecs(now - msk->last_data_sent);
+	info->mptcpi_last_data_recv = jiffies_to_msecs(now - msk->last_data_recv);
 	unlock_sock_fast(sk, slow);
+
+	mptcp_data_lock(sk);
+	info->mptcpi_last_ack_recv = jiffies_to_msecs(now - msk->last_ack_recv);
+	info->mptcpi_snd_una = msk->snd_una;
+	info->mptcpi_rcv_nxt = msk->ack_seq;
+	info->mptcpi_bytes_acked = msk->bytes_acked;
+	mptcp_data_unlock(sk);
 }
 EXPORT_SYMBOL_GPL(mptcp_diag_fill_info);
 
@@ -975,6 +1021,10 @@ static int mptcp_getsockopt_info(struct mptcp_sock *msk, char __user *optval, in
 
 	if (get_user(len, optlen))
 		return -EFAULT;
+
+	/* When used only to check if a fallback to TCP happened. */
+	if (len == 0)
+		return 0;
 
 	len = min_t(unsigned int, len, sizeof(struct mptcp_info));
 
@@ -1376,6 +1426,13 @@ static int mptcp_getsockopt_sol_tcp(struct mptcp_sock *msk, int optname,
 		return mptcp_put_int_option(msk, optval, optlen,
 					    msk->keepalive_cnt ? :
 					    READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_keepalive_probes));
+	case TCP_NOTSENT_LOWAT:
+		return mptcp_put_int_option(msk, optval, optlen, msk->notsent_lowat);
+	case TCP_IS_MPTCP:
+		return mptcp_put_int_option(msk, optval, optlen, 1);
+	case TCP_MAXSEG:
+		return mptcp_getsockopt_first_sf_only(msk, SOL_TCP, optname,
+						      optval, optlen);
 	}
 	return -EOPNOTSUPP;
 }
@@ -1387,13 +1444,19 @@ static int mptcp_getsockopt_v4(struct mptcp_sock *msk, int optname,
 
 	switch (optname) {
 	case IP_TOS:
-		return mptcp_put_int_option(msk, optval, optlen, inet_sk(sk)->tos);
+		return mptcp_put_int_option(msk, optval, optlen, READ_ONCE(inet_sk(sk)->tos));
 	case IP_FREEBIND:
 		return mptcp_put_int_option(msk, optval, optlen,
 				inet_test_bit(FREEBIND, sk));
 	case IP_TRANSPARENT:
 		return mptcp_put_int_option(msk, optval, optlen,
 				inet_test_bit(TRANSPARENT, sk));
+	case IP_BIND_ADDRESS_NO_PORT:
+		return mptcp_put_int_option(msk, optval, optlen,
+				inet_test_bit(BIND_ADDRESS_NO_PORT, sk));
+	case IP_LOCAL_PORT_RANGE:
+		return mptcp_put_int_option(msk, optval, optlen,
+				READ_ONCE(inet_sk(sk)->local_port_range));
 	}
 
 	return -EOPNOTSUPP;
@@ -1471,13 +1534,12 @@ static void sync_socket_options(struct mptcp_sock *msk, struct sock *ssk)
 {
 	static const unsigned int tx_rx_locks = SOCK_RCVBUF_LOCK | SOCK_SNDBUF_LOCK;
 	struct sock *sk = (struct sock *)msk;
+	bool keep_open;
 
-	if (ssk->sk_prot->keepalive) {
-		if (sock_flag(sk, SOCK_KEEPOPEN))
-			ssk->sk_prot->keepalive(ssk, 1);
-		else
-			ssk->sk_prot->keepalive(ssk, 0);
-	}
+	keep_open = sock_flag(sk, SOCK_KEEPOPEN);
+	if (ssk->sk_prot->keepalive)
+		ssk->sk_prot->keepalive(ssk, keep_open);
+	sock_valbool_flag(ssk, SOCK_KEEPOPEN, keep_open);
 
 	ssk->sk_priority = sk->sk_priority;
 	ssk->sk_bound_dev_if = sk->sk_bound_dev_if;
@@ -1516,31 +1578,12 @@ static void sync_socket_options(struct mptcp_sock *msk, struct sock *ssk)
 	tcp_sock_set_keepidle_locked(ssk, msk->keepalive_idle);
 	tcp_sock_set_keepintvl(ssk, msk->keepalive_intvl);
 	tcp_sock_set_keepcnt(ssk, msk->keepalive_cnt);
+	tcp_sock_set_maxseg(ssk, msk->maxseg);
 
 	inet_assign_bit(TRANSPARENT, ssk, inet_test_bit(TRANSPARENT, sk));
 	inet_assign_bit(FREEBIND, ssk, inet_test_bit(FREEBIND, sk));
-}
-
-static void __mptcp_sockopt_sync(struct mptcp_sock *msk, struct sock *ssk)
-{
-	bool slow = lock_sock_fast(ssk);
-
-	sync_socket_options(msk, ssk);
-
-	unlock_sock_fast(ssk, slow);
-}
-
-void mptcp_sockopt_sync(struct mptcp_sock *msk, struct sock *ssk)
-{
-	struct mptcp_subflow_context *subflow = mptcp_subflow_ctx(ssk);
-
-	msk_owned_by_me(msk);
-
-	if (READ_ONCE(subflow->setsockopt_seq) != msk->setsockopt_seq) {
-		__mptcp_sockopt_sync(msk, ssk);
-
-		subflow->setsockopt_seq = msk->setsockopt_seq;
-	}
+	inet_assign_bit(BIND_ADDRESS_NO_PORT, ssk, inet_test_bit(BIND_ADDRESS_NO_PORT, sk));
+	WRITE_ONCE(inet_sk(ssk)->local_port_range, READ_ONCE(inet_sk(sk)->local_port_range));
 }
 
 void mptcp_sockopt_sync_locked(struct mptcp_sock *msk, struct sock *ssk)
@@ -1550,6 +1593,12 @@ void mptcp_sockopt_sync_locked(struct mptcp_sock *msk, struct sock *ssk)
 	msk_owned_by_me(msk);
 
 	ssk->sk_rcvlowat = 0;
+
+	/* subflows must ignore any latency-related settings: will not affect
+	 * the user-space - only the msk is relevant - but will foul the
+	 * mptcp scheduler
+	 */
+	tcp_sk(ssk)->notsent_lowat = UINT_MAX;
 
 	if (READ_ONCE(subflow->setsockopt_seq) != msk->setsockopt_seq) {
 		sync_socket_options(msk, ssk);
@@ -1584,7 +1633,7 @@ int mptcp_set_rcvlowat(struct sock *sk, int val)
 	if (sk->sk_userlocks & SOCK_RCVBUF_LOCK)
 		return 0;
 
-	space = __tcp_space_from_win(mptcp_sk(sk)->scaling_ratio, val);
+	space = mptcp_space_from_win(sk, val);
 	if (space <= sk->sk_rcvbuf)
 		return 0;
 

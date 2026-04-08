@@ -61,11 +61,6 @@ CONFIG_ACPI_APEI_MEMORY_FAILURE=y
 CONFIG_ACPI_APEI_EINJ=m
 
 ##
-## file: drivers/acpi/numa/Kconfig
-##
-CONFIG_ACPI_NUMA=y
-
-##
 ## file: drivers/ata/Kconfig
 ##
 # CONFIG_AHCI_QORIQ is not set
@@ -81,7 +76,7 @@ CONFIG_VEXPRESS_CONFIG=y
 # CONFIG_CLK_QORIQ is not set
 
 ##
-## file: drivers/cpufreq/Kconfig.arm
+## file: drivers/cpufreq/Kconfig
 ##
 CONFIG_ACPI_CPPC_CPUFREQ=m
 

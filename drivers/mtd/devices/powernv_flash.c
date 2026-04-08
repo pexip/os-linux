@@ -268,14 +268,12 @@ static int powernv_flash_probe(struct platform_device *pdev)
  *
  * Returns 0
  */
-static int powernv_flash_release(struct platform_device *pdev)
+static void powernv_flash_release(struct platform_device *pdev)
 {
 	struct powernv_flash *data = dev_get_drvdata(&(pdev->dev));
 
 	/* All resources should be freed automatically */
 	WARN_ON(mtd_device_unregister(&data->mtd));
-
-	return 0;
 }
 
 static const struct of_device_id powernv_flash_match[] = {

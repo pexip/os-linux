@@ -331,26 +331,26 @@ static void dirty_init(struct keybuf_key *w)
 	struct dirty_io *io = w->private;
 	struct bio *bio = &io->bio;
 
-	bio_init(bio, NULL, bio->bi_inline_vecs,
+	bio_init_inline(bio, NULL,
 		 DIV_ROUND_UP(KEY_SIZE(&w->key), PAGE_SECTORS), 0);
 	if (!io->dc->writeback_percent)
-		bio_set_prio(bio, IOPRIO_PRIO_VALUE(IOPRIO_CLASS_IDLE, 0));
+		bio->bi_ioprio = IOPRIO_PRIO_VALUE(IOPRIO_CLASS_IDLE, 0);
 
 	bio->bi_iter.bi_size	= KEY_SIZE(&w->key) << 9;
 	bio->bi_private		= w;
 	bch_bio_map(bio, NULL);
 }
 
-static void dirty_io_destructor(struct closure *cl)
+static CLOSURE_CALLBACK(dirty_io_destructor)
 {
-	struct dirty_io *io = container_of(cl, struct dirty_io, cl);
+	closure_type(io, struct dirty_io, cl);
 
 	kfree(io);
 }
 
-static void write_dirty_finish(struct closure *cl)
+static CLOSURE_CALLBACK(write_dirty_finish)
 {
-	struct dirty_io *io = container_of(cl, struct dirty_io, cl);
+	closure_type(io, struct dirty_io, cl);
 	struct keybuf_key *w = io->bio.bi_private;
 	struct cached_dev *dc = io->dc;
 
@@ -400,9 +400,9 @@ static void dirty_endio(struct bio *bio)
 	closure_put(&io->cl);
 }
 
-static void write_dirty(struct closure *cl)
+static CLOSURE_CALLBACK(write_dirty)
 {
-	struct dirty_io *io = container_of(cl, struct dirty_io, cl);
+	closure_type(io, struct dirty_io, cl);
 	struct keybuf_key *w = io->bio.bi_private;
 	struct cached_dev *dc = io->dc;
 
@@ -462,9 +462,9 @@ static void read_dirty_endio(struct bio *bio)
 	dirty_endio(bio);
 }
 
-static void read_dirty_submit(struct closure *cl)
+static CLOSURE_CALLBACK(read_dirty_submit)
 {
-	struct dirty_io *io = container_of(cl, struct dirty_io, cl);
+	closure_type(io, struct dirty_io, cl);
 
 	closure_bio_submit(io->dc->disk.c, &io->bio, cl);
 
@@ -536,9 +536,9 @@ static void read_dirty(struct cached_dev *dc)
 		for (i = 0; i < nk; i++) {
 			w = keys[i];
 
-			io = kzalloc(struct_size(io, bio.bi_inline_vecs,
-						DIV_ROUND_UP(KEY_SIZE(&w->key), PAGE_SECTORS)),
-				     GFP_KERNEL);
+			io = kzalloc(sizeof(*io) + sizeof(struct bio_vec) *
+				DIV_ROUND_UP(KEY_SIZE(&w->key), PAGE_SECTORS),
+				GFP_KERNEL);
 			if (!io)
 				goto err;
 

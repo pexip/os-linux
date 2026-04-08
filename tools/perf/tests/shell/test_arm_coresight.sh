@@ -1,5 +1,5 @@
-#!/bin/sh
-# Check Arm CoreSight trace data recording and synthesized samples
+#!/bin/bash
+# Check Arm CoreSight trace data recording and synthesized samples (exclusive)
 
 # Uses the 'perf record' to record trace data with Arm CoreSight sinks;
 # then verify if there have any branch samples and instruction samples
@@ -12,7 +12,7 @@
 glb_err=0
 
 skip_if_no_cs_etm_event() {
-	perf list | grep -q 'cs_etm//' && return 0
+	perf list pmu | grep -q 'cs_etm//' && return 0
 
 	# cs_etm event doesn't exist
 	return 2
@@ -136,7 +136,9 @@ arm_cs_iterate_devices() {
 
 arm_cs_etm_traverse_path_test() {
 	# Iterate for every ETM device
-	for dev in /sys/bus/coresight/devices/etm*; do
+	for dev in /sys/bus/event_source/devices/cs_etm/cpu*; do
+		# Canonicalize the path
+		dev=`readlink -f $dev`
 
 		# Find the ETM device belonging to which CPU
 		cpu=`cat $dev/cpu`

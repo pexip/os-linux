@@ -44,8 +44,6 @@ static DEFINE_MUTEX(zones_mutex);
 struct zones_ht_key {
 	struct net *net;
 	u16 zone;
-	/* Note : pad[] must be the last field. */
-	u8  pad[];
 };
 
 struct tcf_ct_flow_table {
@@ -62,7 +60,7 @@ struct tcf_ct_flow_table {
 static const struct rhashtable_params zones_params = {
 	.head_offset = offsetof(struct tcf_ct_flow_table, node),
 	.key_offset = offsetof(struct tcf_ct_flow_table, key),
-	.key_len = offsetof(struct zones_ht_key, pad),
+	.key_len = offsetofend(struct zones_ht_key, zone),
 	.automatic_shrinking = true,
 };
 
@@ -742,7 +740,6 @@ static struct tc_action_ops act_ct_ops;
 
 struct tc_ct_action_net {
 	struct tc_action_net tn; /* Must be first */
-	bool labels;
 };
 
 /* Determine whether skb->_nfct is equal to the result of conntrack lookup. */
@@ -880,8 +877,13 @@ static void tcf_ct_params_free(struct tcf_ct_params *params)
 	}
 	if (params->ct_ft)
 		tcf_ct_flow_table_put(params->ct_ft);
-	if (params->tmpl)
+	if (params->tmpl) {
+		if (params->put_labels)
+			nf_connlabels_put(nf_ct_net(params->tmpl));
+
 		nf_ct_put(params->tmpl);
+	}
+
 	kfree(params);
 }
 
@@ -942,6 +944,8 @@ static int tcf_ct_act_nat(struct sk_buff *skb,
 		action |= BIT(NF_NAT_MANIP_DST);
 
 	err = nf_ct_nat(skb, ct, ctinfo, &action, range, commit);
+	if (err != NF_ACCEPT)
+		return err & NF_VERDICT_MASK;
 
 	if (action & BIT(NF_NAT_MANIP_SRC))
 		tc_skb_cb(skb)->post_ct_snat = 1;
@@ -973,7 +977,7 @@ TC_INDIRECT_SCOPE int tcf_ct_act(struct sk_buff *skb, const struct tc_action *a,
 
 	p = rcu_dereference_bh(c->params);
 
-	retval = READ_ONCE(c->tcf_action);
+	retval = p->action;
 	commit = p->ct_action & TCA_CT_ACT_COMMIT;
 	clear = p->ct_action & TCA_CT_ACT_CLEAR;
 	tmpl = p->tmpl;
@@ -1033,7 +1037,7 @@ TC_INDIRECT_SCOPE int tcf_ct_act(struct sk_buff *skb, const struct tc_action *a,
 		state.pf = family;
 		err = nf_conntrack_in(skb, &state);
 		if (err != NF_ACCEPT)
-			goto out_push;
+			goto nf_error;
 	}
 
 do_nat:
@@ -1045,7 +1049,7 @@ do_nat:
 
 	err = tcf_ct_act_nat(skb, ct, ctinfo, p->ct_action, &p->range, commit);
 	if (err != NF_ACCEPT)
-		goto drop;
+		goto nf_error;
 
 	if (!nf_ct_is_confirmed(ct) && commit && p->helper && !nfct_help(ct)) {
 		err = __nf_ct_try_assign_helper(ct, p->tmpl, GFP_ATOMIC);
@@ -1059,8 +1063,9 @@ do_nat:
 	}
 
 	if (nf_ct_is_confirmed(ct) ? ((!cached && !skip_add) || add_helper) : commit) {
-		if (nf_ct_helper(skb, ct, ctinfo, family) != NF_ACCEPT)
-			goto drop;
+		err = nf_ct_helper(skb, ct, ctinfo, family);
+		if (err != NF_ACCEPT)
+			goto nf_error;
 	}
 
 	if (commit) {
@@ -1073,8 +1078,9 @@ do_nat:
 		/* This will take care of sending queued events
 		 * even if the connection is already confirmed.
 		 */
-		if (nf_conntrack_confirm(skb) != NF_ACCEPT)
-			goto drop;
+		err = nf_conntrack_confirm(skb);
+		if (err != NF_ACCEPT)
+			goto nf_error;
 
 		/* The ct may be dropped if a clash has been resolved,
 		 * so it's necessary to retrieve it from skb again to
@@ -1106,6 +1112,21 @@ out_frag:
 drop:
 	tcf_action_inc_drop_qstats(&c->common);
 	return TC_ACT_SHOT;
+
+nf_error:
+	/* some verdicts store extra data in upper bits, such
+	 * as errno or queue number.
+	 */
+	switch (err & NF_VERDICT_MASK) {
+	case NF_DROP:
+		goto drop;
+	case NF_STOLEN:
+		tcf_action_inc_drop_qstats(&c->common);
+		return TC_ACT_CONSUMED;
+	default:
+		DEBUG_NET_WARN_ON_ONCE(1);
+		goto drop;
+	}
 }
 
 static const struct nla_policy ct_policy[TCA_CT_MAX + 1] = {
@@ -1162,9 +1183,8 @@ static int tcf_ct_fill_params_nat(struct tcf_ct_params *p,
 		range->min_addr.ip =
 			nla_get_in_addr(tb[TCA_CT_NAT_IPV4_MIN]);
 
-		range->max_addr.ip = max_attr ?
-				     nla_get_in_addr(max_attr) :
-				     range->min_addr.ip;
+		range->max_addr.ip =
+			nla_get_in_addr_default(max_attr, range->min_addr.ip);
 	} else if (tb[TCA_CT_NAT_IPV6_MIN]) {
 		struct nlattr *max_attr = tb[TCA_CT_NAT_IPV6_MAX];
 
@@ -1214,9 +1234,9 @@ static int tcf_ct_fill_params(struct net *net,
 			      struct nlattr **tb,
 			      struct netlink_ext_ack *extack)
 {
-	struct tc_ct_action_net *tn = net_generic(net, act_ct_ops.net_id);
 	struct nf_conntrack_zone zone;
 	int err, family, proto, len;
+	bool put_labels = false;
 	struct nf_conn *tmpl;
 	char *name;
 
@@ -1246,15 +1266,20 @@ static int tcf_ct_fill_params(struct net *net,
 	}
 
 	if (tb[TCA_CT_LABELS]) {
+		unsigned int n_bits = sizeof_field(struct tcf_ct_params, labels) * 8;
+
 		if (!IS_ENABLED(CONFIG_NF_CONNTRACK_LABELS)) {
 			NL_SET_ERR_MSG_MOD(extack, "Conntrack labels isn't enabled.");
 			return -EOPNOTSUPP;
 		}
 
-		if (!tn->labels) {
+		if (nf_connlabels_get(net, n_bits - 1)) {
 			NL_SET_ERR_MSG_MOD(extack, "Failed to set connlabel length");
 			return -EOPNOTSUPP;
+		} else {
+			put_labels = true;
 		}
+
 		tcf_ct_set_key_val(tb,
 				   p->labels, TCA_CT_LABELS,
 				   p->labels_mask, TCA_CT_LABELS_MASK,
@@ -1288,8 +1313,9 @@ static int tcf_ct_fill_params(struct net *net,
 			err = -EINVAL;
 			goto err;
 		}
-		family = tb[TCA_CT_HELPER_FAMILY] ? nla_get_u8(tb[TCA_CT_HELPER_FAMILY]) : AF_INET;
-		proto = tb[TCA_CT_HELPER_PROTO] ? nla_get_u8(tb[TCA_CT_HELPER_PROTO]) : IPPROTO_TCP;
+		family = nla_get_u8_default(tb[TCA_CT_HELPER_FAMILY], AF_INET);
+		proto = nla_get_u8_default(tb[TCA_CT_HELPER_PROTO],
+					   IPPROTO_TCP);
 		err = nf_ct_add_helper(tmpl, name, family, proto,
 				       p->ct_action & TCA_CT_ACT_NAT, &p->helper);
 		if (err) {
@@ -1298,10 +1324,15 @@ static int tcf_ct_fill_params(struct net *net,
 		}
 	}
 
+	p->put_labels = put_labels;
+
 	if (p->ct_action & TCA_CT_ACT_COMMIT)
 		__set_bit(IPS_CONFIRMED_BIT, &tmpl->status);
 	return 0;
 err:
+	if (put_labels)
+		nf_connlabels_put(net);
+
 	nf_ct_put(p->tmpl);
 	p->tmpl = NULL;
 	return err;
@@ -1351,7 +1382,7 @@ static int tcf_ct_init(struct net *net, struct nlattr *nla,
 		res = ACT_P_CREATED;
 	} else {
 		if (bind)
-			return 0;
+			return ACT_P_BOUND;
 
 		if (!(flags & TCA_ACT_FLAGS_REPLACE)) {
 			tcf_idr_release(*a, bind);
@@ -1378,6 +1409,7 @@ static int tcf_ct_init(struct net *net, struct nlattr *nla,
 	if (err)
 		goto cleanup;
 
+	params->action = parm->action;
 	spin_lock_bh(&c->tcf_lock);
 	goto_ch = tcf_action_set_ctrlact(*a, parm->action, goto_ch);
 	params = rcu_replace_pointer(c->params, params,
@@ -1411,8 +1443,8 @@ static void tcf_ct_cleanup(struct tc_action *a)
 }
 
 static int tcf_ct_dump_key_val(struct sk_buff *skb,
-			       void *val, int val_type,
-			       void *mask, int mask_type,
+			       const void *val, int val_type,
+			       const void *mask, int mask_type,
 			       int len)
 {
 	int err;
@@ -1433,9 +1465,9 @@ static int tcf_ct_dump_key_val(struct sk_buff *skb,
 	return 0;
 }
 
-static int tcf_ct_dump_nat(struct sk_buff *skb, struct tcf_ct_params *p)
+static int tcf_ct_dump_nat(struct sk_buff *skb, const struct tcf_ct_params *p)
 {
-	struct nf_nat_range2 *range = &p->range;
+	const struct nf_nat_range2 *range = &p->range;
 
 	if (!(p->ct_action & TCA_CT_ACT_NAT))
 		return 0;
@@ -1473,7 +1505,8 @@ static int tcf_ct_dump_nat(struct sk_buff *skb, struct tcf_ct_params *p)
 	return 0;
 }
 
-static int tcf_ct_dump_helper(struct sk_buff *skb, struct nf_conntrack_helper *helper)
+static int tcf_ct_dump_helper(struct sk_buff *skb,
+			      const struct nf_conntrack_helper *helper)
 {
 	if (!helper)
 		return 0;
@@ -1490,9 +1523,8 @@ static inline int tcf_ct_dump(struct sk_buff *skb, struct tc_action *a,
 			      int bind, int ref)
 {
 	unsigned char *b = skb_tail_pointer(skb);
-	struct tcf_ct *c = to_ct(a);
-	struct tcf_ct_params *p;
-
+	const struct tcf_ct *c = to_ct(a);
+	const struct tcf_ct_params *p;
 	struct tc_ct opt = {
 		.index   = c->tcf_index,
 		.refcnt  = refcount_read(&c->tcf_refcnt) - ref,
@@ -1500,10 +1532,9 @@ static inline int tcf_ct_dump(struct sk_buff *skb, struct tc_action *a,
 	};
 	struct tcf_t t;
 
-	spin_lock_bh(&c->tcf_lock);
-	p = rcu_dereference_protected(c->params,
-				      lockdep_is_held(&c->tcf_lock));
-	opt.action = c->tcf_action;
+	rcu_read_lock();
+	p = rcu_dereference(c->params);
+	opt.action = p->action;
 
 	if (tcf_ct_dump_key_val(skb,
 				&p->ct_action, TCA_CT_ACTION,
@@ -1548,11 +1579,11 @@ skip_dump:
 	tcf_tm_dump(&t, &c->tcf_tm);
 	if (nla_put_64bit(skb, TCA_CT_TM, sizeof(t), &t, TCA_CT_PAD))
 		goto nla_put_failure;
-	spin_unlock_bh(&c->tcf_lock);
+	rcu_read_unlock();
 
 	return skb->len;
 nla_put_failure:
-	spin_unlock_bh(&c->tcf_lock);
+	rcu_read_unlock();
 	nlmsg_trim(skb, b);
 	return -1;
 }
@@ -1602,35 +1633,17 @@ static struct tc_action_ops act_ct_ops = {
 	.offload_act_setup =	tcf_ct_offload_act_setup,
 	.size		=	sizeof(struct tcf_ct),
 };
+MODULE_ALIAS_NET_ACT("ct");
 
 static __net_init int ct_init_net(struct net *net)
 {
-	unsigned int n_bits = sizeof_field(struct tcf_ct_params, labels) * 8;
 	struct tc_ct_action_net *tn = net_generic(net, act_ct_ops.net_id);
-
-	if (nf_connlabels_get(net, n_bits - 1)) {
-		tn->labels = false;
-		pr_err("act_ct: Failed to set connlabels length");
-	} else {
-		tn->labels = true;
-	}
 
 	return tc_action_net_init(net, &tn->tn, &act_ct_ops);
 }
 
 static void __net_exit ct_exit_net(struct list_head *net_list)
 {
-	struct net *net;
-
-	rtnl_lock();
-	list_for_each_entry(net, net_list, exit_list) {
-		struct tc_ct_action_net *tn = net_generic(net, act_ct_ops.net_id);
-
-		if (tn->labels)
-			nf_connlabels_put(net);
-	}
-	rtnl_unlock();
-
 	tc_action_net_exit(net_list, act_ct_ops.net_id);
 }
 

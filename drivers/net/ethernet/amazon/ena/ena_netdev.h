@@ -16,6 +16,7 @@
 #include <linux/skbuff.h>
 #include <net/xdp.h>
 #include <uapi/linux/bpf.h>
+#include <net/devlink.h>
 
 #include "ena_com.h"
 #include "ena_eth_com.h"
@@ -110,6 +111,8 @@
 
 #define ENA_MMIO_DISABLE_REG_READ	BIT(0)
 
+struct ena_phc_info;
+
 struct ena_irq {
 	irq_handler_t handler;
 	void *data;
@@ -130,7 +133,13 @@ struct ena_napi {
 };
 
 struct ena_tx_buffer {
-	struct sk_buff *skb;
+	union {
+		struct sk_buff *skb;
+		/* XDP buffer structure which is used for sending packets in
+		 * the xdp queues
+		 */
+		struct xdp_frame *xdpf;
+	};
 	/* num of ena desc for this specific skb
 	 * (includes data desc and metadata desc)
 	 */
@@ -138,16 +147,14 @@ struct ena_tx_buffer {
 	/* num of buffers used by this skb */
 	u32 num_of_bufs;
 
-	/* XDP buffer structure which is used for sending packets in
-	 * the xdp queues
-	 */
-	struct xdp_frame *xdpf;
+	/* Total size of all buffers in bytes */
+	u32 total_tx_size;
 
 	/* Indicate if bufs[0] map the linear data of the skb. */
 	u8 map_linear_data;
 
 	/* Used for detect missing tx packets to limit the number of prints */
-	u32 print_once;
+	u8 print_once;
 	/* Save the last jiffies to detect missing tx packets
 	 *
 	 * sets to non zero value on ena_start_xmit and set to zero on
@@ -286,6 +293,7 @@ struct ena_stats_dev {
 	u64 admin_q_pause;
 	u64 rx_drops;
 	u64 tx_drops;
+	u64 reset_fail;
 };
 
 enum ena_flags_t {
@@ -343,6 +351,8 @@ struct ena_adapter {
 
 	char name[ENA_NAME_MAX_LEN];
 
+	struct ena_phc_info *phc_info;
+
 	unsigned long flags;
 	/* TX */
 	struct ena_ring tx_ring[ENA_MAX_NUM_IO_QUEUES]
@@ -368,6 +378,7 @@ struct ena_adapter {
 	struct u64_stats_sync syncp;
 	struct ena_stats_dev dev_stats;
 	struct ena_admin_eni_stats eni_stats;
+	struct ena_admin_ena_srd_info ena_srd_info;
 
 	/* last queue index that was checked for uncompleted tx packets */
 	u32 last_monitored_tx_qid;
@@ -377,6 +388,13 @@ struct ena_adapter {
 	struct bpf_prog *xdp_bpf_prog;
 	u32 xdp_first_ring;
 	u32 xdp_num_queues;
+
+	struct devlink *devlink;
+	struct devlink_port devlink_port;
+#ifdef CONFIG_DEBUG_FS
+
+	struct dentry *debugfs_base;
+#endif /* CONFIG_DEBUG_FS */
 };
 
 void ena_set_ethtool_ops(struct net_device *netdev);
@@ -385,7 +403,6 @@ void ena_dump_stats_to_dmesg(struct ena_adapter *adapter);
 
 void ena_dump_stats_to_buf(struct ena_adapter *adapter, u8 *buf);
 
-int ena_update_hw_stats(struct ena_adapter *adapter);
 
 int ena_update_queue_params(struct ena_adapter *adapter,
 			    u32 new_tx_size,
@@ -407,6 +424,8 @@ static inline void ena_reset_device(struct ena_adapter *adapter,
 	set_bit(ENA_FLAG_TRIGGER_RESET, &adapter->flags);
 }
 
+int ena_destroy_device(struct ena_adapter *adapter, bool graceful);
+int ena_restore_device(struct ena_adapter *adapter);
 int handle_invalid_req_id(struct ena_ring *ring, u16 req_id,
 			  struct ena_tx_buffer *tx_info, bool is_xdp);
 

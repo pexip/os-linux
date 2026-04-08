@@ -32,6 +32,7 @@
 #include "kfd_device_queue_manager.h"
 #include "kfd_pm4_headers.h"
 #include "kfd_pm4_opcodes.h"
+#include "amdgpu_reset.h"
 
 #define PM4_COUNT_ZERO (((1 << 15) - 1) << 16)
 
@@ -45,11 +46,7 @@ static bool kq_initialize(struct kernel_queue *kq, struct kfd_node *dev,
 	int retval;
 	union PM4_MES_TYPE_3_HEADER nop;
 
-	if (WARN_ON(type != KFD_QUEUE_TYPE_DIQ && type != KFD_QUEUE_TYPE_HIQ))
-		return false;
-
-	pr_debug("Initializing queue type %d size %d\n", KFD_QUEUE_TYPE_HIQ,
-			queue_size);
+	pr_debug("Initializing queue type %d size %d\n", type, queue_size);
 
 	memset(&prop, 0, sizeof(prop));
 	memset(&nop, 0, sizeof(nop));
@@ -68,6 +65,7 @@ static bool kq_initialize(struct kernel_queue *kq, struct kfd_node *dev,
 		kq->mqd_mgr = dev->dqm->mqd_mgrs[KFD_MQD_TYPE_HIQ];
 		break;
 	default:
+		WARN(1, "Invalid queue type %d\n", type);
 		dev_err(dev->adev->dev, "Invalid queue type %d\n", type);
 		return false;
 	}
@@ -197,15 +195,17 @@ err_get_kernel_doorbell:
 }
 
 /* Uninitialize a kernel queue and free all its memory usages. */
-static void kq_uninitialize(struct kernel_queue *kq, bool hanging)
+static void kq_uninitialize(struct kernel_queue *kq)
 {
-	if (kq->queue->properties.type == KFD_QUEUE_TYPE_HIQ && !hanging)
+	if (kq->queue->properties.type == KFD_QUEUE_TYPE_HIQ && down_read_trylock(&kq->dev->adev->reset_domain->sem)) {
 		kq->mqd_mgr->destroy_mqd(kq->mqd_mgr,
 					kq->queue->mqd,
 					KFD_PREEMPT_TYPE_WAVEFRONT_RESET,
 					KFD_UNMAP_LATENCY_MS,
 					kq->queue->pipe,
 					kq->queue->queue);
+		up_read(&kq->dev->adev->reset_domain->sem);
+	}
 	else if (kq->queue->properties.type == KFD_QUEUE_TYPE_DIQ)
 		kfd_gtt_sa_free(kq->dev, kq->fence_mem_obj);
 
@@ -287,7 +287,7 @@ err_no_space:
 	return -ENOMEM;
 }
 
-void kq_submit_packet(struct kernel_queue *kq)
+int kq_submit_packet(struct kernel_queue *kq)
 {
 #ifdef DEBUG
 	int i;
@@ -299,15 +299,26 @@ void kq_submit_packet(struct kernel_queue *kq)
 	}
 	pr_debug("\n");
 #endif
+	/* Fatal err detected, packet submission won't go through */
+	if (amdgpu_amdkfd_is_fed(kq->dev->adev))
+		return -EIO;
+
+	/* Make sure ring buffer is updated before wptr updated */
+	mb();
+
 	if (kq->dev->kfd->device_info.doorbell_size == 8) {
 		*kq->wptr64_kernel = kq->pending_wptr64;
+		mb(); /* Make sure wptr updated before ring doorbell */
 		write_kernel_doorbell64(kq->queue->properties.doorbell_ptr,
 					kq->pending_wptr64);
 	} else {
 		*kq->wptr_kernel = kq->pending_wptr;
+		mb(); /* Make sure wptr updated before ring doorbell */
 		write_kernel_doorbell(kq->queue->properties.doorbell_ptr,
 					kq->pending_wptr);
 	}
+
+	return 0;
 }
 
 void kq_rollback_packet(struct kernel_queue *kq)
@@ -339,9 +350,9 @@ struct kernel_queue *kernel_queue_init(struct kfd_node *dev,
 	return NULL;
 }
 
-void kernel_queue_uninit(struct kernel_queue *kq, bool hanging)
+void kernel_queue_uninit(struct kernel_queue *kq)
 {
-	kq_uninitialize(kq, hanging);
+	kq_uninitialize(kq);
 	kfree(kq);
 }
 

@@ -179,8 +179,7 @@ retry_alloc:
 	}
 
 	/* Note: deduplicating should be done in userspace. */
-	report_filterlist.addrs[report_filterlist.used++] =
-		kallsyms_lookup_name(func);
+	report_filterlist.addrs[report_filterlist.used++] = addr;
 	report_filterlist.sorted = false;
 
 	raw_spin_unlock_irqrestore(&report_filterlist_lock, flags);
@@ -223,7 +222,7 @@ debugfs_write(struct file *file, const char __user *buf, size_t count, loff_t *o
 {
 	char kbuf[KSYM_NAME_LEN];
 	char *arg;
-	int read_len = count < (sizeof(kbuf) - 1) ? count : (sizeof(kbuf) - 1);
+	const size_t read_len = min(count, sizeof(kbuf) - 1);
 
 	if (copy_from_user(kbuf, buf, read_len))
 		return -EFAULT;

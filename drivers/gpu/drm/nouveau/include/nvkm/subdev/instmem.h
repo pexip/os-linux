@@ -8,6 +8,8 @@ struct nvkm_instmem {
 	const struct nvkm_instmem_func *func;
 	struct nvkm_subdev subdev;
 
+	bool suspend;
+
 	spinlock_t lock;
 	struct list_head list;
 	struct list_head boot;
@@ -26,7 +28,7 @@ struct nvkm_instmem {
 
 u32 nvkm_instmem_rd32(struct nvkm_instmem *, u32 addr);
 void nvkm_instmem_wr32(struct nvkm_instmem *, u32 addr, u32 data);
-int nvkm_instobj_new(struct nvkm_instmem *, u32 size, u32 align, bool zero,
+int nvkm_instobj_new(struct nvkm_instmem *, u32 size, u32 align, bool zero, bool preserve,
 		     struct nvkm_memory **);
 int nvkm_instobj_wrap(struct nvkm_device *, struct nvkm_memory *, struct nvkm_memory **);
 
@@ -34,4 +36,5 @@ int nv04_instmem_new(struct nvkm_device *, enum nvkm_subdev_type, int, struct nv
 int nv40_instmem_new(struct nvkm_device *, enum nvkm_subdev_type, int, struct nvkm_instmem **);
 int nv50_instmem_new(struct nvkm_device *, enum nvkm_subdev_type, int, struct nvkm_instmem **);
 int gk20a_instmem_new(struct nvkm_device *, enum nvkm_subdev_type, int, struct nvkm_instmem **);
+int gh100_instmem_new(struct nvkm_device *, enum nvkm_subdev_type, int, struct nvkm_instmem **);
 #endif

@@ -3,12 +3,13 @@
  *
  * Copyright © 2018 Intel Corporation
  */
-#include "gt/intel_gpu_commands.h"
-#include "gt/intel_gt.h"
 
 #include "gem/i915_gem_internal.h"
 #include "gem/selftests/igt_gem_utils.h"
+#include "gt/intel_gpu_commands.h"
+#include "gt/intel_gt.h"
 
+#include "i915_wait_util.h"
 #include "igt_spinner.h"
 
 int igt_spinner_init(struct igt_spinner *spin, struct intel_gt *gt)
@@ -178,6 +179,9 @@ igt_spinner_create_request(struct igt_spinner *spin,
 	*batch++ = rq->fence.seqno;
 
 	*batch++ = arbitration_command;
+
+	memset32(batch, MI_NOOP, 128);
+	batch += 128;
 
 	if (GRAPHICS_VER(rq->i915) >= 8)
 		*batch++ = MI_BATCH_BUFFER_START | BIT(8) | 1;

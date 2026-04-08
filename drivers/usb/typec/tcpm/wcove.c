@@ -535,7 +535,7 @@ static irqreturn_t wcove_typec_irq(int irq, void *data)
 				goto err;
 			}
 
-			tcpm_pd_receive(wcove->tcpm, &msg);
+			tcpm_pd_receive(wcove->tcpm, &msg, TCPC_TX_SOP);
 
 			ret = regmap_read(wcove->regmap, USBC_RXSTATUS,
 					  &status);
@@ -687,7 +687,7 @@ static struct platform_driver wcove_typec_driver = {
 		.name		= "bxt_wcove_usbc",
 	},
 	.probe			= wcove_typec_probe,
-	.remove_new		= wcove_typec_remove,
+	.remove			= wcove_typec_remove,
 };
 
 module_platform_driver(wcove_typec_driver);

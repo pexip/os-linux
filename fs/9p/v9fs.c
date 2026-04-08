@@ -101,7 +101,7 @@ int v9fs_show_options(struct seq_file *m, struct dentry *root)
 	struct v9fs_session_info *v9ses = root->d_sb->s_fs_info;
 
 	if (v9ses->debug)
-		seq_printf(m, ",debug=%x", v9ses->debug);
+		seq_printf(m, ",debug=%#x", v9ses->debug);
 	if (!uid_eq(v9ses->dfltuid, V9FS_DEFUID))
 		seq_printf(m, ",dfltuid=%u",
 			   from_kuid_munged(&init_user_ns, v9ses->dfltuid));
@@ -117,7 +117,7 @@ int v9fs_show_options(struct seq_file *m, struct dentry *root)
 	if (v9ses->nodev)
 		seq_puts(m, ",nodevmap");
 	if (v9ses->cache)
-		seq_printf(m, ",cache=%x", v9ses->cache);
+		seq_printf(m, ",cache=%#x", v9ses->cache);
 #ifdef CONFIG_9P_FSCACHE
 	if (v9ses->cachetag && (v9ses->cache & CACHE_FSCACHE))
 		seq_printf(m, ",cachetag=%s", v9ses->cachetag);
@@ -438,8 +438,7 @@ struct p9_fid *v9fs_session_init(struct v9fs_session_info *v9ses,
 		v9ses->flags &= ~V9FS_ACCESS_MASK;
 		v9ses->flags |= V9FS_ACCESS_USER;
 	}
-	/*FIXME !! */
-	/* for legacy mode, fall back to V9FS_ACCESS_ANY */
+	/* FIXME: for legacy mode, fall back to V9FS_ACCESS_ANY */
 	if (!(v9fs_proto_dotu(v9ses) || v9fs_proto_dotl(v9ses)) &&
 		((v9ses->flags&V9FS_ACCESS_MASK) == V9FS_ACCESS_USER)) {
 
@@ -450,7 +449,7 @@ struct p9_fid *v9fs_session_init(struct v9fs_session_info *v9ses,
 	if (!v9fs_proto_dotl(v9ses) ||
 		!((v9ses->flags & V9FS_ACCESS_MASK) == V9FS_ACCESS_CLIENT)) {
 		/*
-		 * We support ACL checks on clinet only if the protocol is
+		 * We support ACL checks on client only if the protocol is
 		 * 9P2000.L and access is V9FS_ACCESS_CLIENT.
 		 */
 		v9ses->flags &= ~V9FS_ACL_MASK;
@@ -561,7 +560,7 @@ static ssize_t caches_show(struct kobject *kobj,
 	spin_lock(&v9fs_sessionlist_lock);
 	list_for_each_entry(v9ses, &v9fs_sessionlist, slist) {
 		if (v9ses->cachetag) {
-			n = snprintf(buf, limit, "%s\n", v9ses->cachetag);
+			n = snprintf(buf + count, limit, "%s\n", v9ses->cachetag);
 			if (n < 0) {
 				count = n;
 				break;
@@ -597,13 +596,16 @@ static const struct attribute_group v9fs_attr_group = {
 
 static int __init v9fs_sysfs_init(void)
 {
+	int ret;
+
 	v9fs_kobj = kobject_create_and_add("9p", fs_kobj);
 	if (!v9fs_kobj)
 		return -ENOMEM;
 
-	if (sysfs_create_group(v9fs_kobj, &v9fs_attr_group)) {
+	ret = sysfs_create_group(v9fs_kobj, &v9fs_attr_group);
+	if (ret) {
 		kobject_put(v9fs_kobj);
-		return -ENOMEM;
+		return ret;
 	}
 
 	return 0;
@@ -637,7 +639,7 @@ static int v9fs_init_inode_cache(void)
 	v9fs_inode_cache = kmem_cache_create("v9fs_inode_cache",
 					  sizeof(struct v9fs_inode),
 					  0, (SLAB_RECLAIM_ACCOUNT|
-					      SLAB_MEM_SPREAD|SLAB_ACCOUNT),
+					      SLAB_ACCOUNT),
 					  v9fs_inode_init_once);
 	if (!v9fs_inode_cache)
 		return -ENOMEM;
@@ -659,21 +661,6 @@ static void v9fs_destroy_inode_cache(void)
 	kmem_cache_destroy(v9fs_inode_cache);
 }
 
-static int v9fs_cache_register(void)
-{
-	int ret;
-
-	ret = v9fs_init_inode_cache();
-	if (ret < 0)
-		return ret;
-	return ret;
-}
-
-static void v9fs_cache_unregister(void)
-{
-	v9fs_destroy_inode_cache();
-}
-
 /**
  * init_v9fs - Initialize module
  *
@@ -684,9 +671,9 @@ static int __init init_v9fs(void)
 	int err;
 
 	pr_info("Installing v9fs 9p2000 file system support\n");
-	/* TODO: Setup list of registered trasnport modules */
+	/* TODO: Setup list of registered transport modules */
 
-	err = v9fs_cache_register();
+	err = v9fs_init_inode_cache();
 	if (err < 0) {
 		pr_err("Failed to register v9fs for caching\n");
 		return err;
@@ -709,7 +696,7 @@ out_sysfs_cleanup:
 	v9fs_sysfs_cleanup();
 
 out_cache:
-	v9fs_cache_unregister();
+	v9fs_destroy_inode_cache();
 
 	return err;
 }
@@ -722,7 +709,7 @@ out_cache:
 static void __exit exit_v9fs(void)
 {
 	v9fs_sysfs_cleanup();
-	v9fs_cache_unregister();
+	v9fs_destroy_inode_cache();
 	unregister_filesystem(&v9fs_fs_type);
 }
 
@@ -732,4 +719,5 @@ module_exit(exit_v9fs)
 MODULE_AUTHOR("Latchesar Ionkov <lucho@ionkov.net>");
 MODULE_AUTHOR("Eric Van Hensbergen <ericvh@gmail.com>");
 MODULE_AUTHOR("Ron Minnich <rminnich@lanl.gov>");
+MODULE_DESCRIPTION("9P Client File System");
 MODULE_LICENSE("GPL");

@@ -4,43 +4,47 @@ Subject: Tweak gitignore for Debian pkg-kernel using git
 Forwarded: not-needed
 
 [bwh: Tweak further for pure git]
+---
+ .gitignore | 25 +++++++------------------
+ 1 file changed, 7 insertions(+), 18 deletions(-)
 
-Index: linux/.gitignore
-===================================================================
---- linux.orig/.gitignore
-+++ linux/.gitignore
-@@ -77,11 +77,6 @@ modules.order
- /kernel.spec
+--- a/.gitignore
++++ b/.gitignore
+@@ -82,11 +82,6 @@ modules.order
  /rpmbuild/
  
--#
+ #
 -# Debian directory (make deb-pkg)
 -#
 -/debian/
 -
- #
+-#
  # Snap directory (make snap-pkg)
  #
-@@ -92,18 +87,6 @@ modules.order
- #
- /tar-install/
+ /snap/
+@@ -103,21 +98,6 @@ modules.order
+ /pacman/
  
--#
+ #
 -# We don't want to ignore the following even if they are dot-files
 -#
 -!.clang-format
+-!.clippy.toml
 -!.cocciconfig
+-!.editorconfig
 -!.get_maintainer.ignore
 -!.gitattributes
 -!.gitignore
 -!.kunitconfig
 -!.mailmap
+-!.pylintrc
 -!.rustfmt.toml
 -
- #
+-#
  # Generated include files
  #
-@@ -170,3 +153,10 @@ sphinx_*/
+ /include/config/
+@@ -183,3 +163,10 @@ sphinx_*/
  
  # Rust analyzer configuration
  /rust-project.json

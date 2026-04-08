@@ -6,18 +6,11 @@ shopt -s extglob
 # Set defaults from the running kernel
 arch="$(dpkg --print-architecture)"
 kernelabi="$(uname -r)"
-ff="${kernelabi#+([^-])-@(trunk|?(rc)+([0-9])|0.@(bpo|deb+([0-9])).+([0-9]))-}"
-if [ "x$ff" != "x$kernelabi" ]; then
-    flavour="${ff#@(openvz|rt|vserver|xen)-}"
-    if [ "x$flavour" != "x$ff" ]; then
-	featureset="${ff%-$flavour}"
-    else
-	featureset=none
-    fi
-else
-    flavour=
-    featureset=none
-fi
+ff="${kernelabi##+([^-])-?(@(trunk|?(rc)+([0-9])|0.@(bpo|deb+([0-9])).+([0-9]))-)}"
+# Until we add a new featureset just unconditionally set flavour and featureset
+# cf. https://salsa.debian.org/kernel-team/linux/-/merge_requests/1636#note_661937
+flavour="${ff}"
+featureset=none
 
 dbginfo=
 fuzz=0
@@ -34,7 +27,7 @@ while true; do
 	--) shift 1; break ;;
     esac
 done
-	    
+
 if [ $# -lt 1 ]; then
     echo >&2 "Usage: $0 [<options>] <patch>..."
     cat >&2 <<EOF
@@ -62,6 +55,14 @@ fi
 # Check build-dependencies early if possible
 if [ -f debian/control ]; then
     dpkg-checkbuilddeps -P"$profiles"
+fi
+
+# Provide defaults for DEBEMAIL and DEBFULLNAME
+if [[ -z "${DEBEMAIL}" && -z "${EMAIL}" ]]; then
+    export DEBEMAIL=test-patches@mail.invalid
+fi
+if [[ -z "${DEBFULLNAME}" && -z "${NAME}" ]]; then
+    export DEBFULLNAME=test-patches
 fi
 
 # Append 'a~test' to Debian version; this should be less than any official
@@ -97,23 +98,23 @@ mkdir $patchdir/test
 
 # Prepare a new directory for the config; override ABI name, featuresets, flavours
 rm -rf debian/config.local
-mkdir debian/config.local debian/config.local/"$arch" debian/config.local/"$arch"/"$featureset"
-cat >debian/config.local/defines <<EOF
+mkdir debian/config.local debian/config.local/"$arch"
+for other_fs in none; do
+    if [ "$other_fs" != "$featureset" ]; then
+	cat >debian/config.local/defines.toml <<EOF
+[[featureset]]
+name = '$other_fs'
+enable = false
 EOF
-cat >debian/config.local/"$arch"/defines <<EOF
-[base]
-featuresets: $featureset
+    fi
+done
+cat >debian/config.local/"$arch"/defines.toml <<EOF
+[[featureset]]
+name = '$featureset'
+
+[[featureset.flavour]]
+name = '$flavour'
 EOF
-cat >debian/config.local/"$arch"/"$featureset"/defines <<EOF
-[base]
-flavours: $flavour
-EOF
-if [ "$featureset" = none ]; then
-    # default-flavour must refer to a flavour that's enabled
-    cat >>debian/config.local/"$arch"/"$featureset"/defines <<EOF
-default-flavour: $flavour
-EOF
-fi
 
 # Regenerate control and included rules
 rm -f debian/control debian/rules.gen

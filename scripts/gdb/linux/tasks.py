@@ -13,7 +13,7 @@
 
 import gdb
 
-from linux import utils
+from linux import utils, lists
 
 
 task_type = utils.CachedType("struct task_struct")
@@ -22,19 +22,15 @@ task_type = utils.CachedType("struct task_struct")
 def task_lists():
     task_ptr_type = task_type.get_type().pointer()
     init_task = gdb.parse_and_eval("init_task").address
-    t = g = init_task
+    t = init_task
 
     while True:
-        while True:
-            yield t
+        thread_head = t['signal']['thread_head']
+        for thread in lists.list_for_each_entry(thread_head, task_ptr_type, 'thread_node'):
+            yield thread
 
-            t = utils.container_of(t['thread_group']['next'],
-                                   task_ptr_type, "thread_group")
-            if t == g:
-                break
-
-        t = g = utils.container_of(g['tasks']['next'],
-                                   task_ptr_type, "tasks")
+        t = utils.container_of(t['tasks']['next'],
+                               task_ptr_type, "tasks")
         if t == init_task:
             return
 
@@ -89,7 +85,7 @@ thread_info_type = utils.CachedType("struct thread_info")
 
 def get_thread_info(task):
     thread_info_ptr_type = thread_info_type.get_type().pointer()
-    if task.type.fields()[0].type == thread_info_type.get_type():
+    if task_type.get_type().fields()[0].type == thread_info_type.get_type():
         return task['thread_info']
     thread_info = task['stack'].cast(thread_info_ptr_type)
     return thread_info.dereference()

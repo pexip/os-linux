@@ -3,12 +3,11 @@
 
 #include <linux/acpi.h>
 #include <linux/delay.h>
-#include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
 #include <linux/i2c.h>
 #include <linux/module.h>
 #include <linux/mod_devicetable.h>
 #include <linux/of.h>
-#include <linux/of_gpio.h>
 #include <linux/pm_runtime.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
@@ -19,7 +18,7 @@
 #include <sound/tlv.h>
 #include "max98388.h"
 
-static struct reg_default max98388_reg[] = {
+static const struct reg_default max98388_reg[] = {
 	{MAX98388_R2000_SW_RESET, 0x00},
 	{MAX98388_R2001_INT_RAW1, 0x00},
 	{MAX98388_R2002_INT_RAW2, 0x00},
@@ -978,7 +977,7 @@ static int max98388_i2c_probe(struct i2c_client *i2c)
 }
 
 static const struct i2c_device_id max98388_i2c_id[] = {
-	{ "max98388", 0},
+	{ "max98388"},
 	{ },
 };
 

@@ -19,12 +19,14 @@ scriptsdir = /usr/libexec/hypervkvpd/
 
 include $(top_rulesdir)/Makefile.inc
 
-install-local-scripts: $(SCRIPTS_REAL)
+install-local: install-hvkvpd-scripts
+
+install-hvkvpd-scripts: installdir = /usr/libexec/hypervkvpd
+install-hvkvpd-scripts: hv_get_dhcp_info.sh hv_get_dns_info.sh
 	@for p in $^; do \
-	  echo " install -m755 '$$p' '$(DESTDIR)/$(scriptsdir)'"; \
+	  echo " install -D -m755 '$$p' '$(DESTDIR)/$(installdir)/$$(basename $$p .sh)'"; \
 	  install -D -m755 \
-	    -s --strip-program $(top_srcdir)/debian/bin/fix-shebang \
-	    "$$p" "$(DESTDIR)/$(scriptsdir)/$$(basename -s .sh $$p)"; \
+	    "$$p" "$(DESTDIR)/$(installdir)/$$(basename $$p .sh)"; \
 	done
 
 endif

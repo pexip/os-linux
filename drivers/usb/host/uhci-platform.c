@@ -184,10 +184,11 @@ MODULE_DEVICE_TABLE(of, platform_uhci_ids);
 
 static struct platform_driver uhci_platform_driver = {
 	.probe		= uhci_hcd_platform_probe,
-	.remove_new	= uhci_hcd_platform_remove,
+	.remove		= uhci_hcd_platform_remove,
 	.shutdown	= uhci_hcd_platform_shutdown,
 	.driver = {
 		.name = "platform-uhci",
 		.of_match_table = platform_uhci_ids,
 	},
 };
+MODULE_SOFTDEP("pre: ehci_platform");

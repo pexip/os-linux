@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: ((GPL-2.0 WITH Linux-syscall-note) OR BSD-3-Clause)
-
+---
 name: ovs_datapath
 version: 2
 protocol: genetlink-legacy
 uapi-header: linux/openvswitch.h
 
-doc:
+doc: >-
   OVS datapath configuration over generic netlink.
 
 definitions:
@@ -20,6 +20,7 @@ definitions:
     name: user-features
     type: flags
     name-prefix: ovs-dp-f-
+    enum-name:
     entries:
       -
         name: unaligned
@@ -34,8 +35,7 @@ definitions:
         name: dispatch-upcall-per-cpu
         doc: Allow per-cpu dispatch of upcalls
   -
-    name: datapath-stats
-    enum-name: ovs-dp-stats
+    name: ovs-dp-stats
     type: struct
     members:
       -
@@ -51,8 +51,7 @@ definitions:
         name: n-flows
         type: u64
   -
-    name: megaflow-stats
-    enum-name: ovs-dp-megaflow-stats
+    name: ovs-dp-megaflow-stats
     type: struct
     members:
       -
@@ -87,11 +86,11 @@ attribute-sets:
       -
         name: stats
         type: binary
-        struct: datapath-stats
+        struct: ovs-dp-stats
       -
         name: megaflow-stats
         type: binary
-        struct: megaflow-stats
+        struct: ovs-dp-megaflow-stats
       -
         name: user-features
         type: u32
@@ -142,7 +141,6 @@ operations:
       do:
         request:
           attributes:
-            - dp-ifindex
             - name
             - upcall-pid
             - user-features
@@ -154,7 +152,6 @@ operations:
       do:
         request:
           attributes:
-            - dp-ifindex
             - name
 
 mcast-groups:

@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2021 Intel Corporation
  */
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 
 #include <linux/clk.h>
 #include <linux/delay.h>
@@ -127,7 +127,6 @@ static const char * const imx412_supply_names[] = {
  * @vblank: Vertical blanking in lines
  * @cur_mode: Pointer to current selected sensor mode
  * @mutex: Mutex for serializing sensor controls
- * @streaming: Flag indicating streaming state
  */
 struct imx412 {
 	struct device *dev;
@@ -149,7 +148,6 @@ struct imx412 {
 	u32 vblank;
 	const struct imx412_mode *cur_mode;
 	struct mutex mutex;
-	bool streaming;
 };
 
 static const s64 link_freq[] = {
@@ -722,7 +720,7 @@ static int imx412_get_pad_format(struct v4l2_subdev *sd,
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 		struct v4l2_mbus_framefmt *framefmt;
 
-		framefmt = v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		framefmt = v4l2_subdev_state_get_format(sd_state, fmt->pad);
 		fmt->format = *framefmt;
 	} else {
 		imx412_fill_pad_format(imx412, imx412->cur_mode, fmt);
@@ -757,7 +755,7 @@ static int imx412_set_pad_format(struct v4l2_subdev *sd,
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 		struct v4l2_mbus_framefmt *framefmt;
 
-		framefmt = v4l2_subdev_get_try_format(sd, sd_state, fmt->pad);
+		framefmt = v4l2_subdev_state_get_format(sd_state, fmt->pad);
 		*framefmt = fmt->format;
 	} else {
 		ret = imx412_update_controls(imx412, mode);
@@ -771,14 +769,14 @@ static int imx412_set_pad_format(struct v4l2_subdev *sd,
 }
 
 /**
- * imx412_init_pad_cfg() - Initialize sub-device pad configuration
+ * imx412_init_state() - Initialize sub-device state
  * @sd: pointer to imx412 V4L2 sub-device structure
  * @sd_state: V4L2 sub-device configuration
  *
  * Return: 0 if successful, error code otherwise.
  */
-static int imx412_init_pad_cfg(struct v4l2_subdev *sd,
-			       struct v4l2_subdev_state *sd_state)
+static int imx412_init_state(struct v4l2_subdev *sd,
+			     struct v4l2_subdev_state *sd_state)
 {
 	struct imx412 *imx412 = to_imx412(sd);
 	struct v4l2_subdev_format fmt = { 0 };
@@ -856,11 +854,6 @@ static int imx412_set_stream(struct v4l2_subdev *sd, int enable)
 
 	mutex_lock(&imx412->mutex);
 
-	if (imx412->streaming == enable) {
-		mutex_unlock(&imx412->mutex);
-		return 0;
-	}
-
 	if (enable) {
 		ret = pm_runtime_resume_and_get(imx412->dev);
 		if (ret)
@@ -873,8 +866,6 @@ static int imx412_set_stream(struct v4l2_subdev *sd, int enable)
 		imx412_stop_streaming(imx412);
 		pm_runtime_put(imx412->dev);
 	}
-
-	imx412->streaming = enable;
 
 	mutex_unlock(&imx412->mutex);
 
@@ -942,11 +933,10 @@ static int imx412_parse_hw_config(struct imx412 *imx412)
 	}
 
 	/* Get sensor input clock */
-	imx412->inclk = devm_clk_get(imx412->dev, NULL);
-	if (IS_ERR(imx412->inclk)) {
-		dev_err(imx412->dev, "could not get inclk\n");
-		return PTR_ERR(imx412->inclk);
-	}
+	imx412->inclk = devm_v4l2_sensor_clk_get(imx412->dev, NULL);
+	if (IS_ERR(imx412->inclk))
+		return dev_err_probe(imx412->dev, PTR_ERR(imx412->inclk),
+				     "could not get inclk\n");
 
 	rate = clk_get_rate(imx412->inclk);
 	if (rate != IMX412_INCLK_RATE) {
@@ -1005,7 +995,6 @@ static const struct v4l2_subdev_video_ops imx412_video_ops = {
 };
 
 static const struct v4l2_subdev_pad_ops imx412_pad_ops = {
-	.init_cfg = imx412_init_pad_cfg,
 	.enum_mbus_code = imx412_enum_mbus_code,
 	.enum_frame_size = imx412_enum_frame_size,
 	.get_fmt = imx412_get_pad_format,
@@ -1015,6 +1004,10 @@ static const struct v4l2_subdev_pad_ops imx412_pad_ops = {
 static const struct v4l2_subdev_ops imx412_subdev_ops = {
 	.video = &imx412_video_ops,
 	.pad = &imx412_pad_ops,
+};
+
+static const struct v4l2_subdev_internal_ops imx412_internal_ops = {
+	.init_state = imx412_init_state,
 };
 
 /**
@@ -1185,6 +1178,7 @@ static int imx412_probe(struct i2c_client *client)
 
 	/* Initialize subdev */
 	v4l2_i2c_subdev_init(&imx412->sd, client, &imx412_subdev_ops);
+	imx412->sd.internal_ops = &imx412_internal_ops;
 
 	ret = imx412_parse_hw_config(imx412);
 	if (ret) {

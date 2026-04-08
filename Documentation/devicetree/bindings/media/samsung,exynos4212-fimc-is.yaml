@@ -75,13 +75,20 @@ properties:
   power-domains:
     maxItems: 1
 
+  samsung,pmu-syscon:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description:
+      Power Management Unit (PMU) system controller interface, used to
+      power/start the ISP.
+
 patternProperties:
   "^pmu@[0-9a-f]+$":
     type: object
     additionalProperties: false
+    deprecated: true
     description:
       Node representing the SoC's Power Management Unit (duplicated with the
-      correct PMU node in the SoC).
+      correct PMU node in the SoC). Deprecated, use samsung,pmu-syscon.
 
     properties:
       reg:
@@ -131,6 +138,7 @@ required:
   - clock-names
   - interrupts
   - ranges
+  - samsung,pmu-syscon
   - '#size-cells'
 
 additionalProperties: false
@@ -179,14 +187,11 @@ examples:
                  <&sysmmu_fimc_fd>, <&sysmmu_fimc_mcuctl>;
         iommu-names = "isp", "drc", "fd", "mcuctl";
         power-domains = <&pd_isp>;
+        samsung,pmu-syscon = <&pmu_system_controller>;
 
         #address-cells = <1>;
         #size-cells = <1>;
         ranges;
-
-        pmu@10020000 {
-            reg = <0x10020000 0x3000>;
-        };
 
         i2c-isp@12140000 {
             compatible = "samsung,exynos4212-i2c-isp";
@@ -204,9 +209,10 @@ examples:
                 svdda-supply = <&cam_io_reg>;
                 svddio-supply = <&ldo19_reg>;
                 afvdd-supply = <&ldo19_reg>;
-                clock-frequency = <24000000>;
                 clocks = <&camera 1>;
                 clock-names = "extclk";
+                assigned-clocks = <&camera 1>;
+                assigned-clock-rates = <24000000>;
                 gpios = <&gpm1 6 GPIO_ACTIVE_LOW>;
 
                 port {

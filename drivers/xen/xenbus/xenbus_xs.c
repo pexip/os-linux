@@ -441,12 +441,12 @@ char **xenbus_directory(struct xenbus_transaction t,
 
 	path = join(dir, node);
 	if (IS_ERR(path))
-		return (char **)path;
+		return ERR_CAST(path);
 
 	strings = xs_single(t, XS_DIRECTORY, path, &len);
 	kfree(path);
 	if (IS_ERR(strings))
-		return (char **)strings;
+		return ERR_CAST(strings);
 
 	return split(strings, len, num);
 }
@@ -479,7 +479,7 @@ void *xenbus_read(struct xenbus_transaction t,
 
 	path = join(dir, node);
 	if (IS_ERR(path))
-		return (void *)path;
+		return ERR_CAST(path);
 
 	ret = xs_single(t, XS_READ, path, len);
 	kfree(path);
@@ -511,23 +511,6 @@ int xenbus_write(struct xenbus_transaction t,
 	return ret;
 }
 EXPORT_SYMBOL_GPL(xenbus_write);
-
-/* Create a new directory. */
-int xenbus_mkdir(struct xenbus_transaction t,
-		 const char *dir, const char *node)
-{
-	char *path;
-	int ret;
-
-	path = join(dir, node);
-	if (IS_ERR(path))
-		return PTR_ERR(path);
-
-	ret = xs_error(xs_single(t, XS_MKDIR, path, NULL));
-	kfree(path);
-	return ret;
-}
-EXPORT_SYMBOL_GPL(xenbus_mkdir);
 
 /* Destroy a file or directory (directories must be empty). */
 int xenbus_rm(struct xenbus_transaction t, const char *dir, const char *node)
@@ -735,34 +718,11 @@ int xs_watch_msg(struct xs_watch_event *event)
 	return 0;
 }
 
-/*
- * Certain older XenBus toolstack cannot handle reading values that are
- * not populated. Some Xen 3.4 installation are incapable of doing this
- * so if we are running on anything older than 4 do not attempt to read
- * control/platform-feature-xs_reset_watches.
- */
-static bool xen_strict_xenbus_quirk(void)
-{
-#ifdef CONFIG_X86
-	uint32_t eax, ebx, ecx, edx, base;
-
-	base = xen_cpuid_base();
-	cpuid(base + 1, &eax, &ebx, &ecx, &edx);
-
-	if ((eax >> 16) < 4)
-		return true;
-#endif
-	return false;
-
-}
 static void xs_reset_watches(void)
 {
 	int err;
 
 	if (!xen_hvm_domain() || xen_initial_domain())
-		return;
-
-	if (xen_strict_xenbus_quirk())
 		return;
 
 	if (!xenbus_read_unsigned("control",

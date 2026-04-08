@@ -150,10 +150,9 @@ static int timeriomem_rng_probe(struct platform_device *pdev)
 		priv->rng_ops.quality = pdata->quality;
 	}
 
-	priv->period = ns_to_ktime(period * NSEC_PER_USEC);
+	priv->period = us_to_ktime(period);
 	init_completion(&priv->completion);
-	hrtimer_init(&priv->timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
-	priv->timer.function = timeriomem_rng_trigger;
+	hrtimer_setup(&priv->timer, timeriomem_rng_trigger, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
 
 	priv->rng_ops.name = dev_name(&pdev->dev);
 	priv->rng_ops.read = timeriomem_rng_read;
@@ -174,13 +173,11 @@ static int timeriomem_rng_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int timeriomem_rng_remove(struct platform_device *pdev)
+static void timeriomem_rng_remove(struct platform_device *pdev)
 {
 	struct timeriomem_rng_private *priv = platform_get_drvdata(pdev);
 
 	hrtimer_cancel(&priv->timer);
-
-	return 0;
 }
 
 static const struct of_device_id timeriomem_rng_match[] = {

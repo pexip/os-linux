@@ -18,6 +18,7 @@ struct snd_ump_group {
 	unsigned int dir_bits;		/* directions */
 	bool active;			/* activeness */
 	bool valid;			/* valid group (referred by blocks) */
+	bool is_midi1;			/* belongs to a MIDI1 FB */
 	char name[64];			/* group name */
 };
 
@@ -82,6 +83,7 @@ struct snd_ump_ops {
 struct snd_seq_ump_ops {
 	void (*input_receive)(struct snd_ump_endpoint *ump,
 			      const u32 *data, int words);
+	int (*notify_ep_change)(struct snd_ump_endpoint *ump);
 	int (*notify_fb_change)(struct snd_ump_endpoint *ump,
 				struct snd_ump_block *fb);
 	int (*switch_protocol)(struct snd_ump_endpoint *ump);

@@ -25,7 +25,7 @@
 #include <linux/ima.h>
 
 #define DM_MSG_PREFIX "ioctl"
-#define DM_DRIVER_EMAIL "dm-devel@redhat.com"
+#define DM_DRIVER_EMAIL "dm-devel@lists.linux.dev"
 
 struct dm_file {
 	/*
@@ -1313,8 +1313,8 @@ static void retrieve_status(struct dm_table *table,
 		spec->status = 0;
 		spec->sector_start = ti->begin;
 		spec->length = ti->len;
-		strncpy(spec->target_type, ti->type->name,
-			sizeof(spec->target_type) - 1);
+		strscpy_pad(spec->target_type, ti->type->name,
+			sizeof(spec->target_type));
 
 		outptr += sizeof(struct dm_target_spec);
 		remaining = len - (outptr - outbuf);
@@ -1885,6 +1885,7 @@ static ioctl_fn lookup_ioctl(unsigned int cmd, int *ioctl_flags)
 		{DM_DEV_SET_GEOMETRY_CMD, 0, dev_set_geometry},
 		{DM_DEV_ARM_POLL_CMD, IOCTL_FLAGS_NO_PARAMS, dev_arm_poll},
 		{DM_GET_TARGET_VERSION_CMD, 0, get_target_version},
+		{DM_MPATH_PROBE_PATHS_CMD, 0, NULL}, /* block device ioctl */
 	};
 
 	if (unlikely(cmd >= ARRAY_SIZE(_ioctls)))
@@ -1912,7 +1913,7 @@ static int check_version(unsigned int cmd, struct dm_ioctl __user *user,
 
 	if ((kernel_params->version[0] != DM_VERSION_MAJOR) ||
 	    (kernel_params->version[1] > DM_VERSION_MINOR)) {
-		DMERR("ioctl interface mismatch: kernel(%u.%u.%u), user(%u.%u.%u), cmd(%d)",
+		DMERR_LIMIT("ioctl interface mismatch: kernel(%u.%u.%u), user(%u.%u.%u), cmd(%d)",
 		      DM_VERSION_MAJOR, DM_VERSION_MINOR,
 		      DM_VERSION_PATCHLEVEL,
 		      kernel_params->version[0],
@@ -1961,7 +1962,7 @@ static int copy_params(struct dm_ioctl __user *user, struct dm_ioctl *param_kern
 
 	if (unlikely(param_kernel->data_size < minimum_data_size) ||
 	    unlikely(param_kernel->data_size > DM_MAX_TARGETS * DM_MAX_TARGET_PARAMS)) {
-		DMERR("Invalid data size in the ioctl structure: %u",
+		DMERR_LIMIT("Invalid data size in the ioctl structure: %u",
 		      param_kernel->data_size);
 		return -EINVAL;
 	}

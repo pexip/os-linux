@@ -304,6 +304,9 @@ static inline bool ntfs_dir_emit(struct ntfs_sb_info *sbi,
 	if (sbi->options->nohidden && (fname->dup.fa & FILE_ATTRIBUTE_HIDDEN))
 		return true;
 
+	if (fname->name_len + sizeof(struct NTFS_DE) > le16_to_cpu(e->size))
+		return true;
+
 	name_len = ntfs_utf16_to_nls(sbi, fname->name, fname->name_len, name,
 				     PATH_MAX);
 	if (name_len <= 0) {
@@ -329,8 +332,7 @@ static inline bool ntfs_dir_emit(struct ntfs_sb_info *sbi,
 	 * It does additional locks/reads just to get the type of name.
 	 * Should we use additional mount option to enable branch below?
 	 */
-	if (((fname->dup.fa & FILE_ATTRIBUTE_REPARSE_POINT) ||
-	     fname->dup.ea_size) &&
+	if (fname->dup.extend_data &&
 	    ino != ni->mi.rno) {
 		struct inode *inode = ntfs_iget5(sbi->sb, &e->ref, NULL);
 		if (!IS_ERR_OR_NULL(inode)) {
@@ -512,7 +514,7 @@ out:
 		ctx->pos = pos;
 	} else if (err < 0) {
 		if (err == -EINVAL)
-			ntfs_inode_err(dir, "directory corrupted");
+			_ntfs_bad_inode(dir);
 		ctx->pos = eod;
 	}
 
@@ -550,8 +552,10 @@ static int ntfs_dir_count(struct inode *dir, bool *is_empty, size_t *dirs,
 			e = Add2Ptr(hdr, off);
 			e_size = le16_to_cpu(e->size);
 			if (e_size < sizeof(struct NTFS_DE) ||
-			    off + e_size > end)
+			    off + e_size > end) {
+				/* Looks like corruption. */
 				break;
+			}
 
 			if (de_is_last(e))
 				break;
@@ -623,5 +627,18 @@ const struct file_operations ntfs_dir_operations = {
 	.iterate_shared	= ntfs_readdir,
 	.fsync		= generic_file_fsync,
 	.open		= ntfs_file_open,
+	.unlocked_ioctl = ntfs_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl   = ntfs_compat_ioctl,
+#endif
 };
+
+#if IS_ENABLED(CONFIG_NTFS_FS)
+const struct file_operations ntfs_legacy_dir_operations = {
+	.llseek		= generic_file_llseek,
+	.read		= generic_read_dir,
+	.iterate_shared	= ntfs_readdir,
+	.open		= ntfs_file_open,
+};
+#endif
 // clang-format on

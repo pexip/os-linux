@@ -139,6 +139,8 @@ int main(int argc, char **argv)
 			break;
 		case 'n':
 			nr_pages = atoi(optarg);
+			if (nr_pages < 0)
+				nr_pages = size / psize();
 			break;
 		case 't':
 			thp = 1;
@@ -229,7 +231,7 @@ int main(int argc, char **argv)
 			break;
 		}
 		ksft_test_result_skip("Please run this test as root\n");
-		return ksft_exit_pass();
+		ksft_exit_pass();
 	}
 
 	p = mmap(NULL, size, PROT_READ | PROT_WRITE, flags, filed, 0);
@@ -268,5 +270,5 @@ int main(int argc, char **argv)
 
 	free(tid);
 
-	return ksft_exit_pass();
+	ksft_exit_pass();
 }

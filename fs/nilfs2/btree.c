@@ -334,7 +334,7 @@ static int nilfs_btree_node_lookup(const struct nilfs_btree_node *node,
  * @inode: host inode of btree
  * @blocknr: block number
  *
- * Return Value: If node is broken, 1 is returned. Otherwise, 0 is returned.
+ * Return: 0 if normal, 1 if the node is broken.
  */
 static int nilfs_btree_node_broken(const struct nilfs_btree_node *node,
 				   size_t size, struct inode *inode,
@@ -366,7 +366,7 @@ static int nilfs_btree_node_broken(const struct nilfs_btree_node *node,
  * @node: btree root node to be examined
  * @inode: host inode of btree
  *
- * Return Value: If node is broken, 1 is returned. Otherwise, 0 is returned.
+ * Return: 0 if normal, 1 if the root node is broken.
  */
 static int nilfs_btree_root_broken(const struct nilfs_btree_node *node,
 				   struct inode *inode)
@@ -652,8 +652,7 @@ static int nilfs_btree_do_lookup_last(const struct nilfs_bmap *btree,
  * @minlevel: start level
  * @nextkey: place to store the next valid key
  *
- * Return Value: If a next key was found, 0 is returned. Otherwise,
- * -ENOENT is returned.
+ * Return: 0 if the next key was found, %-ENOENT if not found.
  */
 static int nilfs_btree_get_next_key(const struct nilfs_bmap *btree,
 				    const struct nilfs_btree_path *path,
@@ -1861,13 +1860,22 @@ nilfs_btree_commit_convert_and_insert(struct nilfs_bmap *btree,
 }
 
 /**
- * nilfs_btree_convert_and_insert -
- * @bmap:
- * @key:
- * @ptr:
- * @keys:
- * @ptrs:
- * @n:
+ * nilfs_btree_convert_and_insert - Convert and insert entries into a B-tree
+ * @btree: NILFS B-tree structure
+ * @key: Key of the new entry to be inserted
+ * @ptr: Pointer (block number) associated with the key to be inserted
+ * @keys: Array of keys to be inserted in addition to @key
+ * @ptrs: Array of pointers associated with @keys
+ * @n: Number of keys and pointers in @keys and @ptrs
+ *
+ * This function is used to insert a new entry specified by @key and @ptr,
+ * along with additional entries specified by @keys and @ptrs arrays, into a
+ * NILFS B-tree.
+ * It prepares the necessary changes by allocating the required blocks and any
+ * necessary intermediate nodes. It converts configurations from other forms of
+ * block mapping (the one that currently exists is direct mapping) to a B-tree.
+ *
+ * Return: 0 on success or a negative error code on failure.
  */
 int nilfs_btree_convert_and_insert(struct nilfs_bmap *btree,
 				   __u64 key, __u64 ptr,

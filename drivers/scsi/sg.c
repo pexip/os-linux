@@ -731,6 +731,8 @@ sg_new_write(Sg_fd *sfp, struct file *file, const char __user *buf,
 		sg_remove_request(sfp, srp);
 		return -EFAULT;
 	}
+	hp->duration = jiffies_to_msecs(jiffies);
+
 	if (hp->interface_id != 'S') {
 		sg_remove_request(sfp, srp);
 		return -ENOSYS;
@@ -815,7 +817,6 @@ sg_common_write(Sg_fd * sfp, Sg_request * srp,
 		return -ENODEV;
 	}
 
-	hp->duration = jiffies_to_msecs(jiffies);
 	if (hp->interface_id != '\0' &&	/* v3 (or later) interface */
 	    (SG_FLAG_Q_AT_TAIL & hp->flags))
 		at_head = 0;
@@ -1235,8 +1236,7 @@ sg_vma_fault(struct vm_fault *vmf)
 		len = vma->vm_end - sa;
 		len = (len < length) ? len : length;
 		if (offset < len) {
-			struct page *page = nth_page(rsv_schp->pages[k],
-						     offset >> PAGE_SHIFT);
+			struct page *page = rsv_schp->pages[k] + (offset >> PAGE_SHIFT);
 			get_page(page);	/* increment page count */
 			vmf->page = page;
 			return 0; /* success */
@@ -1339,9 +1339,6 @@ sg_rq_end_io(struct request *rq, blk_status_t status)
 				      "sg_cmd_done: pack_id=%d, res=0x%x\n",
 				      srp->header.pack_id, result));
 	srp->header.resid = resid;
-	ms = jiffies_to_msecs(jiffies);
-	srp->header.duration = (ms > srp->header.duration) ?
-				(ms - srp->header.duration) : 0;
 	if (0 != result) {
 		struct scsi_sense_hdr sshdr;
 
@@ -1390,6 +1387,9 @@ sg_rq_end_io(struct request *rq, blk_status_t status)
 			done = 0;
 	}
 	srp->done = done;
+	ms = jiffies_to_msecs(jiffies);
+	srp->header.duration = (ms > srp->header.duration) ?
+				(ms - srp->header.duration) : 0;
 	write_unlock_irqrestore(&sfp->rq_list_lock, iflags);
 
 	if (likely(done)) {
@@ -1417,10 +1417,11 @@ static const struct file_operations sg_fops = {
 	.mmap = sg_mmap,
 	.release = sg_release,
 	.fasync = sg_fasync,
-	.llseek = no_llseek,
 };
 
-static struct class *sg_sysfs_class;
+static const struct class sg_sysfs_class = {
+	.name = "scsi_generic"
+};
 
 static int sg_sysfs_valid = 0;
 
@@ -1522,7 +1523,7 @@ sg_add_device(struct device *cl_dev)
 	if (sg_sysfs_valid) {
 		struct device *sg_class_member;
 
-		sg_class_member = device_create(sg_sysfs_class, cl_dev->parent,
+		sg_class_member = device_create(&sg_sysfs_class, cl_dev->parent,
 						MKDEV(SCSI_GENERIC_MAJOR,
 						      sdp->index),
 						sdp, "%s", sdp->name);
@@ -1612,7 +1613,7 @@ sg_remove_device(struct device *cl_dev)
 	read_unlock_irqrestore(&sdp->sfd_lock, iflags);
 
 	sysfs_remove_link(&scsidp->sdev_gendev.kobj, "generic");
-	device_destroy(sg_sysfs_class, MKDEV(SCSI_GENERIC_MAJOR, sdp->index));
+	device_destroy(&sg_sysfs_class, MKDEV(SCSI_GENERIC_MAJOR, sdp->index));
 	cdev_del(sdp->cdev);
 	sdp->cdev = NULL;
 
@@ -1638,7 +1639,7 @@ MODULE_PARM_DESC(allow_dio, "allow direct I/O (default: 0 (disallow))");
 #ifdef CONFIG_SYSCTL
 #include <linux/sysctl.h>
 
-static struct ctl_table sg_sysctls[] = {
+static const struct ctl_table sg_sysctls[] = {
 	{
 		.procname	= "sg-big-buff",
 		.data		= &sg_big_buff,
@@ -1646,7 +1647,6 @@ static struct ctl_table sg_sysctls[] = {
 		.mode		= 0444,
 		.proc_handler	= proc_dointvec,
 	},
-	{}
 };
 
 static struct ctl_table_header *hdr;
@@ -1658,8 +1658,7 @@ static void register_sg_sysctls(void)
 
 static void unregister_sg_sysctls(void)
 {
-	if (hdr)
-		unregister_sysctl_table(hdr);
+	unregister_sysctl_table(hdr);
 }
 #else
 #define register_sg_sysctls() do { } while (0)
@@ -1684,11 +1683,9 @@ init_sg(void)
 				    SG_MAX_DEVS, "sg");
 	if (rc)
 		return rc;
-        sg_sysfs_class = class_create("scsi_generic");
-        if ( IS_ERR(sg_sysfs_class) ) {
-		rc = PTR_ERR(sg_sysfs_class);
+	rc = class_register(&sg_sysfs_class);
+	if (rc)
 		goto err_out;
-        }
 	sg_sysfs_valid = 1;
 	rc = scsi_register_interface(&sg_interface);
 	if (0 == rc) {
@@ -1697,7 +1694,7 @@ init_sg(void)
 #endif				/* CONFIG_SCSI_PROC_FS */
 		return 0;
 	}
-	class_destroy(sg_sysfs_class);
+	class_unregister(&sg_sysfs_class);
 	register_sg_sysctls();
 err_out:
 	unregister_chrdev_region(MKDEV(SCSI_GENERIC_MAJOR, 0), SG_MAX_DEVS);
@@ -1712,7 +1709,7 @@ exit_sg(void)
 	remove_proc_subtree("scsi/sg", NULL);
 #endif				/* CONFIG_SCSI_PROC_FS */
 	scsi_unregister_interface(&sg_interface);
-	class_destroy(sg_sysfs_class);
+	class_unregister(&sg_sysfs_class);
 	sg_sysfs_valid = 0;
 	unregister_chrdev_region(MKDEV(SCSI_GENERIC_MAJOR, 0),
 				 SG_MAX_DEVS);
@@ -2212,9 +2209,17 @@ sg_remove_sfp_usercontext(struct work_struct *work)
 	write_lock_irqsave(&sfp->rq_list_lock, iflags);
 	while (!list_empty(&sfp->rq_list)) {
 		srp = list_first_entry(&sfp->rq_list, Sg_request, entry);
-		sg_finish_rem_req(srp);
 		list_del(&srp->entry);
+		write_unlock_irqrestore(&sfp->rq_list_lock, iflags);
+
+		sg_finish_rem_req(srp);
+		/*
+		 * sg_rq_end_io() uses srp->parentfp. Hence, only clear
+		 * srp->parentfp after blk_mq_free_request() has been called.
+		 */
 		srp->parentfp = NULL;
+
+		write_lock_irqsave(&sfp->rq_list_lock, iflags);
 	}
 	write_unlock_irqrestore(&sfp->rq_list_lock, iflags);
 
@@ -2529,6 +2534,7 @@ static void sg_proc_debug_helper(struct seq_file *s, Sg_device * sdp)
 	const sg_io_hdr_t *hp;
 	const char * cp;
 	unsigned int ms;
+	unsigned int duration;
 
 	k = 0;
 	list_for_each_entry(fp, &sdp->sfds, sfd_siblings) {
@@ -2566,13 +2572,17 @@ static void sg_proc_debug_helper(struct seq_file *s, Sg_device * sdp)
 			seq_printf(s, " id=%d blen=%d",
 				   srp->header.pack_id, blen);
 			if (srp->done)
-				seq_printf(s, " dur=%d", hp->duration);
+				seq_printf(s, " dur=%u", hp->duration);
 			else {
 				ms = jiffies_to_msecs(jiffies);
-				seq_printf(s, " t_o/elap=%d/%d",
+				duration = READ_ONCE(hp->duration);
+				if (duration)
+					duration = (ms > duration ?
+						    ms - duration : 0);
+				seq_printf(s, " t_o/elap=%u/%u",
 					(new_interface ? hp->timeout :
 						  jiffies_to_msecs(fp->timeout)),
-					(ms > hp->duration ? ms - hp->duration : 0));
+					duration);
 			}
 			seq_printf(s, "ms sgat=%d op=0x%02x\n", usg,
 				   (int) srp->data.cmd_opcode);

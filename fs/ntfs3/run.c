@@ -9,6 +9,7 @@
 #include <linux/blkdev.h>
 #include <linux/fs.h>
 #include <linux/log2.h>
+#include <linux/overflow.h>
 
 #include "debug.h"
 #include "ntfs.h"
@@ -959,7 +960,7 @@ int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		 * Large positive number requires to store 5 bytes
 		 * e.g.: 05 FF 7E FF FF 00 00 00
 		 */
-		if (size_size > 8)
+		if (size_size > sizeof(len))
 			return -EINVAL;
 
 		len = run_unpack_s64(run_buf, size_size, 0);
@@ -971,7 +972,7 @@ int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 
 		if (!offset_size)
 			lcn = SPARSE_LCN64;
-		else if (offset_size <= 8) {
+		else if (offset_size <= sizeof(s64)) {
 			s64 dlcn;
 
 			/* Initial value of dlcn is -1 or 0. */
@@ -982,12 +983,22 @@ int run_unpack(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 
 			if (!dlcn)
 				return -EINVAL;
-			lcn = prev_lcn + dlcn;
+
+			/* Check special combination: 0 + SPARSE_LCN64. */
+			if (!prev_lcn && dlcn == SPARSE_LCN64) {
+				lcn = SPARSE_LCN64;
+			} else if (check_add_overflow(prev_lcn, dlcn, &lcn)) {
+				return -EINVAL;
+			}
 			prev_lcn = lcn;
-		} else
+		} else {
+			/* The size of 'dlcn' can't be > 8. */
+			return -EINVAL;
+		}
+
+		if (check_add_overflow(vcn64, len, &next_vcn))
 			return -EINVAL;
 
-		next_vcn = vcn64 + len;
 		/* Check boundary. */
 		if (next_vcn > evcn + 1)
 			return -EINVAL;
@@ -1110,9 +1121,9 @@ int run_unpack_ex(struct runs_tree *run, struct ntfs_sb_info *sbi, CLST ino,
 		err = wnd_set_used_safe(wnd, lcn, len, &done);
 		if (zone) {
 			/* Restore zone. Lock mft run. */
-			struct rw_semaphore *lock;
-			lock = is_mounted(sbi) ? &sbi->mft.ni->file.run_lock :
-						 NULL;
+			struct rw_semaphore *lock =
+				is_mounted(sbi) ? &sbi->mft.ni->file.run_lock :
+						  NULL;
 			if (lock)
 				down_read(lock);
 			ntfs_refresh_zone(sbi);
@@ -1151,7 +1162,8 @@ int run_get_highest_vcn(CLST vcn, const u8 *run_buf, u64 *highest_vcn)
 			return -EINVAL;
 
 		run_buf += size_size + offset_size;
-		vcn64 += len;
+		if (check_add_overflow(vcn64, len, &vcn64))
+			return -EINVAL;
 
 #ifndef CONFIG_NTFS3_64BIT_CLUSTER
 		if (vcn64 > 0x100000000ull)

@@ -427,7 +427,7 @@ static struct scx200_acb_iface *scx200_create_iface(const char *text,
 	snprintf(adapter->name, sizeof(adapter->name), "%s ACB%d", text, index);
 	adapter->owner = THIS_MODULE;
 	adapter->algo = &scx200_acb_algorithm;
-	adapter->class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
+	adapter->class = I2C_CLASS_HWMON;
 	adapter->dev.parent = dev;
 
 	mutex_init(&iface->mutex);
@@ -500,10 +500,8 @@ static int scx200_probe(struct platform_device *pdev)
 	struct resource *res;
 
 	res = platform_get_resource(pdev, IORESOURCE_IO, 0);
-	if (!res) {
-		dev_err(&pdev->dev, "can't fetch device resource info\n");
-		return -ENODEV;
-	}
+	if (!res)
+		return dev_err_probe(&pdev->dev, -ENODEV, "can't fetch device resource info\n");
 
 	iface = scx200_create_dev("CS5535", res->start, 0, &pdev->dev);
 	if (!iface)
@@ -536,7 +534,7 @@ static struct platform_driver scx200_pci_driver = {
 		.name = "cs5535-smb",
 	},
 	.probe = scx200_probe,
-	.remove_new = scx200_remove,
+	.remove = scx200_remove,
 };
 
 static const struct pci_device_id scx200_isa[] = {

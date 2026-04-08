@@ -5,7 +5,16 @@
  */
 #include <dt-bindings/pinctrl/stm32-pinfunc.h>
 
+&hdp {
+	/omit-if-no-ref/
+	hdp2_gpo: hdp2-pins {
+		function = "gpoval2";
+		pins = "HDP2";
+	};
+};
+
 &pinctrl {
+	/omit-if-no-ref/
 	adc1_ain_pins_a: adc1-ain-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 11, ANALOG)>, /* ADC1_INP2 */
@@ -17,12 +26,21 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	adc1_in6_pins_a: adc1-in6-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 12, ANALOG)>;
 		};
 	};
 
+	/omit-if-no-ref/
+	adc1_in10_pins_a: adc1-in10-0 {
+		pins {
+			pinmux = <STM32_PINMUX('C', 0, ANALOG)>;
+		};
+	};
+
+	/omit-if-no-ref/
 	adc12_ain_pins_a: adc12-ain-0 {
 		pins {
 			pinmux = <STM32_PINMUX('C', 3, ANALOG)>, /* ADC1 in13 */
@@ -32,6 +50,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	adc12_ain_pins_b: adc12-ain-1 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 12, ANALOG)>, /* ADC1 in6 */
@@ -39,6 +58,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	adc12_usb_cc_pins_a: adc12-usb-cc-pins-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 4, ANALOG)>, /* ADC12 in18 */
@@ -46,6 +66,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	cec_pins_a: cec-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 15, AF4)>;
@@ -55,12 +76,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	cec_sleep_pins_a: cec-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 15, ANALOG)>; /* HDMI_CEC */
 		};
 	};
 
+	/omit-if-no-ref/
 	cec_pins_b: cec-1 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 6, AF5)>;
@@ -70,24 +93,28 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	cec_sleep_pins_b: cec-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 6, ANALOG)>; /* HDMI_CEC */
 		};
 	};
 
+	/omit-if-no-ref/
 	dac_ch1_pins_a: dac-ch1-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 4, ANALOG)>;
 		};
 	};
 
+	/omit-if-no-ref/
 	dac_ch2_pins_a: dac-ch2-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 5, ANALOG)>;
 		};
 	};
 
+	/omit-if-no-ref/
 	dcmi_pins_a: dcmi-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 8,  AF13)>,/* DCMI_HSYNC */
@@ -109,6 +136,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	dcmi_sleep_pins_a: dcmi-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 8,  ANALOG)>,/* DCMI_HSYNC */
@@ -129,6 +157,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	dcmi_pins_b: dcmi-1 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 4,  AF13)>,/* DCMI_HSYNC */
@@ -146,6 +175,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	dcmi_sleep_pins_b: dcmi-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 4,  ANALOG)>,/* DCMI_HSYNC */
@@ -162,6 +192,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	dcmi_pins_c: dcmi-2 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 4,  AF13)>,/* DCMI_HSYNC */
@@ -181,6 +212,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	dcmi_sleep_pins_c: dcmi-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 4,  ANALOG)>,/* DCMI_HSYNC */
@@ -199,6 +231,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_pins_a: rgmii-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 5, AF11)>, /* ETH_RGMII_CLK125 */
@@ -230,6 +263,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_sleep_pins_a: rgmii-sleep-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 5, ANALOG)>, /* ETH_RGMII_CLK125 */
@@ -250,6 +284,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_pins_b: rgmii-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 5, AF11)>, /* ETH_RGMII_CLK125 */
@@ -281,6 +316,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_sleep_pins_b: rgmii-sleep-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 5, ANALOG)>, /* ETH_RGMII_CLK125 */
@@ -301,6 +337,7 @@
 		 };
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_pins_c: rgmii-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 5, AF11)>, /* ETH_RGMII_CLK125 */
@@ -332,6 +369,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_sleep_pins_c: rgmii-sleep-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 5, ANALOG)>, /* ETH_RGMII_CLK125 */
@@ -352,6 +390,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_pins_d: rgmii-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 5, AF11)>, /* ETH_RGMII_CLK125 */
@@ -382,6 +421,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_sleep_pins_d: rgmii-sleep-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 5, ANALOG)>, /* ETH_RGMII_CLK125 */
@@ -402,6 +442,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_pins_e: rgmii-4 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 4, AF11)>, /* ETH_RGMII_GTX_CLK */
@@ -425,6 +466,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rgmii_sleep_pins_e: rgmii-sleep-4 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 4, ANALOG)>, /* ETH_RGMII_GTX_CLK */
@@ -442,6 +484,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rmii_pins_a: rmii-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 13, AF11)>, /* ETH1_RMII_TXD0 */
@@ -462,6 +505,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rmii_sleep_pins_a: rmii-sleep-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 13, ANALOG)>, /* ETH1_RMII_TXD0 */
@@ -476,6 +520,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rmii_pins_b: rmii-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 5, AF0)>, /* ETH1_CLK */
@@ -503,6 +548,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rmii_sleep_pins_b: rmii-sleep-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('A', 2, ANALOG)>, /* ETH1_MDIO */
@@ -517,6 +563,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rmii_pins_c: rmii-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 13, AF11)>, /* ETH1_RMII_TXD0 */
@@ -537,6 +584,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ethernet0_rmii_sleep_pins_c: rmii-sleep-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 13, ANALOG)>, /* ETH1_RMII_TXD0 */
@@ -551,6 +599,44 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	ethernet0_rmii_pins_d: rmii-3 {
+		pins1 {
+			pinmux = <STM32_PINMUX('B', 12, AF11)>, /* ETH1_RMII_TXD0 */
+				 <STM32_PINMUX('B', 13, AF11)>, /* ETH1_RMII_TXD1 */
+				 <STM32_PINMUX('B', 11, AF11)>, /* ETH1_RMII_TX_EN */
+				 <STM32_PINMUX('A', 1, AF11)>, /* ETH1_RMII_REF_CLK */
+				 <STM32_PINMUX('A', 2, AF11)>, /* ETH1_MDIO */
+				 <STM32_PINMUX('C', 1, AF11)>; /* ETH1_MDC */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <2>;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('C', 4, AF11)>, /* ETH1_RMII_RXD0 */
+				 <STM32_PINMUX('C', 5, AF11)>, /* ETH1_RMII_RXD1 */
+				 <STM32_PINMUX('A', 7, AF11)>; /* ETH1_RMII_CRS_DV */
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/
+	ethernet0_rmii_sleep_pins_d: rmii-sleep-3 {
+		pins1 {
+			pinmux = <STM32_PINMUX('B', 12, ANALOG)>, /* ETH1_RMII_TXD0 */
+				 <STM32_PINMUX('B', 13, ANALOG)>, /* ETH1_RMII_TXD1 */
+				 <STM32_PINMUX('B', 11, ANALOG)>, /* ETH1_RMII_TX_EN */
+				 <STM32_PINMUX('A', 2, ANALOG)>, /* ETH1_MDIO */
+				 <STM32_PINMUX('C', 1, ANALOG)>, /* ETH1_MDC */
+				 <STM32_PINMUX('C', 4, ANALOG)>, /* ETH1_RMII_RXD0 */
+				 <STM32_PINMUX('C', 5, ANALOG)>, /* ETH1_RMII_RXD1 */
+				 <STM32_PINMUX('A', 1, ANALOG)>, /* ETH1_RMII_REF_CLK */
+				 <STM32_PINMUX('A', 7, ANALOG)>; /* ETH1_RMII_CRS_DV */
+		};
+	};
+
+	/omit-if-no-ref/
 	fmc_pins_a: fmc-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('D', 4, AF12)>, /* FMC_NOE */
@@ -576,6 +662,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	fmc_sleep_pins_a: fmc-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 4, ANALOG)>, /* FMC_NOE */
@@ -595,6 +682,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	fmc_pins_b: fmc-1 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 4, AF12)>, /* FMC_NOE */
@@ -624,6 +712,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	fmc_sleep_pins_b: fmc-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 4, ANALOG)>, /* FMC_NOE */
@@ -650,6 +739,24 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	hdp2_pins_a: hdp2-0 {
+		pins {
+			pinmux = <STM32_PINMUX('E', 13, AF0)>; /* HDP2 */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <2>;
+		};
+	};
+
+	/omit-if-no-ref/
+	hdp2_sleep_pins_a: hdp2-sleep-0 {
+		pins {
+			pinmux = <STM32_PINMUX('E', 13, ANALOG)>; /* HDP2 */
+		};
+	};
+
+	/omit-if-no-ref/
 	i2c1_pins_a: i2c1-0 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 12, AF5)>, /* I2C1_SCL */
@@ -660,6 +767,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c1_sleep_pins_a: i2c1-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 12, ANALOG)>, /* I2C1_SCL */
@@ -667,6 +775,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c1_pins_b: i2c1-1 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 14, AF5)>, /* I2C1_SCL */
@@ -677,6 +786,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c1_sleep_pins_b: i2c1-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 14, ANALOG)>, /* I2C1_SCL */
@@ -684,6 +794,26 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	i2c1_pins_c: i2c1-2 {
+		pins {
+			pinmux = <STM32_PINMUX('D', 12, AF5)>, /* I2C1_SCL */
+				 <STM32_PINMUX('D', 13, AF5)>; /* I2C1_SDA */
+			bias-disable;
+			drive-open-drain;
+			slew-rate = <0>;
+		};
+	};
+
+	/omit-if-no-ref/
+	i2c1_sleep_pins_c: i2c1-sleep-2 {
+		pins {
+			pinmux = <STM32_PINMUX('D', 12, ANALOG)>, /* I2C1_SCL */
+				 <STM32_PINMUX('D', 13, ANALOG)>; /* I2C1_SDA */
+		};
+	};
+
+	/omit-if-no-ref/
 	i2c2_pins_a: i2c2-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 4, AF4)>, /* I2C2_SCL */
@@ -694,6 +824,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c2_sleep_pins_a: i2c2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 4, ANALOG)>, /* I2C2_SCL */
@@ -701,6 +832,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c2_pins_b1: i2c2-1 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 5, AF4)>; /* I2C2_SDA */
@@ -710,12 +842,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c2_sleep_pins_b1: i2c2-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 5, ANALOG)>; /* I2C2_SDA */
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c2_pins_c: i2c2-2 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 1, AF4)>, /* I2C2_SCL */
@@ -726,6 +860,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c2_pins_sleep_c: i2c2-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 1, ANALOG)>, /* I2C2_SCL */
@@ -733,6 +868,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c5_pins_a: i2c5-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 11, AF4)>, /* I2C5_SCL */
@@ -743,6 +879,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c5_sleep_pins_a: i2c5-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 11, ANALOG)>, /* I2C5_SCL */
@@ -751,6 +888,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c5_pins_b: i2c5-1 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 0, AF4)>, /* I2C5_SCL */
@@ -761,6 +899,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c5_sleep_pins_b: i2c5-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 0, ANALOG)>, /* I2C5_SCL */
@@ -768,6 +907,28 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	i2s1_pins_a: i2s1-0 {
+		pins {
+			pinmux = <STM32_PINMUX('A', 6, AF5)>, /* I2S2_SDI */
+				 <STM32_PINMUX('A', 4, AF5)>, /* I2S2_WS */
+				 <STM32_PINMUX('A', 5, AF5)>; /* I2S2_CK */
+			slew-rate = <0>;
+			drive-push-pull;
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/
+	i2s1_sleep_pins_a: i2s1-sleep-0 {
+		pins {
+			pinmux = <STM32_PINMUX('A', 6, ANALOG)>, /* I2S2_SDI */
+				 <STM32_PINMUX('A', 4, ANALOG)>, /* I2S2_WS */
+				 <STM32_PINMUX('A', 5, ANALOG)>; /* I2S2_CK */
+		};
+	};
+
+	/omit-if-no-ref/
 	i2s2_pins_a: i2s2-0 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 3, AF5)>, /* I2S2_SDO */
@@ -779,6 +940,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2s2_sleep_pins_a: i2s2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 3, ANALOG)>, /* I2S2_SDO */
@@ -787,6 +949,28 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	i2s2_pins_b: i2s2-1 {
+		pins {
+			pinmux = <STM32_PINMUX('C',  3, AF5)>, /* I2S2_SDO */
+				 <STM32_PINMUX('B', 12, AF5)>, /* I2S2_WS */
+				 <STM32_PINMUX('B', 13, AF5)>; /* I2S2_CK */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <1>;
+		};
+	};
+
+	/omit-if-no-ref/
+	i2s2_sleep_pins_b: i2s2-sleep-1 {
+		pins {
+			pinmux = <STM32_PINMUX('C', 3, ANALOG)>, /* I2S2_SDO */
+				 <STM32_PINMUX('B', 12, ANALOG)>, /* I2S2_WS */
+				 <STM32_PINMUX('B', 13, ANALOG)>; /* I2S2_CK */
+		};
+	};
+
+	/omit-if-no-ref/
 	ltdc_pins_a: ltdc-0 {
 		pins {
 			pinmux = <STM32_PINMUX('G',  7, AF14)>, /* LCD_CLK */
@@ -823,6 +1007,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ltdc_sleep_pins_a: ltdc-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('G',  7, ANALOG)>, /* LCD_CLK */
@@ -856,6 +1041,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ltdc_pins_b: ltdc-1 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 14, AF14)>, /* LCD_CLK */
@@ -892,6 +1078,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ltdc_sleep_pins_b: ltdc-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 14, ANALOG)>, /* LCD_CLK */
@@ -925,6 +1112,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ltdc_pins_c: ltdc-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B',  1, AF9)>,  /* LTDC_R6 */
@@ -960,6 +1148,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ltdc_sleep_pins_c: ltdc-sleep-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 1, ANALOG)>,  /* LTDC_R6 */
@@ -987,6 +1176,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ltdc_pins_d: ltdc-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G',  7, AF14)>; /* LCD_CLK */
@@ -1028,6 +1218,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	ltdc_sleep_pins_d: ltdc-sleep-3 {
 		pins {
 			pinmux = <STM32_PINMUX('G',  7, ANALOG)>, /* LCD_CLK */
@@ -1061,6 +1252,98 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	ltdc_pins_e: ltdc-4 {
+		pins1 {
+			pinmux = <STM32_PINMUX('H',  2, AF14)>, /* LTDC_R0 */
+				 <STM32_PINMUX('H',  3, AF14)>, /* LTDC_R1 */
+				 <STM32_PINMUX('H',  8, AF14)>, /* LTDC_R2 */
+				 <STM32_PINMUX('H',  9, AF14)>, /* LTDC_R3 */
+				 <STM32_PINMUX('H', 10, AF14)>, /* LTDC_R4 */
+				 <STM32_PINMUX('C',  0, AF14)>, /* LTDC_R5 */
+				 <STM32_PINMUX('H', 12, AF14)>, /* LTDC_R6 */
+				 <STM32_PINMUX('E', 15, AF14)>, /* LTDC_R7 */
+				 <STM32_PINMUX('E', 14, AF13)>, /* LTDC_G0 */
+				 <STM32_PINMUX('E',  6, AF14)>, /* LTDC_G1 */
+				 <STM32_PINMUX('H', 13, AF14)>, /* LTDC_G2 */
+				 <STM32_PINMUX('H', 14, AF14)>, /* LTDC_G3 */
+				 <STM32_PINMUX('H',  4, AF14)>, /* LTDC_G4 */
+				 <STM32_PINMUX('I',  0, AF14)>, /* LTDC_G5 */
+				 <STM32_PINMUX('I',  1, AF14)>, /* LTDC_G6 */
+				 <STM32_PINMUX('I',  2, AF14)>, /* LTDC_G7 */
+				 <STM32_PINMUX('D',  9, AF14)>, /* LTDC_B0 */
+				 <STM32_PINMUX('G', 12, AF14)>, /* LTDC_B1 */
+				 <STM32_PINMUX('G', 10, AF14)>, /* LTDC_B2 */
+				 <STM32_PINMUX('D', 10, AF14)>, /* LTDC_B3 */
+				 <STM32_PINMUX('E', 12, AF14)>, /* LTDC_B4 */
+				 <STM32_PINMUX('A',  3, AF14)>, /* LTDC_B5 */
+				 <STM32_PINMUX('B',  8, AF14)>, /* LTDC_B6 */
+				 <STM32_PINMUX('D',  8, AF14)>, /* LTDC_B7 */
+				 <STM32_PINMUX('F', 10, AF14)>, /* LTDC_DE */
+				 <STM32_PINMUX('I',  9, AF14)>, /* LTDC_VSYNC */
+				 <STM32_PINMUX('I', 10, AF14)>; /* LTDC_HSYNC */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <0>;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('G', 7, AF14)>; /* LTDC_CLK */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <1>;
+		};
+	};
+
+	/omit-if-no-ref/
+	ltdc_sleep_pins_e: ltdc-sleep-4 {
+		pins {
+			pinmux = <STM32_PINMUX('H',  2, ANALOG)>, /* LTDC_R0 */
+				 <STM32_PINMUX('H',  3, ANALOG)>, /* LTDC_R1 */
+				 <STM32_PINMUX('H',  8, ANALOG)>, /* LTDC_R2 */
+				 <STM32_PINMUX('H',  9, ANALOG)>, /* LTDC_R3 */
+				 <STM32_PINMUX('H', 10, ANALOG)>, /* LTDC_R4 */
+				 <STM32_PINMUX('C',  0, ANALOG)>, /* LTDC_R5 */
+				 <STM32_PINMUX('H', 12, ANALOG)>, /* LTDC_R6 */
+				 <STM32_PINMUX('E', 15, ANALOG)>, /* LTDC_R7 */
+				 <STM32_PINMUX('D',  9, ANALOG)>, /* LTDC_B0 */
+				 <STM32_PINMUX('G', 12, ANALOG)>, /* LTDC_B1 */
+				 <STM32_PINMUX('G', 10, ANALOG)>, /* LTDC_B2 */
+				 <STM32_PINMUX('D', 10, ANALOG)>, /* LTDC_B3 */
+				 <STM32_PINMUX('E', 12, ANALOG)>, /* LTDC_B4 */
+				 <STM32_PINMUX('A',  3, ANALOG)>, /* LTDC_B5 */
+				 <STM32_PINMUX('B',  8, ANALOG)>, /* LTDC_B6 */
+				 <STM32_PINMUX('D',  8, ANALOG)>, /* LTDC_B7 */
+				 <STM32_PINMUX('E', 14, ANALOG)>, /* LTDC_G0 */
+				 <STM32_PINMUX('E',  6, ANALOG)>, /* LTDC_G1 */
+				 <STM32_PINMUX('H', 13, ANALOG)>, /* LTDC_G2 */
+				 <STM32_PINMUX('H', 14, ANALOG)>, /* LTDC_G3 */
+				 <STM32_PINMUX('H',  4, ANALOG)>, /* LTDC_G4 */
+				 <STM32_PINMUX('I',  0, ANALOG)>, /* LTDC_G5 */
+				 <STM32_PINMUX('I',  1, ANALOG)>, /* LTDC_G6 */
+				 <STM32_PINMUX('I',  2, ANALOG)>, /* LTDC_G7 */
+				 <STM32_PINMUX('F', 10, ANALOG)>, /* LTDC_DE */
+				 <STM32_PINMUX('I',  9, ANALOG)>, /* LTDC_VSYNC */
+				 <STM32_PINMUX('I', 10, ANALOG)>, /* LTDC_HSYNC */
+				 <STM32_PINMUX('G',  7, ANALOG)>; /* LTDC_CLK */
+		};
+	};
+
+	/omit-if-no-ref/
+	m4_leds_orange_pins_a: m4-leds-orange-0 {
+		pins {
+			pinmux = <STM32_PINMUX('H', 7, RSVD)>;
+		};
+	};
+
+	/omit-if-no-ref/
+	m4_leds_orange_pins_b: m4-leds-orange-1 {
+		pins {
+			pinmux = <STM32_PINMUX('D', 8, RSVD)>;
+		};
+	};
+
+	/omit-if-no-ref/
 	mco1_pins_a: mco1-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 13, AF2)>; /* MCO1 */
@@ -1070,12 +1353,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	mco1_sleep_pins_a: mco1-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 13, ANALOG)>; /* MCO1 */
 		};
 	};
 
+	/omit-if-no-ref/
 	mco2_pins_a: mco2-0 {
 		pins {
 			pinmux = <STM32_PINMUX('G', 2, AF1)>; /* MCO2 */
@@ -1085,12 +1370,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	mco2_sleep_pins_a: mco2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('G', 2, ANALOG)>; /* MCO2 */
 		};
 	};
 
+	/omit-if-no-ref/
 	m_can1_pins_a: m-can1-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('H', 13, AF9)>; /* CAN1_TX */
@@ -1104,6 +1391,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	m_can1_sleep_pins_a: m_can1-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 13, ANALOG)>, /* CAN1_TX */
@@ -1111,6 +1399,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	m_can1_pins_b: m-can1-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('A', 12, AF9)>; /* CAN1_TX */
@@ -1124,6 +1413,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	m_can1_sleep_pins_b: m_can1-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 12, ANALOG)>, /* CAN1_TX */
@@ -1131,6 +1421,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	m_can1_pins_c: m-can1-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('H', 13, AF9)>; /* CAN1_TX */
@@ -1144,6 +1435,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	m_can1_sleep_pins_c: m_can1-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 13, ANALOG)>, /* CAN1_TX */
@@ -1151,6 +1443,29 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	m_can1_pins_d: m-can1-3 {
+		pins1 {
+			pinmux = <STM32_PINMUX('D', 1, AF9)>; /* CAN1_TX */
+			slew-rate = <1>;
+			drive-push-pull;
+			bias-disable;
+		};
+		pins2 {
+			pinmux = <STM32_PINMUX('D', 0, AF9)>; /* CAN1_RX */
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/
+	m_can1_sleep_pins_d: m_can1-sleep-3 {
+		pins {
+			pinmux = <STM32_PINMUX('D', 1, ANALOG)>, /* CAN1_TX */
+				 <STM32_PINMUX('D', 0, ANALOG)>; /* CAN1_RX */
+		};
+	};
+
+	/omit-if-no-ref/
 	m_can2_pins_a: m-can2-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 13, AF9)>; /* CAN2_TX */
@@ -1164,6 +1479,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	m_can2_sleep_pins_a: m_can2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 13, ANALOG)>, /* CAN2_TX */
@@ -1171,6 +1487,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm1_pins_a: pwm1-0 {
 		pins {
 			pinmux = <STM32_PINMUX('E', 9, AF1)>, /* TIM1_CH1 */
@@ -1182,6 +1499,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm1_sleep_pins_a: pwm1-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('E', 9, ANALOG)>, /* TIM1_CH1 */
@@ -1190,6 +1508,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm1_pins_b: pwm1-1 {
 		pins {
 			pinmux = <STM32_PINMUX('E', 9, AF1)>; /* TIM1_CH1 */
@@ -1199,12 +1518,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm1_sleep_pins_b: pwm1-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('E', 9, ANALOG)>; /* TIM1_CH1 */
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm1_pins_c: pwm1-2 {
 		pins {
 			pinmux = <STM32_PINMUX('E', 11, AF1)>; /* TIM1_CH2 */
@@ -1213,12 +1534,31 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm1_sleep_pins_c: pwm1-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('E', 11, ANALOG)>; /* TIM1_CH2 */
 		};
 	};
 
+	/omit-if-no-ref/
+	pwm1_pins_d: pwm1-3 {
+		pins {
+			pinmux = <STM32_PINMUX('A', 0, AF2)>; /* TIM5_CH1 */
+			bias-pull-down;
+			drive-push-pull;
+			slew-rate = <0>;
+		};
+	};
+
+	/omit-if-no-ref/
+	pwm1_sleep_pins_d: pwm1-sleep-3 {
+		pins {
+			pinmux = <STM32_PINMUX('A', 0, ANALOG)>;
+		};
+	};
+
+	/omit-if-no-ref/
 	pwm2_pins_a: pwm2-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 3, AF1)>; /* TIM2_CH4 */
@@ -1228,12 +1568,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm2_sleep_pins_a: pwm2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 3, ANALOG)>; /* TIM2_CH4 */
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm3_pins_a: pwm3-0 {
 		pins {
 			pinmux = <STM32_PINMUX('C', 7, AF2)>; /* TIM3_CH2 */
@@ -1243,12 +1585,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm3_sleep_pins_a: pwm3-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('C', 7, ANALOG)>; /* TIM3_CH2 */
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm3_pins_b: pwm3-1 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 5, AF2)>; /* TIM3_CH2 */
@@ -1258,12 +1602,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm3_sleep_pins_b: pwm3-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 5, ANALOG)>; /* TIM3_CH2 */
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm4_pins_a: pwm4-0 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 14, AF2)>, /* TIM4_CH3 */
@@ -1274,6 +1620,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm4_sleep_pins_a: pwm4-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 14, ANALOG)>, /* TIM4_CH3 */
@@ -1281,6 +1628,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm4_pins_b: pwm4-1 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 13, AF2)>; /* TIM4_CH2 */
@@ -1290,12 +1638,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm4_sleep_pins_b: pwm4-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 13, ANALOG)>; /* TIM4_CH2 */
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm5_pins_a: pwm5-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 11, AF2)>; /* TIM5_CH2 */
@@ -1305,12 +1655,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm5_sleep_pins_a: pwm5-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 11, ANALOG)>; /* TIM5_CH2 */
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm5_pins_b: pwm5-1 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 11, AF2)>, /* TIM5_CH2 */
@@ -1322,6 +1674,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm5_sleep_pins_b: pwm5-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 11, ANALOG)>, /* TIM5_CH2 */
@@ -1330,6 +1683,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm8_pins_a: pwm8-0 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 2, AF3)>; /* TIM8_CH4 */
@@ -1339,12 +1693,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm8_sleep_pins_a: pwm8-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 2, ANALOG)>; /* TIM8_CH4 */
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm8_pins_b: pwm8-1 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 5, AF3)>, /* TIM8_CH1 */
@@ -1356,6 +1712,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm8_sleep_pins_b: pwm8-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 5, ANALOG)>, /* TIM8_CH1 */
@@ -1365,6 +1722,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm12_pins_a: pwm12-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 6, AF2)>; /* TIM12_CH1 */
@@ -1374,12 +1732,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	pwm12_sleep_pins_a: pwm12-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 6, ANALOG)>; /* TIM12_CH1 */
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_clk_pins_a: qspi-clk-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 10, AF9)>; /* QSPI_CLK */
@@ -1389,12 +1749,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_clk_sleep_pins_a: qspi-clk-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 10, ANALOG)>; /* QSPI_CLK */
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_bk1_pins_a: qspi-bk1-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 8, AF10)>, /* QSPI_BK1_IO0 */
@@ -1407,6 +1769,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_bk1_sleep_pins_a: qspi-bk1-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 8, ANALOG)>, /* QSPI_BK1_IO0 */
@@ -1416,6 +1779,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_bk2_pins_a: qspi-bk2-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 2, AF9)>, /* QSPI_BK2_IO0 */
@@ -1428,6 +1792,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_bk2_sleep_pins_a: qspi-bk2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 2, ANALOG)>, /* QSPI_BK2_IO0 */
@@ -1437,6 +1802,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_cs1_pins_a: qspi-cs1-0 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 6, AF10)>; /* QSPI_BK1_NCS */
@@ -1446,12 +1812,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_cs1_sleep_pins_a: qspi-cs1-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 6, ANALOG)>; /* QSPI_BK1_NCS */
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_cs2_pins_a: qspi-cs2-0 {
 		pins {
 			pinmux = <STM32_PINMUX('C', 0, AF10)>; /* QSPI_BK2_NCS */
@@ -1461,12 +1829,21 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	qspi_cs2_sleep_pins_a: qspi-cs2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('C', 0, ANALOG)>; /* QSPI_BK2_NCS */
 		};
 	};
 
+	/omit-if-no-ref/
+	rtc_rsvd_pins_a: rtc-rsvd-0 {
+		pins {
+			pinmux = <STM32_PINMUX('I', 8, ANALOG)>; /* RTC_OUT2_RMP */
+		};
+	};
+
+	/omit-if-no-ref/
 	sai2a_pins_a: sai2a-0 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 5, AF10)>, /* SAI2_SCK_A */
@@ -1479,6 +1856,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2a_sleep_pins_a: sai2a-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 5, ANALOG)>, /* SAI2_SCK_A */
@@ -1488,6 +1866,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2a_pins_b: sai2a-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('I', 6, AF10)>,	/* SAI2_SD_A */
@@ -1499,6 +1878,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2a_sleep_pins_b: sai2a-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 6, ANALOG)>,  /* SAI2_SD_A */
@@ -1507,6 +1887,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2a_pins_c: sai2a-2 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 13, AF10)>, /* SAI2_SCK_A */
@@ -1518,6 +1899,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2a_sleep_pins_c: sai2a-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 13, ANALOG)>, /* SAI2_SCK_A */
@@ -1526,6 +1908,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2b_pins_a: sai2b-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('E', 12, AF10)>, /* SAI2_SCK_B */
@@ -1541,6 +1924,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2b_sleep_pins_a: sai2b-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 11, ANALOG)>, /* SAI2_SD_B */
@@ -1550,6 +1934,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2b_pins_b: sai2b-1 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 11, AF10)>; /* SAI2_SD_B */
@@ -1557,12 +1942,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2b_sleep_pins_b: sai2b-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 11, ANALOG)>; /* SAI2_SD_B */
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2b_pins_c: sai2b-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 11, AF10)>; /* SAI2_SD_B */
@@ -1570,12 +1957,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2b_sleep_pins_c: sai2b-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 11, ANALOG)>; /* SAI2_SD_B */
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2b_pins_d: sai2b-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('H', 2, AF10)>, /* SAI2_SCK_B */
@@ -1591,6 +1980,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai2b_sleep_pins_d: sai2b-sleep-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('H', 2, ANALOG)>, /* SAI2_SCK_B */
@@ -1600,6 +1990,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai4a_pins_a: sai4a-0 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 5, AF10)>; /* SAI4_SD_A */
@@ -1609,12 +2000,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sai4a_sleep_pins_a: sai4a-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 5, ANALOG)>; /* SAI4_SD_A */
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_b4_pins_a: sdmmc1-b4-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('C', 8, AF12)>, /* SDMMC1_D0 */
@@ -1634,6 +2027,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_b4_od_pins_a: sdmmc1-b4-od-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('C', 8, AF12)>, /* SDMMC1_D0 */
@@ -1658,6 +2052,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_b4_init_pins_a: sdmmc1-b4-init-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('C', 8, AF12)>, /* SDMMC1_D0 */
@@ -1670,6 +2065,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_b4_sleep_pins_a: sdmmc1-b4-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('C', 8, ANALOG)>, /* SDMMC1_D0 */
@@ -1681,6 +2077,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_b4_pins_b: sdmmc1-b4-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('C', 8, AF12)>, /* SDMMC1_D0 */
@@ -1700,6 +2097,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_b4_od_pins_b: sdmmc1-b4-od-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('C', 8, AF12)>, /* SDMMC1_D0 */
@@ -1724,6 +2122,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_b4_sleep_pins_b: sdmmc1-b4-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('C', 8, ANALOG)>, /* SDMMC1_D0 */
@@ -1735,6 +2134,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_dir_pins_a: sdmmc1-dir-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 2, AF11)>, /* SDMMC1_D0DIR */
@@ -1750,6 +2150,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_dir_init_pins_a: sdmmc1-dir-init-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 2, AF11)>, /* SDMMC1_D0DIR */
@@ -1761,6 +2162,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_dir_sleep_pins_a: sdmmc1-dir-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 2, ANALOG)>, /* SDMMC1_D0DIR */
@@ -1770,6 +2172,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_dir_pins_b: sdmmc1-dir-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 2, AF11)>, /* SDMMC1_D0DIR */
@@ -1785,6 +2188,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc1_dir_sleep_pins_b: sdmmc1-dir-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 2, ANALOG)>, /* SDMMC1_D0DIR */
@@ -1794,6 +2198,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_b4_pins_a: sdmmc2-b4-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 14, AF9)>, /* SDMMC2_D0 */
@@ -1813,6 +2218,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_b4_od_pins_a: sdmmc2-b4-od-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 14, AF9)>, /* SDMMC2_D0 */
@@ -1837,6 +2243,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_b4_sleep_pins_a: sdmmc2-b4-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 14, ANALOG)>, /* SDMMC2_D0 */
@@ -1848,6 +2255,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_b4_pins_b: sdmmc2-b4-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 14, AF9)>, /* SDMMC2_D0 */
@@ -1867,6 +2275,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_b4_od_pins_b: sdmmc2-b4-od-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 14, AF9)>, /* SDMMC2_D0 */
@@ -1891,6 +2300,67 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	sdmmc2_b4_pins_c: sdmmc2-b4-2 {
+		pins1 {
+			pinmux = <STM32_PINMUX('B', 14, AF9)>, /* SDMMC2_D0 */
+				 <STM32_PINMUX('B', 7, AF10)>, /* SDMMC2_D1 */
+				 <STM32_PINMUX('B', 3, AF9)>, /* SDMMC2_D2 */
+				 <STM32_PINMUX('B', 4, AF9)>, /* SDMMC2_D3 */
+				 <STM32_PINMUX('G', 6, AF10)>; /* SDMMC2_CMD */
+			slew-rate = <1>;
+			drive-push-pull;
+			bias-pull-up;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('E', 3, AF9)>; /* SDMMC2_CK */
+			slew-rate = <2>;
+			drive-push-pull;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/
+	sdmmc2_b4_od_pins_c: sdmmc2-b4-od-2 {
+		pins1 {
+			pinmux = <STM32_PINMUX('B', 14, AF9)>, /* SDMMC2_D0 */
+				 <STM32_PINMUX('B', 7, AF10)>, /* SDMMC2_D1 */
+				 <STM32_PINMUX('B', 3, AF9)>, /* SDMMC2_D2 */
+				 <STM32_PINMUX('B', 4, AF9)>; /* SDMMC2_D3 */
+			slew-rate = <1>;
+			drive-push-pull;
+			bias-pull-up;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('E', 3, AF9)>; /* SDMMC2_CK */
+			slew-rate = <2>;
+			drive-push-pull;
+			bias-pull-up;
+		};
+
+		pins3 {
+			pinmux = <STM32_PINMUX('G', 6, AF10)>; /* SDMMC2_CMD */
+			slew-rate = <1>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/
+	sdmmc2_b4_sleep_pins_c: sdmmc2-b4-sleep-2 {
+		pins {
+			pinmux = <STM32_PINMUX('B', 14, ANALOG)>, /* SDMMC2_D0 */
+				 <STM32_PINMUX('B', 7, ANALOG)>, /* SDMMC2_D1 */
+				 <STM32_PINMUX('B', 3, ANALOG)>, /* SDMMC2_D2 */
+				 <STM32_PINMUX('B', 4, ANALOG)>, /* SDMMC2_D3 */
+				 <STM32_PINMUX('E', 3, ANALOG)>, /* SDMMC2_CK */
+				 <STM32_PINMUX('G', 6, ANALOG)>; /* SDMMC2_CMD */
+		};
+	};
+
+	/omit-if-no-ref/
 	sdmmc2_d47_pins_a: sdmmc2-d47-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, AF9)>, /* SDMMC2_D4 */
@@ -1903,6 +2373,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_sleep_pins_a: sdmmc2-d47-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, ANALOG)>, /* SDMMC2_D4 */
@@ -1912,6 +2383,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_pins_b: sdmmc2-d47-1 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, AF9)>,  /* SDMMC2_D4 */
@@ -1924,6 +2396,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_sleep_pins_b: sdmmc2-d47-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, ANALOG)>, /* SDMMC2_D4 */
@@ -1933,6 +2406,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_pins_c: sdmmc2-d47-2 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, AF9)>, /* SDMMC2_D4 */
@@ -1945,6 +2419,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_sleep_pins_c: sdmmc2-d47-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, ANALOG)>, /* SDMMC2_D4 */
@@ -1954,15 +2429,20 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_pins_d: sdmmc2-d47-3 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, AF9)>, /* SDMMC2_D4 */
 				 <STM32_PINMUX('A', 9, AF10)>, /* SDMMC2_D5 */
 				 <STM32_PINMUX('E', 5, AF9)>, /* SDMMC2_D6 */
 				 <STM32_PINMUX('C', 7, AF10)>; /* SDMMC2_D7 */
+			slew-rate = <1>;
+			drive-push-pull;
+			bias-pull-up;
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_sleep_pins_d: sdmmc2-d47-sleep-3 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, ANALOG)>, /* SDMMC2_D4 */
@@ -1972,6 +2452,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_pins_e: sdmmc2-d47-4 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, AF9)>,	/* SDMMC2_D4 */
@@ -1984,6 +2465,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc2_d47_sleep_pins_e: sdmmc2-d47-sleep-4 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 8, ANALOG)>, /* SDMMC2_D4 */
@@ -1993,6 +2475,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc3_b4_pins_a: sdmmc3-b4-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 0, AF9)>, /* SDMMC3_D0 */
@@ -2012,6 +2495,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc3_b4_od_pins_a: sdmmc3-b4-od-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 0, AF9)>, /* SDMMC3_D0 */
@@ -2036,6 +2520,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc3_b4_sleep_pins_a: sdmmc3-b4-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 0, ANALOG)>, /* SDMMC3_D0 */
@@ -2047,6 +2532,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc3_b4_pins_b: sdmmc3-b4-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 0, AF9)>, /* SDMMC3_D0 */
@@ -2066,6 +2552,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc3_b4_od_pins_b: sdmmc3-b4-od-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 0, AF9)>, /* SDMMC3_D0 */
@@ -2090,6 +2577,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	sdmmc3_b4_sleep_pins_b: sdmmc3-b4-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 0, ANALOG)>, /* SDMMC3_D0 */
@@ -2101,6 +2589,67 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	sdmmc3_b4_pins_c: sdmmc3-b4-2 {
+		pins1 {
+			pinmux = <STM32_PINMUX('D', 1, AF10)>, /* SDMMC3_D0 */
+				 <STM32_PINMUX('D', 4, AF10)>, /* SDMMC3_D1 */
+				 <STM32_PINMUX('D', 5, AF10)>, /* SDMMC3_D2 */
+				 <STM32_PINMUX('D', 7, AF10)>, /* SDMMC3_D3 */
+				 <STM32_PINMUX('D', 0, AF10)>; /* SDMMC3_CMD */
+			slew-rate = <1>;
+			drive-push-pull;
+			bias-pull-up;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('G', 15, AF10)>; /* SDMMC3_CK */
+			slew-rate = <2>;
+			drive-push-pull;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/
+	sdmmc3_b4_od_pins_c: sdmmc3-b4-od-2 {
+		pins1 {
+			pinmux = <STM32_PINMUX('D', 1, AF10)>, /* SDMMC3_D0 */
+				 <STM32_PINMUX('D', 4, AF10)>, /* SDMMC3_D1 */
+				 <STM32_PINMUX('D', 5, AF10)>, /* SDMMC3_D2 */
+				 <STM32_PINMUX('D', 7, AF10)>; /* SDMMC3_D3 */
+			slew-rate = <1>;
+			drive-push-pull;
+			bias-pull-up;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('G', 15, AF10)>; /* SDMMC3_CK */
+			slew-rate = <2>;
+			drive-push-pull;
+			bias-pull-up;
+		};
+
+		pins3 {
+			pinmux = <STM32_PINMUX('D', 0, AF10)>; /* SDMMC3_CMD */
+			slew-rate = <1>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/
+	sdmmc3_b4_sleep_pins_c: sdmmc3-b4-sleep-2 {
+		pins {
+			pinmux = <STM32_PINMUX('D', 1, ANALOG)>, /* SDMMC3_D0 */
+				 <STM32_PINMUX('D', 4, ANALOG)>, /* SDMMC3_D1 */
+				 <STM32_PINMUX('D', 5, ANALOG)>, /* SDMMC3_D2 */
+				 <STM32_PINMUX('D', 7, ANALOG)>, /* SDMMC3_D3 */
+				 <STM32_PINMUX('G', 15, ANALOG)>, /* SDMMC3_CK */
+				 <STM32_PINMUX('D', 0, ANALOG)>; /* SDMMC3_CMD */
+		};
+	};
+
+	/omit-if-no-ref/
 	spdifrx_pins_a: spdifrx-0 {
 		pins {
 			pinmux = <STM32_PINMUX('G', 12, AF8)>; /* SPDIF_IN1 */
@@ -2108,12 +2657,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	spdifrx_sleep_pins_a: spdifrx-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('G', 12, ANALOG)>; /* SPDIF_IN1 */
 		};
 	};
 
+	/omit-if-no-ref/
 	spi1_pins_b: spi1-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('A', 5, AF5)>, /* SPI1_SCK */
@@ -2129,6 +2680,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	spi2_pins_a: spi2-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, AF5)>, /* SPI2_SCK */
@@ -2144,6 +2696,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	spi2_pins_b: spi2-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('I', 1, AF5)>, /* SPI2_SCK */
@@ -2159,6 +2712,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	spi2_pins_c: spi2-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('I', 1, AF5)>, /* SPI2_SCK */
@@ -2173,6 +2727,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	spi4_pins_a: spi4-0 {
 		pins {
 			pinmux = <STM32_PINMUX('E', 12, AF5)>, /* SPI4_SCK */
@@ -2187,6 +2742,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	spi5_pins_a: spi5-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 7, AF5)>, /* SPI5_SCK */
@@ -2202,6 +2758,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	stusb1600_pins_a: stusb1600-0 {
 		pins {
 			pinmux = <STM32_PINMUX('I', 11, GPIO)>;
@@ -2209,6 +2766,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart4_pins_a: uart4-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 11, AF6)>; /* UART4_TX */
@@ -2222,6 +2780,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart4_idle_pins_a: uart4-idle-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 11, ANALOG)>; /* UART4_TX */
@@ -2232,6 +2791,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart4_sleep_pins_a: uart4-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('G', 11, ANALOG)>, /* UART4_TX */
@@ -2239,6 +2799,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart4_pins_b: uart4-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('D', 1, AF8)>; /* UART4_TX */
@@ -2252,6 +2813,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart4_pins_c: uart4-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('G', 11, AF6)>; /* UART4_TX */
@@ -2265,6 +2827,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart4_pins_d: uart4-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('A', 13, AF8)>; /* UART4_TX */
@@ -2278,6 +2841,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart4_idle_pins_d: uart4-idle-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('A', 13, ANALOG)>; /* UART4_TX */
@@ -2288,6 +2852,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart4_sleep_pins_d: uart4-sleep-3 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 13, ANALOG)>, /* UART4_TX */
@@ -2295,6 +2860,42 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	uart4_pins_e: uart4-4 {
+		pins1 {
+			pinmux = <STM32_PINMUX('G', 11, AF6)>; /* UART4_TX */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <0>;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('B', 8, AF8)>; /* UART4_RX */
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/
+	uart4_idle_pins_e: uart4-idle-4 {
+		pins1 {
+			pinmux = <STM32_PINMUX('G', 11, ANALOG)>; /* UART4_TX */
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('B', 8, AF8)>; /* UART4_RX */
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/
+	uart4_sleep_pins_e: uart4-sleep-4 {
+		pins {
+			pinmux = <STM32_PINMUX('G', 11, ANALOG)>, /* UART4_TX */
+				 <STM32_PINMUX('B', 8, ANALOG)>; /* UART4_RX */
+		};
+	};
+
+	/omit-if-no-ref/
 	uart5_pins_a: uart5-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 13, AF14)>; /* UART5_TX */
@@ -2308,6 +2909,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart7_pins_a: uart7-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('E', 8, AF7)>; /* UART7_TX */
@@ -2323,6 +2925,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart7_pins_b: uart7-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 7, AF7)>; /* UART7_TX */
@@ -2336,6 +2939,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart7_pins_c: uart7-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('E', 8, AF7)>; /* UART7_TX */
@@ -2349,6 +2953,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart7_idle_pins_c: uart7-idle-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('E', 8, ANALOG)>; /* UART7_TX */
@@ -2359,6 +2964,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart7_sleep_pins_c: uart7-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('E', 8, ANALOG)>, /* UART7_TX */
@@ -2366,6 +2972,24 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	uart7_pins_d: uart7-3 {
+		pins1 {
+			pinmux = <STM32_PINMUX('F', 7, AF7)>, /* UART7_TX */
+				 <STM32_PINMUX('F', 8, AF7)>; /* UART7_RTS */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <0>;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('E', 7, AF7)>, /* UART7_RX */
+				 <STM32_PINMUX('F', 9, AF7)>; /* UART7_CTS */
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/
 	uart8_pins_a: uart8-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('E', 1, AF8)>; /* UART8_TX */
@@ -2379,6 +3003,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	uart8_rtscts_pins_a: uart8rtscts-0 {
 		pins {
 			pinmux = <STM32_PINMUX('G', 7, AF8)>, /* UART8_RTS */
@@ -2387,6 +3012,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart1_pins_a: usart1-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('A', 12, AF7)>; /* USART1_RTS */
@@ -2400,6 +3026,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart1_idle_pins_a: usart1-idle-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('A', 12, ANALOG)>, /* USART1_RTS */
@@ -2407,6 +3034,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart1_sleep_pins_a: usart1-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 12, ANALOG)>, /* USART1_RTS */
@@ -2414,6 +3042,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart2_pins_a: usart2-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 5, AF7)>, /* USART2_TX */
@@ -2429,6 +3058,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart2_sleep_pins_a: usart2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 5, ANALOG)>, /* USART2_TX */
@@ -2438,6 +3068,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart2_pins_b: usart2-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('F', 5, AF7)>, /* USART2_TX */
@@ -2453,6 +3084,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart2_sleep_pins_b: usart2-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('F', 5, ANALOG)>, /* USART2_TX */
@@ -2462,6 +3094,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart2_pins_c: usart2-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('D', 5, AF7)>, /* USART2_TX */
@@ -2477,6 +3110,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart2_idle_pins_c: usart2-idle-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('D', 5, ANALOG)>, /* USART2_TX */
@@ -2494,6 +3128,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart2_sleep_pins_c: usart2-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('D', 5, ANALOG)>, /* USART2_TX */
@@ -2503,6 +3138,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_pins_a: usart3-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, AF7)>; /* USART3_TX */
@@ -2516,6 +3152,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_idle_pins_a: usart3-idle-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>; /* USART3_TX */
@@ -2526,6 +3163,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_sleep_pins_a: usart3-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2533,6 +3171,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_pins_b: usart3-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, AF7)>, /* USART3_TX */
@@ -2548,6 +3187,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_idle_pins_b: usart3-idle-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2565,6 +3205,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_sleep_pins_b: usart3-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2574,6 +3215,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_pins_c: usart3-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, AF7)>, /* USART3_TX */
@@ -2589,6 +3231,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_idle_pins_c: usart3-idle-2 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2606,6 +3249,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_sleep_pins_c: usart3-sleep-2 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2615,6 +3259,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_pins_d: usart3-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, AF7)>, /* USART3_TX */
@@ -2630,6 +3275,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_idle_pins_d: usart3-idle-3 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2642,6 +3288,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_sleep_pins_d: usart3-sleep-3 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2651,6 +3298,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_pins_e: usart3-4 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, AF7)>, /* USART3_TX */
@@ -2666,6 +3314,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_idle_pins_e: usart3-idle-4 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2683,6 +3332,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_sleep_pins_e: usart3-sleep-4 {
 		pins {
 			pinmux = <STM32_PINMUX('B', 10, ANALOG)>, /* USART3_TX */
@@ -2692,6 +3342,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart3_pins_f: usart3-5 {
 		pins1 {
 			pinmux = <STM32_PINMUX('B', 10, AF7)>, /* USART3_TX */
@@ -2707,12 +3358,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usbotg_hs_pins_a: usbotg-hs-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 10, ANALOG)>; /* OTG_ID */
 		};
 	};
 
+	/omit-if-no-ref/
 	usbotg_fs_dp_dm_pins_a: usbotg-fs-dp-dm-0 {
 		pins {
 			pinmux = <STM32_PINMUX('A', 11, ANALOG)>, /* OTG_FS_DM */
@@ -2722,6 +3375,7 @@
 };
 
 &pinctrl_z {
+	/omit-if-no-ref/
 	i2c2_pins_b2: i2c2-0 {
 		pins {
 			pinmux = <STM32_PINMUX('Z', 0, AF3)>; /* I2C2_SCL */
@@ -2731,12 +3385,14 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c2_sleep_pins_b2: i2c2-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('Z', 0, ANALOG)>; /* I2C2_SCL */
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c4_pins_a: i2c4-0 {
 		pins {
 			pinmux = <STM32_PINMUX('Z', 4, AF6)>, /* I2C4_SCL */
@@ -2747,6 +3403,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c4_sleep_pins_a: i2c4-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('Z', 4, ANALOG)>, /* I2C4_SCL */
@@ -2754,6 +3411,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c6_pins_a: i2c6-0 {
 		pins {
 			pinmux = <STM32_PINMUX('Z', 6, AF2)>, /* I2C6_SCL */
@@ -2764,6 +3422,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	i2c6_sleep_pins_a: i2c6-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('Z', 6, ANALOG)>, /* I2C6_SCL */
@@ -2771,6 +3430,26 @@
 		};
 	};
 
+	/omit-if-no-ref/
+	i2c6_pins_b: i2c6-1 {
+		pins {
+			pinmux = <STM32_PINMUX('A', 11, AF2)>, /* I2C6_SCL */
+				 <STM32_PINMUX('A', 12, AF2)>; /* I2C6_SDA */
+			bias-disable;
+			drive-open-drain;
+			slew-rate = <0>;
+		};
+	};
+
+	/omit-if-no-ref/
+	i2c6_sleep_pins_b: i2c6-sleep-1 {
+		pins {
+			pinmux = <STM32_PINMUX('A', 11, ANALOG)>, /* I2C6_SCL */
+				 <STM32_PINMUX('A', 12, ANALOG)>; /* I2C6_SDA */
+		};
+	};
+
+	/omit-if-no-ref/
 	spi1_pins_a: spi1-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('Z', 0, AF5)>, /* SPI1_SCK */
@@ -2786,6 +3465,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	spi1_sleep_pins_a: spi1-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('Z', 0, ANALOG)>, /* SPI1_SCK */
@@ -2794,6 +3474,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart1_pins_b: usart1-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('Z', 7, AF7)>; /* USART1_TX */
@@ -2807,6 +3488,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart1_idle_pins_b: usart1-idle-1 {
 		pins1 {
 			pinmux = <STM32_PINMUX('Z', 7, ANALOG)>; /* USART1_TX */
@@ -2817,6 +3499,7 @@
 		};
 	};
 
+	/omit-if-no-ref/
 	usart1_sleep_pins_b: usart1-sleep-1 {
 		pins {
 			pinmux = <STM32_PINMUX('Z', 7, ANALOG)>, /* USART1_TX */

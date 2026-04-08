@@ -1032,7 +1032,7 @@ static int smu10_print_clock_levels(struct pp_hwmgr *hwmgr,
 			data->clock_vol_info.vdd_dep_on_fclk;
 	uint32_t i, now, size = 0;
 	uint32_t min_freq, max_freq = 0;
-	uint32_t ret = 0;
+	int ret = 0;
 
 	switch (type) {
 	case PP_SCLK:
@@ -1314,13 +1314,17 @@ static int smu10_read_sensor(struct pp_hwmgr *hwmgr, int idx,
 
 	switch (idx) {
 	case AMDGPU_PP_SENSOR_GFX_SCLK:
-		smum_send_msg_to_smc(hwmgr, PPSMC_MSG_GetGfxclkFrequency, &sclk);
+		ret = smum_send_msg_to_smc(hwmgr, PPSMC_MSG_GetGfxclkFrequency, &sclk);
+		if (ret)
+			break;
 			/* in units of 10KHZ */
 		*((uint32_t *)value) = sclk * 100;
 		*size = 4;
 		break;
 	case AMDGPU_PP_SENSOR_GFX_MCLK:
-		smum_send_msg_to_smc(hwmgr, PPSMC_MSG_GetFclkFrequency, &mclk);
+		ret = smum_send_msg_to_smc(hwmgr, PPSMC_MSG_GetFclkFrequency, &mclk);
+		if (ret)
+			break;
 			/* in units of 10KHZ */
 		*((uint32_t *)value) = mclk * 100;
 		*size = 4;
@@ -1638,7 +1642,6 @@ static const struct pp_hwmgr_func smu10_hwmgr_funcs = {
 	.apply_state_adjust_rules = smu10_apply_state_adjust_rules,
 	.force_dpm_level = smu10_dpm_force_dpm_level,
 	.get_power_state_size = smu10_get_power_state_size,
-	.powerdown_uvd = NULL,
 	.powergate_uvd = smu10_powergate_vcn,
 	.powergate_vce = NULL,
 	.get_mclk = smu10_dpm_get_mclk,

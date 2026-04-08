@@ -9,13 +9,13 @@
  * TODO: Input ALC/limiter support
  */
 
+#include <linux/mod_devicetable.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/pm.h>
 #include <linux/i2c.h>
-#include <linux/of_device.h>
 #include <linux/regmap.h>
 #include <linux/spi/spi.h>
 #include <linux/slab.h>
@@ -182,9 +182,9 @@ static int wm8776_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 	iface = 0;
 
 	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
-	case SND_SOC_DAIFMT_CBM_CFM:
+	case SND_SOC_DAIFMT_CBP_CFP:
 		break;
-	case SND_SOC_DAIFMT_CBS_CFS:
+	case SND_SOC_DAIFMT_CBC_CFC:
 		master = 0;
 		break;
 	default:

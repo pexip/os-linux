@@ -89,7 +89,7 @@ static int ping_v6_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 			return -EAFNOSUPPORT;
 		}
 		daddr = &(u->sin6_addr);
-		if (np->sndflow)
+		if (inet6_test_bit(SNDFLOW, sk))
 			fl6.flowlabel = u->sin6_flowinfo & IPV6_FLOWINFO_MASK;
 		if (__ipv6_addr_needs_scope_id(ipv6_addr_type(daddr)))
 			oif = u->sin6_scope_id;
@@ -107,9 +107,9 @@ static int ping_v6_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 		oif = np->sticky_pktinfo.ipi6_ifindex;
 
 	if (!oif && ipv6_addr_is_multicast(daddr))
-		oif = np->mcast_oif;
+		oif = READ_ONCE(np->mcast_oif);
 	else if (!oif)
-		oif = np->ucast_oif;
+		oif = READ_ONCE(np->ucast_oif);
 
 	addr_type = ipv6_addr_type(daddr);
 	if ((__ipv6_addr_needs_scope_id(addr_type) && !oif) ||
@@ -118,9 +118,7 @@ static int ping_v6_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 	     l3mdev_master_ifindex_by_index(sock_net(sk), oif) != sk->sk_bound_dev_if))
 		return -EINVAL;
 
-	ipcm6_init_sk(&ipc6, np);
-	ipc6.sockc.tsflags = READ_ONCE(sk->sk_tsflags);
-	ipc6.sockc.mark = READ_ONCE(sk->sk_mark);
+	ipcm6_init_sk(&ipc6, sk);
 
 	fl6.flowi6_oif = oif;
 
@@ -144,7 +142,7 @@ static int ping_v6_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 	fl6.saddr = np->saddr;
 	fl6.daddr = *daddr;
 	fl6.flowi6_mark = ipc6.sockc.mark;
-	fl6.flowi6_uid = sk->sk_uid;
+	fl6.flowi6_uid = sk_uid(sk);
 	fl6.fl6_icmp_type = user_icmph.icmp6_type;
 	fl6.fl6_icmp_code = user_icmph.icmp6_code;
 	security_sk_classify_flow(sk, flowi6_to_flowi_common(&fl6));
@@ -157,9 +155,9 @@ static int ping_v6_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 	rt = dst_rt6_info(dst);
 
 	if (!fl6.flowi6_oif && ipv6_addr_is_multicast(&fl6.daddr))
-		fl6.flowi6_oif = np->mcast_oif;
+		fl6.flowi6_oif = READ_ONCE(np->mcast_oif);
 	else if (!fl6.flowi6_oif)
-		fl6.flowi6_oif = np->ucast_oif;
+		fl6.flowi6_oif = READ_ONCE(np->ucast_oif);
 
 	pfh.icmph.type = user_icmph.icmp6_type;
 	pfh.icmph.code = user_icmph.icmp6_code;
@@ -210,7 +208,6 @@ struct proto pingv6_prot = {
 	.recvmsg =	ping_recvmsg,
 	.bind =		ping_bind,
 	.backlog_rcv =	ping_queue_rcv_skb,
-	.hash =		ping_hash,
 	.unhash =	ping_unhash,
 	.get_port =	ping_get_port,
 	.put_port =	ping_unhash,

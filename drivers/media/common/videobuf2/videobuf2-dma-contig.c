@@ -258,6 +258,7 @@ static void *vb2_dc_alloc(struct vb2_buffer *vb,
 
 	if (ret) {
 		dev_err(dev, "dma alloc of size %lu failed\n", size);
+		put_device(buf->dev);
 		kfree(buf);
 		return ERR_PTR(-ENOMEM);
 	}
@@ -542,13 +543,14 @@ static void vb2_dc_put_userptr(void *buf_priv)
 		 */
 		dma_unmap_sgtable(buf->dev, sgt, buf->dma_dir,
 				  DMA_ATTR_SKIP_CPU_SYNC);
-		pages = frame_vector_pages(buf->vec);
-		/* sgt should exist only if vector contains pages... */
-		BUG_ON(IS_ERR(pages));
 		if (buf->dma_dir == DMA_FROM_DEVICE ||
-		    buf->dma_dir == DMA_BIDIRECTIONAL)
-			for (i = 0; i < frame_vector_count(buf->vec); i++)
-				set_page_dirty_lock(pages[i]);
+				buf->dma_dir == DMA_BIDIRECTIONAL) {
+			pages = frame_vector_pages(buf->vec);
+			/* sgt should exist only if vector contains pages... */
+			if (!WARN_ON_ONCE(IS_ERR(pages)))
+				for (i = 0; i < frame_vector_count(buf->vec); i++)
+					set_page_dirty_lock(pages[i]);
+		}
 		sg_free_table(sgt);
 		kfree(sgt);
 	} else {
@@ -853,8 +855,7 @@ int vb2_dma_contig_set_max_seg_size(struct device *dev, unsigned int size)
 		return -ENODEV;
 	}
 	if (dma_get_max_seg_size(dev) < size)
-		return dma_set_max_seg_size(dev, size);
-
+		dma_set_max_seg_size(dev, size);
 	return 0;
 }
 EXPORT_SYMBOL_GPL(vb2_dma_contig_set_max_seg_size);
@@ -862,4 +863,4 @@ EXPORT_SYMBOL_GPL(vb2_dma_contig_set_max_seg_size);
 MODULE_DESCRIPTION("DMA-contig memory handling routines for videobuf2");
 MODULE_AUTHOR("Pawel Osciak <pawel@osciak.com>");
 MODULE_LICENSE("GPL");
-MODULE_IMPORT_NS(DMA_BUF);
+MODULE_IMPORT_NS("DMA_BUF");

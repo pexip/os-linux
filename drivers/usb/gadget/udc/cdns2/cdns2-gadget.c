@@ -29,6 +29,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/interrupt.h>
 #include <linux/property.h>
+#include <linux/string_choices.h>
 #include <linux/dmapool.h>
 #include <linux/iopoll.h>
 
@@ -2033,8 +2034,8 @@ static void cdns2_quiesce(struct cdns2_device *pdev)
 	set_reg_bit_8(&pdev->usb_regs->usbcs, USBCS_DISCON);
 
 	/* Disable interrupt. */
-	writeb(0, &pdev->interrupt_regs->extien),
-	writeb(0, &pdev->interrupt_regs->usbien),
+	writeb(0, &pdev->interrupt_regs->extien);
+	writeb(0, &pdev->interrupt_regs->usbien);
 	writew(0, &pdev->adma_regs->ep_ien);
 
 	/* Clear interrupt line. */
@@ -2233,12 +2234,12 @@ static int cdns2_init_eps(struct cdns2_device *pdev)
 		dev_dbg(pdev->dev, "Init %s, SupType: CTRL: %s, INT: %s, "
 			"BULK: %s, ISOC %s, SupDir IN: %s, OUT: %s\n",
 			pep->name,
-			(pep->endpoint.caps.type_control) ? "yes" : "no",
-			(pep->endpoint.caps.type_int) ? "yes" : "no",
-			(pep->endpoint.caps.type_bulk) ? "yes" : "no",
-			(pep->endpoint.caps.type_iso) ? "yes" : "no",
-			(pep->endpoint.caps.dir_in) ? "yes" : "no",
-			(pep->endpoint.caps.dir_out) ? "yes" : "no");
+			str_yes_no(pep->endpoint.caps.type_control),
+			str_yes_no(pep->endpoint.caps.type_int),
+			str_yes_no(pep->endpoint.caps.type_bulk),
+			str_yes_no(pep->endpoint.caps.type_iso),
+			str_yes_no(pep->endpoint.caps.dir_in),
+			str_yes_no(pep->endpoint.caps.dir_out));
 
 		INIT_LIST_HEAD(&pep->pending_list);
 		INIT_LIST_HEAD(&pep->deferred_list);

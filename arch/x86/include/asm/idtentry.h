@@ -7,7 +7,7 @@
 
 #define IDT_ALIGN	(8 * (1 + HAS_KERNEL_IBT))
 
-#ifndef __ASSEMBLY__
+#ifndef __ASSEMBLER__
 #include <linux/entry-common.h>
 #include <linux/hardirq.h>
 
@@ -459,7 +459,17 @@ __visible noinstr void func(struct pt_regs *regs,			\
 #define DEFINE_FREDENTRY_DEBUG		DEFINE_FREDENTRY_RAW
 #endif
 
-#else /* !__ASSEMBLY__ */
+void idt_install_sysvec(unsigned int n, const void *function);
+void fred_install_sysvec(unsigned int vector, const idtentry_t function);
+
+#define sysvec_install(vector, function) {				\
+	if (IS_ENABLED(CONFIG_X86_FRED))				\
+		fred_install_sysvec(vector, function);			\
+	if (!cpu_feature_enabled(X86_FEATURE_FRED))			\
+		idt_install_sysvec(vector, asm_##function);		\
+}
+
+#else /* !__ASSEMBLER__ */
 
 /*
  * The ASM variants for DECLARE_IDTENTRY*() which emit the ASM entry stubs.
@@ -485,7 +495,7 @@ __visible noinstr void func(struct pt_regs *regs,			\
 
 /* System vector entries */
 #define DECLARE_IDTENTRY_SYSVEC(vector, func)				\
-	idtentry_sysvec vector func
+	DECLARE_IDTENTRY(vector, func)
 
 #ifdef CONFIG_X86_64
 # define DECLARE_IDTENTRY_MCE(vector, func)				\
@@ -564,7 +574,7 @@ SYM_CODE_START(spurious_entries_start)
 SYM_CODE_END(spurious_entries_start)
 #endif
 
-#endif /* __ASSEMBLY__ */
+#endif /* __ASSEMBLER__ */
 
 /*
  * The actual entry points. Note that DECLARE_IDTENTRY*() serves two
@@ -726,7 +736,7 @@ DECLARE_IDTENTRY_SYSVEC(IRQ_WORK_VECTOR,		sysvec_irq_work);
 # endif
 #endif
 
-#ifdef CONFIG_HAVE_KVM
+#if IS_ENABLED(CONFIG_KVM)
 DECLARE_IDTENTRY_SYSVEC(POSTED_INTR_VECTOR,		sysvec_kvm_posted_intr_ipi);
 DECLARE_IDTENTRY_SYSVEC(POSTED_INTR_WAKEUP_VECTOR,	sysvec_kvm_posted_intr_wakeup_ipi);
 DECLARE_IDTENTRY_SYSVEC(POSTED_INTR_NESTED_VECTOR,	sysvec_kvm_posted_intr_nested_ipi);
@@ -735,6 +745,12 @@ DECLARE_IDTENTRY_SYSVEC(POSTED_INTR_NESTED_VECTOR,	sysvec_kvm_posted_intr_nested
 # define fred_sysvec_kvm_posted_intr_wakeup_ipi		NULL
 # define fred_sysvec_kvm_posted_intr_nested_ipi		NULL
 #endif
+
+# ifdef CONFIG_X86_POSTED_MSI
+DECLARE_IDTENTRY_SYSVEC(POSTED_MSI_NOTIFICATION_VECTOR,	sysvec_posted_msi_notification);
+#else
+# define fred_sysvec_posted_msi_notification		NULL
+# endif
 
 #if IS_ENABLED(CONFIG_HYPERV)
 DECLARE_IDTENTRY_SYSVEC(HYPERVISOR_CALLBACK_VECTOR,	sysvec_hyperv_callback);

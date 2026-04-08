@@ -10,6 +10,7 @@
 #include <linux/clk.h>
 #include <linux/device.h>
 #include <linux/dmaengine.h>
+#include <linux/minmax.h>
 #include <linux/module.h>
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
@@ -187,16 +188,8 @@ static int jh7110_tdm_syncdiv(struct jh7110_tdm_dev *tdm)
 {
 	u32 sl, sscale, syncdiv;
 
-	if (tdm->rx.sl >= tdm->tx.sl)
-		sl = tdm->rx.sl;
-	else
-		sl = tdm->tx.sl;
-
-	if (tdm->rx.sscale >= tdm->tx.sscale)
-		sscale = tdm->rx.sscale;
-	else
-		sscale = tdm->tx.sscale;
-
+	sl = max(tdm->rx.sl, tdm->tx.sl);
+	sscale = max(tdm->rx.sscale, tdm->tx.sscale);
 	syncdiv = tdm->pcmclk / tdm->samplerate - 1;
 
 	if ((syncdiv + 1) < (sl * sscale)) {
@@ -325,7 +318,7 @@ static const struct snd_soc_component_driver jh7110_tdm_component = {
 static int jh7110_tdm_startup(struct snd_pcm_substream *substream,
 			      struct snd_soc_dai *cpu_dai)
 {
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
 	struct snd_soc_dai_link *dai_link = rtd->dai_link;
 
 	dai_link->trigger_stop = SND_SOC_TRIGGER_ORDER_LDC;
@@ -660,7 +653,7 @@ static struct platform_driver jh7110_tdm_driver = {
 		.pm = pm_ptr(&jh7110_tdm_pm_ops),
 	},
 	.probe = jh7110_tdm_probe,
-	.remove_new = jh7110_tdm_dev_remove,
+	.remove = jh7110_tdm_dev_remove,
 };
 module_platform_driver(jh7110_tdm_driver);
 

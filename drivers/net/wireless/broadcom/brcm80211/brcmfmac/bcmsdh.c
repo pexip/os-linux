@@ -455,6 +455,11 @@ static int brcmf_sdiod_sglist_rw(struct brcmf_sdio_dev *sdiodev,
 			if (sg_data_sz > max_req_sz - req_sz)
 				sg_data_sz = max_req_sz - req_sz;
 
+			if (!sgl) {
+				/* out of (pre-allocated) scatterlist entries */
+				ret = -ENOMEM;
+				goto exit;
+			}
 			sg_set_buf(sgl, pkt_data, sg_data_sz);
 			sg_cnt++;
 
@@ -947,8 +952,8 @@ int brcmf_sdiod_probe(struct brcmf_sdio_dev *sdiodev)
 
 	/* try to attach to the target device */
 	sdiodev->bus = brcmf_sdio_probe(sdiodev);
-	if (!sdiodev->bus) {
-		ret = -ENODEV;
+	if (IS_ERR(sdiodev->bus)) {
+		ret = PTR_ERR(sdiodev->bus);
 		goto out;
 	}
 	brcmf_sdiod_host_fixup(sdiodev->func2->card->host);
@@ -991,9 +996,10 @@ static const struct sdio_device_id brcmf_sdmmc_ids[] = {
 	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_4354, WCC),
 	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_4356, WCC),
 	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_4359, WCC),
+	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_43751, WCC),
+	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_43752, WCC),
 	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_CYPRESS_4373, CYW),
 	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_CYPRESS_43012, CYW),
-	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_CYPRESS_43752, CYW),
 	BRCMF_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_CYPRESS_89359, CYW),
 	CYW_SDIO_DEVICE(SDIO_DEVICE_ID_BROADCOM_CYPRESS_43439, CYW),
 	{ /* end: all zeroes */ }
@@ -1061,10 +1067,10 @@ static int brcmf_ops_sdio_probe(struct sdio_func *func,
 	if (func->num != 2)
 		return -ENODEV;
 
-	bus_if = kzalloc(sizeof(struct brcmf_bus), GFP_KERNEL);
+	bus_if = kzalloc(sizeof(*bus_if), GFP_KERNEL);
 	if (!bus_if)
 		return -ENOMEM;
-	sdiodev = kzalloc(sizeof(struct brcmf_sdio_dev), GFP_KERNEL);
+	sdiodev = kzalloc(sizeof(*sdiodev), GFP_KERNEL);
 	if (!sdiodev) {
 		kfree(bus_if);
 		return -ENOMEM;
@@ -1244,7 +1250,6 @@ static struct sdio_driver brcmf_sdmmc_driver = {
 	.name = KBUILD_MODNAME,
 	.id_table = brcmf_sdmmc_ids,
 	.drv = {
-		.owner = THIS_MODULE,
 		.pm = pm_sleep_ptr(&brcmf_sdio_pm_ops),
 		.coredump = brcmf_dev_coredump,
 	},

@@ -132,12 +132,15 @@ bool static_key_fast_inc_not_disabled(struct static_key *key)
 	/*
 	 * Negative key->enabled has a special meaning: it sends
 	 * static_key_slow_inc/dec() down the slow path, and it is non-zero
-	 * so it counts as "enabled" in jump_label_update().  Note that
-	 * atomic_inc_unless_negative() checks >= 0, so roll our own.
+	 * so it counts as "enabled" in jump_label_update().
+	 *
+	 * The INT_MAX overflow condition is either used by the networking
+	 * code to reset or detected in the slow path of
+	 * static_key_slow_inc_cpuslocked().
 	 */
 	v = atomic_read(&key->enabled);
 	do {
-		if (v <= 0 || (v + 1) < 0)
+		if (v <= 0 || v == INT_MAX)
 			return false;
 	} while (!likely(atomic_try_cmpxchg(&key->enabled, &v, v + 1)));
 
@@ -565,6 +568,45 @@ void __init jump_label_init(void)
 	cpus_read_unlock();
 }
 
+static inline bool static_key_sealed(struct static_key *key)
+{
+	return (key->type & JUMP_TYPE_LINKED) && !(key->type & ~JUMP_TYPE_MASK);
+}
+
+static inline void static_key_seal(struct static_key *key)
+{
+	unsigned long type = key->type & JUMP_TYPE_TRUE;
+	key->type = JUMP_TYPE_LINKED | type;
+}
+
+void jump_label_init_ro(void)
+{
+	struct jump_entry *iter_start = __start___jump_table;
+	struct jump_entry *iter_stop = __stop___jump_table;
+	struct jump_entry *iter;
+
+	if (WARN_ON_ONCE(!static_key_initialized))
+		return;
+
+	cpus_read_lock();
+	jump_label_lock();
+
+	for (iter = iter_start; iter < iter_stop; iter++) {
+		struct static_key *iterk = jump_entry_key(iter);
+
+		if (!is_kernel_ro_after_init((unsigned long)iterk))
+			continue;
+
+		if (static_key_sealed(iterk))
+			continue;
+
+		static_key_seal(iterk);
+	}
+
+	jump_label_unlock();
+	cpus_read_unlock();
+}
+
 #ifdef CONFIG_MODULES
 
 enum jump_label_type jump_label_init_type(struct jump_entry *entry)
@@ -611,13 +653,12 @@ static int __jump_label_mod_text_reserved(void *start, void *end)
 	struct module *mod;
 	int ret;
 
-	preempt_disable();
-	mod = __module_text_address((unsigned long)start);
-	WARN_ON_ONCE(__module_text_address((unsigned long)end) != mod);
-	if (!try_module_get(mod))
-		mod = NULL;
-	preempt_enable();
-
+	scoped_guard(rcu) {
+		mod = __module_text_address((unsigned long)start);
+		WARN_ON_ONCE(__module_text_address((unsigned long)end) != mod);
+		if (!try_module_get(mod))
+			mod = NULL;
+	}
 	if (!mod)
 		return 0;
 
@@ -685,6 +726,15 @@ static int jump_label_add_module(struct module *mod)
 			static_key_set_entries(key, iter);
 			continue;
 		}
+
+		/*
+		 * If the key was sealed at init, then there's no need to keep a
+		 * reference to its module entries - just patch them now and be
+		 * done with it.
+		 */
+		if (static_key_sealed(key))
+			goto do_poke;
+
 		jlm = kzalloc(sizeof(struct static_key_mod), GFP_KERNEL);
 		if (!jlm)
 			return -ENOMEM;
@@ -695,9 +745,9 @@ static int jump_label_add_module(struct module *mod)
 				kfree(jlm);
 				return -ENOMEM;
 			}
-			preempt_disable();
-			jlm2->mod = __module_address((unsigned long)key);
-			preempt_enable();
+			scoped_guard(rcu)
+				jlm2->mod = __module_address((unsigned long)key);
+
 			jlm2->entries = static_key_entries(key);
 			jlm2->next = NULL;
 			static_key_set_mod(key, jlm2);
@@ -710,6 +760,7 @@ static int jump_label_add_module(struct module *mod)
 		static_key_set_linked(key);
 
 		/* Only update if we've changed from our initial state */
+do_poke:
 		if (jump_label_type(iter) != jump_label_init_type(iter))
 			__jump_label_update(key, iter, iter_stop, true);
 	}
@@ -732,6 +783,10 @@ static void jump_label_del_module(struct module *mod)
 		key = jump_entry_key(iter);
 
 		if (within_module((unsigned long)key, mod))
+			continue;
+
+		/* No @jlm allocated because key was sealed at init. */
+		if (static_key_sealed(key))
 			continue;
 
 		/* No memory during module load */
@@ -850,13 +905,13 @@ static void jump_label_update(struct static_key *key)
 		return;
 	}
 
-	preempt_disable();
-	mod = __module_address((unsigned long)key);
-	if (mod) {
-		stop = mod->jump_entries + mod->num_jump_entries;
-		init = mod->state == MODULE_STATE_COMING;
+	scoped_guard(rcu) {
+		mod = __module_address((unsigned long)key);
+		if (mod) {
+			stop = mod->jump_entries + mod->num_jump_entries;
+			init = mod->state == MODULE_STATE_COMING;
+		}
 	}
-	preempt_enable();
 #endif
 	entry = static_key_entries(key);
 	/* if there are no users, entry can be NULL */

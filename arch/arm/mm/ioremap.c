@@ -111,8 +111,8 @@ void __init add_static_vm_early(struct static_vm *svm)
 int ioremap_page(unsigned long virt, unsigned long phys,
 		 const struct mem_type *mtype)
 {
-	return ioremap_page_range(virt, virt + PAGE_SIZE, phys,
-				  __pgprot(mtype->prot_pte));
+	return vmap_page_range(virt, virt + PAGE_SIZE, phys,
+			       __pgprot(mtype->prot_pte));
 }
 EXPORT_SYMBOL(ioremap_page);
 
@@ -436,7 +436,7 @@ void __arm_iomem_set_ro(void __iomem *ptr, size_t size)
 	set_memory_ro((unsigned long)ptr, PAGE_ALIGN(size) / PAGE_SIZE);
 }
 
-void *arch_memremap_wb(phys_addr_t phys_addr, size_t size)
+void *arch_memremap_wb(phys_addr_t phys_addr, size_t size, unsigned long flags)
 {
 	return (__force void *)arch_ioremap_caller(phys_addr, size,
 						   MT_MEMORY_RW,
@@ -491,8 +491,8 @@ int pci_remap_iospace(const struct resource *res, phys_addr_t phys_addr)
 	if (res->end > IO_SPACE_LIMIT)
 		return -EINVAL;
 
-	return ioremap_page_range(vaddr, vaddr + resource_size(res), phys_addr,
-				  __pgprot(get_mem_type(pci_ioremap_mem_type)->prot_pte));
+	return vmap_page_range(vaddr, vaddr + resource_size(res), phys_addr,
+			       __pgprot(get_mem_type(pci_ioremap_mem_type)->prot_pte));
 }
 EXPORT_SYMBOL(pci_remap_iospace);
 

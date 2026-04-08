@@ -141,7 +141,6 @@ struct ov5693_device {
 
 	struct gpio_desc *reset;
 	struct gpio_desc *powerdown;
-	struct gpio_desc *privacy_led;
 	struct regulator_bulk_data supplies[OV5693_NUM_SUPPLIES];
 	struct clk *xvclk;
 
@@ -154,7 +153,6 @@ struct ov5693_device {
 		unsigned int inc_y_odd;
 		unsigned int vts;
 	} mode;
-	bool streaming;
 
 	struct v4l2_subdev sd;
 	struct media_pad pad;
@@ -658,7 +656,6 @@ static int ov5693_sensor_init(struct ov5693_device *ov5693)
 
 static void ov5693_sensor_powerdown(struct ov5693_device *ov5693)
 {
-	gpiod_set_value_cansleep(ov5693->privacy_led, 0);
 	gpiod_set_value_cansleep(ov5693->reset, 1);
 	gpiod_set_value_cansleep(ov5693->powerdown, 1);
 
@@ -688,7 +685,6 @@ static int ov5693_sensor_powerup(struct ov5693_device *ov5693)
 
 	gpiod_set_value_cansleep(ov5693->powerdown, 0);
 	gpiod_set_value_cansleep(ov5693->reset, 0);
-	gpiod_set_value_cansleep(ov5693->privacy_led, 1);
 
 	usleep_range(5000, 7500);
 
@@ -776,7 +772,7 @@ __ov5693_get_pad_format(struct ov5693_device *ov5693,
 {
 	switch (which) {
 	case V4L2_SUBDEV_FORMAT_TRY:
-		return v4l2_subdev_get_try_format(&ov5693->sd, state, pad);
+		return v4l2_subdev_state_get_format(state, pad);
 	case V4L2_SUBDEV_FORMAT_ACTIVE:
 		return &ov5693->mode.format;
 	default:
@@ -791,7 +787,7 @@ __ov5693_get_pad_crop(struct ov5693_device *ov5693,
 {
 	switch (which) {
 	case V4L2_SUBDEV_FORMAT_TRY:
-		return v4l2_subdev_get_try_crop(&ov5693->sd, state, pad);
+		return v4l2_subdev_state_get_crop(state, pad);
 	case V4L2_SUBDEV_FORMAT_ACTIVE:
 		return &ov5693->mode.crop;
 	}
@@ -975,9 +971,9 @@ static int ov5693_s_stream(struct v4l2_subdev *sd, int enable)
 	int ret;
 
 	if (enable) {
-		ret = pm_runtime_get_sync(ov5693->dev);
-		if (ret < 0)
-			goto err_power_down;
+		ret = pm_runtime_resume_and_get(ov5693->dev);
+		if (ret)
+			return ret;
 
 		mutex_lock(&ov5693->lock);
 		ret = __v4l2_ctrl_handler_setup(&ov5693->ctrls.handler);
@@ -996,8 +992,6 @@ static int ov5693_s_stream(struct v4l2_subdev *sd, int enable)
 	if (ret)
 		goto err_power_down;
 
-	ov5693->streaming = !!enable;
-
 	if (!enable)
 		pm_runtime_put(ov5693->dev);
 
@@ -1007,13 +1001,21 @@ err_power_down:
 	return ret;
 }
 
-static int ov5693_g_frame_interval(struct v4l2_subdev *sd,
-				   struct v4l2_subdev_frame_interval *interval)
+static int ov5693_get_frame_interval(struct v4l2_subdev *sd,
+				     struct v4l2_subdev_state *sd_state,
+				     struct v4l2_subdev_frame_interval *interval)
 {
 	struct ov5693_device *ov5693 = to_ov5693_sensor(sd);
 	unsigned int framesize = OV5693_FIXED_PPL * (ov5693->mode.format.height +
 				 ov5693->ctrls.vblank->val);
 	unsigned int fps = DIV_ROUND_CLOSEST(OV5693_PIXEL_RATE, framesize);
+
+	/*
+	 * FIXME: Implement support for V4L2_SUBDEV_FORMAT_TRY, using the V4L2
+	 * subdev active state API.
+	 */
+	if (interval->which != V4L2_SUBDEV_FORMAT_ACTIVE)
+		return -EINVAL;
 
 	interval->interval.numerator = 1;
 	interval->interval.denominator = fps;
@@ -1057,7 +1059,6 @@ static int ov5693_enum_frame_size(struct v4l2_subdev *sd,
 
 static const struct v4l2_subdev_video_ops ov5693_video_ops = {
 	.s_stream = ov5693_s_stream,
-	.g_frame_interval = ov5693_g_frame_interval,
 };
 
 static const struct v4l2_subdev_pad_ops ov5693_pad_ops = {
@@ -1067,6 +1068,7 @@ static const struct v4l2_subdev_pad_ops ov5693_pad_ops = {
 	.set_fmt = ov5693_set_fmt,
 	.get_selection = ov5693_get_selection,
 	.set_selection = ov5693_set_selection,
+	.get_frame_interval = ov5693_get_frame_interval,
 };
 
 static const struct v4l2_subdev_ops ov5693_ops = {
@@ -1196,13 +1198,6 @@ static int ov5693_configure_gpios(struct ov5693_device *ov5693)
 		return PTR_ERR(ov5693->powerdown);
 	}
 
-	ov5693->privacy_led = devm_gpiod_get_optional(ov5693->dev, "privacy-led",
-						      GPIOD_OUT_LOW);
-	if (IS_ERR(ov5693->privacy_led)) {
-		dev_err(ov5693->dev, "Error fetching privacy-led GPIO\n");
-		return PTR_ERR(ov5693->privacy_led);
-	}
-
 	return 0;
 }
 
@@ -1227,9 +1222,14 @@ static int ov5693_check_hwcfg(struct ov5693_device *ov5693)
 	unsigned int i;
 	int ret;
 
+	/*
+	 * Sometimes the fwnode graph is initialized by the bridge driver
+	 * Bridge drivers doing this may also add GPIO mappings, wait for this.
+	 */
 	endpoint = fwnode_graph_get_next_endpoint(fwnode, NULL);
 	if (!endpoint)
-		return -EPROBE_DEFER; /* Could be provided by cio2-bridge */
+		return dev_err_probe(ov5693->dev, -EPROBE_DEFER,
+				     "waiting for fwnode graph endpoint\n");
 
 	ret = v4l2_fwnode_endpoint_alloc_parse(endpoint, &bus_cfg);
 	fwnode_handle_put(endpoint);
@@ -1289,25 +1289,13 @@ static int ov5693_probe(struct i2c_client *client)
 
 	v4l2_i2c_subdev_init(&ov5693->sd, client, &ov5693_ops);
 
-	ov5693->xvclk = devm_clk_get_optional(&client->dev, "xvclk");
+	ov5693->xvclk = devm_v4l2_sensor_clk_get(&client->dev, "xvclk");
 	if (IS_ERR(ov5693->xvclk))
 		return dev_err_probe(&client->dev, PTR_ERR(ov5693->xvclk),
 				     "failed to get xvclk: %ld\n",
 				     PTR_ERR(ov5693->xvclk));
 
-	if (ov5693->xvclk) {
-		xvclk_rate = clk_get_rate(ov5693->xvclk);
-	} else {
-		ret = fwnode_property_read_u32(dev_fwnode(&client->dev),
-				     "clock-frequency",
-				     &xvclk_rate);
-
-		if (ret) {
-			dev_err(&client->dev, "can't get clock frequency");
-			return ret;
-		}
-	}
-
+	xvclk_rate = clk_get_rate(ov5693->xvclk);
 	if (xvclk_rate != OV5693_XVCLK_FREQ)
 		dev_warn(&client->dev, "Found clk freq %u, expected %u\n",
 			 xvclk_rate, OV5693_XVCLK_FREQ);

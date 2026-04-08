@@ -20,7 +20,7 @@
 
 #define _PAGE_PRESENT	0x001	/* software: pte contains a translation */
 #define _PAGE_HASHPTE	0x002	/* hash_page has made an HPTE for this pte */
-#define _PAGE_USER	0x004	/* usermode access allowed */
+#define _PAGE_READ	0x004	/* software: read access allowed */
 #define _PAGE_GUARDED	0x008	/* G: prohibit speculative access */
 #define _PAGE_COHERENT	0x010	/* M: enforce memory coherence (SMP systems) */
 #define _PAGE_NO_CACHE	0x020	/* I: cache inhibit */
@@ -28,7 +28,7 @@
 #define _PAGE_DIRTY	0x080	/* C: page changed */
 #define _PAGE_ACCESSED	0x100	/* R: page referenced */
 #define _PAGE_EXEC	0x200	/* software: exec allowed */
-#define _PAGE_RW	0x400	/* software: user write access allowed */
+#define _PAGE_WRITE	0x400	/* software: user write access allowed */
 #define _PAGE_SPECIAL	0x800	/* software: Special page */
 
 #ifdef CONFIG_PTE_64BIT
@@ -42,25 +42,12 @@
 #define _PMD_PRESENT_MASK (PAGE_MASK)
 #define _PMD_BAD	(~PAGE_MASK)
 
-/* We borrow the _PAGE_USER bit to store the exclusive marker in swap PTEs. */
-#define _PAGE_SWP_EXCLUSIVE	_PAGE_USER
+/* We borrow the _PAGE_READ bit to store the exclusive marker in swap PTEs. */
+#define _PAGE_SWP_EXCLUSIVE	_PAGE_READ
 
 /* And here we include common definitions */
 
-#define _PAGE_KERNEL_RO		0
-#define _PAGE_KERNEL_ROX	(_PAGE_EXEC)
-#define _PAGE_KERNEL_RW		(_PAGE_DIRTY | _PAGE_RW)
-#define _PAGE_KERNEL_RWX	(_PAGE_DIRTY | _PAGE_RW | _PAGE_EXEC)
-
 #define _PAGE_HPTEFLAGS _PAGE_HASHPTE
-
-#ifndef __ASSEMBLY__
-
-static inline bool pte_user(pte_t pte)
-{
-	return pte_val(pte) & _PAGE_USER;
-}
-#endif /* __ASSEMBLY__ */
 
 /*
  * Location of the PFN in the PTE. Most 32-bit platforms use the same
@@ -97,20 +84,7 @@ static inline bool pte_user(pte_t pte)
 #define _PAGE_BASE_NC	(_PAGE_PRESENT | _PAGE_ACCESSED)
 #define _PAGE_BASE	(_PAGE_BASE_NC | _PAGE_COHERENT)
 
-/*
- * Permission masks used to generate the __P and __S table.
- *
- * Note:__pgprot is defined in arch/powerpc/include/asm/page.h
- *
- * Write permissions imply read permissions for now.
- */
-#define PAGE_NONE	__pgprot(_PAGE_BASE)
-#define PAGE_SHARED	__pgprot(_PAGE_BASE | _PAGE_USER | _PAGE_RW)
-#define PAGE_SHARED_X	__pgprot(_PAGE_BASE | _PAGE_USER | _PAGE_RW | _PAGE_EXEC)
-#define PAGE_COPY	__pgprot(_PAGE_BASE | _PAGE_USER)
-#define PAGE_COPY_X	__pgprot(_PAGE_BASE | _PAGE_USER | _PAGE_EXEC)
-#define PAGE_READONLY	__pgprot(_PAGE_BASE | _PAGE_USER)
-#define PAGE_READONLY_X	__pgprot(_PAGE_BASE | _PAGE_USER | _PAGE_EXEC)
+#include <asm/pgtable-masks.h>
 
 /* Permission masks used for kernel mappings */
 #define PAGE_KERNEL	__pgprot(_PAGE_BASE | _PAGE_KERNEL_RW)
@@ -128,7 +102,7 @@ static inline bool pte_user(pte_t pte)
 #define PMD_CACHE_INDEX	PMD_INDEX_SIZE
 #define PUD_CACHE_INDEX	PUD_INDEX_SIZE
 
-#ifndef __ASSEMBLY__
+#ifndef __ASSEMBLER__
 #define PTE_TABLE_SIZE	(sizeof(pte_t) << PTE_INDEX_SIZE)
 #define PMD_TABLE_SIZE	0
 #define PUD_TABLE_SIZE	0
@@ -136,7 +110,7 @@ static inline bool pte_user(pte_t pte)
 
 /* Bits to mask out from a PMD to get to the PTE page */
 #define PMD_MASKED_BITS		(PTE_TABLE_SIZE - 1)
-#endif	/* __ASSEMBLY__ */
+#endif	/* __ASSEMBLER__ */
 
 #define PTRS_PER_PTE	(1 << PTE_INDEX_SIZE)
 #define PTRS_PER_PGD	(1 << PGD_INDEX_SIZE)
@@ -158,19 +132,26 @@ static inline bool pte_user(pte_t pte)
 
 #define USER_PTRS_PER_PGD	(TASK_SIZE / PGDIR_SIZE)
 
-#ifndef __ASSEMBLY__
+#ifndef __ASSEMBLER__
 
 int map_kernel_page(unsigned long va, phys_addr_t pa, pgprot_t prot);
 void unmap_kernel_page(unsigned long va);
 
-#endif /* !__ASSEMBLY__ */
+#endif /* !__ASSEMBLER__ */
 
 /*
  * This is the bottom of the PKMAP area with HIGHMEM or an arbitrary
  * value (for now) on others, from where we can start layout kernel
  * virtual space that goes below PKMAP and FIXMAP
  */
-#include <asm/fixmap.h>
+
+#define FIXADDR_SIZE	0
+#ifdef CONFIG_KASAN
+#include <asm/kasan.h>
+#define FIXADDR_TOP	(KASAN_SHADOW_START - PAGE_SIZE)
+#else
+#define FIXADDR_TOP	((unsigned long)(-PAGE_SIZE))
+#endif
 
 /*
  * ioremap_bot starts at that address. Early ioremaps move down from there,
@@ -215,18 +196,16 @@ void unmap_kernel_page(unsigned long va);
 #endif
 
 #define MODULES_END	ALIGN_DOWN(PAGE_OFFSET, SZ_256M)
-#define MODULES_VADDR	(MODULES_END - SZ_256M)
+#define MODULES_SIZE	(CONFIG_MODULES_SIZE * SZ_1M)
+#define MODULES_VADDR	(MODULES_END - MODULES_SIZE)
 
-#ifndef __ASSEMBLY__
+#ifndef __ASSEMBLER__
 #include <linux/sched.h>
 #include <linux/threads.h>
 
 /* Bits to mask out from a PGD to get to the PUD page */
 #define PGD_MASKED_BITS		0
 
-#define pte_ERROR(e) \
-	pr_err("%s:%d: bad pte %llx.\n", __FILE__, __LINE__, \
-		(unsigned long long)pte_val(e))
 #define pgd_ERROR(e) \
 	pr_err("%s:%d: bad pgd %08lx.\n", __FILE__, __LINE__, pgd_val(e))
 /*
@@ -343,7 +322,7 @@ static inline pte_t ptep_get_and_clear(struct mm_struct *mm, unsigned long addr,
 static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr,
 				      pte_t *ptep)
 {
-	pte_update(mm, addr, ptep, _PAGE_RW, 0, 0);
+	pte_update(mm, addr, ptep, _PAGE_WRITE, 0, 0);
 }
 
 static inline void __ptep_set_access_flags(struct vm_area_struct *vma,
@@ -386,7 +365,7 @@ static inline void __ptep_set_access_flags(struct vm_area_struct *vma,
 #define __pte_to_swp_entry(pte)		((swp_entry_t) { pte_val(pte) >> 3 })
 #define __swp_entry_to_pte(x)		((pte_t) { (x).val << 3 })
 
-static inline int pte_swp_exclusive(pte_t pte)
+static inline bool pte_swp_exclusive(pte_t pte)
 {
 	return pte_val(pte) & _PAGE_SWP_EXCLUSIVE;
 }
@@ -402,8 +381,16 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
 }
 
 /* Generic accessors to PTE bits */
-static inline int pte_write(pte_t pte)		{ return !!(pte_val(pte) & _PAGE_RW);}
-static inline int pte_read(pte_t pte)		{ return 1; }
+static inline bool pte_read(pte_t pte)
+{
+	return !!(pte_val(pte) & _PAGE_READ);
+}
+
+static inline bool pte_write(pte_t pte)
+{
+	return !!(pte_val(pte) & _PAGE_WRITE);
+}
+
 static inline int pte_dirty(pte_t pte)		{ return !!(pte_val(pte) & _PAGE_DIRTY); }
 static inline int pte_young(pte_t pte)		{ return !!(pte_val(pte) & _PAGE_ACCESSED); }
 static inline int pte_special(pte_t pte)	{ return !!(pte_val(pte) & _PAGE_SPECIAL); }
@@ -438,10 +425,10 @@ static inline bool pte_ci(pte_t pte)
 static inline bool pte_access_permitted(pte_t pte, bool write)
 {
 	/*
-	 * A read-only access is controlled by _PAGE_USER bit.
-	 * We have _PAGE_READ set for WRITE and EXECUTE
+	 * A read-only access is controlled by _PAGE_READ bit.
+	 * We have _PAGE_READ set for WRITE
 	 */
-	if (!pte_present(pte) || !pte_user(pte) || !pte_read(pte))
+	if (!pte_present(pte) || !pte_read(pte))
 		return false;
 
 	if (write && !pte_write(pte))
@@ -465,7 +452,7 @@ static inline pte_t pfn_pte(unsigned long pfn, pgprot_t pgprot)
 /* Generic modifiers for PTE bits */
 static inline pte_t pte_wrprotect(pte_t pte)
 {
-	return __pte(pte_val(pte) & ~_PAGE_RW);
+	return __pte(pte_val(pte) & ~_PAGE_WRITE);
 }
 
 static inline pte_t pte_exprotect(pte_t pte)
@@ -495,6 +482,9 @@ static inline pte_t pte_mkpte(pte_t pte)
 
 static inline pte_t pte_mkwrite_novma(pte_t pte)
 {
+	/*
+	 * write implies read, hence set both
+	 */
 	return __pte(pte_val(pte) | _PAGE_RW);
 }
 
@@ -516,16 +506,6 @@ static inline pte_t pte_mkspecial(pte_t pte)
 static inline pte_t pte_mkhuge(pte_t pte)
 {
 	return pte;
-}
-
-static inline pte_t pte_mkprivileged(pte_t pte)
-{
-	return __pte(pte_val(pte) & ~_PAGE_USER);
-}
-
-static inline pte_t pte_mkuser(pte_t pte)
-{
-	return __pte(pte_val(pte) | _PAGE_USER);
 }
 
 static inline pte_t pte_modify(pte_t pte, pgprot_t newprot)
@@ -622,6 +602,6 @@ static inline pgprot_t pgprot_writecombine(pgprot_t prot)
 	return pgprot_noncached_wc(prot);
 }
 
-#endif /* !__ASSEMBLY__ */
+#endif /* !__ASSEMBLER__ */
 
 #endif /*  _ASM_POWERPC_BOOK3S_32_PGTABLE_H */

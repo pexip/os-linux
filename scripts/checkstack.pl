@@ -8,7 +8,6 @@
 #	Original idea maybe from Keith Owens
 #	s390 port and big speedup by Arnd Bergmann <arnd@bergmann-dalldorf.de>
 #	Mips port by Juan Quintela <quintela@mandrakesoft.com>
-#	IA64 port via Andreas Dilger
 #	Arm port by Holger Schurig
 #	Random bits by Matt Mackall <mpm@selenic.com>
 #	M68k port by Geert Uytterhoeven and Andreas Schwab
@@ -16,9 +15,10 @@
 #	sparc port by Martin Habets <errandir_news@mph.eclipse.co.uk>
 #	ppc64le port by Breno Leitao <leitao@debian.org>
 #	riscv port by Wadim Mueller <wafgo01@gmail.com>
+#	loongarch port by Youling Tang <tangyouling@kylinos.cn>
 #
 #	Usage:
-#	objdump -d vmlinux | scripts/checkstack.pl [arch]
+#	objdump -d vmlinux | scripts/checkstack.pl [arch] [min_stack]
 #
 #	TODO :	Port to all architectures (one regex per arch)
 
@@ -47,7 +47,7 @@ my (@stack, $re, $dre, $sub, $x, $xs, $funcre, $min_stack);
 
 	$min_stack = shift;
 	if ($min_stack eq "" || $min_stack !~ /^\d+$/) {
-		$min_stack = 100;
+		$min_stack = 512;
 	}
 
 	$x	= "[0-9a-f]";	# hex character
@@ -56,7 +56,7 @@ my (@stack, $re, $dre, $sub, $x, $xs, $funcre, $min_stack);
 	if ($arch =~ '^(aarch|arm)64$') {
 		#ffffffc0006325cc:       a9bb7bfd        stp     x29, x30, [sp, #-80]!
 		#a110:       d11643ff        sub     sp, sp, #0x590
-		$re = qr/^.*stp.*sp, \#-([0-9]{1,8})\]\!/o;
+		$re = qr/^.*stp.*sp, ?\#-([0-9]{1,8})\]\!/o;
 		$dre = qr/^.*sub.*sp, sp, #(0x$x{1,8})/o;
 	} elsif ($arch eq 'arm') {
 		#c0008ffc:	e24dd064	sub	sp, sp, #100	; 0x64
@@ -74,16 +74,16 @@ my (@stack, $re, $dre, $sub, $x, $xs, $funcre, $min_stack);
 		$re = qr/.*(?:linkw %fp,|addaw )#-([0-9]{1,4})(?:,%sp)?$/o;
 	} elsif ($arch eq 'mips64') {
 		#8800402c:       67bdfff0        daddiu  sp,sp,-16
-		$re = qr/.*daddiu.*sp,sp,-(([0-9]{2}|[3-9])[0-9]{2})/o;
+		$re = qr/.*daddiu.*sp,sp,-([0-9]{1,8})/o;
 	} elsif ($arch eq 'mips') {
 		#88003254:       27bdffe0        addiu   sp,sp,-32
-		$re = qr/.*addiu.*sp,sp,-(([0-9]{2}|[3-9])[0-9]{2})/o;
+		$re = qr/.*addiu.*sp,sp,-([0-9]{1,8})/o;
 	} elsif ($arch eq 'nios2') {
 		#25a8:	defffb04 	addi	sp,sp,-20
-		$re = qr/.*addi.*sp,sp,-(([0-9]{2}|[3-9])[0-9]{2})/o;
+		$re = qr/.*addi.*sp,sp,-([0-9]{1,8})/o;
 	} elsif ($arch eq 'openrisc') {
 		# c000043c:       9c 21 fe f0     l.addi r1,r1,-272
-		$re = qr/.*l\.addi.*r1,r1,-(([0-9]{2}|[3-9])[0-9]{2})/o;
+		$re = qr/.*l\.addi.*r1,r1,-([0-9]{1,8})/o;
 	} elsif ($arch eq 'parisc' || $arch eq 'parisc64') {
 		$re = qr/.*ldo ($x{1,8})\(sp\),sp/o;
 	} elsif ($arch eq 'powerpc' || $arch =~ /^ppc(64)?(le)?$/ ) {
@@ -97,10 +97,13 @@ my (@stack, $re, $dre, $sub, $x, $xs, $funcre, $min_stack);
 		$re = qr/.*(?:lay|ag?hi).*\%r15,-([0-9]+)(?:\(\%r15\))?$/o;
 	} elsif ($arch eq 'sparc' || $arch eq 'sparc64') {
 		# f0019d10:       9d e3 bf 90     save  %sp, -112, %sp
-		$re = qr/.*save.*%sp, -(([0-9]{2}|[3-9])[0-9]{2}), %sp/o;
+		$re = qr/.*save.*%sp, -([0-9]{1,8}), %sp/o;
 	} elsif ($arch =~ /^riscv(64)?$/) {
 		#ffffffff8036e868:	c2010113          	addi	sp,sp,-992
-		$re = qr/.*addi.*sp,sp,-(([0-9]{2}|[3-9])[0-9]{2})/o;
+		$re = qr/.*addi.*sp,sp,-([0-9]{1,8})/o;
+	} elsif ($arch =~ /^loongarch(32|64)?$/) {
+		#9000000000224708:	02ff4063		addi.d  $sp, $sp, -48(0xfd0)
+		$re = qr/.*addi\..*sp, .*sp, -([0-9]{1,8}).*/o;
 	} else {
 		print("wrong or unknown architecture \"$arch\"\n");
 		exit
@@ -186,5 +189,20 @@ if ($total_size > $min_stack) {
 	push @stack, "$intro$total_size\n";
 }
 
-# Sort output by size (last field)
-print sort { ($b =~ /:\t*(\d+)$/)[0] <=> ($a =~ /:\t*(\d+)$/)[0] } @stack;
+# Sort output by size (last field) and function name if size is the same
+sub sort_lines {
+	my ($a, $b) = @_;
+
+	my $num_a = $1 if $a =~ /:\t*(\d+)$/;
+	my $num_b = $1 if $b =~ /:\t*(\d+)$/;
+	my $func_a = $1 if $a =~ / (.*):/;
+	my $func_b = $1 if $b =~ / (.*):/;
+
+	if ($num_a != $num_b) {
+		return $num_b <=> $num_a;
+	} else {
+		return $func_a cmp $func_b;
+	}
+}
+
+print sort { sort_lines($a, $b) } @stack;

@@ -15,16 +15,18 @@ cat /sys/kernel/debug/device_component/*
 '
 
 # Dump drm state to confirm that kernel was able to find a connected display:
-# TODO this path might not exist for all drivers.. maybe run modetest instead?
 set +e
 cat /sys/kernel/debug/dri/*/state
 set -e
 
-# Cannot use HWCI_KERNEL_MODULES as at that point we don't have the module in /lib
-if [ "$IGT_FORCE_DRIVER" = "amdgpu" ]; then
-    mv /install/modules/lib/modules/* /lib/modules/.
-    modprobe amdgpu
-fi
+mkdir -p /lib/modules
+case "$DRIVER_NAME" in
+    amdgpu|vkms)
+        # Cannot use HWCI_KERNEL_MODULES as at that point we don't have the module in /lib
+        mv /install/modules/lib/modules/* /lib/modules/. || true
+        modprobe --first-time $DRIVER_NAME
+        ;;
+esac
 
 if [ -e "/install/xfails/$DRIVER_NAME-$GPU_VERSION-skips.txt" ]; then
     IGT_SKIPS="--skips /install/xfails/$DRIVER_NAME-$GPU_VERSION-skips.txt"
@@ -46,32 +48,54 @@ else
     ARCH="x86_64"
 fi
 
-curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -s ${FDO_HTTP_CACHE_URI:-}$PIPELINE_ARTIFACTS_BASE/$ARCH/igt.tar.gz | tar --zstd -v -x -C /
+curl -L --retry 4 -f --retry-all-errors --retry-delay 60 -s $PIPELINE_ARTIFACTS_BASE/$ARCH/igt.tar.gz | tar --zstd -v -x -C /
+
+TESTLIST="/igt/libexec/igt-gpu-tools/ci-testlist.txt"
+
+# If the job is parallel at the gitab job level, take the corresponding fraction
+# of the caselist.
+if [ -n "$CI_NODE_INDEX" ]; then
+    sed -ni $CI_NODE_INDEX~$CI_NODE_TOTAL"p" $TESTLIST
+fi
+
+# core_getversion checks if the driver is loaded and probed correctly
+# so run it in all shards
+if ! grep -q "core_getversion" $TESTLIST; then
+    # Add the line to the file
+    echo "core_getversion" >> $TESTLIST
+fi
 
 set +e
 igt-runner \
     run \
     --igt-folder /igt/libexec/igt-gpu-tools \
-    --caselist /install/testlist.txt \
-    --output /results \
+    --caselist $TESTLIST \
+    --output $RESULTS_DIR \
+    -vvvv \
     $IGT_SKIPS \
     $IGT_FLAKES \
     $IGT_FAILS \
-    --fraction-start $CI_NODE_INDEX \
-    --fraction $CI_NODE_TOTAL \
     --jobs 1
 ret=$?
 set -e
 
 deqp-runner junit \
    --testsuite IGT \
-   --results /results/failures.csv \
-   --output /results/junit.xml \
+   --results $RESULTS_DIR/failures.csv \
+   --output $RESULTS_DIR/junit.xml \
    --limit 50 \
-   --template "See https://$CI_PROJECT_ROOT_NAMESPACE.pages.freedesktop.org/-/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/results/{{testcase}}.xml"
+   --template "See $ARTIFACTS_BASE_URL/results/{{testcase}}.xml"
 
-# Store the results also in the simpler format used by the runner in ChromeOS CI
-#sed -r 's/(dmesg-warn|pass)/success/g' /results/results.txt > /results/results_simple.txt
+# Check if /proc/lockdep_stats exists
+if [ -f /proc/lockdep_stats ]; then
+    # If debug_locks is 0, it indicates lockdep is detected and it turns itself off.
+    debug_locks=$(grep 'debug_locks:' /proc/lockdep_stats | awk '{print $2}')
+    if [ "$debug_locks" -eq 0 ] && [ "$ret" -eq 0 ]; then
+        echo "Warning: LOCKDEP issue detected. Please check dmesg logs for more information."
+        cat /proc/lockdep_stats
+        ret=101
+    fi
+fi
 
 cd $oldpath
 exit $ret

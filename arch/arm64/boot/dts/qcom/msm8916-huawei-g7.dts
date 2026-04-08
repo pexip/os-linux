@@ -214,6 +214,9 @@
 
 &blsp_uart2 {
 	status = "okay";
+	pinctrl-0 = <&blsp_uart2_console_default>;
+	pinctrl-1 = <&blsp_uart2_console_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &lpass {
@@ -328,12 +331,24 @@
 	extcon = <&usb_id>;
 };
 
+&venus {
+	status = "okay";
+};
+
+&venus_mem {
+	status = "okay";
+};
+
 &wcnss {
 	status = "okay";
 };
 
 &wcnss_iris {
 	compatible = "qcom,wcn3620";
+};
+
+&wcnss_mem {
+	status = "okay";
 };
 
 &tlmm {

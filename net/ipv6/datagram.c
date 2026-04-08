@@ -53,16 +53,16 @@ static void ip6_datagram_flow_key_init(struct flowi6 *fl6,
 	fl6->fl6_dport = inet->inet_dport;
 	fl6->fl6_sport = inet->inet_sport;
 	fl6->flowlabel = ip6_make_flowinfo(np->tclass, np->flow_label);
-	fl6->flowi6_uid = sk->sk_uid;
+	fl6->flowi6_uid = sk_uid(sk);
 
 	if (!oif)
 		oif = np->sticky_pktinfo.ipi6_ifindex;
 
 	if (!oif) {
 		if (ipv6_addr_is_multicast(&fl6->daddr))
-			oif = np->mcast_oif;
+			oif = READ_ONCE(np->mcast_oif);
 		else
-			oif = np->ucast_oif;
+			oif = READ_ONCE(np->ucast_oif);
 	}
 
 	fl6->flowi6_oif = oif;
@@ -80,7 +80,8 @@ int ip6_datagram_dst_update(struct sock *sk, bool fix_sk_saddr)
 	struct flowi6 fl6;
 	int err = 0;
 
-	if (np->sndflow && (np->flow_label & IPV6_FLOWLABEL_MASK)) {
+	if (inet6_test_bit(SNDFLOW, sk) &&
+	    (np->flow_label & IPV6_FLOWLABEL_MASK)) {
 		flowlabel = fl6_sock_lookup(sk, np->flow_label);
 		if (IS_ERR(flowlabel))
 			return -EINVAL;
@@ -126,7 +127,7 @@ void ip6_datagram_release_cb(struct sock *sk)
 
 	rcu_read_lock();
 	dst = __sk_dst_get(sk);
-	if (!dst || !dst->obsolete ||
+	if (!dst || !READ_ONCE(dst->obsolete) ||
 	    dst->ops->check(dst, inet6_sk(sk)->dst_cookie)) {
 		rcu_read_unlock();
 		return;
@@ -163,7 +164,7 @@ int __ip6_datagram_connect(struct sock *sk, struct sockaddr *uaddr,
 	if (usin->sin6_family != AF_INET6)
 		return -EAFNOSUPPORT;
 
-	if (np->sndflow)
+	if (inet6_test_bit(SNDFLOW, sk))
 		fl6_flowlabel = usin->sin6_flowinfo & IPV6_FLOWINFO_MASK;
 
 	if (ipv6_addr_any(&usin->sin6_addr)) {
@@ -228,7 +229,7 @@ ipv4_connected:
 		}
 
 		if (!sk->sk_bound_dev_if && (addr_type & IPV6_ADDR_MULTICAST))
-			WRITE_ONCE(sk->sk_bound_dev_if, np->mcast_oif);
+			WRITE_ONCE(sk->sk_bound_dev_if, READ_ONCE(np->mcast_oif));
 
 		/* Connect to link-local address requires an interface */
 		if (!sk->sk_bound_dev_if) {
@@ -305,11 +306,10 @@ static void ipv6_icmp_error_rfc4884(const struct sk_buff *skb,
 void ipv6_icmp_error(struct sock *sk, struct sk_buff *skb, int err,
 		     __be16 port, u32 info, u8 *payload)
 {
-	struct ipv6_pinfo *np  = inet6_sk(sk);
 	struct icmp6hdr *icmph = icmp6_hdr(skb);
 	struct sock_exterr_skb *serr;
 
-	if (!np->recverr)
+	if (!inet6_test_bit(RECVERR6, sk))
 		return;
 
 	skb = skb_clone(skb, GFP_ATOMIC);
@@ -332,7 +332,7 @@ void ipv6_icmp_error(struct sock *sk, struct sk_buff *skb, int err,
 
 	__skb_pull(skb, payload - skb->data);
 
-	if (inet6_sk(sk)->recverr_rfc4884)
+	if (inet6_test_bit(RECVERR6_RFC4884, sk))
 		ipv6_icmp_error_rfc4884(skb, &serr->ee.ee_rfc4884);
 
 	skb_reset_transport_header(skb);
@@ -344,12 +344,11 @@ EXPORT_SYMBOL_GPL(ipv6_icmp_error);
 
 void ipv6_local_error(struct sock *sk, int err, struct flowi6 *fl6, u32 info)
 {
-	const struct ipv6_pinfo *np = inet6_sk(sk);
 	struct sock_exterr_skb *serr;
 	struct ipv6hdr *iph;
 	struct sk_buff *skb;
 
-	if (!np->recverr)
+	if (!inet6_test_bit(RECVERR6, sk))
 		return;
 
 	skb = alloc_skb(sizeof(struct ipv6hdr), GFP_ATOMIC);
@@ -493,7 +492,7 @@ int ipv6_recv_error(struct sock *sk, struct msghdr *msg, int len, int *addr_len)
 			const struct ipv6hdr *ip6h = container_of((struct in6_addr *)(nh + serr->addr_offset),
 								  struct ipv6hdr, daddr);
 			sin->sin6_addr = ip6h->daddr;
-			if (np->sndflow)
+			if (inet6_test_bit(SNDFLOW, sk))
 				sin->sin6_flowinfo = ip6_flowinfo(ip6h);
 			sin->sin6_scope_id =
 				ipv6_iface_scope_id(&sin->sin6_addr,
@@ -1065,9 +1064,9 @@ void __ip6_dgram_sock_seq_show(struct seq_file *seq, struct sock *sp,
 		   sk_wmem_alloc_get(sp),
 		   rqueue,
 		   0, 0L, 0,
-		   from_kuid_munged(seq_user_ns(seq), sock_i_uid(sp)),
+		   from_kuid_munged(seq_user_ns(seq), sk_uid(sp)),
 		   0,
 		   sock_i_ino(sp),
 		   refcount_read(&sp->sk_refcnt), sp,
-		   atomic_read(&sp->sk_drops));
+		   sk_drops_read(sp));
 }

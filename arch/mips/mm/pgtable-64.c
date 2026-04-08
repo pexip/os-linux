@@ -89,20 +89,13 @@ void pud_init(void *addr)
 }
 #endif
 
-pmd_t mk_pmd(struct page *page, pgprot_t prot)
-{
-	pmd_t pmd;
-
-	pmd_val(pmd) = (page_to_pfn(page) << PFN_PTE_SHIFT) | pgprot_val(prot);
-
-	return pmd;
-}
-
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 void set_pmd_at(struct mm_struct *mm, unsigned long addr,
 		pmd_t *pmdp, pmd_t pmd)
 {
 	*pmdp = pmd;
 }
+#endif
 
 void __init pagetable_init(void)
 {

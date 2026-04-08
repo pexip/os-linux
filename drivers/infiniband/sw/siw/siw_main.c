@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0 or BSD-3-Clause
+// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 
 /* Authors: Bernard Metzler <bmt@zurich.ibm.com> */
 /* Copyright (c) 2008-2019, IBM Corporation */
@@ -59,7 +59,6 @@ u_char mpa_version = MPA_REVISION_2;
 const bool peer_to_peer;
 
 struct task_struct *siw_tx_thread[NR_CPUS];
-struct crypto_shash *siw_crypto_shash;
 
 static int siw_device_register(struct siw_device *sdev, const char *name)
 {
@@ -109,6 +108,17 @@ static struct {
 	int num_nodes;
 } siw_cpu_info;
 
+static void siw_destroy_cpulist(int number)
+{
+	int i = 0;
+
+	while (i < number)
+		kfree(siw_cpu_info.tx_valid_cpus[i++]);
+
+	kfree(siw_cpu_info.tx_valid_cpus);
+	siw_cpu_info.tx_valid_cpus = NULL;
+}
+
 static int siw_init_cpulist(void)
 {
 	int i, num_nodes = nr_node_ids;
@@ -138,22 +148,9 @@ static int siw_init_cpulist(void)
 
 out_err:
 	siw_cpu_info.num_nodes = 0;
-	while (--i >= 0)
-		kfree(siw_cpu_info.tx_valid_cpus[i]);
-	kfree(siw_cpu_info.tx_valid_cpus);
-	siw_cpu_info.tx_valid_cpus = NULL;
+	siw_destroy_cpulist(i);
 
 	return -ENOMEM;
-}
-
-static void siw_destroy_cpulist(void)
-{
-	int i = 0;
-
-	while (i < siw_cpu_info.num_nodes)
-		kfree(siw_cpu_info.tx_valid_cpus[i++]);
-
-	kfree(siw_cpu_info.tx_valid_cpus);
 }
 
 /*
@@ -289,7 +286,6 @@ static struct siw_device *siw_device_create(struct net_device *netdev)
 		return NULL;
 
 	base_dev = &sdev->base_dev;
-	sdev->netdev = netdev;
 
 	if (netdev->addr_len) {
 		memcpy(sdev->raw_gid, netdev->dev_addr,
@@ -366,39 +362,6 @@ error:
 	return NULL;
 }
 
-/*
- * Network link becomes unavailable. Mark all
- * affected QP's accordingly.
- */
-static void siw_netdev_down(struct work_struct *work)
-{
-	struct siw_device *sdev =
-		container_of(work, struct siw_device, netdev_down);
-
-	struct siw_qp_attrs qp_attrs;
-	struct list_head *pos, *tmp;
-
-	memset(&qp_attrs, 0, sizeof(qp_attrs));
-	qp_attrs.state = SIW_QP_STATE_ERROR;
-
-	list_for_each_safe(pos, tmp, &sdev->qp_list) {
-		struct siw_qp *qp = list_entry(pos, struct siw_qp, devq);
-
-		down_write(&qp->state_lock);
-		WARN_ON(siw_qp_modify(qp, &qp_attrs, SIW_QP_ATTR_STATE));
-		up_write(&qp->state_lock);
-	}
-	ib_device_put(&sdev->base_dev);
-}
-
-static void siw_device_goes_down(struct siw_device *sdev)
-{
-	if (ib_device_try_get(&sdev->base_dev)) {
-		INIT_WORK(&sdev->netdev_down, siw_netdev_down);
-		schedule_work(&sdev->netdev_down);
-	}
-}
-
 static int siw_netdev_event(struct notifier_block *nb, unsigned long event,
 			    void *arg)
 {
@@ -415,20 +378,6 @@ static int siw_netdev_event(struct notifier_block *nb, unsigned long event,
 	sdev = to_siw_dev(base_dev);
 
 	switch (event) {
-	case NETDEV_UP:
-		sdev->state = IB_PORT_ACTIVE;
-		siw_port_event(sdev, 1, IB_EVENT_PORT_ACTIVE);
-		break;
-
-	case NETDEV_GOING_DOWN:
-		siw_device_goes_down(sdev);
-		break;
-
-	case NETDEV_DOWN:
-		sdev->state = IB_PORT_DOWN;
-		siw_port_event(sdev, 1, IB_EVENT_PORT_ERR);
-		break;
-
 	case NETDEV_REGISTER:
 		/*
 		 * Device registration now handled only by
@@ -446,12 +395,8 @@ static int siw_netdev_event(struct notifier_block *nb, unsigned long event,
 		siw_port_event(sdev, 1, IB_EVENT_LID_CHANGE);
 		break;
 	/*
-	 * Todo: Below netdev events are currently not handled.
+	 * All other events are not handled
 	 */
-	case NETDEV_CHANGEMTU:
-	case NETDEV_CHANGE:
-		break;
-
 	default:
 		break;
 	}
@@ -481,12 +426,7 @@ static int siw_newlink(const char *basedev_name, struct net_device *netdev)
 	sdev = siw_device_create(netdev);
 	if (sdev) {
 		dev_dbg(&netdev->dev, "siw: new device\n");
-
-		if (netif_running(netdev) && netif_carrier_ok(netdev))
-			sdev->state = IB_PORT_ACTIVE;
-		else
-			sdev->state = IB_PORT_DOWN;
-
+		ib_mark_name_assigned_by_user(&sdev->base_dev);
 		rv = siw_device_register(sdev, basedev_name);
 		if (rv)
 			ib_dealloc_device(&sdev->base_dev);
@@ -526,20 +466,7 @@ static __init int siw_init_module(void)
 		rv = -ENOMEM;
 		goto out_error;
 	}
-	/*
-	 * Locate CRC32 algorithm. If unsuccessful, fail
-	 * loading siw only, if CRC is required.
-	 */
-	siw_crypto_shash = crypto_alloc_shash("crc32c", 0, 0);
-	if (IS_ERR(siw_crypto_shash)) {
-		pr_info("siw: Loading CRC32c failed: %ld\n",
-			PTR_ERR(siw_crypto_shash));
-		siw_crypto_shash = NULL;
-		if (mpa_crc_required) {
-			rv = -EOPNOTSUPP;
-			goto out_error;
-		}
-	}
+
 	rv = register_netdevice_notifier(&siw_netdev_nb);
 	if (rv)
 		goto out_error;
@@ -552,13 +479,10 @@ static __init int siw_init_module(void)
 out_error:
 	siw_stop_tx_threads();
 
-	if (siw_crypto_shash)
-		crypto_free_shash(siw_crypto_shash);
-
 	pr_info("SoftIWARP attach failed. Error: %d\n", rv);
 
 	siw_cm_exit();
-	siw_destroy_cpulist();
+	siw_destroy_cpulist(siw_cpu_info.num_nodes);
 
 	return rv;
 }
@@ -573,10 +497,7 @@ static void __exit siw_exit_module(void)
 
 	siw_cm_exit();
 
-	siw_destroy_cpulist();
-
-	if (siw_crypto_shash)
-		crypto_free_shash(siw_crypto_shash);
+	siw_destroy_cpulist(siw_cpu_info.num_nodes);
 
 	pr_info("SoftiWARP detached\n");
 }

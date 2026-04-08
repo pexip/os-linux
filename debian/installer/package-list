@@ -2,3 +2,5 @@
 # "-di" are appended to the package names. Section can be left out. So can
 # architecture, which is derived from the files in the modules directory.
 #
+
+# Pexip package has no installer debs

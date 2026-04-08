@@ -5,7 +5,7 @@
 #include "ice.h"
 #include "ice_lib.h"
 #include "ice_fltr.h"
-#include "ice_virtchnl_allowlist.h"
+#include "virt/allowlist.h"
 
 /* Public functions which may be accessed by all driver files */
 
@@ -55,6 +55,8 @@ struct ice_vf *ice_get_vf_by_id(struct ice_pf *pf, u16 vf_id)
 static void ice_release_vf(struct kref *ref)
 {
 	struct ice_vf *vf = container_of(ref, struct ice_vf, refcnt);
+
+	pci_dev_put(vf->vfdev);
 
 	vf->vf_ops->free(vf);
 }
@@ -224,6 +226,7 @@ static void ice_vf_clear_counters(struct ice_vf *vf)
 		vsi->num_vlan = 0;
 
 	vf->num_mac = 0;
+	vf->num_mac_lldp = 0;
 	memset(&vf->mdd_tx_events, 0, sizeof(vf->mdd_tx_events));
 	memset(&vf->mdd_rx_events, 0, sizeof(vf->mdd_rx_events));
 }
@@ -246,25 +249,32 @@ static void ice_vf_pre_vsi_rebuild(struct ice_vf *vf)
 }
 
 /**
- * ice_vf_recreate_vsi - Release and re-create the VF's VSI
- * @vf: VF to recreate the VSI for
+ * ice_vf_reconfig_vsi - Reconfigure a VF VSI with the device
+ * @vf: VF to reconfigure the VSI for
  *
- * This is only called when a single VF is being reset (i.e. VVF, VFLR, host
- * VF configuration change, etc)
+ * This is called when a single VF is being reset (i.e. VVF, VFLR, host VF
+ * configuration change, etc).
  *
- * It releases and then re-creates a new VSI.
+ * It brings the VSI down and then reconfigures it with the hardware.
  */
-static int ice_vf_recreate_vsi(struct ice_vf *vf)
+static int ice_vf_reconfig_vsi(struct ice_vf *vf)
 {
+	struct ice_vsi *vsi = ice_get_vf_vsi(vf);
 	struct ice_pf *pf = vf->pf;
 	int err;
 
-	ice_vf_vsi_release(vf);
+	if (WARN_ON(!vsi))
+		return -EINVAL;
 
-	err = vf->vf_ops->create_vsi(vf);
+	vsi->flags = ICE_VSI_FLAG_NO_INIT;
+
+	ice_vsi_decfg(vsi);
+	ice_fltr_remove_all(vsi);
+
+	err = ice_vsi_cfg(vsi);
 	if (err) {
 		dev_err(ice_pf_to_dev(pf),
-			"Failed to recreate the VF%u's VSI, error %d\n",
+			"Failed to reconfigure the VF%u's VSI, error %d\n",
 			vf->vf_id, err);
 		return err;
 	}
@@ -298,7 +308,6 @@ static int ice_vf_rebuild_vsi(struct ice_vf *vf)
 	 * vf->lan_vsi_idx
 	 */
 	vsi->vsi_num = ice_get_hw_vsi_num(&pf->hw, vsi->idx);
-	vf->lan_vsi_num = vsi->vsi_num;
 
 	return 0;
 }
@@ -327,6 +336,13 @@ static int ice_vf_rebuild_host_vlan_cfg(struct ice_vf *vf, struct ice_vsi *vsi)
 
 		err = vlan_ops->add_vlan(vsi, &vf->port_vlan_info);
 	} else {
+		/* clear possible previous port vlan config */
+		err = ice_vsi_clear_port_vlan(vsi);
+		if (err) {
+			dev_err(dev, "failed to clear port VLAN via VSI parameters for VF %u, error %d\n",
+				vf->vf_id, err);
+			return err;
+		}
 		err = ice_vsi_add_vlan_zero(vsi);
 	}
 
@@ -775,6 +791,7 @@ void ice_reset_all_vfs(struct ice_pf *pf)
 	ice_for_each_vf(pf, bkt, vf) {
 		mutex_lock(&vf->cfg_lock);
 
+		ice_eswitch_detach_vf(pf, vf);
 		vf->driver_caps = 0;
 		ice_vc_set_default_allowlist(vf);
 
@@ -790,12 +807,10 @@ void ice_reset_all_vfs(struct ice_pf *pf)
 		ice_vf_rebuild_vsi(vf);
 		ice_vf_post_vsi_rebuild(vf);
 
+		ice_eswitch_attach_vf(pf, vf);
+
 		mutex_unlock(&vf->cfg_lock);
 	}
-
-	if (ice_is_eswitch_mode_switchdev(pf))
-		if (ice_eswitch_rebuild(pf))
-			dev_warn(dev, "eswitch rebuild failed\n");
 
 	ice_flush(hw);
 	clear_bit(ICE_VF_DIS, pf->state);
@@ -844,16 +859,13 @@ static void ice_notify_vf_reset(struct ice_vf *vf)
 int ice_reset_vf(struct ice_vf *vf, u32 flags)
 {
 	struct ice_pf *pf = vf->pf;
-	struct ice_lag *lag;
 	struct ice_vsi *vsi;
-	u8 act_prt, pri_prt;
 	struct device *dev;
 	int err = 0;
+	u8 act_prt;
 	bool rsd;
 
 	dev = ice_pf_to_dev(pf);
-	act_prt = ICE_LAG_INVALID_PORT;
-	pri_prt = pf->hw.port_info->lport;
 
 	if (flags & ICE_VF_RESET_NOTIFY)
 		ice_notify_vf_reset(vf);
@@ -869,16 +881,8 @@ int ice_reset_vf(struct ice_vf *vf, u32 flags)
 	else
 		lockdep_assert_held(&vf->cfg_lock);
 
-	lag = pf->lag;
 	mutex_lock(&pf->lag_mutex);
-	if (lag && lag->bonded && lag->primary) {
-		act_prt = lag->active_port;
-		if (act_prt != pri_prt && act_prt != ICE_LAG_INVALID_PORT &&
-		    lag->upper_netdev)
-			ice_lag_move_vf_nodes_cfg(lag, act_prt, pri_prt);
-		else
-			act_prt = ICE_LAG_INVALID_PORT;
-	}
+	act_prt = ice_lag_prepare_vf_reset(pf->lag);
 
 	if (ice_is_vf_disabled(vf)) {
 		vsi = ice_get_vf_vsi(vf);
@@ -944,7 +948,7 @@ int ice_reset_vf(struct ice_vf *vf, u32 flags)
 
 	ice_vf_pre_vsi_rebuild(vf);
 
-	if (ice_vf_recreate_vsi(vf)) {
+	if (ice_vf_reconfig_vsi(vf)) {
 		dev_err(dev, "Failed to release and setup the VF%u's VSI\n",
 			vf->vf_id);
 		err = -EFAULT;
@@ -958,15 +962,13 @@ int ice_reset_vf(struct ice_vf *vf, u32 flags)
 		goto out_unlock;
 	}
 
-	ice_eswitch_update_repr(vsi);
+	ice_eswitch_update_repr(&vf->repr_id, vsi);
 
 	/* if the VF has been reset allow it to come up again */
 	ice_reset_vf_mbx_cnt(vf);
 
 out_unlock:
-	if (lag && lag->bonded && lag->primary &&
-	    act_prt != ICE_LAG_INVALID_PORT)
-		ice_lag_move_vf_nodes_cfg(lag, pri_prt, act_prt);
+	ice_lag_complete_vf_reset(pf->lag, act_prt);
 	mutex_unlock(&pf->lag_mutex);
 
 	if (flags & ICE_VF_RESET_LOCK)
@@ -1000,9 +1002,15 @@ void ice_initialize_vf_entry(struct ice_vf *vf)
 
 	/* assign default capabilities */
 	vf->spoofchk = true;
-	vf->num_vf_qs = vfs->num_qps_per;
 	ice_vc_set_default_allowlist(vf);
 	ice_virtchnl_set_dflt_ops(vf);
+
+	/* set default number of MSI-X */
+	vf->num_msix = vfs->num_msix_per;
+	vf->num_vf_qs = vfs->num_qps_per;
+
+	/* set default RSS hash configuration */
+	vf->rss_hashcfg = ICE_DEFAULT_RSS_HASHCFG;
 
 	/* ctrl_vsi_idx will be set to a valid value only when iAVF
 	 * creates its first fdir rule.
@@ -1259,7 +1267,7 @@ struct ice_vsi *ice_vf_ctrl_vsi_setup(struct ice_vf *vf)
 	struct ice_vsi *vsi;
 
 	params.type = ICE_VSI_CTRL;
-	params.pi = ice_vf_get_port_info(vf);
+	params.port_info = ice_vf_get_port_info(vf);
 	params.vf = vf;
 	params.flags = ICE_VSI_FLAG_INIT;
 
@@ -1327,13 +1335,12 @@ int ice_vf_init_host_cfg(struct ice_vf *vf, struct ice_vsi *vsi)
 }
 
 /**
- * ice_vf_invalidate_vsi - invalidate vsi_idx/vsi_num to remove VSI access
+ * ice_vf_invalidate_vsi - invalidate vsi_idx to remove VSI access
  * @vf: VF to remove access to VSI for
  */
 void ice_vf_invalidate_vsi(struct ice_vf *vf)
 {
 	vf->lan_vsi_idx = ICE_NO_VSI;
-	vf->lan_vsi_num = ICE_NO_VSI;
 }
 
 /**
@@ -1384,4 +1391,29 @@ struct ice_vsi *ice_get_vf_ctrl_vsi(struct ice_pf *pf, struct ice_vsi *vsi)
 
 	rcu_read_unlock();
 	return ctrl_vsi;
+}
+
+/**
+ * ice_vf_update_mac_lldp_num - update the VF's number of LLDP addresses
+ * @vf: a VF to add the address to
+ * @vsi: the corresponding VSI
+ * @incr: is the rule added or removed
+ */
+void ice_vf_update_mac_lldp_num(struct ice_vf *vf, struct ice_vsi *vsi,
+				bool incr)
+{
+	bool lldp_by_fw = test_bit(ICE_FLAG_FW_LLDP_AGENT, vsi->back->flags);
+	bool was_ena = ice_vf_is_lldp_ena(vf) && !lldp_by_fw;
+	bool is_ena;
+
+	if (WARN_ON(!vsi)) {
+		vf->num_mac_lldp = 0;
+		return;
+	}
+
+	vf->num_mac_lldp += incr ? 1 : -1;
+	is_ena = ice_vf_is_lldp_ena(vf) && !lldp_by_fw;
+
+	if (was_ena != is_ena)
+		ice_vsi_cfg_sw_lldp(vsi, false, is_ena);
 }

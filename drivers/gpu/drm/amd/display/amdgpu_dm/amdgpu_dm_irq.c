@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /*
  * Copyright 2015 Advanced Micro Devices, Inc.
  *
@@ -473,7 +474,7 @@ void amdgpu_dm_irq_fini(struct amdgpu_device *adev)
 	unregister_all_irq_handlers(adev);
 }
 
-int amdgpu_dm_irq_suspend(struct amdgpu_device *adev)
+void amdgpu_dm_irq_suspend(struct amdgpu_device *adev)
 {
 	int src;
 	struct list_head *hnd_list_h;
@@ -511,10 +512,9 @@ int amdgpu_dm_irq_suspend(struct amdgpu_device *adev)
 	}
 
 	DM_IRQ_TABLE_UNLOCK(adev, irq_table_flags);
-	return 0;
 }
 
-int amdgpu_dm_irq_resume_early(struct amdgpu_device *adev)
+void amdgpu_dm_irq_resume_early(struct amdgpu_device *adev)
 {
 	int src;
 	struct list_head *hnd_list_h, *hnd_list_l;
@@ -522,7 +522,7 @@ int amdgpu_dm_irq_resume_early(struct amdgpu_device *adev)
 
 	DM_IRQ_TABLE_LOCK(adev, irq_table_flags);
 
-	DRM_DEBUG_KMS("DM_IRQ: early resume\n");
+	drm_dbg(adev_to_drm(adev), "DM_IRQ: early resume\n");
 
 	/* re-enable short pulse interrupts HW interrupt */
 	for (src = DC_IRQ_SOURCE_HPD1RX; src <= DC_IRQ_SOURCE_HPD6RX; src++) {
@@ -533,11 +533,9 @@ int amdgpu_dm_irq_resume_early(struct amdgpu_device *adev)
 	}
 
 	DM_IRQ_TABLE_UNLOCK(adev, irq_table_flags);
-
-	return 0;
 }
 
-int amdgpu_dm_irq_resume_late(struct amdgpu_device *adev)
+void amdgpu_dm_irq_resume_late(struct amdgpu_device *adev)
 {
 	int src;
 	struct list_head *hnd_list_h, *hnd_list_l;
@@ -545,7 +543,7 @@ int amdgpu_dm_irq_resume_late(struct amdgpu_device *adev)
 
 	DM_IRQ_TABLE_LOCK(adev, irq_table_flags);
 
-	DRM_DEBUG_KMS("DM_IRQ: resume\n");
+	drm_dbg(adev_to_drm(adev), "DM_IRQ: resume\n");
 
 	/**
 	 * Renable HW interrupt  for HPD and only since FLIP and VBLANK
@@ -559,7 +557,6 @@ int amdgpu_dm_irq_resume_late(struct amdgpu_device *adev)
 	}
 
 	DM_IRQ_TABLE_UNLOCK(adev, irq_table_flags);
-	return 0;
 }
 
 /*
@@ -711,7 +708,7 @@ static inline int dm_irq_state(struct amdgpu_device *adev,
 {
 	bool st;
 	enum dc_irq_source irq_source;
-
+	struct dc *dc = adev->dm.dc;
 	struct amdgpu_crtc *acrtc = adev->mode_info.crtcs[crtc_id];
 
 	if (!acrtc) {
@@ -728,6 +725,9 @@ static inline int dm_irq_state(struct amdgpu_device *adev,
 	irq_source = dal_irq_type + acrtc->otg_inst;
 
 	st = (state == AMDGPU_IRQ_STATE_ENABLE);
+
+	if (dc && dc->caps.ips_support && dc->idle_optimizations_allowed)
+		dc_allow_idle_optimizations(dc, false);
 
 	dc_interrupt_set(adev->dm.dc, irq_source, st);
 	return 0;
@@ -903,10 +903,15 @@ void amdgpu_dm_hpd_init(struct amdgpu_device *adev)
 
 	drm_connector_list_iter_begin(dev, &iter);
 	drm_for_each_connector_iter(connector, &iter) {
-		struct amdgpu_dm_connector *amdgpu_dm_connector =
-				to_amdgpu_dm_connector(connector);
+		struct amdgpu_dm_connector *amdgpu_dm_connector;
+		const struct dc_link *dc_link;
 
-		const struct dc_link *dc_link = amdgpu_dm_connector->dc_link;
+		if (connector->connector_type == DRM_MODE_CONNECTOR_WRITEBACK)
+			continue;
+
+		amdgpu_dm_connector = to_amdgpu_dm_connector(connector);
+
+		dc_link = amdgpu_dm_connector->dc_link;
 
 		/*
 		 * Get a base driver irq reference for hpd ints for the lifetime
@@ -961,9 +966,14 @@ void amdgpu_dm_hpd_fini(struct amdgpu_device *adev)
 
 	drm_connector_list_iter_begin(dev, &iter);
 	drm_for_each_connector_iter(connector, &iter) {
-		struct amdgpu_dm_connector *amdgpu_dm_connector =
-				to_amdgpu_dm_connector(connector);
-		const struct dc_link *dc_link = amdgpu_dm_connector->dc_link;
+		struct amdgpu_dm_connector *amdgpu_dm_connector;
+		const struct dc_link *dc_link;
+
+		if (connector->connector_type == DRM_MODE_CONNECTOR_WRITEBACK)
+			continue;
+
+		amdgpu_dm_connector = to_amdgpu_dm_connector(connector);
+		dc_link = amdgpu_dm_connector->dc_link;
 
 		if (dc_link->irq_source_hpd != DC_IRQ_SOURCE_INVALID) {
 			irq_type = dc_link->irq_source_hpd - DC_IRQ_SOURCE_HPD1;

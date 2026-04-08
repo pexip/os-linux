@@ -13,12 +13,24 @@ CONFIG_NUMA=y
 ##
 ## file: arch/riscv/Kconfig.socs
 ##
-CONFIG_SOC_MICROCHIP_POLARFIRE=y
+CONFIG_ARCH_ANDES=y
+CONFIG_ARCH_ESWIN=y
+CONFIG_ARCH_MICROCHIP=y
 CONFIG_ARCH_RENESAS=y
-CONFIG_SOC_SIFIVE=y
+CONFIG_ARCH_SIFIVE=y
+CONFIG_ARCH_SOPHGO=y
+CONFIG_ARCH_SPACEMIT=y
 CONFIG_SOC_STARFIVE=y
 CONFIG_ARCH_SUNXI=y
-CONFIG_SOC_VIRT=y
+CONFIG_ARCH_THEAD=y
+CONFIG_ARCH_VIRT=y
+CONFIG_ARCH_CANAAN=y
+
+##
+## file: arch/riscv/crypto/Kconfig
+##
+CONFIG_CRYPTO_AES_RISCV64=m
+CONFIG_CRYPTO_GHASH_RISCV64=m
 
 ##
 ## file: arch/riscv/kvm/Kconfig
@@ -38,21 +50,44 @@ CONFIG_SATA_AHCI_PLATFORM=m
 CONFIG_AHCI_DWC=m
 
 ##
+## file: drivers/bluetooth/Kconfig
+##
+CONFIG_BT_HCIUART=y
+
+##
+## file: drivers/cache/Kconfig
+##
+CONFIG_SIFIVE_CCACHE=y
+CONFIG_STARFIVE_STARLINK_CACHE=y
+
+##
 ## file: drivers/char/hw_random/Kconfig
 ##
 CONFIG_HW_RANDOM_POLARFIRE_SOC=m
 CONFIG_HW_RANDOM_JH7110=m
 
 ##
+## file: drivers/clk/sophgo/Kconfig
+##
+CONFIG_CLK_SOPHGO_CV1800=m
+CONFIG_CLK_SOPHGO_SG2042_PLL=m
+CONFIG_CLK_SOPHGO_SG2042_CLKGEN=m
+CONFIG_CLK_SOPHGO_SG2042_RPGATE=m
+CONFIG_CLK_SOPHGO_SG2044=y
+CONFIG_CLK_SOPHGO_SG2044_PLL=m
+
+##
+## file: drivers/clk/spacemit/Kconfig
+##
+CONFIG_SPACEMIT_CCU=y
+CONFIG_SPACEMIT_K1_CCU=y
+
+##
 ## file: drivers/cpufreq/Kconfig
 ##
 CONFIG_CPUFREQ_DT=m
 CONFIG_CPUFREQ_DT_PLATDEV=y
-
-##
-## file: drivers/crypto/starfive/Kconfig
-##
-CONFIG_CRYPTO_DEV_JH7110=m
+CONFIG_ACPI_CPPC_CPUFREQ=m
 
 ##
 ## file: drivers/cxl/Kconfig
@@ -65,12 +100,26 @@ CONFIG_CXL_BUS=y
 CONFIG_DMADEVICES=y
 CONFIG_DMA_SUN6I=m
 CONFIG_DW_AXI_DMAC=m
+CONFIG_MMP_PDMA=m
+CONFIG_SOPHGO_CV1800B_DMAMUX=m
+
+##
+## file: drivers/firmware/Kconfig
+##
+CONFIG_TH1520_AON_PROTOCOL=m
+
+##
+## file: drivers/firmware/microchip/Kconfig
+##
+CONFIG_POLARFIRE_SOC_AUTO_UPDATE=m
 
 ##
 ## file: drivers/gpio/Kconfig
 ##
 CONFIG_GPIOLIB=y
+CONFIG_GPIO_DWAPB=m
 CONFIG_GPIO_SIFIVE=y
+CONFIG_GPIO_SPACEMIT_K1=y
 
 ##
 ## file: drivers/gpu/drm/Kconfig
@@ -78,9 +127,9 @@ CONFIG_GPIO_SIFIVE=y
 CONFIG_DRM=m
 
 ##
-## file: drivers/gpu/drm/amd/amdgpu/Kconfig
+## file: drivers/gpu/drm/imagination/Kconfig
 ##
-CONFIG_DRM_AMDGPU=m
+CONFIG_DRM_POWERVR=m
 
 ##
 ## file: drivers/gpu/drm/radeon/Kconfig
@@ -97,6 +146,7 @@ CONFIG_DRM_SUN4I=m
 ##
 CONFIG_SENSORS_LM90=m
 CONFIG_SENSORS_SFCTEMP=m
+CONFIG_SENSORS_SG2042_MCU=m
 
 ##
 ## file: drivers/i2c/Kconfig
@@ -106,12 +156,16 @@ CONFIG_I2C=y
 ##
 ## file: drivers/i2c/busses/Kconfig
 ##
+CONFIG_I2C_DESIGNWARE_CORE=y
 CONFIG_I2C_DESIGNWARE_PLATFORM=m
+CONFIG_I2C_K1=m
+CONFIG_I2C_MICROCHIP_CORE=m
 CONFIG_I2C_MV64XXX=m
 
 ##
 ## file: drivers/input/misc/Kconfig
 ##
+CONFIG_INPUT_MISC=y
 CONFIG_INPUT_DA9063_ONKEY=m
 
 ##
@@ -120,16 +174,41 @@ CONFIG_INPUT_DA9063_ONKEY=m
 CONFIG_SUN50I_IOMMU=y
 
 ##
+## file: drivers/irqchip/Kconfig
+##
+CONFIG_ACLINT_SSWI=y
+CONFIG_SOPHGO_SG2042_MSI=y
+
+##
+## file: drivers/leds/Kconfig
+##
+CONFIG_LEDS_PWM=m
+
+##
+## file: drivers/leds/rgb/Kconfig
+##
+CONFIG_LEDS_GROUP_MULTICOLOR=m
+CONFIG_LEDS_PWM_MULTICOLOR=m
+
+##
 ## file: drivers/mailbox/Kconfig
 ##
 CONFIG_MAILBOX=y
 CONFIG_POLARFIRE_SOC_MAILBOX=m
+CONFIG_MCHP_SBI_IPC_MBOX=m
+CONFIG_THEAD_TH1520_MBOX=m
+
+##
+## file: drivers/media/platform/cadence/Kconfig
+##
+CONFIG_VIDEO_CADENCE_CSI2RX=m
 
 ##
 ## file: drivers/mfd/Kconfig
 ##
 CONFIG_MFD_AXP20X_I2C=m
 CONFIG_MFD_DA9063=m
+CONFIG_MFD_SPACEMIT_P1=m
 CONFIG_MFD_TPS65086=m
 
 ##
@@ -141,6 +220,8 @@ CONFIG_MMC=m
 ## file: drivers/mmc/host/Kconfig
 ##
 CONFIG_MMC_SDHCI_PLTFM=m
+CONFIG_MMC_SDHCI_OF_DWCMSHC=m
+CONFIG_MMC_SDHCI_OF_K1=m
 CONFIG_MMC_SDHCI_CADENCE=m
 CONFIG_MMC_SPI=m
 CONFIG_MMC_DW=m
@@ -156,6 +237,7 @@ CONFIG_MACB=m
 ## file: drivers/net/ethernet/stmicro/stmmac/Kconfig
 ##
 CONFIG_STMMAC_ETH=m
+CONFIG_DWMAC_THEAD=m
 
 ##
 ## file: drivers/net/phy/Kconfig
@@ -163,9 +245,19 @@ CONFIG_STMMAC_ETH=m
 CONFIG_MOTORCOMM_PHY=m
 
 ##
+## file: drivers/net/wireless/broadcom/brcm80211/brcmfmac/Kconfig
+##
+CONFIG_BRCMFMAC_SDIO=y
+
+##
 ## file: drivers/nvmem/Kconfig
 ##
 CONFIG_NVMEM_SUNXI_SID=m
+
+##
+## file: drivers/nvmem/layouts/Kconfig
+##
+CONFIG_NVMEM_LAYOUT_ONIE_TLV=m
 
 ##
 ## file: drivers/pci/Kconfig
@@ -176,19 +268,64 @@ CONFIG_PCI=y
 ## file: drivers/pci/controller/Kconfig
 ##
 CONFIG_PCI_HOST_GENERIC=y
-CONFIG_PCIE_MICROCHIP_HOST=y
 CONFIG_PCIE_XILINX=y
+
+##
+## file: drivers/pci/controller/cadence/Kconfig
+##
+CONFIG_PCIE_SG2042_HOST=y
 
 ##
 ## file: drivers/pci/controller/dwc/Kconfig
 ##
 CONFIG_PCIE_DW_PLAT_HOST=y
 CONFIG_PCIE_FU740=y
+CONFIG_PCIE_SOPHGO_DW=y
+
+##
+## file: drivers/pci/controller/plda/Kconfig
+##
+CONFIG_PCIE_MICROCHIP_HOST=y
+CONFIG_PCIE_STARFIVE_HOST=y
+
+##
+## file: drivers/perf/Kconfig
+##
+CONFIG_STARFIVE_STARLINK_PMU=y
 
 ##
 ## file: drivers/phy/allwinner/Kconfig
 ##
 CONFIG_PHY_SUN4I_USB=m
+
+##
+## file: drivers/phy/starfive/Kconfig
+##
+CONFIG_PHY_STARFIVE_JH7110_DPHY_RX=m
+CONFIG_PHY_STARFIVE_JH7110_DPHY_TX=m
+CONFIG_PHY_STARFIVE_JH7110_PCIE=m
+CONFIG_PHY_STARFIVE_JH7110_USB=m
+
+##
+## file: drivers/pinctrl/Kconfig
+##
+CONFIG_PINCTRL_EIC7700=y
+CONFIG_PINCTRL_TH1520=y
+
+##
+## file: drivers/pinctrl/sophgo/Kconfig
+##
+CONFIG_PINCTRL_SOPHGO_CV1800B=y
+CONFIG_PINCTRL_SOPHGO_CV1812H=y
+CONFIG_PINCTRL_SOPHGO_SG2000=y
+CONFIG_PINCTRL_SOPHGO_SG2002=y
+CONFIG_PINCTRL_SOPHGO_SG2042=y
+CONFIG_PINCTRL_SOPHGO_SG2044=y
+
+##
+## file: drivers/pmdomain/thead/Kconfig
+##
+CONFIG_TH1520_PM_DOMAINS=m
 
 ##
 ## file: drivers/power/reset/Kconfig
@@ -197,12 +334,21 @@ CONFIG_POWER_RESET=y
 CONFIG_POWER_RESET_GPIO=y
 CONFIG_POWER_RESET_GPIO_RESTART=y
 CONFIG_POWER_RESET_RESTART=y
+CONFIG_POWER_RESET_TH1520_AON=m
+
+##
+## file: drivers/pps/clients/Kconfig
+##
+CONFIG_PPS_CLIENT_GPIO=m
 
 ##
 ## file: drivers/pwm/Kconfig
 ##
 CONFIG_PWM=y
+CONFIG_PWM_MICROCHIP_CORE=m
+CONFIG_PWM_PXA=m
 CONFIG_PWM_SIFIVE=m
+CONFIG_PWM_SOPHGO_SG2042=m
 
 ##
 ## file: drivers/regulator/Kconfig
@@ -214,12 +360,18 @@ CONFIG_REGULATOR_DA9063=m
 CONFIG_REGULATOR_TPS65086=m
 
 ##
+## file: drivers/reset/Kconfig
+##
+CONFIG_RESET_TH1520=m
+
+##
 ## file: drivers/rtc/Kconfig
 ##
 CONFIG_RTC_DRV_DS1307=m
-CONFIG_RTC_DRV_PCF85063=m
 CONFIG_RTC_DRV_PCF8563=m
+CONFIG_RTC_DRV_PCF85063=m
 CONFIG_RTC_DRV_DA9063=m
+CONFIG_RTC_DRV_CV1800=m
 CONFIG_RTC_DRV_SUN6I=y
 CONFIG_RTC_DRV_POLARFIRE_SOC=m
 
@@ -229,15 +381,34 @@ CONFIG_RTC_DRV_POLARFIRE_SOC=m
 CONFIG_POLARFIRE_SOC_SYS_CTRL=m
 
 ##
-## file: drivers/soc/renesas/Kconfig
+## file: drivers/soc/sophgo/Kconfig
 ##
-CONFIG_ARCH_R9A07G043=y
+CONFIG_SOPHGO_CV1800_RTCSYS=y
+CONFIG_SOPHGO_SG2044_TOPSYS=y
 
 ##
 ## file: drivers/spi/Kconfig
 ##
+CONFIG_SPI_DESIGNWARE=y
+CONFIG_SPI_DW_MMIO=m
 CONFIG_SPI_SIFIVE=m
+CONFIG_SPI_SG2044_NOR=m
 CONFIG_SPI_SUN6I=m
+
+##
+## file: drivers/staging/media/Kconfig
+##
+CONFIG_STAGING_MEDIA=y
+
+##
+## file: drivers/staging/media/starfive/camss/Kconfig
+##
+CONFIG_VIDEO_STARFIVE_CAMSS=m
+
+##
+## file: drivers/thermal/Kconfig
+##
+CONFIG_SUN8I_THERMAL=m
 
 ##
 ## file: drivers/tty/hvc/Kconfig
@@ -264,6 +435,20 @@ CONFIG_SERIAL_OF_PLATFORM=y
 CONFIG_USB=m
 
 ##
+## file: drivers/usb/cdns3/Kconfig
+##
+CONFIG_USB_CDNS_SUPPORT=m
+CONFIG_USB_CDNS3=m
+CONFIG_USB_CDNS3_GADGET=y
+CONFIG_USB_CDNS3_HOST=y
+CONFIG_USB_CDNS3_STARFIVE=m
+
+##
+## file: drivers/usb/gadget/Kconfig
+##
+CONFIG_USB_GADGET=m
+
+##
 ## file: drivers/usb/host/Kconfig
 ##
 CONFIG_USB_XHCI_PLATFORM=m
@@ -277,6 +462,7 @@ CONFIG_USB_OHCI_HCD_PLATFORM=m
 ##
 CONFIG_USB_MUSB_HDRC=m
 CONFIG_USB_MUSB_SUNXI=m
+CONFIG_USB_MUSB_POLARFIRE_SOC=m
 
 ##
 ## file: drivers/usb/phy/Kconfig
@@ -284,11 +470,27 @@ CONFIG_USB_MUSB_SUNXI=m
 CONFIG_NOP_USB_XCEIV=m
 
 ##
+## file: drivers/video/fbdev/Kconfig
+##
+CONFIG_FB_EFI=y
+
+##
 ## file: drivers/watchdog/Kconfig
 ##
 CONFIG_DA9063_WATCHDOG=m
 CONFIG_SUNXI_WATCHDOG=m
 CONFIG_STARFIVE_WATCHDOG=m
+
+##
+## file: init/Kconfig
+##
+## choice: Kernel compression mode
+#. Decompression is done by the bootloader, so we need to be
+#. conservative here.
+CONFIG_KERNEL_GZIP=y
+# CONFIG_KERNEL_ZSTD is not set
+## end choice
+CONFIG_KALLSYMS_ALL=y
 
 ##
 ## file: kernel/Kconfig.kexec
@@ -299,12 +501,9 @@ CONFIG_KEXEC=y
 ## file: lib/Kconfig.debug
 ##
 CONFIG_DEBUG_INFO_BTF=y
-#. Workaround module loading of different builds of on-disk modules
-#. vs booted kernel when keeping same ABI, cf. #1003210, #1022202
-CONFIG_MODULE_ALLOW_BTF_MISMATCH=y
 
 ##
-## file: sound/pci/hda/Kconfig
+## file: sound/hda/controllers/Kconfig
 ##
 CONFIG_SND_HDA_INTEL=m
 
@@ -314,7 +513,17 @@ CONFIG_SND_HDA_INTEL=m
 CONFIG_SND_SOC=m
 
 ##
+## file: sound/soc/dwc/Kconfig
+##
+CONFIG_SND_DESIGNWARE_I2S=m
+
+##
+## file: sound/soc/generic/Kconfig
+##
+CONFIG_SND_SIMPLE_CARD=m
+
+##
 ## file: sound/soc/starfive/Kconfig
 ##
-CONFIG_SND_SOC_STARFIVE=m
+CONFIG_SND_SOC_JH7110_PWMDAC=m
 CONFIG_SND_SOC_JH7110_TDM=m

@@ -761,8 +761,6 @@ static const struct vb2_ops ceu_vb2_ops = {
 	.queue_setup		= ceu_vb2_setup,
 	.buf_queue		= ceu_vb2_queue,
 	.buf_prepare		= ceu_vb2_prepare,
-	.wait_prepare		= vb2_ops_wait_prepare,
-	.wait_finish		= vb2_ops_wait_finish,
 	.start_streaming	= ceu_start_streaming,
 	.stop_streaming		= ceu_stop_streaming,
 };
@@ -1050,7 +1048,7 @@ static int ceu_init_mbus_fmt(struct ceu_device *ceudev)
 /*
  * ceu_runtime_resume() - soft-reset the interface and turn sensor power on.
  */
-static int __maybe_unused ceu_runtime_resume(struct device *dev)
+static int ceu_runtime_resume(struct device *dev)
 {
 	struct ceu_device *ceudev = dev_get_drvdata(dev);
 	struct v4l2_subdev *v4l2_sd = ceudev->sd->v4l2_sd;
@@ -1066,7 +1064,7 @@ static int __maybe_unused ceu_runtime_resume(struct device *dev)
  * ceu_runtime_suspend() - disable capture and interrupts and soft-reset.
  *			   Turn sensor power off.
  */
-static int __maybe_unused ceu_runtime_suspend(struct device *dev)
+static int ceu_runtime_suspend(struct device *dev)
 {
 	struct ceu_device *ceudev = dev_get_drvdata(dev);
 	struct v4l2_subdev *v4l2_sd = ceudev->sd->v4l2_sd;
@@ -1183,17 +1181,13 @@ static int ceu_enum_input(struct file *file, void *priv,
 			  struct v4l2_input *inp)
 {
 	struct ceu_device *ceudev = video_drvdata(file);
-	struct ceu_subdev *ceusd;
 
 	if (inp->index >= ceudev->num_sd)
 		return -EINVAL;
 
-	ceusd = ceudev->subdevs[inp->index];
-
 	inp->type = V4L2_INPUT_TYPE_CAMERA;
 	inp->std = 0;
-	snprintf(inp->name, sizeof(inp->name), "Camera%u: %s",
-		 inp->index, ceusd->v4l2_sd->name);
+	snprintf(inp->name, sizeof(inp->name), "Camera %u", inp->index);
 
 	return 0;
 }
@@ -1403,7 +1397,7 @@ static int ceu_notify_complete(struct v4l2_async_notifier *notifier)
 	q->mem_ops		= &vb2_dma_contig_memops;
 	q->buf_struct_size	= sizeof(struct ceu_buffer);
 	q->timestamp_flags	= V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
-	q->min_buffers_needed	= 2;
+	q->min_queued_buffers	= 2;
 	q->lock			= &ceudev->mlock;
 	q->dev			= ceudev->v4l2_dev.dev;
 
@@ -1715,19 +1709,17 @@ static void ceu_remove(struct platform_device *pdev)
 }
 
 static const struct dev_pm_ops ceu_pm_ops = {
-	SET_RUNTIME_PM_OPS(ceu_runtime_suspend,
-			   ceu_runtime_resume,
-			   NULL)
+	RUNTIME_PM_OPS(ceu_runtime_suspend, ceu_runtime_resume, NULL)
 };
 
 static struct platform_driver ceu_driver = {
 	.driver		= {
 		.name	= DRIVER_NAME,
-		.pm	= &ceu_pm_ops,
+		.pm	= pm_ptr(&ceu_pm_ops),
 		.of_match_table = of_match_ptr(ceu_of_match),
 	},
 	.probe		= ceu_probe,
-	.remove_new	= ceu_remove,
+	.remove		= ceu_remove,
 };
 
 module_platform_driver(ceu_driver);

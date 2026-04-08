@@ -200,8 +200,7 @@ static unsigned int count_plts(Elf64_Sym *syms, Elf64_Rela *rela, int num,
 			break;
 		case R_AARCH64_ADR_PREL_PG_HI21_NC:
 		case R_AARCH64_ADR_PREL_PG_HI21:
-			if (!IS_ENABLED(CONFIG_ARM64_ERRATUM_843419) ||
-			    !cpus_have_const_cap(ARM64_WORKAROUND_843419))
+			if (!cpus_have_final_cap(ARM64_WORKAROUND_843419))
 				break;
 
 			/*
@@ -236,13 +235,13 @@ static unsigned int count_plts(Elf64_Sym *syms, Elf64_Rela *rela, int num,
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_ARM64_ERRATUM_843419) &&
-	    cpus_have_const_cap(ARM64_WORKAROUND_843419))
+	if (cpus_have_final_cap(ARM64_WORKAROUND_843419)) {
 		/*
 		 * Add some slack so we can skip PLT slots that may trigger
 		 * the erratum due to the placement of the ADRP instruction.
 		 */
 		ret += DIV_ROUND_UP(ret, (SZ_4K / sizeof(struct plt_entry)));
+	}
 
 	return ret;
 }
@@ -284,7 +283,7 @@ int module_frob_arch_sections(Elf_Ehdr *ehdr, Elf_Shdr *sechdrs,
 	unsigned long core_plts = 0;
 	unsigned long init_plts = 0;
 	Elf64_Sym *syms = NULL;
-	Elf_Shdr *pltsec, *tramp = NULL;
+	Elf_Shdr *pltsec, *tramp = NULL, *init_tramp = NULL;
 	int i;
 
 	/*
@@ -299,6 +298,9 @@ int module_frob_arch_sections(Elf_Ehdr *ehdr, Elf_Shdr *sechdrs,
 		else if (!strcmp(secstrings + sechdrs[i].sh_name,
 				 ".text.ftrace_trampoline"))
 			tramp = sechdrs + i;
+		else if (!strcmp(secstrings + sechdrs[i].sh_name,
+				 ".init.text.ftrace_trampoline"))
+			init_tramp = sechdrs + i;
 		else if (sechdrs[i].sh_type == SHT_SYMTAB)
 			syms = (Elf64_Sym *)sechdrs[i].sh_addr;
 	}
@@ -362,6 +364,13 @@ int module_frob_arch_sections(Elf_Ehdr *ehdr, Elf_Shdr *sechdrs,
 		tramp->sh_flags = SHF_EXECINSTR | SHF_ALLOC;
 		tramp->sh_addralign = __alignof__(struct plt_entry);
 		tramp->sh_size = NR_FTRACE_PLTS * sizeof(struct plt_entry);
+	}
+
+	if (init_tramp) {
+		init_tramp->sh_type = SHT_NOBITS;
+		init_tramp->sh_flags = SHF_EXECINSTR | SHF_ALLOC;
+		init_tramp->sh_addralign = __alignof__(struct plt_entry);
+		init_tramp->sh_size = NR_FTRACE_PLTS * sizeof(struct plt_entry);
 	}
 
 	return 0;

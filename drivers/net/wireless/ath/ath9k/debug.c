@@ -17,7 +17,7 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/export.h>
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 
 #include "ath9k.h"
 
@@ -750,6 +750,7 @@ static int read_file_reset(struct seq_file *file, void *data)
 		[RESET_TYPE_CALIBRATION] = "Calibration error",
 		[RESET_TX_DMA_ERROR] = "Tx DMA stop error",
 		[RESET_RX_DMA_ERROR] = "Rx DMA stop error",
+		[RESET_TYPE_RX_INACTIVE] = "Rx path inactive",
 	};
 	int i;
 
@@ -1376,7 +1377,7 @@ void ath9k_deinit_debug(struct ath_softc *sc)
 int ath9k_init_debug(struct ath_hw *ah)
 {
 	struct ath_common *common = ath9k_hw_common(ah);
-	struct ath_softc *sc = (struct ath_softc *) common->priv;
+	struct ath_softc *sc = common->priv;
 
 	sc->debug.debugfs_phy = debugfs_create_dir("ath9k",
 						   sc->hw->wiphy->debugfsdir);

@@ -9,7 +9,7 @@
 #ifndef __ASM_PARISC_PROCESSOR_H
 #define __ASM_PARISC_PROCESSOR_H
 
-#ifndef __ASSEMBLY__
+#ifndef __ASSEMBLER__
 #include <linux/threads.h>
 #include <linux/irqreturn.h>
 
@@ -20,7 +20,7 @@
 #include <asm/ptrace.h>
 #include <asm/types.h>
 #include <asm/percpu.h>
-#endif /* __ASSEMBLY__ */
+#endif /* __ASSEMBLER__ */
 
 #define HAVE_ARCH_PICK_MMAP_LAYOUT
 
@@ -45,10 +45,10 @@
 #define STACK_TOP	TASK_SIZE
 #define STACK_TOP_MAX	DEFAULT_TASK_SIZE
 
-#ifndef __ASSEMBLY__
+#ifndef __ASSEMBLER__
 
 struct rlimit;
-unsigned long mmap_upper_limit(struct rlimit *rlim_stack);
+unsigned long mmap_upper_limit(const struct rlimit *rlim_stack);
 unsigned long calc_max_stack_size(unsigned long stack_max);
 
 /*
@@ -289,6 +289,7 @@ extern int _parisc_requires_coherency;
 #endif
 
 extern int running_on_qemu;
+extern int parisc_narrow_firmware;
 
 extern void __noreturn toc_intr(struct pt_regs *regs);
 extern void toc_handler(void);
@@ -297,7 +298,7 @@ extern unsigned int toc_handler_csum;
 extern void do_cpu_irq_mask(struct pt_regs *);
 extern irqreturn_t timer_interrupt(int, void *);
 extern irqreturn_t ipi_interrupt(int, void *);
-extern void start_cpu_itimer(void);
+extern void parisc_clockevent_init(void);
 extern void handle_interruption(int, struct pt_regs *);
 
 /* called from assembly code: */
@@ -324,6 +325,6 @@ extern void sba_directed_lmmio(struct parisc_device *, struct resource *);
 extern void lba_set_iregs(struct parisc_device *lba, u32 ibase, u32 imask);
 extern void ccio_cujo20_fixup(struct parisc_device *dev, u32 iovp);
 
-#endif /* __ASSEMBLY__ */
+#endif /* __ASSEMBLER__ */
 
 #endif /* __ASM_PARISC_PROCESSOR_H */

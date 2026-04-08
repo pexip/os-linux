@@ -13,20 +13,22 @@
  *		    http://www.ite.com.tw/
  *
  *	Support of the watchdog timers, which are available on
- *	IT8607, IT8620, IT8622, IT8625, IT8628, IT8655, IT8665, IT8686,
- *	IT8702, IT8712, IT8716, IT8718, IT8720, IT8721, IT8726, IT8728,
- *	IT8772, IT8783 and IT8784.
+ *	IT8607, IT8613, IT8620, IT8622, IT8625, IT8628, IT8655, IT8659,
+ *	IT8665, IT8686, IT8702, IT8712, IT8716, IT8718, IT8720, IT8721,
+ *	IT8726,	IT8728, IT8772, IT8783, IT8784 and IT8786.
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/bits.h>
 #include <linux/dmi.h>
+#include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/io.h>
-#include <linux/kernel.h>
+#include <linux/ioport.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+#include <linux/printk.h>
 #include <linux/types.h>
 #include <linux/watchdog.h>
 
@@ -53,11 +55,13 @@
 /* Chip Id numbers */
 #define NO_DEV_ID	0xffff
 #define IT8607_ID	0x8607
+#define IT8613_ID	0x8613
 #define IT8620_ID	0x8620
 #define IT8622_ID	0x8622
 #define IT8625_ID	0x8625
 #define IT8628_ID	0x8628
 #define IT8655_ID	0x8655
+#define IT8659_ID	0x8659
 #define IT8665_ID	0x8665
 #define IT8686_ID	0x8686
 #define IT8702_ID	0x8702
@@ -154,6 +158,7 @@ static inline void superio_outb(int val, int reg)
 static inline int superio_inw(int reg)
 {
 	int val;
+
 	outb(reg++, REG);
 	val = inb(VAL) << 8;
 	outb(reg, REG);
@@ -219,12 +224,16 @@ static int wdt_stop(struct watchdog_device *wdd)
 
 /**
  *	wdt_set_timeout - set a new timeout value with watchdog ioctl
+ *	@wdd: pointer to the watchdog_device structure
  *	@t: timeout value in seconds
  *
  *	The hardware device has a 8 or 16 bit watchdog timer (depends on
  *	chip version) that can be configured to count seconds or minutes.
  *
  *	Used within WDIOC_SETTIMEOUT watchdog device ioctl.
+ *
+ *	Return: 0 if the timeout was set successfully, or a negative error code on
+ *	failure.
  */
 
 static int wdt_set_timeout(struct watchdog_device *wdd, unsigned int t)
@@ -303,21 +312,21 @@ static int __init it87_wdt_init(void)
 	case IT8712_ID:
 		max_units = (chip_rev < 8) ? 255 : 65535;
 		break;
-	case IT8716_ID:
-	case IT8726_ID:
-		max_units = 65535;
-		break;
 	case IT8607_ID:
+	case IT8613_ID:
 	case IT8620_ID:
 	case IT8622_ID:
 	case IT8625_ID:
 	case IT8628_ID:
 	case IT8655_ID:
+	case IT8659_ID:
 	case IT8665_ID:
 	case IT8686_ID:
+	case IT8716_ID:
 	case IT8718_ID:
 	case IT8720_ID:
 	case IT8721_ID:
+	case IT8726_ID:
 	case IT8728_ID:
 	case IT8772_ID:
 	case IT8783_ID:
@@ -381,10 +390,8 @@ static int __init it87_wdt_init(void)
 
 	watchdog_stop_on_reboot(&wdt_dev);
 	rc = watchdog_register_device(&wdt_dev);
-	if (rc) {
-		pr_err("Cannot register watchdog device (err=%d)\n", rc);
+	if (rc)
 		return rc;
-	}
 
 	pr_info("Chip IT%04x revision %d initialized. timeout=%d sec (nowayout=%d testmode=%d)\n",
 		chip_type, chip_rev, timeout, nowayout, testmode);

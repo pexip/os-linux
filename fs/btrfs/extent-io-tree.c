@@ -4,9 +4,9 @@
 #include <trace/events/btrfs.h>
 #include "messages.h"
 #include "ctree.h"
+#include "extent_io.h"
 #include "extent-io-tree.h"
 #include "btrfs_inode.h"
-#include "misc.h"
 
 static struct kmem_cache *extent_state_cache;
 
@@ -42,12 +42,14 @@ static inline void btrfs_extent_state_leak_debug_check(void)
 	struct extent_state *state;
 
 	while (!list_empty(&states)) {
-		state = list_entry(states.next, struct extent_state, leak_list);
-		pr_err("BTRFS: state leak: start %llu end %llu state %u in tree %d refs %d\n",
+		state = list_first_entry(&states, struct extent_state, leak_list);
+		btrfs_err(NULL,
+		       "state leak: start %llu end %llu state %u in tree %d refs %d",
 		       state->start, state->end, state->state,
 		       extent_state_in_tree(state),
 		       refcount_read(&state->refs));
 		list_del(&state->leak_list);
+		WARN_ON_ONCE(1);
 		kmem_cache_free(extent_state_cache, state);
 	}
 }
@@ -58,10 +60,10 @@ static inline void __btrfs_debug_check_extent_io_range(const char *caller,
 						       struct extent_io_tree *tree,
 						       u64 start, u64 end)
 {
-	struct btrfs_inode *inode = tree->inode;
+	const struct btrfs_inode *inode = tree->inode;
 	u64 isize;
 
-	if (!inode)
+	if (tree->owner != IO_TREE_INODE_IO)
 		return;
 
 	isize = i_size_read(&inode->vfs_inode);
@@ -78,59 +80,65 @@ static inline void __btrfs_debug_check_extent_io_range(const char *caller,
 #define btrfs_debug_check_extent_io_range(c, s, e)	do {} while (0)
 #endif
 
-/*
- * For the file_extent_tree, we want to hold the inode lock when we lookup and
- * update the disk_i_size, but lockdep will complain because our io_tree we hold
- * the tree lock and get the inode lock when setting delalloc.  These two things
- * are unrelated, so make a class for the file_extent_tree so we don't get the
- * two locking patterns mixed up.
- */
-static struct lock_class_key file_extent_tree_class;
-
-struct tree_entry {
-	u64 start;
-	u64 end;
-	struct rb_node rb_node;
-};
-
-void extent_io_tree_init(struct btrfs_fs_info *fs_info,
-			 struct extent_io_tree *tree, unsigned int owner)
+/* Read-only access to the inode. */
+const struct btrfs_inode *btrfs_extent_io_tree_to_inode(const struct extent_io_tree *tree)
 {
-	tree->fs_info = fs_info;
-	tree->state = RB_ROOT;
-	spin_lock_init(&tree->lock);
-	tree->inode = NULL;
-	tree->owner = owner;
-	if (owner == IO_TREE_INODE_FILE_EXTENT)
-		lockdep_set_class(&tree->lock, &file_extent_tree_class);
+	if (tree->owner == IO_TREE_INODE_IO)
+		return tree->inode;
+	return NULL;
 }
 
-void extent_io_tree_release(struct extent_io_tree *tree)
+/* For read-only access to fs_info. */
+const struct btrfs_fs_info *btrfs_extent_io_tree_to_fs_info(const struct extent_io_tree *tree)
 {
-	spin_lock(&tree->lock);
-	/*
-	 * Do a single barrier for the waitqueue_active check here, the state
-	 * of the waitqueue should not change once extent_io_tree_release is
-	 * called.
-	 */
-	smp_mb();
-	while (!RB_EMPTY_ROOT(&tree->state)) {
-		struct rb_node *node;
-		struct extent_state *state;
+	if (tree->owner == IO_TREE_INODE_IO)
+		return tree->inode->root->fs_info;
+	return tree->fs_info;
+}
 
-		node = rb_first(&tree->state);
-		state = rb_entry(node, struct extent_state, rb_node);
-		rb_erase(&state->rb_node, &tree->state);
+void btrfs_extent_io_tree_init(struct btrfs_fs_info *fs_info,
+			       struct extent_io_tree *tree, unsigned int owner)
+{
+	tree->state = RB_ROOT;
+	spin_lock_init(&tree->lock);
+	tree->fs_info = fs_info;
+	tree->owner = owner;
+}
+
+/*
+ * Empty an io tree, removing and freeing every extent state record from the
+ * tree. This should be called once we are sure no other task can access the
+ * tree anymore, so no tree updates happen after we empty the tree and there
+ * aren't any waiters on any extent state record (EXTENT_LOCK_BITS are never
+ * set on any extent state when calling this function).
+ */
+void btrfs_extent_io_tree_release(struct extent_io_tree *tree)
+{
+	struct rb_root root;
+	struct extent_state *state;
+	struct extent_state *tmp;
+
+	spin_lock(&tree->lock);
+	root = tree->state;
+	tree->state = RB_ROOT;
+	rbtree_postorder_for_each_entry_safe(state, tmp, &root, rb_node) {
+		/* Clear node to keep free_extent_state() happy. */
 		RB_CLEAR_NODE(&state->rb_node);
+		ASSERT(!(state->state & EXTENT_LOCK_BITS));
 		/*
-		 * btree io trees aren't supposed to have tasks waiting for
-		 * changes in the flags of extent states ever.
+		 * No need for a memory barrier here, as we are holding the tree
+		 * lock and we only change the waitqueue while holding that lock
+		 * (see wait_extent_bit()).
 		 */
 		ASSERT(!waitqueue_active(&state->wq));
-		free_extent_state(state);
-
+		btrfs_free_extent_state(state);
 		cond_resched_lock(&tree->lock);
 	}
+	/*
+	 * Should still be empty even after a reschedule, no other task should
+	 * be accessing the tree anymore.
+	 */
+	ASSERT(RB_EMPTY_ROOT(&tree->state));
 	spin_unlock(&tree->lock);
 }
 
@@ -151,7 +159,7 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
 	btrfs_leak_debug_add_state(state);
 	refcount_set(&state->refs, 1);
 	init_waitqueue_head(&state->wq);
-	trace_alloc_extent_state(state, mask, _RET_IP_);
+	trace_btrfs_alloc_extent_state(state, mask, _RET_IP_);
 	return state;
 }
 
@@ -163,14 +171,14 @@ static struct extent_state *alloc_extent_state_atomic(struct extent_state *preal
 	return prealloc;
 }
 
-void free_extent_state(struct extent_state *state)
+void btrfs_free_extent_state(struct extent_state *state)
 {
 	if (!state)
 		return;
 	if (refcount_dec_and_test(&state->refs)) {
 		WARN_ON(extent_state_in_tree(state));
 		btrfs_leak_debug_del_state(state);
-		trace_free_extent_state(state, _RET_IP_);
+		trace_btrfs_free_extent_state(state, _RET_IP_);
 		kmem_cache_free(extent_state_cache, state);
 	}
 }
@@ -197,38 +205,34 @@ static inline struct extent_state *next_state(struct extent_state *state)
 {
 	struct rb_node *next = rb_next(&state->rb_node);
 
-	if (next)
-		return rb_entry(next, struct extent_state, rb_node);
-	else
-		return NULL;
+	return rb_entry_safe(next, struct extent_state, rb_node);
 }
 
 static inline struct extent_state *prev_state(struct extent_state *state)
 {
 	struct rb_node *next = rb_prev(&state->rb_node);
 
-	if (next)
-		return rb_entry(next, struct extent_state, rb_node);
-	else
-		return NULL;
+	return rb_entry_safe(next, struct extent_state, rb_node);
 }
 
 /*
- * Search @tree for an entry that contains @offset. Such entry would have
- * entry->start <= offset && entry->end >= offset.
+ * Search @tree for an entry that contains @offset or if none exists for the
+ * first entry that starts and ends after that offset.
  *
  * @tree:       the tree to search
- * @offset:     offset that should fall within an entry in @tree
+ * @offset:     search offset
  * @node_ret:   pointer where new node should be anchored (used when inserting an
  *	        entry in the tree)
  * @parent_ret: points to entry which would have been the parent of the entry,
  *               containing @offset
  *
- * Return a pointer to the entry that contains @offset byte address and don't change
- * @node_ret and @parent_ret.
+ * Return a pointer to the entry that contains @offset byte address.
  *
- * If no such entry exists, return pointer to entry that ends before @offset
- * and fill parameters @node_ret and @parent_ret, ie. does not return NULL.
+ * If no such entry exists, return the first entry that starts and ends after
+ * @offset if one exists, otherwise NULL.
+ *
+ * If the returned entry starts at @offset, then @node_ret and @parent_ret
+ * aren't changed.
  */
 static inline struct extent_state *tree_search_for_insert(struct extent_io_tree *tree,
 							  u64 offset,
@@ -257,7 +261,11 @@ static inline struct extent_state *tree_search_for_insert(struct extent_io_tree 
 	if (parent_ret)
 		*parent_ret = prev;
 
-	/* Search neighbors until we find the first one past the end */
+	/*
+	 * Return either the current entry if it contains offset (it ends after
+	 * or at offset) or the first entry that starts and ends after offset if
+	 * one exists, or NULL.
+	 */
 	while (entry && offset > entry->end)
 		entry = next_state(entry);
 
@@ -321,10 +329,44 @@ static inline struct extent_state *tree_search(struct extent_io_tree *tree, u64 
 	return tree_search_for_insert(tree, offset, NULL, NULL);
 }
 
-static void extent_io_tree_panic(struct extent_io_tree *tree, int err)
+static void __cold extent_io_tree_panic(const struct extent_io_tree *tree,
+					const struct extent_state *state,
+					const char *opname,
+					int err)
 {
-	btrfs_panic(tree->fs_info, err,
-	"locking error: extent tree was modified by another thread while locked");
+	btrfs_panic(btrfs_extent_io_tree_to_fs_info(tree), err,
+		    "extent io tree error on %s state start %llu end %llu",
+		    opname, state->start, state->end);
+}
+
+static void merge_prev_state(struct extent_io_tree *tree, struct extent_state *state)
+{
+	struct extent_state *prev;
+
+	prev = prev_state(state);
+	if (prev && prev->end == state->start - 1 && prev->state == state->state) {
+		if (tree->owner == IO_TREE_INODE_IO)
+			btrfs_merge_delalloc_extent(tree->inode, state, prev);
+		state->start = prev->start;
+		rb_erase(&prev->rb_node, &tree->state);
+		RB_CLEAR_NODE(&prev->rb_node);
+		btrfs_free_extent_state(prev);
+	}
+}
+
+static void merge_next_state(struct extent_io_tree *tree, struct extent_state *state)
+{
+	struct extent_state *next;
+
+	next = next_state(state);
+	if (next && next->start == state->end + 1 && next->state == state->state) {
+		if (tree->owner == IO_TREE_INODE_IO)
+			btrfs_merge_delalloc_extent(tree->inode, state, next);
+		state->end = next->end;
+		rb_erase(&next->rb_node, &tree->state);
+		RB_CLEAR_NODE(&next->rb_node);
+		btrfs_free_extent_state(next);
+	}
 }
 
 /*
@@ -338,31 +380,11 @@ static void extent_io_tree_panic(struct extent_io_tree *tree, int err)
  */
 static void merge_state(struct extent_io_tree *tree, struct extent_state *state)
 {
-	struct extent_state *other;
-
-	if (state->state & (EXTENT_LOCKED | EXTENT_BOUNDARY))
+	if (state->state & (EXTENT_LOCK_BITS | EXTENT_BOUNDARY))
 		return;
 
-	other = prev_state(state);
-	if (other && other->end == state->start - 1 &&
-	    other->state == state->state) {
-		if (tree->inode)
-			btrfs_merge_delalloc_extent(tree->inode, state, other);
-		state->start = other->start;
-		rb_erase(&other->rb_node, &tree->state);
-		RB_CLEAR_NODE(&other->rb_node);
-		free_extent_state(other);
-	}
-	other = next_state(state);
-	if (other && other->start == state->end + 1 &&
-	    other->state == state->state) {
-		if (tree->inode)
-			btrfs_merge_delalloc_extent(tree->inode, state, other);
-		state->end = other->end;
-		rb_erase(&other->rb_node, &tree->state);
-		RB_CLEAR_NODE(&other->rb_node);
-		free_extent_state(other);
-	}
+	merge_prev_state(tree, state);
+	merge_next_state(tree, state);
 }
 
 static void set_state_bits(struct extent_io_tree *tree,
@@ -372,7 +394,7 @@ static void set_state_bits(struct extent_io_tree *tree,
 	u32 bits_to_set = bits & ~EXTENT_CTLBITS;
 	int ret;
 
-	if (tree->inode)
+	if (tree->owner == IO_TREE_INODE_IO)
 		btrfs_set_delalloc_extent(tree->inode, state, bits);
 
 	ret = add_extent_changeset(state, bits_to_set, changeset, 1);
@@ -384,19 +406,27 @@ static void set_state_bits(struct extent_io_tree *tree,
  * Insert an extent_state struct into the tree.  'bits' are set on the
  * struct before it is inserted.
  *
- * This may return -EEXIST if the extent is already there, in which case the
- * state struct is freed.
+ * Returns a pointer to the struct extent_state record containing the range
+ * requested for insertion, which may be the same as the given struct or it
+ * may be an existing record in the tree that was expanded to accommodate the
+ * requested range. In case of an extent_state different from the one that was
+ * given, the later can be freed or reused by the caller.
+ *
+ * On error it returns an error pointer.
  *
  * The tree lock is not taken internally.  This is a utility function and
  * probably isn't what you want to call (see set/clear_extent_bit).
  */
-static int insert_state(struct extent_io_tree *tree,
-			struct extent_state *state,
-			u32 bits, struct extent_changeset *changeset)
+static struct extent_state *insert_state(struct extent_io_tree *tree,
+					 struct extent_state *state,
+					 u32 bits,
+					 struct extent_changeset *changeset)
 {
 	struct rb_node **node;
 	struct rb_node *parent = NULL;
-	const u64 end = state->end;
+	const u64 start = state->start - 1;
+	const u64 end = state->end + 1;
+	const bool try_merge = !(bits & (EXTENT_LOCK_BITS | EXTENT_BOUNDARY));
 
 	set_state_bits(tree, state, bits, changeset);
 
@@ -407,23 +437,39 @@ static int insert_state(struct extent_io_tree *tree,
 		parent = *node;
 		entry = rb_entry(parent, struct extent_state, rb_node);
 
-		if (end < entry->start) {
+		if (state->end < entry->start) {
+			if (try_merge && end == entry->start &&
+			    state->state == entry->state) {
+				if (tree->owner == IO_TREE_INODE_IO)
+					btrfs_merge_delalloc_extent(tree->inode,
+								    state, entry);
+				entry->start = state->start;
+				merge_prev_state(tree, entry);
+				state->state = 0;
+				return entry;
+			}
 			node = &(*node)->rb_left;
-		} else if (end > entry->end) {
+		} else if (state->end > entry->end) {
+			if (try_merge && entry->end == start &&
+			    state->state == entry->state) {
+				if (tree->owner == IO_TREE_INODE_IO)
+					btrfs_merge_delalloc_extent(tree->inode,
+								    state, entry);
+				entry->end = state->end;
+				merge_next_state(tree, entry);
+				state->state = 0;
+				return entry;
+			}
 			node = &(*node)->rb_right;
 		} else {
-			btrfs_err(tree->fs_info,
-			       "found node %llu %llu on insert of %llu %llu",
-			       entry->start, entry->end, state->start, end);
-			return -EEXIST;
+			return ERR_PTR(-EEXIST);
 		}
 	}
 
 	rb_link_node(&state->rb_node, parent, node);
 	rb_insert_color(&state->rb_node, &tree->state);
 
-	merge_state(tree, state);
-	return 0;
+	return state;
 }
 
 /*
@@ -460,7 +506,7 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
 	struct rb_node *parent = NULL;
 	struct rb_node **node;
 
-	if (tree->inode)
+	if (tree->owner == IO_TREE_INODE_IO)
 		btrfs_split_delalloc_extent(tree->inode, orig, split);
 
 	prealloc->start = orig->start;
@@ -481,7 +527,7 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
 		} else if (prealloc->end > entry->end) {
 			node = &(*node)->rb_right;
 		} else {
-			free_extent_state(prealloc);
+			btrfs_free_extent_state(prealloc);
 			return -EEXIST;
 		}
 	}
@@ -493,6 +539,18 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
 }
 
 /*
+ * Use this during tree iteration to avoid doing next node searches when it's
+ * not needed (the current record ends at or after the target range's end).
+ */
+static inline struct extent_state *next_search_state(struct extent_state *state, u64 end)
+{
+	if (state->end < end)
+		return next_state(state);
+
+	return NULL;
+}
+
+/*
  * Utility function to clear some bits in an extent state struct.  It will
  * optionally wake up anyone waiting on this state (wake == 1).
  *
@@ -501,14 +559,14 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
  */
 static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
 					    struct extent_state *state,
-					    u32 bits, int wake,
+					    u32 bits, int wake, u64 end,
 					    struct extent_changeset *changeset)
 {
 	struct extent_state *next;
 	u32 bits_to_clear = bits & ~EXTENT_CTLBITS;
 	int ret;
 
-	if (tree->inode)
+	if (tree->owner == IO_TREE_INODE_IO)
 		btrfs_clear_delalloc_extent(tree->inode, state, bits);
 
 	ret = add_extent_changeset(state, bits_to_clear, changeset, 0);
@@ -517,17 +575,17 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
 	if (wake)
 		wake_up(&state->wq);
 	if (state->state == 0) {
-		next = next_state(state);
+		next = next_search_state(state, end);
 		if (extent_state_in_tree(state)) {
 			rb_erase(&state->rb_node, &tree->state);
 			RB_CLEAR_NODE(&state->rb_node);
-			free_extent_state(state);
+			btrfs_free_extent_state(state);
 		} else {
 			WARN_ON(1);
 		}
 	} else {
 		merge_state(tree, state);
-		next = next_state(state);
+		next = next_search_state(state, end);
 	}
 	return next;
 }
@@ -547,25 +605,22 @@ static void set_gfp_mask_from_bits(u32 *bits, gfp_t *mask)
  * inserting elements in the tree, so the gfp mask is used to indicate which
  * allocations or sleeping are allowed.
  *
- * Pass 'wake' == 1 to kick any sleepers, and 'delete' == 1 to remove the given
- * range from the tree regardless of state (ie for truncate).
- *
  * The range [start, end] is inclusive.
  *
  * This takes the tree lock, and returns 0 on success and < 0 on error.
  */
-int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-		       u32 bits, struct extent_state **cached_state,
-		       struct extent_changeset *changeset)
+int btrfs_clear_extent_bit_changeset(struct extent_io_tree *tree, u64 start, u64 end,
+				     u32 bits, struct extent_state **cached_state,
+				     struct extent_changeset *changeset)
 {
 	struct extent_state *state;
 	struct extent_state *cached;
 	struct extent_state *prealloc = NULL;
 	u64 last_end;
-	int err;
-	int clear = 0;
-	int wake;
-	int delete = (bits & EXTENT_CLEAR_ALL_BITS);
+	int ret = 0;
+	bool clear;
+	bool wake;
+	const bool delete = (bits & EXTENT_CLEAR_ALL_BITS);
 	gfp_t mask;
 
 	set_gfp_mask_from_bits(&bits, &mask);
@@ -578,9 +633,8 @@ int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
 	if (bits & EXTENT_DELALLOC)
 		bits |= EXTENT_NORESERVE;
 
-	wake = (bits & EXTENT_LOCKED) ? 1 : 0;
-	if (bits & (EXTENT_LOCKED | EXTENT_BOUNDARY))
-		clear = 1;
+	wake = (bits & EXTENT_LOCK_BITS);
+	clear = (bits & (EXTENT_LOCK_BITS | EXTENT_BOUNDARY));
 again:
 	if (!prealloc) {
 		/*
@@ -610,7 +664,7 @@ again:
 			goto hit_next;
 		}
 		if (clear)
-			free_extent_state(cached);
+			btrfs_free_extent_state(cached);
 	}
 
 	/* This search will find the extents that end after our range starts. */
@@ -625,7 +679,7 @@ hit_next:
 
 	/* The state doesn't have the wanted bits, go ahead. */
 	if (!(state->state & bits)) {
-		state = next_state(state);
+		state = next_search_state(state, end);
 		goto next;
 	}
 
@@ -648,18 +702,24 @@ hit_next:
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc)
 			goto search_again;
-		err = split_state(tree, state, prealloc, start);
-		if (err)
-			extent_io_tree_panic(tree, err);
-
+		ret = split_state(tree, state, prealloc, start);
 		prealloc = NULL;
-		if (err)
+		if (ret) {
+			extent_io_tree_panic(tree, state, "split", ret);
 			goto out;
+		}
 		if (state->end <= end) {
-			state = clear_state_bit(tree, state, bits, wake, changeset);
+			state = clear_state_bit(tree, state, bits, wake, end,
+						changeset);
 			goto next;
 		}
-		goto search_again;
+		if (need_resched())
+			goto search_again;
+		/*
+		 * Fallthrough and try atomic extent state allocation if needed.
+		 * If it fails we'll jump to 'search_again' retry the allocation
+		 * in non-atomic mode and start the search again.
+		 */
 	}
 	/*
 	 * | ---- desired range ---- |
@@ -670,30 +730,31 @@ hit_next:
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc)
 			goto search_again;
-		err = split_state(tree, state, prealloc, end + 1);
-		if (err)
-			extent_io_tree_panic(tree, err);
+		ret = split_state(tree, state, prealloc, end + 1);
+		if (ret) {
+			extent_io_tree_panic(tree, state, "split", ret);
+			prealloc = NULL;
+			goto out;
+		}
 
 		if (wake)
 			wake_up(&state->wq);
 
-		clear_state_bit(tree, prealloc, bits, wake, changeset);
+		clear_state_bit(tree, prealloc, bits, wake, end, changeset);
 
 		prealloc = NULL;
 		goto out;
 	}
 
-	state = clear_state_bit(tree, state, bits, wake, changeset);
+	state = clear_state_bit(tree, state, bits, wake, end, changeset);
 next:
-	if (last_end == (u64)-1)
+	if (last_end >= end)
 		goto out;
 	start = last_end + 1;
-	if (start <= end && state && !need_resched())
+	if (state && !need_resched())
 		goto hit_next;
 
 search_again:
-	if (start > end)
-		goto out;
 	spin_unlock(&tree->lock);
 	if (gfpflags_allow_blocking(mask))
 		cond_resched();
@@ -701,24 +762,10 @@ search_again:
 
 out:
 	spin_unlock(&tree->lock);
-	if (prealloc)
-		free_extent_state(prealloc);
+	btrfs_free_extent_state(prealloc);
 
-	return 0;
+	return ret;
 
-}
-
-static void wait_on_state(struct extent_io_tree *tree,
-			  struct extent_state *state)
-		__releases(tree->lock)
-		__acquires(tree->lock)
-{
-	DEFINE_WAIT(wait);
-	prepare_to_wait(&state->wq, &wait, TASK_UNINTERRUPTIBLE);
-	spin_unlock(&tree->lock);
-	schedule();
-	spin_lock(&tree->lock);
-	finish_wait(&state->wq, &wait);
 }
 
 /*
@@ -726,8 +773,8 @@ static void wait_on_state(struct extent_io_tree *tree,
  * The range [start, end] is inclusive.
  * The tree lock is taken by this function
  */
-void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, u32 bits,
-		     struct extent_state **cached_state)
+static void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+			    u32 bits, struct extent_state **cached_state)
 {
 	struct extent_state *state;
 
@@ -758,10 +805,16 @@ process_node:
 			goto out;
 
 		if (state->state & bits) {
+			DEFINE_WAIT(wait);
+
 			start = state->start;
 			refcount_inc(&state->refs);
-			wait_on_state(tree, state);
-			free_extent_state(state);
+			prepare_to_wait(&state->wq, &wait, TASK_UNINTERRUPTIBLE);
+			spin_unlock(&tree->lock);
+			schedule();
+			spin_lock(&tree->lock);
+			finish_wait(&state->wq, &wait);
+			btrfs_free_extent_state(state);
 			goto again;
 		}
 		start = state->end + 1;
@@ -779,7 +832,7 @@ out:
 	if (cached_state && *cached_state) {
 		state = *cached_state;
 		*cached_state = NULL;
-		free_extent_state(state);
+		btrfs_free_extent_state(state);
 	}
 	spin_unlock(&tree->lock);
 }
@@ -799,8 +852,7 @@ static void cache_state_if_flags(struct extent_state *state,
 static void cache_state(struct extent_state *state,
 			struct extent_state **cached_ptr)
 {
-	return cache_state_if_flags(state, cached_ptr,
-				    EXTENT_LOCKED | EXTENT_BOUNDARY);
+	return cache_state_if_flags(state, cached_ptr, EXTENT_LOCK_BITS | EXTENT_BOUNDARY);
 }
 
 /*
@@ -819,7 +871,7 @@ static struct extent_state *find_first_extent_bit_state(struct extent_io_tree *t
 	 */
 	state = tree_search(tree, start);
 	while (state) {
-		if (state->end >= start && (state->state & bits))
+		if (state->state & bits)
 			return state;
 		state = next_state(state);
 	}
@@ -834,9 +886,9 @@ static struct extent_state *find_first_extent_bit_state(struct extent_io_tree *t
  * Return true if we find something, and update @start_ret and @end_ret.
  * Return false if we found nothing.
  */
-bool find_first_extent_bit(struct extent_io_tree *tree, u64 start,
-			   u64 *start_ret, u64 *end_ret, u32 bits,
-			   struct extent_state **cached_state)
+bool btrfs_find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+				 u64 *start_ret, u64 *end_ret, u32 bits,
+				 struct extent_state **cached_state)
 {
 	struct extent_state *state;
 	bool ret = false;
@@ -847,13 +899,22 @@ bool find_first_extent_bit(struct extent_io_tree *tree, u64 start,
 		if (state->end == start - 1 && extent_state_in_tree(state)) {
 			while ((state = next_state(state)) != NULL) {
 				if (state->state & bits)
-					goto got_it;
+					break;
 			}
-			free_extent_state(*cached_state);
+			/*
+			 * If we found the next extent state, clear cached_state
+			 * so that we can cache the next extent state below and
+			 * avoid future calls going over the same extent state
+			 * again. If we haven't found any, clear as well since
+			 * it's now useless.
+			 */
+			btrfs_free_extent_state(*cached_state);
 			*cached_state = NULL;
+			if (state)
+				goto got_it;
 			goto out;
 		}
-		free_extent_state(*cached_state);
+		btrfs_free_extent_state(*cached_state);
 		*cached_state = NULL;
 	}
 
@@ -885,12 +946,17 @@ out:
  * contiguous area for given bits.  We will search to the first bit we find, and
  * then walk down the tree until we find a non-contiguous area.  The area
  * returned will be the full contiguous area with the bits set.
+ *
+ * Returns true if we found a range with the given bits set, in which case
+ * @start_ret and @end_ret are updated, or false if no range was found.
  */
-int find_contiguous_extent_bit(struct extent_io_tree *tree, u64 start,
-			       u64 *start_ret, u64 *end_ret, u32 bits)
+bool btrfs_find_contiguous_extent_bit(struct extent_io_tree *tree, u64 start,
+				      u64 *start_ret, u64 *end_ret, u32 bits)
 {
 	struct extent_state *state;
-	int ret = 1;
+	bool ret = false;
+
+	ASSERT(!btrfs_fs_incompat(btrfs_extent_io_tree_to_fs_info(tree), NO_HOLES));
 
 	spin_lock(&tree->lock);
 	state = find_first_extent_bit_state(tree, start, bits);
@@ -902,7 +968,7 @@ int find_contiguous_extent_bit(struct extent_io_tree *tree, u64 start,
 				break;
 			*end_ret = state->end;
 		}
-		ret = 0;
+		ret = true;
 	}
 	spin_unlock(&tree->lock);
 	return ret;
@@ -977,20 +1043,20 @@ out:
  *
  * [start, end] is inclusive This takes the tree lock.
  */
-static int __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-			    u32 bits, u64 *failed_start,
-			    struct extent_state **failed_state,
-			    struct extent_state **cached_state,
-			    struct extent_changeset *changeset)
+static int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+			  u32 bits, u64 *failed_start,
+			  struct extent_state **failed_state,
+			  struct extent_state **cached_state,
+			  struct extent_changeset *changeset)
 {
 	struct extent_state *state;
 	struct extent_state *prealloc = NULL;
 	struct rb_node **p = NULL;
 	struct rb_node *parent = NULL;
-	int err = 0;
+	int ret = 0;
 	u64 last_start;
 	u64 last_end;
-	u32 exclusive_bits = (bits & EXTENT_LOCKED);
+	u32 exclusive_bits = (bits & EXTENT_LOCK_BITS);
 	gfp_t mask;
 
 	set_gfp_mask_from_bits(&bits, &mask);
@@ -1012,6 +1078,9 @@ again:
 		 */
 		prealloc = alloc_extent_state(mask);
 	}
+	/* Optimistically preallocate the extent changeset ulist node. */
+	if (changeset)
+		extent_changeset_prealloc(changeset, mask);
 
 	spin_lock(&tree->lock);
 	if (cached_state && *cached_state) {
@@ -1050,19 +1119,18 @@ hit_next:
 		if (state->state & exclusive_bits) {
 			*failed_start = state->start;
 			cache_state(state, failed_state);
-			err = -EEXIST;
+			ret = -EEXIST;
 			goto out;
 		}
 
 		set_state_bits(tree, state, bits, changeset);
 		cache_state(state, cached_state);
 		merge_state(tree, state);
-		if (last_end == (u64)-1)
+		if (last_end >= end)
 			goto out;
 		start = last_end + 1;
 		state = next_state(state);
-		if (start < end && state && state->start == start &&
-		    !need_resched())
+		if (state && state->start == start && !need_resched())
 			goto hit_next;
 		goto search_again;
 	}
@@ -1086,7 +1154,7 @@ hit_next:
 		if (state->state & exclusive_bits) {
 			*failed_start = start;
 			cache_state(state, failed_state);
-			err = -EEXIST;
+			ret = -EEXIST;
 			goto out;
 		}
 
@@ -1103,23 +1171,22 @@ hit_next:
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc)
 			goto search_again;
-		err = split_state(tree, state, prealloc, start);
-		if (err)
-			extent_io_tree_panic(tree, err);
+		ret = split_state(tree, state, prealloc, start);
+		if (ret)
+			extent_io_tree_panic(tree, state, "split", ret);
 
 		prealloc = NULL;
-		if (err)
+		if (ret)
 			goto out;
 		if (state->end <= end) {
 			set_state_bits(tree, state, bits, changeset);
 			cache_state(state, cached_state);
 			merge_state(tree, state);
-			if (last_end == (u64)-1)
+			if (last_end >= end)
 				goto out;
 			start = last_end + 1;
 			state = next_state(state);
-			if (start < end && state && state->start == start &&
-			    !need_resched())
+			if (state && state->start == start && !need_resched())
 				goto hit_next;
 		}
 		goto search_again;
@@ -1132,11 +1199,7 @@ hit_next:
 	 * extent we found.
 	 */
 	if (state->start > start) {
-		u64 this_end;
-		if (end < last_start)
-			this_end = end;
-		else
-			this_end = last_start - 1;
+		struct extent_state *inserted_state;
 
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc)
@@ -1147,14 +1210,38 @@ hit_next:
 		 * extent.
 		 */
 		prealloc->start = start;
-		prealloc->end = this_end;
-		err = insert_state(tree, prealloc, bits, changeset);
-		if (err)
-			extent_io_tree_panic(tree, err);
+		if (end < last_start)
+			prealloc->end = end;
+		else
+			prealloc->end = last_start - 1;
 
-		cache_state(prealloc, cached_state);
-		prealloc = NULL;
-		start = this_end + 1;
+		inserted_state = insert_state(tree, prealloc, bits, changeset);
+		if (IS_ERR(inserted_state)) {
+			ret = PTR_ERR(inserted_state);
+			extent_io_tree_panic(tree, prealloc, "insert", ret);
+			goto out;
+		}
+
+		cache_state(inserted_state, cached_state);
+		if (inserted_state == prealloc)
+			prealloc = NULL;
+		start = inserted_state->end + 1;
+
+		/* Beyond target range, stop. */
+		if (start > end)
+			goto out;
+
+		if (need_resched())
+			goto search_again;
+
+		state = next_search_state(inserted_state, end);
+		/*
+		 * If there's a next state, whether contiguous or not, we don't
+		 * need to unlock and start search again. If it's not contiguous
+		 * we will end up here and try to allocate a prealloc state and insert.
+		 */
+		if (state)
+			goto hit_next;
 		goto search_again;
 	}
 	/*
@@ -1167,16 +1254,19 @@ hit_next:
 		if (state->state & exclusive_bits) {
 			*failed_start = start;
 			cache_state(state, failed_state);
-			err = -EEXIST;
+			ret = -EEXIST;
 			goto out;
 		}
 
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc)
 			goto search_again;
-		err = split_state(tree, state, prealloc, end + 1);
-		if (err)
-			extent_io_tree_panic(tree, err);
+		ret = split_state(tree, state, prealloc, end + 1);
+		if (ret) {
+			extent_io_tree_panic(tree, state, "split", ret);
+			prealloc = NULL;
+			goto out;
+		}
 
 		set_state_bits(tree, prealloc, bits, changeset);
 		cache_state(prealloc, cached_state);
@@ -1195,18 +1285,16 @@ search_again:
 
 out:
 	spin_unlock(&tree->lock);
-	if (prealloc)
-		free_extent_state(prealloc);
+	btrfs_free_extent_state(prealloc);
 
-	return err;
+	return ret;
 
 }
 
-int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-		   u32 bits, struct extent_state **cached_state)
+int btrfs_set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+			 u32 bits, struct extent_state **cached_state)
 {
-	return __set_extent_bit(tree, start, end, bits, NULL, NULL,
-				cached_state, NULL);
+	return set_extent_bit(tree, start, end, bits, NULL, NULL, cached_state, NULL);
 }
 
 /*
@@ -1227,15 +1315,15 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
  *
  * All allocations are done with GFP_NOFS.
  */
-int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-		       u32 bits, u32 clear_bits,
-		       struct extent_state **cached_state)
+int btrfs_convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+			     u32 bits, u32 clear_bits,
+			     struct extent_state **cached_state)
 {
 	struct extent_state *state;
 	struct extent_state *prealloc = NULL;
 	struct rb_node **p = NULL;
 	struct rb_node *parent = NULL;
-	int err = 0;
+	int ret = 0;
 	u64 last_start;
 	u64 last_end;
 	bool first_iteration = true;
@@ -1274,7 +1362,7 @@ again:
 	if (!state) {
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc) {
-			err = -ENOMEM;
+			ret = -ENOMEM;
 			goto out;
 		}
 		prealloc->start = start;
@@ -1297,12 +1385,11 @@ hit_next:
 	if (state->start == start && state->end <= end) {
 		set_state_bits(tree, state, bits, NULL);
 		cache_state(state, cached_state);
-		state = clear_state_bit(tree, state, clear_bits, 0, NULL);
-		if (last_end == (u64)-1)
+		state = clear_state_bit(tree, state, clear_bits, 0, end, NULL);
+		if (last_end >= end)
 			goto out;
 		start = last_end + 1;
-		if (start < end && state && state->start == start &&
-		    !need_resched())
+		if (state && state->start == start && !need_resched())
 			goto hit_next;
 		goto search_again;
 	}
@@ -1325,24 +1412,23 @@ hit_next:
 	if (state->start < start) {
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc) {
-			err = -ENOMEM;
+			ret = -ENOMEM;
 			goto out;
 		}
-		err = split_state(tree, state, prealloc, start);
-		if (err)
-			extent_io_tree_panic(tree, err);
+		ret = split_state(tree, state, prealloc, start);
 		prealloc = NULL;
-		if (err)
+		if (ret) {
+			extent_io_tree_panic(tree, state, "split", ret);
 			goto out;
+		}
 		if (state->end <= end) {
 			set_state_bits(tree, state, bits, NULL);
 			cache_state(state, cached_state);
-			state = clear_state_bit(tree, state, clear_bits, 0, NULL);
-			if (last_end == (u64)-1)
+			state = clear_state_bit(tree, state, clear_bits, 0, end, NULL);
+			if (last_end >= end)
 				goto out;
 			start = last_end + 1;
-			if (start < end && state && state->start == start &&
-			    !need_resched())
+			if (state && state->start == start && !need_resched())
 				goto hit_next;
 		}
 		goto search_again;
@@ -1355,15 +1441,11 @@ hit_next:
 	 * extent we found.
 	 */
 	if (state->start > start) {
-		u64 this_end;
-		if (end < last_start)
-			this_end = end;
-		else
-			this_end = last_start - 1;
+		struct extent_state *inserted_state;
 
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc) {
-			err = -ENOMEM;
+			ret = -ENOMEM;
 			goto out;
 		}
 
@@ -1372,13 +1454,37 @@ hit_next:
 		 * extent.
 		 */
 		prealloc->start = start;
-		prealloc->end = this_end;
-		err = insert_state(tree, prealloc, bits, NULL);
-		if (err)
-			extent_io_tree_panic(tree, err);
-		cache_state(prealloc, cached_state);
-		prealloc = NULL;
-		start = this_end + 1;
+		if (end < last_start)
+			prealloc->end = end;
+		else
+			prealloc->end = last_start - 1;
+
+		inserted_state = insert_state(tree, prealloc, bits, NULL);
+		if (IS_ERR(inserted_state)) {
+			ret = PTR_ERR(inserted_state);
+			extent_io_tree_panic(tree, prealloc, "insert", ret);
+			goto out;
+		}
+		cache_state(inserted_state, cached_state);
+		if (inserted_state == prealloc)
+			prealloc = NULL;
+		start = inserted_state->end + 1;
+
+		/* Beyond target range, stop. */
+		if (start > end)
+			goto out;
+
+		if (need_resched())
+			goto search_again;
+
+		state = next_search_state(inserted_state, end);
+		/*
+		 * If there's a next state, whether contiguous or not, we don't
+		 * need to unlock and start search again. If it's not contiguous
+		 * we will end up here and try to allocate a prealloc state and insert.
+		 */
+		if (state)
+			goto hit_next;
 		goto search_again;
 	}
 	/*
@@ -1390,17 +1496,20 @@ hit_next:
 	if (state->start <= end && state->end > end) {
 		prealloc = alloc_extent_state_atomic(prealloc);
 		if (!prealloc) {
-			err = -ENOMEM;
+			ret = -ENOMEM;
 			goto out;
 		}
 
-		err = split_state(tree, state, prealloc, end + 1);
-		if (err)
-			extent_io_tree_panic(tree, err);
+		ret = split_state(tree, state, prealloc, end + 1);
+		if (ret) {
+			extent_io_tree_panic(tree, state, "split", ret);
+			prealloc = NULL;
+			goto out;
+		}
 
 		set_state_bits(tree, prealloc, bits, NULL);
 		cache_state(prealloc, cached_state);
-		clear_state_bit(tree, prealloc, clear_bits, 0, NULL);
+		clear_state_bit(tree, prealloc, clear_bits, 0, end, NULL);
 		prealloc = NULL;
 		goto out;
 	}
@@ -1415,10 +1524,9 @@ search_again:
 
 out:
 	spin_unlock(&tree->lock);
-	if (prealloc)
-		free_extent_state(prealloc);
+	btrfs_free_extent_state(prealloc);
 
-	return err;
+	return ret;
 }
 
 /*
@@ -1436,8 +1544,8 @@ out:
  * spans (last_range_end, end of device]. In this case it's up to the caller to
  * trim @end_ret to the appropriate size.
  */
-void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
-				 u64 *start_ret, u64 *end_ret, u32 bits)
+void btrfs_find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
+				       u64 *start_ret, u64 *end_ret, u32 bits)
 {
 	struct extent_state *state;
 	struct extent_state *prev = NULL, *next = NULL;
@@ -1554,10 +1662,10 @@ out:
  * all given bits set. If the returned number of bytes is greater than zero
  * then @start is updated with the offset of the first byte with the bits set.
  */
-u64 count_range_bits(struct extent_io_tree *tree,
-		     u64 *start, u64 search_end, u64 max_bytes,
-		     u32 bits, int contig,
-		     struct extent_state **cached_state)
+u64 btrfs_count_range_bits(struct extent_io_tree *tree,
+			   u64 *start, u64 search_end, u64 max_bytes,
+			   u32 bits, bool contig,
+			   struct extent_state **cached_state)
 {
 	struct extent_state *state = NULL;
 	struct extent_state *cached;
@@ -1628,7 +1736,7 @@ search:
 	}
 
 	if (cached_state) {
-		free_extent_state(*cached_state);
+		btrfs_free_extent_state(*cached_state);
 		*cached_state = state;
 		if (state)
 			refcount_inc(&state->refs);
@@ -1640,15 +1748,79 @@ search:
 }
 
 /*
- * Search a range in the state tree for a given mask.  If 'filled' == 1, this
- * returns 1 only if every extent in the tree has the bits set.  Otherwise, 1
- * is returned if any bit in the range is found set.
+ * Check if the single @bit exists in the given range.
  */
-int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
-		   u32 bits, int filled, struct extent_state *cached)
+bool btrfs_test_range_bit_exists(struct extent_io_tree *tree, u64 start, u64 end, u32 bit)
 {
-	struct extent_state *state = NULL;
-	int bitset = 0;
+	struct extent_state *state;
+	bool bitset = false;
+
+	ASSERT(is_power_of_2(bit));
+
+	spin_lock(&tree->lock);
+	state = tree_search(tree, start);
+	while (state) {
+		if (state->start > end)
+			break;
+
+		if (state->state & bit) {
+			bitset = true;
+			break;
+		}
+
+		if (state->end >= end)
+			break;
+		state = next_state(state);
+	}
+	spin_unlock(&tree->lock);
+	return bitset;
+}
+
+void btrfs_get_range_bits(struct extent_io_tree *tree, u64 start, u64 end, u32 *bits,
+			  struct extent_state **cached_state)
+{
+	struct extent_state *state;
+
+	/*
+	 * The cached state is currently mandatory and not used to start the
+	 * search, only to cache the first state record found in the range.
+	 */
+	ASSERT(cached_state != NULL);
+	ASSERT(*cached_state == NULL);
+
+	*bits = 0;
+
+	spin_lock(&tree->lock);
+	state = tree_search(tree, start);
+	if (state && state->start < end) {
+		*cached_state = state;
+		refcount_inc(&state->refs);
+	}
+	while (state) {
+		if (state->start > end)
+			break;
+
+		*bits |= state->state;
+
+		if (state->end >= end)
+			break;
+
+		state = next_state(state);
+	}
+	spin_unlock(&tree->lock);
+}
+
+/*
+ * Check if the whole range [@start,@end) contains the single @bit set.
+ */
+bool btrfs_test_range_bit(struct extent_io_tree *tree, u64 start, u64 end, u32 bit,
+			  struct extent_state *cached)
+{
+	struct extent_state *state;
+	bool bitset = true;
+
+	ASSERT(is_power_of_2(bit));
+	ASSERT(start < end);
 
 	spin_lock(&tree->lock);
 	if (cached && extent_state_in_tree(cached) && cached->start <= start &&
@@ -1656,79 +1828,69 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
 		state = cached;
 	else
 		state = tree_search(tree, start);
-	while (state && start <= end) {
-		if (filled && state->start > start) {
-			bitset = 0;
+	while (state) {
+		if (state->start > start) {
+			bitset = false;
 			break;
 		}
 
-		if (state->start > end)
-			break;
-
-		if (state->state & bits) {
-			bitset = 1;
-			if (!filled)
-				break;
-		} else if (filled) {
-			bitset = 0;
+		if ((state->state & bit) == 0) {
+			bitset = false;
 			break;
 		}
 
-		if (state->end == (u64)-1)
+		if (state->end >= end)
 			break;
 
+		/* Next state must start where this one ends. */
 		start = state->end + 1;
-		if (start > end)
-			break;
 		state = next_state(state);
 	}
 
 	/* We ran out of states and were still inside of our range. */
-	if (filled && !state)
-		bitset = 0;
+	if (!state)
+		bitset = false;
 	spin_unlock(&tree->lock);
 	return bitset;
 }
 
 /* Wrappers around set/clear extent bit */
-int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
-			   u32 bits, struct extent_changeset *changeset)
+int btrfs_set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+				 u32 bits, struct extent_changeset *changeset)
 {
 	/*
-	 * We don't support EXTENT_LOCKED yet, as current changeset will
-	 * record any bits changed, so for EXTENT_LOCKED case, it will
-	 * either fail with -EEXIST or changeset will record the whole
-	 * range.
+	 * We don't support EXTENT_LOCK_BITS yet, as current changeset will
+	 * record any bits changed, so for EXTENT_LOCK_BITS case, it will either
+	 * fail with -EEXIST or changeset will record the whole range.
 	 */
-	ASSERT(!(bits & EXTENT_LOCKED));
+	ASSERT(!(bits & EXTENT_LOCK_BITS));
 
-	return __set_extent_bit(tree, start, end, bits, NULL, NULL, NULL, changeset);
+	return set_extent_bit(tree, start, end, bits, NULL, NULL, NULL, changeset);
 }
 
-int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
-			     u32 bits, struct extent_changeset *changeset)
+int btrfs_clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+				   u32 bits, struct extent_changeset *changeset)
 {
 	/*
-	 * Don't support EXTENT_LOCKED case, same reason as
+	 * Don't support EXTENT_LOCK_BITS case, same reason as
 	 * set_record_extent_bits().
 	 */
-	ASSERT(!(bits & EXTENT_LOCKED));
+	ASSERT(!(bits & EXTENT_LOCK_BITS));
 
-	return __clear_extent_bit(tree, start, end, bits, NULL, changeset);
+	return btrfs_clear_extent_bit_changeset(tree, start, end, bits, NULL, changeset);
 }
 
-int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end,
-		    struct extent_state **cached)
+bool btrfs_try_lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+				u32 bits, struct extent_state **cached)
 {
-	int err;
+	int ret;
 	u64 failed_start;
 
-	err = __set_extent_bit(tree, start, end, EXTENT_LOCKED, &failed_start,
-			       NULL, cached, NULL);
-	if (err == -EEXIST) {
+	ret = set_extent_bit(tree, start, end, bits, &failed_start, NULL, cached, NULL);
+	if (ret == -EEXIST) {
 		if (failed_start > start)
-			clear_extent_bit(tree, start, failed_start - 1,
-					 EXTENT_LOCKED, cached);
+			btrfs_clear_extent_bit(tree, start, failed_start - 1,
+					       bits, cached);
 		return 0;
 	}
 	return 1;
@@ -1738,40 +1900,58 @@ int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end,
  * Either insert or lock state struct between start and end use mask to tell
  * us if waiting is desired.
  */
-int lock_extent(struct extent_io_tree *tree, u64 start, u64 end,
-		struct extent_state **cached_state)
+int btrfs_lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end, u32 bits,
+			   struct extent_state **cached_state)
 {
 	struct extent_state *failed_state = NULL;
-	int err;
+	int ret;
 	u64 failed_start;
 
-	err = __set_extent_bit(tree, start, end, EXTENT_LOCKED, &failed_start,
-			       &failed_state, cached_state, NULL);
-	while (err == -EEXIST) {
+	ret = set_extent_bit(tree, start, end, bits, &failed_start,
+			     &failed_state, cached_state, NULL);
+	while (ret == -EEXIST) {
 		if (failed_start != start)
-			clear_extent_bit(tree, start, failed_start - 1,
-					 EXTENT_LOCKED, cached_state);
+			btrfs_clear_extent_bit(tree, start, failed_start - 1,
+					       bits, cached_state);
 
-		wait_extent_bit(tree, failed_start, end, EXTENT_LOCKED,
-				&failed_state);
-		err = __set_extent_bit(tree, start, end, EXTENT_LOCKED,
-				       &failed_start, &failed_state,
-				       cached_state, NULL);
+		wait_extent_bit(tree, failed_start, end, bits, &failed_state);
+		ret = set_extent_bit(tree, start, end, bits, &failed_start,
+				     &failed_state, cached_state, NULL);
 	}
-	return err;
+	return ret;
 }
 
-void __cold extent_state_free_cachep(void)
+/*
+ * Get the extent state that follows the given extent state.
+ * This is meant to be used in a context where we know no other tasks can
+ * concurrently modify the tree.
+ */
+struct extent_state *btrfs_next_extent_state(struct extent_io_tree *tree,
+					     struct extent_state *state)
+{
+	struct extent_state *next;
+
+	spin_lock(&tree->lock);
+	ASSERT(extent_state_in_tree(state));
+	next = next_state(state);
+	if (next)
+		refcount_inc(&next->refs);
+	spin_unlock(&tree->lock);
+
+	return next;
+}
+
+void __cold btrfs_extent_state_free_cachep(void)
 {
 	btrfs_extent_state_leak_debug_check();
 	kmem_cache_destroy(extent_state_cache);
 }
 
-int __init extent_state_init_cachep(void)
+int __init btrfs_extent_state_init_cachep(void)
 {
 	extent_state_cache = kmem_cache_create("btrfs_extent_state",
-			sizeof(struct extent_state), 0,
-			SLAB_MEM_SPREAD, NULL);
+					       sizeof(struct extent_state), 0, 0,
+					       NULL);
 	if (!extent_state_cache)
 		return -ENOMEM;
 

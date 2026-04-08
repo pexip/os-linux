@@ -644,11 +644,9 @@ static int wkup_m3_ipc_probe(struct platform_device *pdev)
 
 	m3_ipc->mbox = mbox_request_channel(&m3_ipc->mbox_client, 0);
 
-	if (IS_ERR(m3_ipc->mbox)) {
-		dev_err(dev, "IPC Request for A8->M3 Channel failed! %ld\n",
-			PTR_ERR(m3_ipc->mbox));
-		return PTR_ERR(m3_ipc->mbox);
-	}
+	if (IS_ERR(m3_ipc->mbox))
+		return dev_err_probe(dev, PTR_ERR(m3_ipc->mbox),
+				     "IPC Request for A8->M3 Channel failed!\n");
 
 	if (of_property_read_u32(dev->of_node, "ti,rproc", &rproc_phandle)) {
 		dev_err(&pdev->dev, "could not get rproc phandle\n");
@@ -710,7 +708,7 @@ err_free_mbox:
 	return ret;
 }
 
-static int wkup_m3_ipc_remove(struct platform_device *pdev)
+static void wkup_m3_ipc_remove(struct platform_device *pdev)
 {
 	wkup_m3_ipc_dbg_destroy(m3_ipc_state);
 
@@ -720,8 +718,6 @@ static int wkup_m3_ipc_remove(struct platform_device *pdev)
 	rproc_put(m3_ipc_state->rproc);
 
 	m3_ipc_state = NULL;
-
-	return 0;
 }
 
 static int __maybe_unused wkup_m3_ipc_suspend(struct device *dev)

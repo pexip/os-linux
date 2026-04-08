@@ -40,6 +40,7 @@
 #include <linux/sched/rt.h>
 #include "rcu/rcu.h"
 
+MODULE_DESCRIPTION("Common functions for in-kernel torture tests");
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Paul E. McKenney <paulmck@linux.ibm.com>");
 
@@ -358,6 +359,8 @@ torture_onoff(void *arg)
 		torture_hrtimeout_jiffies(onoff_holdoff, &rand);
 		VERBOSE_TOROUT_STRING("torture_onoff end holdoff");
 	}
+	while (!rcu_inkernel_boot_has_ended())
+		schedule_timeout_interruptible(HZ / 10);
 	while (!torture_must_stop()) {
 		if (disable_onoff_at_boot && !rcu_inkernel_boot_has_ended()) {
 			torture_hrtimeout_jiffies(HZ / 10, &rand);
@@ -521,9 +524,8 @@ static void torture_shuffle_task_unregister_all(void)
  * A special case is when shuffle_idle_cpu = -1, in which case we allow
  * the tasks to run on all CPUs.
  */
-static void torture_shuffle_tasks(void)
+static void torture_shuffle_tasks(struct torture_random_state *trp)
 {
-	DEFINE_TORTURE_RANDOM(rand);
 	struct shuffle_task *stp;
 
 	cpumask_setall(shuffle_tmp_mask);
@@ -544,7 +546,7 @@ static void torture_shuffle_tasks(void)
 
 	mutex_lock(&shuffle_task_mutex);
 	list_for_each_entry(stp, &shuffle_task_list, st_l) {
-		if (!random_shuffle || torture_random(&rand) & 0x1)
+		if (!random_shuffle || torture_random(trp) & 0x1)
 			set_cpus_allowed_ptr(stp->st_t, shuffle_tmp_mask);
 	}
 	mutex_unlock(&shuffle_task_mutex);
@@ -563,7 +565,7 @@ static int torture_shuffle(void *arg)
 	VERBOSE_TOROUT_STRING("torture_shuffle task started");
 	do {
 		torture_hrtimeout_jiffies(shuffle_interval, &rand);
-		torture_shuffle_tasks();
+		torture_shuffle_tasks(&rand);
 		torture_shutdown_absorb("torture_shuffle");
 	} while (!torture_must_stop());
 	torture_kthread_stopping("torture_shuffle");
@@ -674,7 +676,7 @@ int torture_shutdown_init(int ssecs, void (*cleanup)(void))
 	if (ssecs > 0) {
 		shutdown_time = ktime_add(ktime_get(), ktime_set(ssecs, 0));
 		return torture_create_kthread(torture_shutdown, NULL,
-					     shutdown_task);
+					      shutdown_task);
 	}
 	return 0;
 }
@@ -792,6 +794,16 @@ static void torture_stutter_cleanup(void)
 	stutter_task = NULL;
 }
 
+static unsigned long torture_init_jiffies;
+
+static void
+torture_print_module_parms(void)
+{
+	pr_alert("torture module --- %s:  disable_onoff_at_boot=%d ftrace_dump_at_shutdown=%d verbose_sleep_frequency=%d verbose_sleep_duration=%d random_shuffle=%d%s\n",
+		 torture_type, disable_onoff_at_boot, ftrace_dump_at_shutdown, verbose_sleep_frequency, verbose_sleep_duration, random_shuffle,
+		 rcu_inkernel_boot_has_ended() ? "" : " still booting");
+}
+
 /*
  * Initialize torture module.  Please note that this is -not- invoked via
  * the usual module_init() mechanism, but rather by an explicit call from
@@ -814,6 +826,8 @@ bool torture_init_begin(char *ttype, int v)
 	torture_type = ttype;
 	verbose = v;
 	fullstop = FULLSTOP_DONTSTOP;
+	WRITE_ONCE(torture_init_jiffies, jiffies); // Lockless reads.
+	torture_print_module_parms();
 	return true;
 }
 EXPORT_SYMBOL_GPL(torture_init_begin);
@@ -827,6 +841,15 @@ void torture_init_end(void)
 	register_reboot_notifier(&torture_shutdown_nb);
 }
 EXPORT_SYMBOL_GPL(torture_init_end);
+
+/*
+ * Get the torture_init_begin()-time value of the jiffies counter.
+ */
+unsigned long get_torture_init_jiffies(void)
+{
+	return READ_ONCE(torture_init_jiffies);
+}
+EXPORT_SYMBOL_GPL(get_torture_init_jiffies);
 
 /*
  * Clean up torture module.  Please note that this is -not- invoked via

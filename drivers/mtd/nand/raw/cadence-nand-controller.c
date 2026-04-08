@@ -15,8 +15,10 @@
 #include <linux/module.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/rawnand.h>
-#include <linux/of_device.h>
 #include <linux/iopoll.h>
+#include <linux/of.h>
+#include <linux/platform_device.h>
+#include <linux/property.h>
 #include <linux/slab.h>
 
 /*
@@ -528,12 +530,7 @@ struct cdns_nand_chip {
 	/* ECC strength index. */
 	u8 corr_str_idx;
 
-	u8 cs[];
-};
-
-struct ecc_info {
-	int (*calc_ecc_bytes)(int step_size, int strength);
-	int max_step_size;
+	u8 cs[] __counted_by(nsels);
 };
 
 static inline struct
@@ -1018,7 +1015,7 @@ static int cadence_nand_cdma_send(struct cdns_nand_ctrl *cdns_ctrl,
 }
 
 /* Send SDMA command and wait for finish. */
-static u32
+static int
 cadence_nand_cdma_send_and_wait(struct cdns_nand_ctrl *cdns_ctrl,
 				u8 thread)
 {
@@ -1896,7 +1893,7 @@ static int cadence_nand_read_buf(struct cdns_nand_ctrl *cdns_ctrl,
 
 		int len_in_words = (data_dma_width == 4) ? len >> 2 : len >> 3;
 
-		/* read alingment data */
+		/* read alignment data */
 		if (data_dma_width == 4)
 			ioread32_rep(cdns_ctrl->io.virt, buf, len_in_words);
 #ifdef CONFIG_64BIT
@@ -2841,7 +2838,6 @@ static void cadence_nand_chips_cleanup(struct cdns_nand_ctrl *cdns_ctrl)
 static int cadence_nand_chips_init(struct cdns_nand_ctrl *cdns_ctrl)
 {
 	struct device_node *np = cdns_ctrl->dev->of_node;
-	struct device_node *nand_np;
 	int max_cs = cdns_ctrl->caps2.max_banks;
 	int nchips, ret;
 
@@ -2854,10 +2850,9 @@ static int cadence_nand_chips_init(struct cdns_nand_ctrl *cdns_ctrl)
 		return -EINVAL;
 	}
 
-	for_each_child_of_node(np, nand_np) {
+	for_each_child_of_node_scoped(np, nand_np) {
 		ret = cadence_nand_chip_init(cdns_ctrl, nand_np);
 		if (ret) {
-			of_node_put(nand_np);
 			cadence_nand_chips_cleanup(cdns_ctrl);
 			return ret;
 		}
@@ -2876,7 +2871,7 @@ cadence_nand_irq_cleanup(int irqnum, struct cdns_nand_ctrl *cdns_ctrl)
 static int cadence_nand_init(struct cdns_nand_ctrl *cdns_ctrl)
 {
 	dma_cap_mask_t mask;
-	struct dma_device *dma_dev = cdns_ctrl->dmac->device;
+	struct dma_device *dma_dev;
 	int ret;
 
 	cdns_ctrl->cdma_desc = dma_alloc_coherent(cdns_ctrl->dev,
@@ -2920,6 +2915,7 @@ static int cadence_nand_init(struct cdns_nand_ctrl *cdns_ctrl)
 		}
 	}
 
+	dma_dev = cdns_ctrl->dmac->device;
 	cdns_ctrl->io.iova_dma = dma_map_resource(dma_dev->dev, cdns_ctrl->io.dma,
 						  cdns_ctrl->io.size,
 						  DMA_BIDIRECTIONAL, 0);
@@ -2977,8 +2973,10 @@ free_buf_desc:
 static void cadence_nand_remove(struct cdns_nand_ctrl *cdns_ctrl)
 {
 	cadence_nand_chips_cleanup(cdns_ctrl);
-	dma_unmap_resource(cdns_ctrl->dmac->device->dev, cdns_ctrl->io.iova_dma,
-			   cdns_ctrl->io.size, DMA_BIDIRECTIONAL, 0);
+	if (cdns_ctrl->dmac)
+		dma_unmap_resource(cdns_ctrl->dmac->device->dev,
+				   cdns_ctrl->io.iova_dma, cdns_ctrl->io.size,
+				   DMA_BIDIRECTIONAL, 0);
 	cadence_nand_irq_cleanup(cdns_ctrl->irq, cdns_ctrl);
 	kfree(cdns_ctrl->buf);
 	dma_free_coherent(cdns_ctrl->dev, sizeof(struct cadence_nand_cdma_desc),
@@ -3013,15 +3011,11 @@ static int cadence_nand_dt_probe(struct platform_device *ofdev)
 	struct cadence_nand_dt *dt;
 	struct cdns_nand_ctrl *cdns_ctrl;
 	int ret;
-	const struct of_device_id *of_id;
 	const struct cadence_nand_dt_devdata *devdata;
 	u32 val;
 
-	of_id = of_match_device(cadence_nand_dt_ids, &ofdev->dev);
-	if (of_id) {
-		ofdev->id_entry = of_id->data;
-		devdata = of_id->data;
-	} else {
+	devdata = device_get_match_data(&ofdev->dev);
+	if (!devdata) {
 		pr_err("Failed to find the right device id.\n");
 		return -ENOMEM;
 	}
@@ -3084,7 +3078,7 @@ static void cadence_nand_dt_remove(struct platform_device *ofdev)
 
 static struct platform_driver cadence_nand_dt_driver = {
 	.probe		= cadence_nand_dt_probe,
-	.remove_new	= cadence_nand_dt_remove,
+	.remove		= cadence_nand_dt_remove,
 	.driver		= {
 		.name	= "cadence-nand-controller",
 		.of_match_table = cadence_nand_dt_ids,

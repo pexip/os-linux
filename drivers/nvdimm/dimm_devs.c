@@ -53,7 +53,9 @@ static int validate_dimm(struct nvdimm_drvdata *ndd)
 
 /**
  * nvdimm_init_nsarea - determine the geometry of a dimm's namespace area
- * @nvdimm: dimm to initialize
+ * @ndd: dimm to initialize
+ *
+ * Returns: %0 if the area is already valid, -errno on error
  */
 int nvdimm_init_nsarea(struct nvdimm_drvdata *ndd)
 {
@@ -194,7 +196,7 @@ static void nvdimm_release(struct device *dev)
 {
 	struct nvdimm *nvdimm = to_nvdimm(dev);
 
-	ida_simple_remove(&dimm_ida, nvdimm->id);
+	ida_free(&dimm_ida, nvdimm->id);
 	kfree(nvdimm);
 }
 
@@ -224,10 +226,10 @@ void nvdimm_drvdata_release(struct kref *kref)
 	struct resource *res, *_r;
 
 	dev_dbg(dev, "trace\n");
-	nvdimm_bus_lock(dev);
-	for_each_dpa_resource_safe(ndd, res, _r)
-		nvdimm_free_dpa(ndd, res);
-	nvdimm_bus_unlock(dev);
+	scoped_guard(nvdimm_bus, dev) {
+		for_each_dpa_resource_safe(ndd, res, _r)
+			nvdimm_free_dpa(ndd, res);
+	}
 
 	kvfree(ndd->data);
 	kfree(ndd);
@@ -317,23 +319,20 @@ static DEVICE_ATTR_RO(state);
 static ssize_t __available_slots_show(struct nvdimm_drvdata *ndd, char *buf)
 {
 	struct device *dev;
-	ssize_t rc;
 	u32 nfree;
 
 	if (!ndd)
 		return -ENXIO;
 
 	dev = ndd->dev;
-	nvdimm_bus_lock(dev);
+	guard(nvdimm_bus)(dev);
 	nfree = nd_label_nfree(ndd);
 	if (nfree - 1 > nfree) {
 		dev_WARN_ONCE(dev, 1, "we ate our last label?\n");
 		nfree = 0;
 	} else
 		nfree--;
-	rc = sprintf(buf, "%d\n", nfree);
-	nvdimm_bus_unlock(dev);
-	return rc;
+	return sprintf(buf, "%d\n", nfree);
 }
 
 static ssize_t available_slots_show(struct device *dev,
@@ -386,21 +385,15 @@ static ssize_t security_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t len)
 
 {
-	ssize_t rc;
-
 	/*
 	 * Require all userspace triggered security management to be
 	 * done while probing is idle and the DIMM is not in active use
 	 * in any region.
 	 */
-	device_lock(dev);
-	nvdimm_bus_lock(dev);
+	guard(device)(dev);
+	guard(nvdimm_bus)(dev);
 	wait_nvdimm_bus_probe_idle(dev);
-	rc = nvdimm_security_store(dev, buf, len);
-	nvdimm_bus_unlock(dev);
-	device_unlock(dev);
-
-	return rc;
+	return nvdimm_security_store(dev, buf, len);
 }
 static DEVICE_ATTR_RW(security);
 
@@ -452,9 +445,8 @@ static ssize_t result_show(struct device *dev, struct device_attribute *attr, ch
 	if (!nvdimm->fw_ops)
 		return -EOPNOTSUPP;
 
-	nvdimm_bus_lock(dev);
+	guard(nvdimm_bus)(dev);
 	result = nvdimm->fw_ops->activate_result(nvdimm);
-	nvdimm_bus_unlock(dev);
 
 	switch (result) {
 	case NVDIMM_FWA_RESULT_NONE:
@@ -481,9 +473,8 @@ static ssize_t activate_show(struct device *dev, struct device_attribute *attr, 
 	if (!nvdimm->fw_ops)
 		return -EOPNOTSUPP;
 
-	nvdimm_bus_lock(dev);
+	guard(nvdimm_bus)(dev);
 	state = nvdimm->fw_ops->activate_state(nvdimm);
-	nvdimm_bus_unlock(dev);
 
 	switch (state) {
 	case NVDIMM_FWA_IDLE:
@@ -514,9 +505,8 @@ static ssize_t activate_store(struct device *dev, struct device_attribute *attr,
 	else
 		return -EINVAL;
 
-	nvdimm_bus_lock(dev);
+	guard(nvdimm_bus)(dev);
 	rc = nvdimm->fw_ops->arm(nvdimm, arg);
-	nvdimm_bus_unlock(dev);
 
 	if (rc < 0)
 		return rc;
@@ -543,9 +533,8 @@ static umode_t nvdimm_firmware_visible(struct kobject *kobj, struct attribute *a
 	if (!nvdimm->fw_ops)
 		return 0;
 
-	nvdimm_bus_lock(dev);
+	guard(nvdimm_bus)(dev);
 	cap = nd_desc->fw_ops->capability(nd_desc);
-	nvdimm_bus_unlock(dev);
 
 	if (cap < NVDIMM_FWA_CAP_QUIESCE)
 		return 0;
@@ -592,7 +581,7 @@ struct nvdimm *__nvdimm_create(struct nvdimm_bus *nvdimm_bus,
 	if (!nvdimm)
 		return NULL;
 
-	nvdimm->id = ida_simple_get(&dimm_ida, 0, 0, GFP_KERNEL);
+	nvdimm->id = ida_alloc(&dimm_ida, GFP_KERNEL);
 	if (nvdimm->id < 0) {
 		kfree(nvdimm);
 		return NULL;
@@ -639,11 +628,10 @@ void nvdimm_delete(struct nvdimm *nvdimm)
 	bool dev_put = false;
 
 	/* We are shutting down. Make state frozen artificially. */
-	nvdimm_bus_lock(dev);
-	set_bit(NVDIMM_SECURITY_FROZEN, &nvdimm->sec.flags);
-	if (test_and_clear_bit(NDD_WORK_PENDING, &nvdimm->flags))
-		dev_put = true;
-	nvdimm_bus_unlock(dev);
+	scoped_guard(nvdimm_bus, dev) {
+		set_bit(NVDIMM_SECURITY_FROZEN, &nvdimm->sec.flags);
+		dev_put = test_and_clear_bit(NDD_WORK_PENDING, &nvdimm->flags);
+	}
 	cancel_delayed_work_sync(&nvdimm->dwork);
 	if (dev_put)
 		put_device(dev);
@@ -722,6 +710,9 @@ static unsigned long dpa_align(struct nd_region *nd_region)
  *			   contiguous unallocated dpa range.
  * @nd_region: constrain available space check to this reference region
  * @nd_mapping: container of dpa-resource-root + labels
+ *
+ * Returns: %0 if there is an alignment error, otherwise the max
+ *		unallocated dpa range
  */
 resource_size_t nd_pmem_max_contiguous_dpa(struct nd_region *nd_region,
 					   struct nd_mapping *nd_mapping)
@@ -767,6 +758,8 @@ resource_size_t nd_pmem_max_contiguous_dpa(struct nd_region *nd_region,
  *
  * Validate that a PMEM label, if present, aligns with the start of an
  * interleave set.
+ *
+ * Returns: %0 if there is an alignment error, otherwise the unallocated dpa
  */
 resource_size_t nd_pmem_available_dpa(struct nd_region *nd_region,
 				      struct nd_mapping *nd_mapping)
@@ -836,8 +829,10 @@ struct resource *nvdimm_allocate_dpa(struct nvdimm_drvdata *ndd,
 
 /**
  * nvdimm_allocated_dpa - sum up the dpa currently allocated to this label_id
- * @nvdimm: container of dpa-resource-root + labels
+ * @ndd: container of dpa-resource-root + labels
  * @label_id: dpa resource name of the form pmem-<human readable uuid>
+ *
+ * Returns: sum of the dpa allocated to the label_id
  */
 resource_size_t nvdimm_allocated_dpa(struct nvdimm_drvdata *ndd,
 		struct nd_label_id *label_id)

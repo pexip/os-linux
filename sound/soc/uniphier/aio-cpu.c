@@ -762,14 +762,10 @@ int uniphier_aio_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	chip->num_plls = chip->chip_spec->num_plls;
-	chip->plls = devm_kcalloc(dev,
-				  chip->num_plls,
-				  sizeof(struct uniphier_aio_pll),
-				  GFP_KERNEL);
+	chip->plls = devm_kmemdup_array(dev, chip->chip_spec->plls, chip->num_plls,
+					sizeof(*chip->chip_spec->plls), GFP_KERNEL);
 	if (!chip->plls)
 		return -ENOMEM;
-	memcpy(chip->plls, chip->chip_spec->plls,
-	       sizeof(struct uniphier_aio_pll) * chip->num_plls);
 
 	for (i = 0; i < chip->num_aios; i++) {
 		struct uniphier_aio *aio = &chip->aios[i];
@@ -822,14 +818,12 @@ err_out_clock:
 }
 EXPORT_SYMBOL_GPL(uniphier_aio_probe);
 
-int uniphier_aio_remove(struct platform_device *pdev)
+void uniphier_aio_remove(struct platform_device *pdev)
 {
 	struct uniphier_aio_chip *chip = platform_get_drvdata(pdev);
 
 	reset_control_assert(chip->rst);
 	clk_disable_unprepare(chip->clk);
-
-	return 0;
 }
 EXPORT_SYMBOL_GPL(uniphier_aio_remove);
 

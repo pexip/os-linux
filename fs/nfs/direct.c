@@ -56,6 +56,7 @@
 #include <linux/uaccess.h>
 #include <linux/atomic.h>
 
+#include "delegation.h"
 #include "internal.h"
 #include "iostat.h"
 #include "pnfs.h"
@@ -286,6 +287,8 @@ static void nfs_direct_read_completion(struct nfs_pgio_header *hdr)
 	nfs_direct_count_bytes(dreq, hdr);
 	spin_unlock(&dreq->lock);
 
+	nfs_update_delegated_atime(dreq->inode);
+
 	while (!list_empty(&hdr->pages)) {
 		struct nfs_page *req = nfs_list_entry(hdr->pages.next);
 		struct page *page = req->wb_page;
@@ -317,6 +320,7 @@ static void nfs_read_sync_pgio_error(struct list_head *head, int error)
 static void nfs_direct_pgio_init(struct nfs_pgio_header *hdr)
 {
 	get_dreq(hdr->dreq);
+	set_bit(NFS_IOHDR_ODIRECT, &hdr->flags);
 }
 
 static const struct nfs_pgio_completion_ops nfs_direct_read_completion_ops = {
@@ -381,7 +385,6 @@ static ssize_t nfs_direct_read_schedule_iovec(struct nfs_direct_req *dreq,
 			bytes -= req_len;
 			requested_bytes += req_len;
 			pos += req_len;
-			dreq->bytes_left -= req_len;
 		}
 		nfs_direct_release_pages(pagevec, npages);
 		kvfree(pagevec);
@@ -453,7 +456,7 @@ ssize_t nfs_file_direct_read(struct kiocb *iocb, struct iov_iter *iter,
 		goto out;
 
 	dreq->inode = inode;
-	dreq->bytes_left = dreq->max_count = count;
+	dreq->max_count = count;
 	dreq->io_start = iocb->ki_pos;
 	dreq->ctx = get_nfs_open_context(nfs_file_open_context(iocb->ki_filp));
 	l_ctx = nfs_get_lock_context(dreq->ctx);
@@ -469,8 +472,16 @@ ssize_t nfs_file_direct_read(struct kiocb *iocb, struct iov_iter *iter,
 	if (user_backed_iter(iter))
 		dreq->flags = NFS_ODIRECT_SHOULD_DIRTY;
 
-	if (!swap)
-		nfs_start_io_direct(inode);
+	if (!swap) {
+		result = nfs_start_io_direct(inode);
+		if (result) {
+			/* release the reference that would usually be
+			 * consumed by nfs_direct_read_schedule_iovec()
+			 */
+			nfs_direct_req_release(dreq);
+			goto out_release;
+		}
+	}
 
 	NFS_I(inode)->read_io += count;
 	requested = nfs_direct_read_schedule_iovec(dreq, iter, iocb->ki_pos);
@@ -619,6 +630,7 @@ static void nfs_direct_commit_complete(struct nfs_commit_data *data)
 
 	trace_nfs_direct_commit_complete(dreq);
 
+	spin_lock(&dreq->lock);
 	if (status < 0) {
 		/* Errors in commit are fatal */
 		dreq->error = status;
@@ -626,6 +638,7 @@ static void nfs_direct_commit_complete(struct nfs_commit_data *data)
 	} else {
 		status = dreq->error;
 	}
+	spin_unlock(&dreq->lock);
 
 	nfs_init_cinfo_from_dreq(&cinfo, dreq);
 
@@ -638,7 +651,10 @@ static void nfs_direct_commit_complete(struct nfs_commit_data *data)
 			spin_unlock(&dreq->lock);
 			nfs_release_request(req);
 		} else if (!nfs_write_match_verf(verf, req)) {
-			dreq->flags = NFS_ODIRECT_RESCHED_WRITES;
+			spin_lock(&dreq->lock);
+			if (dreq->flags == 0)
+				dreq->flags = NFS_ODIRECT_RESCHED_WRITES;
+			spin_unlock(&dreq->lock);
 			/*
 			 * Despite the reboot, the write was successful,
 			 * so reset wb_nio.
@@ -741,7 +757,6 @@ static void nfs_direct_write_completion(struct nfs_pgio_header *hdr)
 {
 	struct nfs_direct_req *dreq = hdr->dreq;
 	struct nfs_commit_info cinfo;
-	struct nfs_page *req = nfs_list_entry(hdr->pages.next);
 	struct inode *inode = dreq->inode;
 	int flags = NFS_ODIRECT_DONE;
 
@@ -766,9 +781,11 @@ static void nfs_direct_write_completion(struct nfs_pgio_header *hdr)
 
 	spin_lock(&inode->i_lock);
 	nfs_direct_file_adjust_size_locked(inode, dreq->io_start, dreq->count);
+	nfs_update_delegated_mtime_locked(dreq->inode);
 	spin_unlock(&inode->i_lock);
 
 	while (!list_empty(&hdr->pages)) {
+		struct nfs_page *req;
 
 		req = nfs_list_entry(hdr->pages.next);
 		nfs_list_remove_request(req);
@@ -898,7 +915,6 @@ static ssize_t nfs_direct_write_schedule_iovec(struct nfs_direct_req *dreq,
 			bytes -= req_len;
 			requested_bytes += req_len;
 			pos += req_len;
-			dreq->bytes_left -= req_len;
 
 			if (defer) {
 				nfs_mark_request_commit(req, NULL, &cinfo, 0);
@@ -1005,7 +1021,7 @@ ssize_t nfs_file_direct_write(struct kiocb *iocb, struct iov_iter *iter,
 		goto out;
 
 	dreq->inode = inode;
-	dreq->bytes_left = dreq->max_count = count;
+	dreq->max_count = count;
 	dreq->io_start = pos;
 	dreq->ctx = get_nfs_open_context(nfs_file_open_context(iocb->ki_filp));
 	l_ctx = nfs_get_lock_context(dreq->ctx);
@@ -1023,7 +1039,14 @@ ssize_t nfs_file_direct_write(struct kiocb *iocb, struct iov_iter *iter,
 		requested = nfs_direct_write_schedule_iovec(dreq, iter, pos,
 							    FLUSH_STABLE);
 	} else {
-		nfs_start_io_direct(inode);
+		result = nfs_start_io_direct(inode);
+		if (result) {
+			/* release the reference that would usually be
+			 * consumed by nfs_direct_write_schedule_iovec()
+			 */
+			nfs_direct_req_release(dreq);
+			goto out_release;
+		}
 
 		requested = nfs_direct_write_schedule_iovec(dreq, iter, pos,
 							    FLUSH_COND_STABLE);
@@ -1063,8 +1086,7 @@ int __init nfs_init_directcache(void)
 {
 	nfs_direct_cachep = kmem_cache_create("nfs_direct_cache",
 						sizeof(struct nfs_direct_req),
-						0, (SLAB_RECLAIM_ACCOUNT|
-							SLAB_MEM_SPREAD),
+						0, SLAB_RECLAIM_ACCOUNT,
 						NULL);
 	if (nfs_direct_cachep == NULL)
 		return -ENOMEM;

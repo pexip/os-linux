@@ -44,13 +44,10 @@ struct inet_connection_sock_af_ops {
 				      struct request_sock *req_unhash,
 				      bool *own_req);
 	u16	    net_header_len;
-	u16	    net_frag_header_len;
-	u16	    sockaddr_len;
 	int	    (*setsockopt)(struct sock *sk, int level, int optname,
 				  sockptr_t optval, unsigned int optlen);
 	int	    (*getsockopt)(struct sock *sk, int level, int optname,
 				  char __user *optval, int __user *optlen);
-	void	    (*addr2sockaddr)(struct sock *sk, struct sockaddr *);
 	void	    (*mtu_reduced)(struct sock *sk);
 };
 
@@ -59,7 +56,6 @@ struct inet_connection_sock_af_ops {
  * @icsk_accept_queue:	   FIFO of established children
  * @icsk_bind_hash:	   Bind node
  * @icsk_bind2_hash:	   Bind node in the bhash2 table
- * @icsk_timeout:	   Timeout
  * @icsk_retransmit_timer: Resend (no ack)
  * @icsk_rto:		   Retransmit timeout
  * @icsk_pmtu_cookie	   Last pmtu seen by socket
@@ -67,7 +63,6 @@ struct inet_connection_sock_af_ops {
  * @icsk_af_ops		   Operations which are AF_INET{4,6} specific
  * @icsk_ulp_ops	   Pluggable ULP control hook
  * @icsk_ulp_data	   ULP private data
- * @icsk_clean_acked	   Clean acked data hook
  * @icsk_ca_state:	   Congestion control state
  * @icsk_retransmits:	   Number of unrecovered [RTO] timeouts
  * @icsk_pending:	   Scheduled timer event
@@ -86,18 +81,17 @@ struct inet_connection_sock {
 	struct request_sock_queue icsk_accept_queue;
 	struct inet_bind_bucket	  *icsk_bind_hash;
 	struct inet_bind2_bucket  *icsk_bind2_hash;
-	unsigned long		  icsk_timeout;
  	struct timer_list	  icsk_retransmit_timer;
  	struct timer_list	  icsk_delack_timer;
 	__u32			  icsk_rto;
 	__u32                     icsk_rto_min;
+	u32			  icsk_rto_max;
 	__u32                     icsk_delack_max;
 	__u32			  icsk_pmtu_cookie;
 	const struct tcp_congestion_ops *icsk_ca_ops;
 	const struct inet_connection_sock_af_ops *icsk_af_ops;
 	const struct tcp_ulp_ops  *icsk_ulp_ops;
 	void __rcu		  *icsk_ulp_data;
-	void (*icsk_clean_acked)(struct sock *sk, u32 acked_seq);
 	unsigned int		  (*icsk_sync_mss)(struct sock *sk, u32 pmtu);
 	__u8			  icsk_ca_state:5,
 				  icsk_ca_initialized:1,
@@ -114,8 +108,11 @@ struct inet_connection_sock {
 		__u8		  quick;	 /* Scheduled number of quick acks	   */
 		__u8		  pingpong;	 /* The session is interactive		   */
 		__u8		  retry;	 /* Number of attempts			   */
-		__u32		  ato;		 /* Predicted tick of soft clock	   */
-		unsigned long	  timeout;	 /* Currently scheduled timeout		   */
+		#define ATO_BITS 8
+		__u32		  ato:ATO_BITS,	 /* Predicted tick of soft clock	   */
+				  lrcv_flowlabel:20, /* last received ipv6 flowlabel	   */
+				  dst_quick_ack:1, /* cache dst RTAX_QUICKACK		   */
+				  unused:3;
 		__u32		  lrcvtime;	 /* timestamp of last received data packet */
 		__u16		  last_seg_size; /* Size of last incoming segment	   */
 		__u16		  rcv_mss;	 /* MSS used for delayed ACK decisions	   */
@@ -145,10 +142,7 @@ struct inet_connection_sock {
 #define ICSK_TIME_LOSS_PROBE	5	/* Tail loss probe timer */
 #define ICSK_TIME_REO_TIMEOUT	6	/* Reordering timer */
 
-static inline struct inet_connection_sock *inet_csk(const struct sock *sk)
-{
-	return (struct inet_connection_sock *)sk;
-}
+#define inet_csk(ptr) container_of_const(ptr, struct inet_connection_sock, icsk_inet.sk)
 
 static inline void *inet_csk_ca(const struct sock *sk)
 {
@@ -190,20 +184,29 @@ static inline void inet_csk_delack_init(struct sock *sk)
 	memset(&inet_csk(sk)->icsk_ack, 0, sizeof(inet_csk(sk)->icsk_ack));
 }
 
-void inet_csk_delete_keepalive_timer(struct sock *sk);
-void inet_csk_reset_keepalive_timer(struct sock *sk, unsigned long timeout);
+static inline unsigned long
+icsk_timeout(const struct inet_connection_sock *icsk)
+{
+	return READ_ONCE(icsk->icsk_retransmit_timer.expires);
+}
+
+static inline unsigned long
+icsk_delack_timeout(const struct inet_connection_sock *icsk)
+{
+	return READ_ONCE(icsk->icsk_delack_timer.expires);
+}
 
 static inline void inet_csk_clear_xmit_timer(struct sock *sk, const int what)
 {
 	struct inet_connection_sock *icsk = inet_csk(sk);
 
 	if (what == ICSK_TIME_RETRANS || what == ICSK_TIME_PROBE0) {
-		icsk->icsk_pending = 0;
+		smp_store_release(&icsk->icsk_pending, 0);
 #ifdef INET_CSK_CLEAR_TIMERS
 		sk_stop_timer(sk, &icsk->icsk_retransmit_timer);
 #endif
 	} else if (what == ICSK_TIME_DACK) {
-		icsk->icsk_ack.pending = 0;
+		smp_store_release(&icsk->icsk_ack.pending, 0);
 		icsk->icsk_ack.retry = 0;
 #ifdef INET_CSK_CLEAR_TIMERS
 		sk_stop_timer(sk, &icsk->icsk_delack_timer);
@@ -228,15 +231,15 @@ static inline void inet_csk_reset_xmit_timer(struct sock *sk, const int what,
 		when = max_when;
 	}
 
+	when += jiffies;
 	if (what == ICSK_TIME_RETRANS || what == ICSK_TIME_PROBE0 ||
 	    what == ICSK_TIME_LOSS_PROBE || what == ICSK_TIME_REO_TIMEOUT) {
-		icsk->icsk_pending = what;
-		icsk->icsk_timeout = jiffies + when;
-		sk_reset_timer(sk, &icsk->icsk_retransmit_timer, icsk->icsk_timeout);
+		smp_store_release(&icsk->icsk_pending, what);
+		sk_reset_timer(sk, &icsk->icsk_retransmit_timer, when);
 	} else if (what == ICSK_TIME_DACK) {
-		icsk->icsk_ack.pending |= ICSK_ACK_TIMER;
-		icsk->icsk_ack.timeout = jiffies + when;
-		sk_reset_timer(sk, &icsk->icsk_delack_timer, icsk->icsk_ack.timeout);
+		smp_store_release(&icsk->icsk_ack.pending,
+				  icsk->icsk_ack.pending | ICSK_ACK_TIMER);
+		sk_reset_timer(sk, &icsk->icsk_delack_timer, when);
 	} else {
 		pr_debug("inet_csk BUG: unknown timer value\n");
 	}
@@ -251,7 +254,7 @@ inet_csk_rto_backoff(const struct inet_connection_sock *icsk,
         return (unsigned long)min_t(u64, when, max_when);
 }
 
-struct sock *inet_csk_accept(struct sock *sk, int flags, int *err, bool kern);
+struct sock *inet_csk_accept(struct sock *sk, struct proto_accept_arg *arg);
 
 int inet_csk_get_port(struct sock *sk, unsigned short snum);
 
@@ -296,14 +299,8 @@ reqsk_timeout(struct request_sock *req, unsigned long max_timeout)
 	return (unsigned long)min_t(u64, timeout, max_timeout);
 }
 
-static inline void inet_csk_prepare_for_destroy_sock(struct sock *sk)
-{
-	/* The below has to be done to allow calling inet_csk_destroy_sock */
-	sock_set_flag(sk, SOCK_DEAD);
-	this_cpu_inc(*sk->sk_prot->orphan_count);
-}
-
 void inet_csk_destroy_sock(struct sock *sk);
+void inet_csk_prepare_for_destroy_sock(struct sock *sk);
 void inet_csk_prepare_forced_close(struct sock *sk);
 
 /*
@@ -318,19 +315,17 @@ static inline __poll_t inet_csk_listen_poll(const struct sock *sk)
 int inet_csk_listen_start(struct sock *sk);
 void inet_csk_listen_stop(struct sock *sk);
 
-void inet_csk_addr2sockaddr(struct sock *sk, struct sockaddr *uaddr);
-
 /* update the fast reuse flag when adding a socket */
-void inet_csk_update_fastreuse(struct inet_bind_bucket *tb,
-			       struct sock *sk);
+void inet_csk_update_fastreuse(const struct sock *sk,
+			       struct inet_bind_bucket *tb,
+			       struct inet_bind2_bucket *tb2);
 
 struct dst_entry *inet_csk_update_pmtu(struct sock *sk, u32 mtu);
 
-#define TCP_PINGPONG_THRESH	1
-
 static inline void inet_csk_enter_pingpong_mode(struct sock *sk)
 {
-	inet_csk(sk)->icsk_ack.pingpong = TCP_PINGPONG_THRESH;
+	inet_csk(sk)->icsk_ack.pingpong =
+		READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_pingpong_thresh);
 }
 
 static inline void inet_csk_exit_pingpong_mode(struct sock *sk)
@@ -340,7 +335,16 @@ static inline void inet_csk_exit_pingpong_mode(struct sock *sk)
 
 static inline bool inet_csk_in_pingpong_mode(struct sock *sk)
 {
-	return inet_csk(sk)->icsk_ack.pingpong >= TCP_PINGPONG_THRESH;
+	return inet_csk(sk)->icsk_ack.pingpong >=
+	       READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_pingpong_thresh);
+}
+
+static inline void inet_csk_inc_pingpong_cnt(struct sock *sk)
+{
+	struct inet_connection_sock *icsk = inet_csk(sk);
+
+	if (icsk->icsk_ack.pingpong < U8_MAX)
+		icsk->icsk_ack.pingpong++;
 }
 
 static inline bool inet_csk_has_ulp(const struct sock *sk)

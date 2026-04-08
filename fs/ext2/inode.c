@@ -754,7 +754,7 @@ static int ext2_get_blocks(struct inode *inode,
 		 */
 		err = sb_issue_zeroout(inode->i_sb,
 				le32_to_cpu(chain[depth-1].key), count,
-				GFP_NOFS);
+				GFP_KERNEL);
 		if (err) {
 			mutex_unlock(&ei->truncate_mutex);
 			goto cleanup;
@@ -895,9 +895,19 @@ int ext2_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
 		u64 start, u64 len)
 {
 	int ret;
+	loff_t i_size;
 
 	inode_lock(inode);
-	len = min_t(u64, len, i_size_read(inode));
+	i_size = i_size_read(inode);
+	/*
+	 * iomap_fiemap() returns EINVAL for 0 length. Make sure we don't trim
+	 * length to 0 but still trim the range as much as possible since
+	 * ext2_get_blocks() iterates unmapped space block by block which is
+	 * slow.
+	 */
+	if (i_size == 0)
+		i_size = 1;
+	len = min_t(u64, len, i_size);
 	ret = iomap_fiemap(inode, fieinfo, start, len, &ext2_iomap_ops);
 	inode_unlock(inode);
 
@@ -915,24 +925,25 @@ static void ext2_readahead(struct readahead_control *rac)
 }
 
 static int
-ext2_write_begin(struct file *file, struct address_space *mapping,
-		loff_t pos, unsigned len, struct page **pagep, void **fsdata)
+ext2_write_begin(const struct kiocb *iocb, struct address_space *mapping,
+		loff_t pos, unsigned len, struct folio **foliop, void **fsdata)
 {
 	int ret;
 
-	ret = block_write_begin(mapping, pos, len, pagep, ext2_get_block);
+	ret = block_write_begin(mapping, pos, len, foliop, ext2_get_block);
 	if (ret < 0)
 		ext2_write_failed(mapping, pos + len);
 	return ret;
 }
 
-static int ext2_write_end(struct file *file, struct address_space *mapping,
-			loff_t pos, unsigned len, unsigned copied,
-			struct page *page, void *fsdata)
+static int ext2_write_end(const struct kiocb *iocb,
+			  struct address_space *mapping,
+			  loff_t pos, unsigned len, unsigned copied,
+			  struct folio *folio, void *fsdata)
 {
 	int ret;
 
-	ret = generic_write_end(file, mapping, pos, len, copied, page, fsdata);
+	ret = generic_write_end(iocb, mapping, pos, len, copied, folio, fsdata);
 	if (ret < len)
 		ext2_write_failed(mapping, pos + len);
 	return ret;
@@ -965,16 +976,14 @@ const struct address_space_operations ext2_aops = {
 	.write_begin		= ext2_write_begin,
 	.write_end		= ext2_write_end,
 	.bmap			= ext2_bmap,
-	.direct_IO		= noop_direct_IO,
 	.writepages		= ext2_writepages,
 	.migrate_folio		= buffer_migrate_folio,
 	.is_partially_uptodate	= block_is_partially_uptodate,
-	.error_remove_page	= generic_error_remove_page,
+	.error_remove_folio	= generic_error_remove_folio,
 };
 
 static const struct address_space_operations ext2_dax_aops = {
 	.writepages		= ext2_dax_writepages,
-	.direct_IO		= noop_direct_IO,
 	.dirty_folio		= noop_dirty_folio,
 };
 
@@ -1291,7 +1300,7 @@ static int ext2_setsize(struct inode *inode, loff_t newsize)
 	__ext2_truncate_blocks(inode, newsize);
 	filemap_invalidate_unlock(inode->i_mapping);
 
-	inode->i_mtime = inode_set_ctime_current(inode);
+	inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
 	if (inode_needs_sync(inode)) {
 		sync_mapping_buffers(inode->i_mapping);
 		sync_inode_metadata(inode, 1);
@@ -1412,10 +1421,9 @@ struct inode *ext2_iget (struct super_block *sb, unsigned long ino)
 	i_gid_write(inode, i_gid);
 	set_nlink(inode, le16_to_cpu(raw_inode->i_links_count));
 	inode->i_size = le32_to_cpu(raw_inode->i_size);
-	inode->i_atime.tv_sec = (signed)le32_to_cpu(raw_inode->i_atime);
+	inode_set_atime(inode, (signed)le32_to_cpu(raw_inode->i_atime), 0);
 	inode_set_ctime(inode, (signed)le32_to_cpu(raw_inode->i_ctime), 0);
-	inode->i_mtime.tv_sec = (signed)le32_to_cpu(raw_inode->i_mtime);
-	inode->i_atime.tv_nsec = inode->i_mtime.tv_nsec = 0;
+	inode_set_mtime(inode, (signed)le32_to_cpu(raw_inode->i_mtime), 0);
 	ei->i_dtime = le32_to_cpu(raw_inode->i_dtime);
 	/* We now have enough fields to check if the inode was active or not.
 	 * This is needed because nfsd might try to access dead inodes
@@ -1544,9 +1552,9 @@ static int __ext2_write_inode(struct inode *inode, int do_sync)
 	}
 	raw_inode->i_links_count = cpu_to_le16(inode->i_nlink);
 	raw_inode->i_size = cpu_to_le32(inode->i_size);
-	raw_inode->i_atime = cpu_to_le32(inode->i_atime.tv_sec);
-	raw_inode->i_ctime = cpu_to_le32(inode_get_ctime(inode).tv_sec);
-	raw_inode->i_mtime = cpu_to_le32(inode->i_mtime.tv_sec);
+	raw_inode->i_atime = cpu_to_le32(inode_get_atime_sec(inode));
+	raw_inode->i_ctime = cpu_to_le32(inode_get_ctime_sec(inode));
+	raw_inode->i_mtime = cpu_to_le32(inode_get_mtime_sec(inode));
 
 	raw_inode->i_blocks = cpu_to_le32(inode->i_blocks);
 	raw_inode->i_dtime = cpu_to_le32(ei->i_dtime);

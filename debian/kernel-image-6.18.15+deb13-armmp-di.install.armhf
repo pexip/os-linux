@@ -1,0 +1,4 @@
+boot/vmlinu?-6.18.15+deb13-armmp
+lib/modules/6.18.15+deb13-armmp/modules.builtin  lib/modules/6.18.15+deb13-armmp
+lib/modules/6.18.15+deb13-armmp/modules.order    lib/modules/6.18.15+deb13-armmp
+lib/modules/6.18.15+deb13-armmp/dtb              lib/modules/6.18.15+deb13-armmp

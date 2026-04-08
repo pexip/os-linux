@@ -10,6 +10,8 @@
 #include <linux/fs.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/printk.h>
+#include <linux/string.h>
 #include <linux/wmi.h>
 #include "bioscfg.h"
 #include "../../firmware_attributes_class.h"
@@ -388,16 +390,13 @@ union acpi_object *hp_get_wmiobj_pointer(int instance_id, const char *guid_strin
  */
 int hp_get_instance_count(const char *guid_string)
 {
-	union acpi_object *wmi_obj = NULL;
-	int i = 0;
+	int ret;
 
-	do {
-		kfree(wmi_obj);
-		wmi_obj = hp_get_wmiobj_pointer(i, guid_string);
-		i++;
-	} while (wmi_obj);
+	ret = wmi_instance_count(guid_string);
+	if (ret < 0)
+		return 0;
 
-	return i - 1;
+	return ret;
 }
 
 /**
@@ -448,7 +447,7 @@ int hp_convert_hexstr_to_str(const char *input, u32 input_len, char **str, int *
 		return -ENOMEM;
 
 	for (i = 0; i < input_len; i += 5) {
-		strncpy(tmp, input + i, strlen(tmp));
+		strscpy(tmp, input + i);
 		if (kstrtol(tmp, 16, &ch) == 0) {
 			// escape char
 			if (ch == '\\' ||
@@ -586,7 +585,6 @@ static void release_attributes_data(void)
 static int hp_add_other_attributes(int attr_type)
 {
 	struct kobject *attr_name_kobj;
-	union acpi_object *obj = NULL;
 	int ret;
 	char *attr_name;
 
@@ -646,7 +644,6 @@ err_other_attr_init:
 	kobject_put(attr_name_kobj);
 unlock_drv_mutex:
 	mutex_unlock(&bioscfg_drv.mutex);
-	kfree(obj);
 	return ret;
 }
 
@@ -697,6 +694,11 @@ static int hp_init_bios_package_attribute(enum hp_wmi_data_type attr_type,
 			 ret);
 		kfree(str_value);
 		return ret;
+	}
+
+	if (!str_value || !str_value[0]) {
+		pr_debug("Ignoring attribute with empty name\n");
+		goto pack_attr_exit;
 	}
 
 	/* All duplicate attributes found are ignored */
@@ -785,6 +787,12 @@ static int hp_init_bios_buffer_attribute(enum hp_wmi_data_type attr_type,
 
 	if (ret < 0)
 		goto buff_attr_exit;
+
+	if (strlen(str) == 0) {
+		pr_debug("Ignoring attribute with empty name\n");
+		ret = 0;
+		goto buff_attr_exit;
+	}
 
 	if (attr_type == HPWMI_PASSWORD_TYPE ||
 	    attr_type == HPWMI_SECURE_PLATFORM_TYPE)

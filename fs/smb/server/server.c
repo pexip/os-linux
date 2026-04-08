@@ -15,7 +15,7 @@
 
 #include "server.h"
 #include "smb_common.h"
-#include "smbstatus.h"
+#include "../common/smb2status.h"
 #include "connection.h"
 #include "transport_ipc.h"
 #include "mgmt/user_session.h"
@@ -47,7 +47,7 @@ static int ___server_conf_set(int idx, char *val)
 		return -EINVAL;
 
 	kfree(server_conf.conf[idx]);
-	server_conf.conf[idx] = kstrdup(val, GFP_KERNEL);
+	server_conf.conf[idx] = kstrdup(val, KSMBD_DEFAULT_GFP);
 	if (!server_conf.conf[idx])
 		return -ENOMEM;
 	return 0;
@@ -126,21 +126,21 @@ static int __process_request(struct ksmbd_work *work, struct ksmbd_conn *conn,
 andx_again:
 	if (command >= conn->max_cmds) {
 		conn->ops->set_rsp_status(work, STATUS_INVALID_PARAMETER);
-		return SERVER_HANDLER_CONTINUE;
+		return SERVER_HANDLER_ABORT;
 	}
 
 	cmds = &conn->cmds[command];
 	if (!cmds->proc) {
 		ksmbd_debug(SMB, "*** not implemented yet cmd = %x\n", command);
 		conn->ops->set_rsp_status(work, STATUS_NOT_IMPLEMENTED);
-		return SERVER_HANDLER_CONTINUE;
+		return SERVER_HANDLER_ABORT;
 	}
 
 	if (work->sess && conn->ops->is_sign_req(work, command)) {
 		ret = conn->ops->check_sign_req(work);
 		if (!ret) {
 			conn->ops->set_rsp_status(work, STATUS_ACCESS_DENIED);
-			return SERVER_HANDLER_CONTINUE;
+			return SERVER_HANDLER_ABORT;
 		}
 	}
 
@@ -275,7 +275,7 @@ static void handle_ksmbd_work(struct work_struct *wk)
 
 /**
  * queue_ksmbd_work() - queue a smb request to worker thread queue
- *		for proccessing smb command and sending response
+ *		for processing smb command and sending response
  * @conn:	connection instance
  *
  * read remaining data from socket create and submit work.
@@ -365,6 +365,7 @@ static void server_ctrl_handle_init(struct server_ctrl_struct *ctrl)
 		return;
 	}
 
+	pr_info("running\n");
 	WRITE_ONCE(server_conf.state, SERVER_STATE_RUNNING);
 }
 
@@ -372,6 +373,7 @@ static void server_ctrl_handle_reset(struct server_ctrl_struct *ctrl)
 {
 	ksmbd_ipc_soft_reset();
 	ksmbd_conn_transport_destroy();
+	ksmbd_stop_durable_scavenger();
 	server_conf_free();
 	server_conf_init();
 	WRITE_ONCE(server_conf.state, SERVER_STATE_STARTING_UP);
@@ -403,7 +405,7 @@ static int __queue_ctrl_work(int type)
 {
 	struct server_ctrl_struct *ctrl;
 
-	ctrl = kmalloc(sizeof(struct server_ctrl_struct), GFP_KERNEL);
+	ctrl = kmalloc(sizeof(struct server_ctrl_struct), KSMBD_DEFAULT_GFP);
 	if (!ctrl)
 		return -ENOMEM;
 
@@ -617,7 +619,6 @@ static void __exit ksmbd_server_exit(void)
 }
 
 MODULE_AUTHOR("Namjae Jeon <linkinjeon@kernel.org>");
-MODULE_VERSION(KSMBD_VERSION);
 MODULE_DESCRIPTION("Linux kernel CIFS/SMB SERVER");
 MODULE_LICENSE("GPL");
 MODULE_SOFTDEP("pre: ecb");
@@ -631,6 +632,5 @@ MODULE_SOFTDEP("pre: sha512");
 MODULE_SOFTDEP("pre: aead2");
 MODULE_SOFTDEP("pre: ccm");
 MODULE_SOFTDEP("pre: gcm");
-MODULE_SOFTDEP("pre: crc32");
 module_init(ksmbd_server_init)
 module_exit(ksmbd_server_exit)

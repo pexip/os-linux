@@ -64,13 +64,13 @@ static inline void kcov_remote_start_usb(u64 id)
 
 static inline void kcov_remote_start_usb_softirq(u64 id)
 {
-	if (in_serving_softirq())
+	if (in_serving_softirq() && !in_hardirq())
 		kcov_remote_start_usb(id);
 }
 
 static inline void kcov_remote_stop_softirq(void)
 {
-	if (in_serving_softirq())
+	if (in_serving_softirq() && !in_hardirq())
 		kcov_remote_stop();
 }
 

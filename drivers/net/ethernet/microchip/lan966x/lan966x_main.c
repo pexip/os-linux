@@ -276,7 +276,7 @@ static int lan966x_port_ifh_xmit(struct sk_buff *skb,
 		++i;
 	}
 
-	/* Inidcate EOF and valid bytes in the last word */
+	/* Indicate EOF and valid bytes in the last word */
 	lan_wr(QS_INJ_CTRL_GAP_SIZE_SET(1) |
 	       QS_INJ_CTRL_VLD_BYTES_SET(skb->len < LAN966X_BUFFER_MIN_SZ ?
 				     0 : last) |
@@ -408,7 +408,7 @@ static int lan966x_port_change_mtu(struct net_device *dev, int new_mtu)
 
 	lan_wr(DEV_MAC_MAXLEN_CFG_MAX_LEN_SET(LAN966X_HW_MTU(new_mtu)),
 	       lan966x, DEV_MAC_MAXLEN_CFG(port->chip_port));
-	dev->mtu = new_mtu;
+	WRITE_ONCE(dev->mtu, new_mtu);
 
 	if (!lan966x->fdma)
 		return 0;
@@ -526,7 +526,7 @@ bool lan966x_hw_offload(struct lan966x *lan966x, u32 port, struct sk_buff *skb)
 	u32 val;
 
 	/* The IGMP and MLD frames are not forward by the HW if
-	 * multicast snooping is enabled, therefor don't mark as
+	 * multicast snooping is enabled, therefore don't mark as
 	 * offload to allow the SW to forward the frames accordingly.
 	 */
 	val = lan_rd(lan966x, ANA_CPU_FWD_CFG(port));
@@ -677,7 +677,6 @@ static irqreturn_t lan966x_xtr_irq_handler(int irq, void *args)
 		skb = netdev_alloc_skb(dev, len);
 		if (unlikely(!skb)) {
 			netdev_err(dev, "Unable to allocate sk_buff\n");
-			err = -ENOMEM;
 			break;
 		}
 		buf_len = len - ETH_FCS_LEN;
@@ -823,7 +822,7 @@ static int lan966x_probe_port(struct lan966x *lan966x, u32 p,
 			 NETIF_F_HW_VLAN_STAG_TX |
 			 NETIF_F_HW_TC;
 	dev->hw_features |= NETIF_F_HW_TC;
-	dev->priv_flags |= IFF_SEE_ALL_HWTSTAMP_REQUESTS;
+	dev->see_all_hwtstamp_requests = true;
 	dev->needed_headroom = IFH_LEN_BYTES;
 
 	eth_hw_addr_gen(dev, lan966x->base_mac, p + 1);
@@ -835,7 +834,6 @@ static int lan966x_probe_port(struct lan966x *lan966x, u32 p,
 	port->phylink_config.type = PHYLINK_NETDEV;
 	port->phylink_pcs.poll = true;
 	port->phylink_pcs.ops = &lan966x_phylink_pcs_ops;
-	port->phylink_pcs.neg_mode = true;
 
 	port->phylink_config.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
 		MAC_10 | MAC_100 | MAC_1000FD | MAC_2500FD;
@@ -1263,14 +1261,13 @@ cleanup_ports:
 
 	cancel_delayed_work_sync(&lan966x->stats_work);
 	destroy_workqueue(lan966x->stats_queue);
-	mutex_destroy(&lan966x->stats_lock);
 
 	debugfs_remove_recursive(lan966x->debugfs_root);
 
 	return err;
 }
 
-static int lan966x_remove(struct platform_device *pdev)
+static void lan966x_remove(struct platform_device *pdev)
 {
 	struct lan966x *lan966x = platform_get_drvdata(pdev);
 
@@ -1281,7 +1278,6 @@ static int lan966x_remove(struct platform_device *pdev)
 
 	cancel_delayed_work_sync(&lan966x->stats_work);
 	destroy_workqueue(lan966x->stats_queue);
-	mutex_destroy(&lan966x->stats_lock);
 
 	lan966x_mac_purge_entries(lan966x);
 	lan966x_mdb_deinit(lan966x);
@@ -1289,8 +1285,6 @@ static int lan966x_remove(struct platform_device *pdev)
 	lan966x_ptp_deinit(lan966x);
 
 	debugfs_remove_recursive(lan966x->debugfs_root);
-
-	return 0;
 }
 
 static struct platform_driver lan966x_driver = {

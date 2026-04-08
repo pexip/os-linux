@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-import collections
-import collections.abc
 import dataclasses
 import enum
 import itertools
 import os.path
 import re
+import shlex
 import typing
-import warnings
 from typing import (
     Iterable,
+    Optional,
     Self,
     TypeAlias,
 )
+
+from .dataclasses_deb822 import field_deb822
 
 
 class Changelog(list):
@@ -174,34 +175,6 @@ class VersionLinux(Version):
         .+?
     )
 )?
-(?:
-    \.dfsg\.
-    (?P<dfsg>
-        \d+
-    )
-)?
-$
-    """, re.X)
-    _revision_re = re.compile(r"""
-\d+
-(\.\d+)?
-(?:
-    (?P<revision_experimental>
-        ~exp\d+
-    )
-    |
-    (?P<revision_security>
-        (?:[~+]deb\d+u\d+)+
-    )?
-    (?P<revision_backports>
-        ~bpo\d+\+\d+
-    )?
-    |
-    (?P<revision_other>
-        .+?
-    )
-)
-(?:\+b\d+)?
 $
     """, re.X)
 
@@ -213,20 +186,10 @@ $
         if up_match is None or rev_match is None:
             raise RuntimeError(u"Invalid debian linux version")
         d = up_match.groupdict()
-        self.linux_modifier = d['modifier']
         self.linux_version = d['version']
+        self.linux_version_full = self.linux_version + d['update']
         if d['modifier'] is not None:
-            assert not d['update']
-            self.linux_upstream = '-'.join((d['version'], d['modifier']))
-        else:
-            self.linux_upstream = d['version']
-        self.linux_upstream_full = self.linux_upstream + d['update']
-        self.linux_dfsg = d['dfsg']
-        d = rev_match.groupdict()
-        self.linux_revision_experimental = d['revision_experimental'] and True
-        self.linux_revision_security = d['revision_security'] and True
-        self.linux_revision_backports = d['revision_backports'] and True
-        self.linux_revision_other = d['revision_other'] and True
+            self.linux_version_full += '-' + d['modifier']
 
 
 class PackageArchitecture(set[str]):
@@ -273,8 +236,8 @@ class PackageDescription:
         long_pars = []
         for i in self.long:
             long_pars.append(wrap(i))
-        long = '\n .\n '.join('\n '.join(i) for i in long_pars)
-        return short + '\n ' + long if long else short
+        long = '\n.\n'.join('\n'.join(i) for i in long_pars)
+        return short + '\n' + long if long else short
 
     def append(self, long: str) -> None:
         long = long.strip()
@@ -369,9 +332,8 @@ class PackageRelationEntry:
             ret.append(f'({self.operator} {self.version})')
         if self.arches:
             ret.append(f'[{self.arches}]')
-        if self.restrictions:
-            ret.append(str(self.restrictions))
-        return ' '.join(ret)
+        ret.append(str(self.restrictions))
+        return ' '.join(i for i in ret if i)
 
 
 class PackageRelationGroup(list[PackageRelationEntry]):
@@ -380,11 +342,13 @@ class PackageRelationGroup(list[PackageRelationEntry]):
         v: Iterable[PackageRelationEntry | str] | str | Self | None = None,
         /, *,
         arches: set[str] | None = None,
+        restrictions: PackageBuildprofile | str | None = None,
     ) -> None:
         if v:
             if isinstance(v, str):
                 v = (i.strip() for i in re.split(r'\|', v.strip()))
-            self.extend(PackageRelationEntry(i, arches=arches) for i in v if i)
+            self.extend(PackageRelationEntry(i, arches=arches, restrictions=restrictions)
+                        for i in v if i)
 
     def __str__(self) -> str:
         return ' | '.join(str(i) for i in self)
@@ -415,7 +379,7 @@ class PackageRelation(list[PackageRelationGroup]):
             self.extend(PackageRelationGroup(i, arches=arches) for i in v if i)
 
     def __str__(self) -> str:
-        return ', '.join(str(i) for i in self)
+        return ', '.join(sorted((str(i) for i in self), key=lambda s: s.replace('$', '~')))
 
     def _merge_eq(self, v: PackageRelationGroup) -> typing.Optional[PackageRelationGroup]:
         for i in self:
@@ -442,8 +406,6 @@ class PackageBuildprofileEntry:
     pos: set[str] = dataclasses.field(default_factory=set)
     neg: set[str] = dataclasses.field(default_factory=set)
 
-    __re = re.compile(r'^<(?P<profiles>[a-z0-9. !-]+)>$')
-
     def copy(self) -> Self:
         return self.__class__(
             pos=set(self.pos),
@@ -452,17 +414,15 @@ class PackageBuildprofileEntry:
 
     @classmethod
     def parse(cls, v: str, /) -> Self:
-        match = cls.__re.match(v)
-        if not match:
-            raise RuntimeError('Unable to parse build profile "%s"' % v)
-
         ret = cls()
-        for i in re.split(r' ', match.group('profiles')):
+        for i in re.split(r' ', v):
             if i:
                 if i[0] == '!':
                     ret.neg.add(i[1:])
                 else:
                     ret.pos.add(i)
+        if ret.pos & ret.neg:
+            raise ValueError
         return ret
 
     def __eq__(self, other: object, /) -> bool:
@@ -493,7 +453,7 @@ class PackageBuildprofileEntry:
         return self.pos <= other.pos and self.neg >= other.neg
     __ge__ = issuperset
 
-    def update(self, other: Self, /) -> None:
+    def update(self, other: Self, /) -> Self:
         '''
         Update the build profiles, adding entries from other, merging if possible.
 
@@ -501,20 +461,40 @@ class PackageBuildprofileEntry:
         All others remain if they are used on both sides.
         '''
         diff = (self.pos & other.neg) | (self.neg & other.pos)
-        self.pos &= other.pos - diff
-        self.neg &= other.neg - diff
+        self.pos &= other.pos
+        self.neg &= other.neg
+        self.pos -= diff
+        self.neg -= diff
+        return self
     __ior__ = update
 
+    def intersection_update(self, other: Self, /) -> Self:
+        '''
+        Update the build profiles, creating an intersection of both.
+
+        Negating entries (profile vs !profile) are completely removed.
+        All others remain.
+        '''
+        diff = (self.pos & other.neg) | (self.neg & other.pos)
+        self.pos |= other.pos
+        self.neg |= other.neg
+        self.pos -= diff
+        self.neg -= diff
+        return self
+    __iand__ = intersection_update
+
+    def __len__(self) -> int:
+        return len(self.pos) + len(self.neg)
+
     def __str__(self) -> str:
-        s = ' '.join(itertools.chain(
+        return ' '.join(itertools.chain(
             sorted(self.pos),
             (f'!{i}' for i in sorted(self.neg)),
         ))
-        return f'<{s}>'
 
 
 class PackageBuildprofile(list[PackageBuildprofileEntry]):
-    __re = re.compile(r' *(<[^>]+>)(?: +|$)')
+    __re = re.compile(r' *<(?P<entry>[a-z0-9. !-]+)>(?: +|$)')
 
     def copy(self) -> Self:
         return self.__class__(i.copy() for i in self)
@@ -523,183 +503,250 @@ class PackageBuildprofile(list[PackageBuildprofileEntry]):
     def parse(cls, v: str, /) -> Self:
         ret = cls()
         for match in cls.__re.finditer(v):
-            ret.append(PackageBuildprofileEntry.parse(match.group(1)))
+            ret.append(PackageBuildprofileEntry.parse(match.group('entry')))
         return ret
 
-    def update(self, v: Self, /) -> None:
-        for i in v:
-            for j in self:
-                if not j.isdisjoint(i):
-                    j.update(i)
-                    break
-            else:
-                self.append(i)
+    def update(self, v: Self, /) -> Self:
+        if len(v) > 1:
+            raise ValueError
+        if not v:
+            self[:] = []
+        elif self:
+            for i in v:
+                for j in self:
+                    if not j.isdisjoint(i):
+                        j.update(i)
+                        break
+                else:
+                    self.append(i)
+        return self
     __ior__ = update
 
+    def intersection_update(self, v: Self, /) -> Self:
+        if len(v) > 1:
+            raise ValueError
+        for i in v:
+            if self:
+                for j in self:
+                    j.intersection_update(i)
+            else:
+                self.append(i)
+        return self
+    __iand__ = intersection_update
+
     def __str__(self) -> str:
-        return ' '.join(str(i) for i in self)
+        return ' '.join(f'<{str(i)}>' for i in self if i)
 
 
-class _ControlFileDict(collections.abc.MutableMapping):
-    def __init__(self):
-        self.__data = {}
-        self.meta = {}
-
-    def __getitem__(self, key):
-        return self.__data[key]
-
-    def __setitem__(self, key, value):
-        if key.lower().startswith('meta-'):
-            self.meta[key.lower()[5:]] = value
-            return
-
-        try:
-            cls = self._fields[key]
-            if not isinstance(value, cls):
-                if f := getattr(cls, 'parse', None):
-                    value = f(value)
-                else:
-                    value = cls(value)
-        except KeyError:
-            warnings.warn(
-                f'setting unknown field { key } in { type(self).__name__ }',
-                stacklevel=2)
-        self.__data[key] = value
-
-    def __delitem__(self, key):
-        del self.__data[key]
-
-    def __iter__(self):
-        keys = set(self.__data.keys())
-        for key in self._fields.keys():
-            if key in self.__data:
-                keys.remove(key)
-                yield key
-        for key in sorted(keys):
-            yield key
-
-    def __len__(self):
-        return len(self.__data)
-
-    def setdefault(self, key):
-        try:
-            return self[key]
-        except KeyError:
-            try:
-                ret = self[key] = self._fields[key]()
-            except KeyError:
-                warnings.warn(
-                    f'setting unknown field { key } in { type(self).__name__ }',
-                    stacklevel=2)
-                ret = self[key] = ''
-            return ret
-
-    def copy(self):
-        ret = self.__class__()
-        ret.__data = self.__data.copy()
-        ret.meta = self.meta.copy()
-        return ret
-
-    @classmethod
-    def read_rfc822(cls, f):
-        entries = []
-        eof = False
-
-        while not eof:
-            e = cls()
-            last = None
-            lines = []
-            while True:
-                line = f.readline()
-                if not line:
-                    eof = True
-                    break
-                # Strip comments rather than trying to preserve them
-                if line[0] == '#':
-                    continue
-                line = line.strip('\n')
-                if not line:
-                    break
-                if line[0] in ' \t':
-                    if not last:
-                        raise ValueError(
-                            'Continuation line seen before first header')
-                    lines.append(line.lstrip())
-                    continue
-                if last:
-                    e[last] = '\n'.join(lines)
-                i = line.find(':')
-                if i < 0:
-                    raise ValueError(u"Not a header, not a continuation: ``%s''" %
-                                     line)
-                last = line[:i]
-                lines = [line[i + 1:].lstrip()]
-            if last:
-                e[last] = '\n'.join(lines)
-            if e:
-                entries.append(e)
-
-        return entries
+@dataclasses.dataclass
+class _BasePackage:
+    name: Optional[str]
+    architecture: PackageArchitecture = field_deb822(
+        'Architecture',
+        default_factory=PackageArchitecture,
+    )
+    section: Optional[str] = field_deb822(
+        'Section',
+        default=None,
+    )
+    priority: Optional[str] = field_deb822(
+        'Priority',
+        default=None,
+    )
 
 
-class SourcePackage(_ControlFileDict):
-    _fields = collections.OrderedDict((
-        ('Source', str),
-        ('Architecture', PackageArchitecture),
-        ('Section', str),
-        ('Priority', str),
-        ('Maintainer', str),
-        ('Uploaders', str),
-        ('Standards-Version', str),
-        ('Build-Depends', PackageRelation),
-        ('Build-Depends-Arch', PackageRelation),
-        ('Build-Depends-Indep', PackageRelation),
-        ('Rules-Requires-Root', str),
-        ('Homepage', str),
-        ('Vcs-Browser', str),
-        ('Vcs-Git', str),
-        ('XS-Autobuild', str),
-    ))
+@dataclasses.dataclass
+class SourcePackage(_BasePackage):
+    name: Optional[str] = field_deb822(
+        'Source',
+        default=None,
+    )
+    maintainer: Optional[str] = field_deb822(
+        'Maintainer',
+        default=None,
+    )
+    uploaders: Optional[str] = field_deb822(
+        'Uploaders',
+        default=None,
+    )
+    standards_version: Optional[str] = field_deb822(
+        'Standards-Version',
+        default=None,
+    )
+    build_depends: PackageRelation = field_deb822(
+        'Build-Depends',
+        default_factory=PackageRelation,
+    )
+    build_depends_arch: PackageRelation = field_deb822(
+        'Build-Depends-Arch',
+        default_factory=PackageRelation,
+    )
+    build_depends_indep: PackageRelation = field_deb822(
+        'Build-Depends-Indep',
+        default_factory=PackageRelation,
+    )
+    rules_requires_root: Optional[str] = field_deb822(
+        'Rules-Requires-Root',
+        default=None,
+    )
+    homepage: Optional[str] = field_deb822(
+        'Homepage',
+        default=None,
+    )
+    vcs_browser: Optional[str] = field_deb822(
+        'Vcs-Browser',
+        default=None,
+    )
+    vcs_git: Optional[str] = field_deb822(
+        'Vcs-Git',
+        default=None,
+    )
+    autobuild: Optional[str] = field_deb822(
+        'XS-Autobuild',
+        default=None,
+    )
+    pexip_original_maintainer: Optional[str] = field_deb822(
+        'XSBC-Pexip-Original-Maintainer',
+        default=None,
+    )
+    pexip_original_uploaders: Optional[str] = field_deb822(
+        'XSBC-Pexip-Original-Uploaders',
+        default=None,
+    )
+    pexip_upstream: Optional[str] = field_deb822(
+        'XS-Pexip-Upstream',
+        default=None,
+    )
 
 
-class BinaryPackage(_ControlFileDict):
-    _fields = collections.OrderedDict((
-        ('Package', str),
-        ('Package-Type', str),  # for udeb only
-        ('Architecture', PackageArchitecture),
-        ('Section', str),
-        ('Priority', str),
-        # Build-Depends* fields aren't allowed for binary packages in
-        # the real control file, but we move them to the source
-        # package
-        ('Build-Depends', PackageRelation),
-        ('Build-Depends-Arch', PackageRelation),
-        ('Build-Depends-Indep', PackageRelation),
-        ('Build-Profiles', PackageBuildprofile),
-        ('Built-Using', PackageRelation),
-        ('Provides', PackageRelation),
-        ('Pre-Depends', PackageRelation),
-        ('Depends', PackageRelation),
-        ('Recommends', PackageRelation),
-        ('Suggests', PackageRelation),
-        ('Replaces', PackageRelation),
-        ('Breaks', PackageRelation),
-        ('Conflicts', PackageRelation),
-        ('Multi-Arch', str),
-        ('Kernel-Version', str),  # for udeb only
-        ('Description', PackageDescription),
-        ('Homepage', str),
-    ))
+@dataclasses.dataclass
+class BinaryPackage(_BasePackage):
+    name: str = field_deb822('Package')
+    # Build-Depends* fields aren't allowed for binary packages in
+    # the real control file, but we move them to the source
+    # package
+    build_depends: PackageRelation = field_deb822(
+        'Build-Depends',
+        default_factory=PackageRelation,
+        deb822_dump=None,
+    )
+    package_type: Optional[str] = field_deb822(
+        'Package-Type',
+        default=None,
+    )  # for udeb only
+    build_profiles: PackageBuildprofile = field_deb822(
+        'Build-Profiles',
+        deb822_load=PackageBuildprofile.parse,
+        default_factory=PackageBuildprofile,
+    )
+    built_using: PackageRelation = field_deb822(
+        'Built-Using',
+        default_factory=PackageRelation,
+    )
+    provides: PackageRelation = field_deb822(
+        'Provides',
+        default_factory=PackageRelation,
+    )
+    pre_depends: PackageRelation = field_deb822(
+        'Pre-Depends',
+        default_factory=PackageRelation,
+    )
+    depends: PackageRelation = field_deb822(
+        'Depends',
+        default_factory=PackageRelation,
+    )
+    recommends: PackageRelation = field_deb822(
+        'Recommends',
+        default_factory=PackageRelation,
+    )
+    suggests: PackageRelation = field_deb822(
+        'Suggests',
+        default_factory=PackageRelation,
+    )
+    replaces: PackageRelation = field_deb822(
+        'Replaces',
+        default_factory=PackageRelation,
+    )
+    breaks: PackageRelation = field_deb822(
+        'Breaks',
+        default_factory=PackageRelation,
+    )
+    conflicts: PackageRelation = field_deb822(
+        'Conflicts',
+        default_factory=PackageRelation,
+    )
+    multi_arch: Optional[str] = field_deb822(
+        'Multi-Arch',
+        default=None,
+    )
+    udeb_kernel_version: Optional[str] = field_deb822(
+        'Kernel-Version',
+        default=None,
+    )  # for udeb only
+    description: PackageDescription = field_deb822(
+        'Description',
+        default_factory=PackageDescription,
+    )
+    meta_architectures: PackageArchitecture = dataclasses.field(
+        default_factory=PackageArchitecture,
+    )
+    meta_rules_check_packages: bool = False
+    meta_rules_makeflags: dict = field_deb822(
+        'Meta-Rules-Makeflags',
+        default_factory=dict,
+        deb822_load=lambda v: dict(i.split('=', 1) for i in shlex.split(v)),
+        deb822_dump=None,
+    )
+    meta_rules_ruleids: dict = dataclasses.field(default_factory=dict)
+    meta_rules_target: Optional[str] = field_deb822(
+        'Meta-Rules-Target',
+        default=None,
+        deb822_dump=None,
+    )
+    meta_sign_package: Optional[str] = field_deb822(
+        'Meta-Sign-Package',
+        default=None,
+        deb822_dump=None,
+    )
+    meta_sign_files: list[str] = field_deb822(
+        'Meta-Sign-Files',
+        default_factory=list,
+        deb822_load=lambda v: v.split(),
+        deb822_dump=None,
+    )
 
 
-class TestsControl(_ControlFileDict):
-    _fields = collections.OrderedDict((
-        ('Tests', str),
-        ('Test-Command', str),
-        ('Architecture', PackageArchitecture),
-        ('Restrictions', str),
-        ('Features', str),
-        ('Depends', PackageRelation),
-        ('Tests-Directory', str),
-        ('Classes', str),
-    ))
+@dataclasses.dataclass
+class TestsControl:
+    tests: Optional[str] = field_deb822(
+        'Tests',
+        default=None,
+    )
+    test_command: Optional[str] = field_deb822(
+        'Test-Command',
+        default=None,
+    )
+    architecture: PackageArchitecture = field_deb822(
+        'Architecture',
+        default_factory=PackageArchitecture,
+    )
+    restrictions: Optional[str] = field_deb822(
+        'Restrictions',
+        default=None,
+    )
+    features: Optional[str] = field_deb822(
+        'Features',
+        default=None,
+    )
+    depends: PackageRelation = field_deb822(
+        'Depends',
+        default_factory=PackageRelation,
+    )
+    tests_directory: Optional[str] = field_deb822(
+        'Tests-Directory',
+        default=None,
+    )
+    classes: Optional[str] = field_deb822(
+        'Classes',
+        default=None,
+    )

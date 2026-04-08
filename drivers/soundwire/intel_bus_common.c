@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-3-Clause)
-// Copyright(c) 2015-2023 Intel Corporation. All rights reserved.
+// Copyright(c) 2015-2023 Intel Corporation
 
 #include <linux/acpi.h>
 #include <linux/soundwire/sdw_registers.h>
@@ -15,6 +15,12 @@ int intel_start_bus(struct sdw_intel *sdw)
 	struct sdw_cdns *cdns = &sdw->cdns;
 	struct sdw_bus *bus = &cdns->bus;
 	int ret;
+
+	ret = sdw_cdns_soft_reset(cdns);
+	if (ret < 0) {
+		dev_err(dev, "%s: unable to soft-reset Cadence IP: %d\n", __func__, ret);
+		return ret;
+	}
 
 	/*
 	 * follow recommended programming flows to avoid timeouts when

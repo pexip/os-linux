@@ -59,6 +59,7 @@
 #include <linux/slab.h>
 #include <linux/types.h>
 #include <linux/uaccess.h>
+#include <linux/mutex.h>
 #include "linux/ntb.h"
 #include "linux/ntb_transport.h"
 
@@ -241,6 +242,9 @@ struct ntb_transport_ctx {
 	struct work_struct link_cleanup;
 
 	struct dentry *debugfs_node_dir;
+
+	/* Make sure workq of link event be executed serially */
+	struct mutex link_event_lock;
 };
 
 enum {
@@ -284,7 +288,7 @@ static void ntb_memcpy_rx(struct ntb_queue_entry *entry, void *offset);
 
 
 static int ntb_transport_bus_match(struct device *dev,
-				   struct device_driver *drv)
+				   const struct device_driver *drv)
 {
 	return !strncmp(dev_name(dev), drv->name, strlen(drv->name));
 }
@@ -314,7 +318,7 @@ static void ntb_transport_bus_remove(struct device *dev)
 	put_device(dev);
 }
 
-static struct bus_type ntb_transport_bus = {
+static const struct bus_type ntb_transport_bus = {
 	.name = "ntb_transport",
 	.match = ntb_transport_bus_match,
 	.probe = ntb_transport_bus_probe,
@@ -377,6 +381,8 @@ EXPORT_SYMBOL_GPL(ntb_transport_unregister_client_dev);
  * @device_name: Name of NTB client device
  *
  * Register an NTB client device with the NTB transport layer
+ *
+ * Returns: %0 on success or -errno code on error
  */
 int ntb_transport_register_client_dev(char *device_name)
 {
@@ -1022,6 +1028,7 @@ static void ntb_transport_link_cleanup_work(struct work_struct *work)
 	struct ntb_transport_ctx *nt =
 		container_of(work, struct ntb_transport_ctx, link_cleanup);
 
+	guard(mutex)(&nt->link_event_lock);
 	ntb_transport_link_cleanup(nt);
 }
 
@@ -1044,6 +1051,8 @@ static void ntb_transport_link_work(struct work_struct *work)
 	resource_size_t size;
 	u32 val;
 	int rc = 0, i, spad;
+
+	guard(mutex)(&nt->link_event_lock);
 
 	/* send the local info, in the opposite order of the way we read it */
 
@@ -1385,6 +1394,7 @@ static int ntb_transport_probe(struct ntb_client *self, struct ntb_dev *ndev)
 			goto err2;
 	}
 
+	mutex_init(&nt->link_event_lock);
 	INIT_DELAYED_WORK(&nt->link_work, ntb_transport_link_work);
 	INIT_WORK(&nt->link_cleanup, ntb_transport_link_cleanup_work);
 
@@ -1979,9 +1989,9 @@ static bool ntb_dma_filter_fn(struct dma_chan *chan, void *node)
 
 /**
  * ntb_transport_create_queue - Create a new NTB transport layer queue
- * @rx_handler: receive callback function
- * @tx_handler: transmit callback function
- * @event_handler: event callback function
+ * @data: pointer for callback data
+ * @client_dev: &struct device pointer
+ * @handlers: pointer to various ntb queue (callback) handlers
  *
  * Create a new NTB transport layer queue and provide the queue with a callback
  * routine for both transmit and receive.  The receive callback routine will be

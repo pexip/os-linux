@@ -21,6 +21,7 @@
 #include <linux/irqdomain.h>
 #include <uapi/linux/input.h>
 #include <linux/rmi.h>
+#include <linux/export.h>
 #include "rmi_bus.h"
 #include "rmi_driver.h"
 
@@ -1258,7 +1259,7 @@ static struct rmi_driver rmi_physical_driver = {
 	.set_input_params = rmi_driver_set_input_params,
 };
 
-bool rmi_is_physical_driver(struct device_driver *drv)
+bool rmi_is_physical_driver(const struct device_driver *drv)
 {
 	return drv == &rmi_physical_driver.driver;
 }

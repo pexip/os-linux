@@ -106,21 +106,19 @@ static int seq_ump_process_event(struct snd_seq_event *ev, int direct,
 static int seq_ump_client_open(struct seq_ump_client *client, int dir)
 {
 	struct snd_ump_endpoint *ump = client->ump;
-	int err = 0;
+	int err;
 
-	mutex_lock(&ump->open_mutex);
+	guard(mutex)(&ump->open_mutex);
 	if (dir == STR_OUT && !client->opened[dir]) {
 		err = snd_rawmidi_kernel_open(&ump->core, 0,
 					      SNDRV_RAWMIDI_LFLG_OUTPUT |
 					      SNDRV_RAWMIDI_LFLG_APPEND,
 					      &client->out_rfile);
 		if (err < 0)
-			goto unlock;
+			return err;
 	}
 	client->opened[dir]++;
- unlock:
-	mutex_unlock(&ump->open_mutex);
-	return err;
+	return 0;
 }
 
 /* close the rawmidi */
@@ -128,11 +126,10 @@ static int seq_ump_client_close(struct seq_ump_client *client, int dir)
 {
 	struct snd_ump_endpoint *ump = client->ump;
 
-	mutex_lock(&ump->open_mutex);
+	guard(mutex)(&ump->open_mutex);
 	if (!--client->opened[dir])
 		if (dir == STR_OUT)
 			snd_rawmidi_kernel_release(&client->out_rfile);
-	mutex_unlock(&ump->open_mutex);
 	return 0;
 }
 
@@ -192,6 +189,8 @@ static void fill_port_info(struct snd_seq_port_info *port,
 	port->ump_group = group->group + 1;
 	if (!group->active)
 		port->capability |= SNDRV_SEQ_PORT_CAP_INACTIVE;
+	if (group->is_midi1)
+		port->flags |= SNDRV_SEQ_PORT_FLG_IS_MIDI1;
 	port->type = SNDRV_SEQ_PORT_TYPE_MIDI_GENERIC |
 		SNDRV_SEQ_PORT_TYPE_MIDI_UMP |
 		SNDRV_SEQ_PORT_TYPE_HARDWARE |
@@ -226,7 +225,7 @@ static int seq_ump_group_init(struct seq_ump_client *client, int group_index)
 		return -ENOMEM;
 
 	fill_port_info(port, client, group);
-	port->flags = SNDRV_SEQ_PORT_FLG_GIVEN_PORT;
+	port->flags |= SNDRV_SEQ_PORT_FLG_GIVEN_PORT;
 	memset(&pcallbacks, 0, sizeof(pcallbacks));
 	pcallbacks.owner = THIS_MODULE;
 	pcallbacks.private_data = client;
@@ -273,8 +272,6 @@ static void update_port_infos(struct seq_ump_client *client)
 						new);
 		if (err < 0)
 			continue;
-		/* notify to system port */
-		snd_seq_system_client_ev_port_change(client->seq_client, i);
 	}
 }
 
@@ -313,7 +310,7 @@ static int create_ump_endpoint_port(struct seq_ump_client *client)
 		SNDRV_SEQ_PORT_TYPE_HARDWARE |
 		SNDRV_SEQ_PORT_TYPE_PORT;
 	port->midi_channels = 16;
-	strcpy(port->name, "MIDI 2.0");
+	strscpy(port->name, "MIDI 2.0");
 	memset(&pcallbacks, 0, sizeof(pcallbacks));
 	pcallbacks.owner = THIS_MODULE;
 	pcallbacks.private_data = client;
@@ -391,6 +388,33 @@ static void handle_group_notify(struct work_struct *work)
 	setup_client_group_filter(client);
 }
 
+/* UMP EP change notification */
+static int seq_ump_notify_ep_change(struct snd_ump_endpoint *ump)
+{
+	struct seq_ump_client *client = ump->seq_client;
+	struct snd_seq_client *cptr;
+	int client_id;
+
+	if (!client)
+		return -ENODEV;
+	client_id = client->seq_client;
+	cptr = snd_seq_kernel_client_get(client_id);
+	if (!cptr)
+		return -ENODEV;
+
+	snd_seq_system_ump_notify(client_id, 0, SNDRV_SEQ_EVENT_UMP_EP_CHANGE,
+				  true);
+
+	/* update sequencer client name if needed */
+	if (*ump->core.name && strcmp(ump->core.name, cptr->name)) {
+		strscpy(cptr->name, ump->core.name, sizeof(cptr->name));
+		snd_seq_system_client_ev_client_change(client_id);
+	}
+
+	snd_seq_kernel_client_put(cptr);
+	return 0;
+}
+
 /* UMP FB change notification */
 static int seq_ump_notify_fb_change(struct snd_ump_endpoint *ump,
 				    struct snd_ump_block *fb)
@@ -400,20 +424,29 @@ static int seq_ump_notify_fb_change(struct snd_ump_endpoint *ump,
 	if (!client)
 		return -ENODEV;
 	schedule_work(&client->group_notify_work);
+	snd_seq_system_ump_notify(client->seq_client, fb->info.block_id,
+				  SNDRV_SEQ_EVENT_UMP_BLOCK_CHANGE,
+				  true);
 	return 0;
 }
 
 /* UMP protocol change notification; just update the midi_version field */
 static int seq_ump_switch_protocol(struct snd_ump_endpoint *ump)
 {
-	if (!ump->seq_client)
+	struct seq_ump_client *client = ump->seq_client;
+
+	if (!client)
 		return -ENODEV;
-	setup_client_midi_version(ump->seq_client);
+	setup_client_midi_version(client);
+	snd_seq_system_ump_notify(client->seq_client, 0,
+				  SNDRV_SEQ_EVENT_UMP_EP_CHANGE,
+				  true);
 	return 0;
 }
 
 static const struct snd_seq_ump_ops seq_ump_ops = {
 	.input_receive = seq_ump_input_receive,
+	.notify_ep_change = seq_ump_notify_ep_change,
 	.notify_fb_change = seq_ump_notify_fb_change,
 	.switch_protocol = seq_ump_switch_protocol,
 };

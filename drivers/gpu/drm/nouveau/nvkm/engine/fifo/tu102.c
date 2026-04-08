@@ -25,12 +25,13 @@
 #include "runl.h"
 
 #include <core/memory.h>
+#include <subdev/gsp.h>
 #include <subdev/mc.h>
 #include <subdev/vfn.h>
 
 #include <nvif/class.h>
 
-static u32
+u32
 tu102_chan_doorbell_handle(struct nvkm_chan *chan)
 {
 	return (chan->cgrp->runl->id << 16) | chan->id;
@@ -282,5 +283,8 @@ int
 tu102_fifo_new(struct nvkm_device *device, enum nvkm_subdev_type type, int inst,
 	       struct nvkm_fifo **pfifo)
 {
+	if (nvkm_gsp_rm(device->gsp))
+		return r535_fifo_new(&tu102_fifo, device, type, inst, pfifo);
+
 	return nvkm_fifo_new_(&tu102_fifo, device, type, inst, pfifo);
 }

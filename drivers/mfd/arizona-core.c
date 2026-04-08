@@ -1100,7 +1100,7 @@ int arizona_dev_init(struct arizona *arizona)
 		} else if (val & 0x01) {
 			ret = wm5102_clear_write_sequencer(arizona);
 			if (ret)
-				return ret;
+				goto err_reset;
 		}
 		break;
 	default:
@@ -1429,4 +1429,5 @@ int arizona_dev_exit(struct arizona *arizona)
 }
 EXPORT_SYMBOL_GPL(arizona_dev_exit);
 
+MODULE_DESCRIPTION("Wolfson Arizona core driver");
 MODULE_LICENSE("GPL v2");

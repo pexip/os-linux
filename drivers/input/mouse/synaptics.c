@@ -161,6 +161,7 @@ static const char * const topbuttonpad_pnp_ids[] = {
 	NULL
 };
 
+#ifdef CONFIG_MOUSE_PS2_SYNAPTICS_SMBUS
 static const char * const smbus_pnp_ids[] = {
 	/* all of the topbuttonpad_pnp_ids are valid, we just add some extras */
 	"DLL060d", /* Dell Precision M3800 */
@@ -201,6 +202,7 @@ static const char * const smbus_pnp_ids[] = {
 	"TOS0213", /* Dynabook Portege X30-D */
 	NULL
 };
+#endif
 
 static const char * const forcepad_pnp_ids[] = {
 	"SYN300D",
@@ -655,9 +657,8 @@ static int synaptics_pt_start(struct serio *serio)
 	struct psmouse *parent = psmouse_from_serio(serio->parent);
 	struct synaptics_data *priv = parent->private;
 
-	serio_pause_rx(parent->ps2dev.serio);
+	guard(serio_pause_rx)(parent->ps2dev.serio);
 	priv->pt_port = serio;
-	serio_continue_rx(parent->ps2dev.serio);
 
 	return 0;
 }
@@ -667,9 +668,8 @@ static void synaptics_pt_stop(struct serio *serio)
 	struct psmouse *parent = psmouse_from_serio(serio->parent);
 	struct synaptics_data *priv = parent->private;
 
-	serio_pause_rx(parent->ps2dev.serio);
+	guard(serio_pause_rx)(parent->ps2dev.serio);
 	priv->pt_port = NULL;
-	serio_continue_rx(parent->ps2dev.serio);
 }
 
 static int synaptics_pt_open(struct serio *serio)
@@ -741,7 +741,7 @@ static void synaptics_pt_create(struct psmouse *psmouse)
 {
 	struct serio *serio;
 
-	serio = kzalloc(sizeof(struct serio), GFP_KERNEL);
+	serio = kzalloc(sizeof(*serio), GFP_KERNEL);
 	if (!serio) {
 		psmouse_err(psmouse,
 			    "not enough memory for pass-through port\n");
@@ -1597,7 +1597,7 @@ static int synaptics_init_ps2(struct psmouse *psmouse,
 
 	synaptics_apply_quirks(psmouse, info);
 
-	psmouse->private = priv = kzalloc(sizeof(struct synaptics_data), GFP_KERNEL);
+	psmouse->private = priv = kzalloc(sizeof(*priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 

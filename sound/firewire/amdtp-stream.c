@@ -618,6 +618,22 @@ static void update_pcm_pointers(struct amdtp_stream *s,
 		// The program in user process should periodically check the status of intermediate
 		// buffer associated to PCM substream to process PCM frames in the buffer, instead
 		// of receiving notification of period elapsed by poll wait.
+		//
+		// Use another work item for period elapsed event to prevent the following AB/BA
+		// deadlock:
+		//
+		//             thread 1                            thread 2
+		// =================================   =================================
+		//       A.work item (process)                pcm ioctl (process)
+		//                 v                                   v
+		//       process_rx_packets()                  B.PCM stream lock
+		//       process_tx_packets()                          v
+		//                 v                        callbacks in snd_pcm_ops
+		//       update_pcm_pointers()                         v
+		//         snd_pcm_elapsed()           fw_iso_context_flush_completions()
+		//  snd_pcm_stream_lock_irqsave()             disable_work_sync()
+		//                 v                                   v
+		//     wait until release of B                wait until A exits
 		if (!pcm->runtime->no_period_wakeup)
 			queue_work(system_highpri_wq, &s->period_work);
 	}
@@ -1058,8 +1074,15 @@ static void generate_rx_packet_descs(struct amdtp_stream *s, struct pkt_desc *de
 
 static inline void cancel_stream(struct amdtp_stream *s)
 {
+	struct work_struct *work = current_work();
+
 	s->packet_index = -1;
-	if (in_softirq())
+
+	// Detect work items for any isochronous context. The work item for pcm_period_work()
+	// should be avoided since the call of snd_pcm_period_elapsed() can reach via
+	// snd_pcm_ops.pointer() under acquiring PCM stream(group) lock and causes dead lock at
+	// snd_pcm_stop_xrun().
+	if (work && work != &s->period_work)
 		amdtp_stream_pcm_abort(s);
 	WRITE_ONCE(s->pcm_buffer_pointer, SNDRV_PCM_POS_XRUN);
 }
@@ -1189,13 +1212,10 @@ static void process_rx_packets(struct fw_iso_context *context, u32 tstamp, size_
 		(void)fw_card_read_cycle_time(fw_parent_device(s->unit)->card, &curr_cycle_time);
 
 	for (i = 0; i < packets; ++i) {
-		struct {
-			struct fw_iso_packet params;
-			__be32 header[CIP_HEADER_QUADLETS];
-		} template = { {0}, {0} };
+		DEFINE_RAW_FLEX(struct fw_iso_packet, template, header, CIP_HEADER_QUADLETS);
 		bool sched_irq = false;
 
-		build_it_pkt_header(s, desc->cycle, &template.params, pkt_header_length,
+		build_it_pkt_header(s, desc->cycle, template, pkt_header_length,
 				    desc->data_blocks, desc->data_block_counter,
 				    desc->syt, i, curr_cycle_time);
 
@@ -1207,7 +1227,7 @@ static void process_rx_packets(struct fw_iso_context *context, u32 tstamp, size_
 			}
 		}
 
-		if (queue_out_packet(s, &template.params, sched_irq) < 0) {
+		if (queue_out_packet(s, template, sched_irq) < 0) {
 			cancel_stream(s);
 			return;
 		}
@@ -1668,20 +1688,16 @@ static int amdtp_stream_start(struct amdtp_stream *s, int channel, int speed,
 	struct pkt_desc *descs;
 	int i, type, tag, err;
 
-	mutex_lock(&s->mutex);
+	guard(mutex)(&s->mutex);
 
 	if (WARN_ON(amdtp_stream_running(s) ||
-		    (s->data_block_quadlets < 1))) {
-		err = -EBADFD;
-		goto err_unlock;
-	}
+		    (s->data_block_quadlets < 1)))
+		return -EBADFD;
 
 	if (s->direction == AMDTP_IN_STREAM) {
 		// NOTE: IT context should be used for constant IRQ.
-		if (is_irq_target) {
-			err = -EINVAL;
-			goto err_unlock;
-		}
+		if (is_irq_target)
+			return -EINVAL;
 
 		s->data_block_counter = UINT_MAX;
 	} else {
@@ -1705,7 +1721,7 @@ static int amdtp_stream_start(struct amdtp_stream *s, int channel, int speed,
 
 	err = iso_packets_buffer_init(&s->buffer, s->unit, queue_size, max_ctx_payload_size, dir);
 	if (err < 0)
-		goto err_unlock;
+		return err;
 	s->queue_size = queue_size;
 
 	s->context = fw_iso_context_create(fw_parent_device(s->unit)->card,
@@ -1826,8 +1842,6 @@ static int amdtp_stream_start(struct amdtp_stream *s, int channel, int speed,
 	if (err < 0)
 		goto err_pkt_descs;
 
-	mutex_unlock(&s->mutex);
-
 	return 0;
 err_pkt_descs:
 	kfree(s->packet_descs);
@@ -1843,8 +1857,6 @@ err_context:
 	s->context = ERR_PTR(-1);
 err_buffer:
 	iso_packets_buffer_destroy(&s->buffer, s->unit);
-err_unlock:
-	mutex_unlock(&s->mutex);
 
 	return err;
 }
@@ -1862,12 +1874,9 @@ unsigned long amdtp_domain_stream_pcm_pointer(struct amdtp_domain *d,
 	struct amdtp_stream *irq_target = d->irq_target;
 
 	if (irq_target && amdtp_stream_running(irq_target)) {
-		// use wq to prevent AB/BA deadlock competition for
-		// substream lock:
-		// fw_iso_context_flush_completions() acquires
-		// lock by ohci_flush_iso_completions(),
-		// amdtp-stream process_rx_packets() attempts to
-		// acquire same lock by snd_pcm_elapsed()
+		// The work item to call snd_pcm_period_elapsed() can reach here by the call of
+		// snd_pcm_ops.pointer(), however less packets would be available then. Therefore
+		// the following call is just for user process contexts.
 		if (current_work() != &s->period_work)
 			fw_iso_context_flush_completions(irq_target->context);
 	}
@@ -1917,12 +1926,10 @@ EXPORT_SYMBOL(amdtp_stream_update);
  */
 static void amdtp_stream_stop(struct amdtp_stream *s)
 {
-	mutex_lock(&s->mutex);
+	guard(mutex)(&s->mutex);
 
-	if (!amdtp_stream_running(s)) {
-		mutex_unlock(&s->mutex);
+	if (!amdtp_stream_running(s))
 		return;
-	}
 
 	cancel_work_sync(&s->period_work);
 	fw_iso_context_stop(s->context);
@@ -1938,8 +1945,6 @@ static void amdtp_stream_stop(struct amdtp_stream *s)
 		if (s->domain->replay.enable)
 			kfree(s->ctx_data.tx.cache.descs);
 	}
-
-	mutex_unlock(&s->mutex);
 }
 
 /**

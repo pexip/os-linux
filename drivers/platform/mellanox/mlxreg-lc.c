@@ -57,9 +57,9 @@ enum mlxreg_lc_state {
  * @dev: platform device;
  * @lock: line card lock;
  * @par_regmap: parent device regmap handle;
- * @data: pltaform core data;
+ * @data: platform core data;
  * @io_data: register access platform data;
- * @led_data: LED platform data ;
+ * @led_data: LED platform data;
  * @mux_data: MUX platform data;
  * @led: LED device;
  * @io_regs: register access device;
@@ -171,7 +171,7 @@ static int mlxreg_lc_chan[] = {
 	0x4e, 0x4f
 };
 
-/* Defaul mux configuration. */
+/* Default mux configuration. */
 static struct mlxcpld_mux_plat_data mlxreg_lc_mux_data[] = {
 	{
 		.chan_ids = mlxreg_lc_chan,
@@ -181,7 +181,7 @@ static struct mlxcpld_mux_plat_data mlxreg_lc_mux_data[] = {
 	},
 };
 
-/* Defaul mux board info. */
+/* Default mux board info. */
 static struct i2c_board_info mlxreg_lc_mux_brdinfo = {
 	I2C_BOARD_INFO("i2c-mux-mlxcpld", 0x32),
 };
@@ -758,7 +758,7 @@ mlxreg_lc_config_init(struct mlxreg_lc *mlxreg_lc, void *regmap,
 		platform_device_register_resndata(dev, "mlxreg-io", data->hpdev.nr, NULL, 0,
 						  mlxreg_lc->io_data, sizeof(*mlxreg_lc->io_data));
 		if (IS_ERR(mlxreg_lc->io_regs)) {
-			dev_err(dev, "Failed to create regio for client %s at bus %d at addr 0x%02x\n",
+			dev_err(dev, "Failed to create region for client %s at bus %d at addr 0x%02x\n",
 				data->hpdev.brdinfo->type, data->hpdev.nr,
 				data->hpdev.brdinfo->addr);
 			err = PTR_ERR(mlxreg_lc->io_regs);
@@ -907,7 +907,7 @@ i2c_get_adapter_fail:
 	return err;
 }
 
-static int mlxreg_lc_remove(struct platform_device *pdev)
+static void mlxreg_lc_remove(struct platform_device *pdev)
 {
 	struct mlxreg_core_data *data = dev_get_platdata(&pdev->dev);
 	struct mlxreg_lc *mlxreg_lc = platform_get_drvdata(pdev);
@@ -921,7 +921,7 @@ static int mlxreg_lc_remove(struct platform_device *pdev)
 	 * is nothing to remove.
 	 */
 	if (!data->notifier || !data->notifier->handle)
-		return 0;
+		return;
 
 	/* Clear event notification callback and handle. */
 	data->notifier->user_handler = NULL;
@@ -940,8 +940,6 @@ static int mlxreg_lc_remove(struct platform_device *pdev)
 		i2c_put_adapter(data->hpdev.adapter);
 		data->hpdev.adapter = NULL;
 	}
-
-	return 0;
 }
 
 static struct platform_driver mlxreg_lc_driver = {

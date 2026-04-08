@@ -33,6 +33,10 @@
 #include "util/bpf-filter.h"
 #include "util/stat.h"
 #include "util/util.h"
+#include "util/env.h"
+#include "util/intel-tpebs.h"
+#include "util/metricgroup.h"
+#include "util/strbuf.h"
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
@@ -79,6 +83,8 @@ void evlist__init(struct evlist *evlist, struct perf_cpu_map *cpus,
 	evlist->ctl_fd.fd = -1;
 	evlist->ctl_fd.ack = -1;
 	evlist->ctl_fd.pos = -1;
+	evlist->nr_br_cntr = -1;
+	metricgroup__rblist_init(&evlist->metric_events);
 }
 
 struct evlist *evlist__new(void)
@@ -169,6 +175,7 @@ static void evlist__purge(struct evlist *evlist)
 
 void evlist__exit(struct evlist *evlist)
 {
+	metricgroup__rblist_exit(&evlist->metric_events);
 	event_enable_timer__exit(&evlist->eet);
 	zfree(&evlist->mmap);
 	zfree(&evlist->overwrite_mmap);
@@ -299,7 +306,8 @@ struct evsel *evlist__add_aux_dummy(struct evlist *evlist, bool system_wide)
 #ifdef HAVE_LIBTRACEEVENT
 struct evsel *evlist__add_sched_switch(struct evlist *evlist, bool system_wide)
 {
-	struct evsel *evsel = evsel__newtp_idx("sched", "sched_switch", 0);
+	struct evsel *evsel = evsel__newtp_idx("sched", "sched_switch", 0,
+					       /*format=*/true);
 
 	if (IS_ERR(evsel))
 		return evsel;
@@ -314,62 +322,6 @@ struct evsel *evlist__add_sched_switch(struct evlist *evlist, bool system_wide)
 	return evsel;
 }
 #endif
-
-int evlist__add_attrs(struct evlist *evlist, struct perf_event_attr *attrs, size_t nr_attrs)
-{
-	struct evsel *evsel, *n;
-	LIST_HEAD(head);
-	size_t i;
-
-	for (i = 0; i < nr_attrs; i++) {
-		evsel = evsel__new_idx(attrs + i, evlist->core.nr_entries + i);
-		if (evsel == NULL)
-			goto out_delete_partial_list;
-		list_add_tail(&evsel->core.node, &head);
-	}
-
-	evlist__splice_list_tail(evlist, &head);
-
-	return 0;
-
-out_delete_partial_list:
-	__evlist__for_each_entry_safe(&head, n, evsel)
-		evsel__delete(evsel);
-	return -1;
-}
-
-int __evlist__add_default_attrs(struct evlist *evlist, struct perf_event_attr *attrs, size_t nr_attrs)
-{
-	size_t i;
-
-	for (i = 0; i < nr_attrs; i++)
-		event_attr_init(attrs + i);
-
-	return evlist__add_attrs(evlist, attrs, nr_attrs);
-}
-
-__weak int arch_evlist__add_default_attrs(struct evlist *evlist,
-					  struct perf_event_attr *attrs,
-					  size_t nr_attrs)
-{
-	if (!nr_attrs)
-		return 0;
-
-	return __evlist__add_default_attrs(evlist, attrs, nr_attrs);
-}
-
-struct evsel *evlist__find_tracepoint_by_id(struct evlist *evlist, int id)
-{
-	struct evsel *evsel;
-
-	evlist__for_each_entry(evlist, evsel) {
-		if (evsel->core.attr.type   == PERF_TYPE_TRACEPOINT &&
-		    (int)evsel->core.attr.config == id)
-			return evsel;
-	}
-
-	return NULL;
-}
 
 struct evsel *evlist__find_tracepoint_by_name(struct evlist *evlist, const char *name)
 {
@@ -1057,14 +1009,13 @@ int evlist__create_maps(struct evlist *evlist, struct target *target)
 	 * per-thread data. thread_map__new_str will call
 	 * thread_map__new_all_cpus to enumerate all threads.
 	 */
-	threads = thread_map__new_str(target->pid, target->tid, target->uid,
-				      all_threads);
+	threads = thread_map__new_str(target->pid, target->tid, all_threads);
 
 	if (!threads)
 		return -1;
 
-	if (target__uses_dummy_map(target))
-		cpus = perf_cpu_map__dummy_new();
+	if (target__uses_dummy_map(target) && !evlist__has_bpf_output(evlist))
+		cpus = perf_cpu_map__new_any_cpu();
 	else
 		cpus = perf_cpu_map__new(target->cpu_list);
 
@@ -1086,7 +1037,8 @@ out_delete_threads:
 	return -1;
 }
 
-int evlist__apply_filters(struct evlist *evlist, struct evsel **err_evsel)
+int evlist__apply_filters(struct evlist *evlist, struct evsel **err_evsel,
+			  struct target *target)
 {
 	struct evsel *evsel;
 	int err = 0;
@@ -1108,7 +1060,7 @@ int evlist__apply_filters(struct evlist *evlist, struct evsel **err_evsel)
 		 * non-tracepoint events can have BPF filters.
 		 */
 		if (!list_empty(&evsel->bpf_filters)) {
-			err = perf_bpf_filter__prepare(evsel);
+			err = perf_bpf_filter__prepare(evsel, target);
 			if (err) {
 				*err_evsel = evsel;
 				break;
@@ -1194,11 +1146,6 @@ int evlist__set_tp_filter_pids(struct evlist *evlist, size_t npids, pid_t *pids)
 	return ret;
 }
 
-int evlist__set_tp_filter_pid(struct evlist *evlist, pid_t pid)
-{
-	return evlist__set_tp_filter_pids(evlist, 1, &pid);
-}
-
 int evlist__append_tp_filter_pids(struct evlist *evlist, size_t npids, pid_t *pids)
 {
 	char *filter = asprintf__tp_filter_pids(npids, pids);
@@ -1259,6 +1206,72 @@ u64 evlist__combined_branch_type(struct evlist *evlist)
 	evlist__for_each_entry(evlist, evsel)
 		branch_type |= evsel->core.attr.branch_sample_type;
 	return branch_type;
+}
+
+static struct evsel *
+evlist__find_dup_event_from_prev(struct evlist *evlist, struct evsel *event)
+{
+	struct evsel *pos;
+
+	evlist__for_each_entry(evlist, pos) {
+		if (event == pos)
+			break;
+		if ((pos->core.attr.branch_sample_type & PERF_SAMPLE_BRANCH_COUNTERS) &&
+		    !strcmp(pos->name, event->name))
+			return pos;
+	}
+	return NULL;
+}
+
+#define MAX_NR_ABBR_NAME	(26 * 11)
+
+/*
+ * The abbr name is from A to Z9. If the number of event
+ * which requires the branch counter > MAX_NR_ABBR_NAME,
+ * return NA.
+ */
+static void evlist__new_abbr_name(char *name)
+{
+	static int idx;
+	int i = idx / 26;
+
+	if (idx >= MAX_NR_ABBR_NAME) {
+		name[0] = 'N';
+		name[1] = 'A';
+		name[2] = '\0';
+		return;
+	}
+
+	name[0] = 'A' + (idx % 26);
+
+	if (!i)
+		name[1] = '\0';
+	else {
+		name[1] = '0' + i - 1;
+		name[2] = '\0';
+	}
+
+	idx++;
+}
+
+void evlist__update_br_cntr(struct evlist *evlist)
+{
+	struct evsel *evsel, *dup;
+	int i = 0;
+
+	evlist__for_each_entry(evlist, evsel) {
+		if (evsel->core.attr.branch_sample_type & PERF_SAMPLE_BRANCH_COUNTERS) {
+			evsel->br_cntr_idx = i++;
+			evsel__leader(evsel)->br_cntr_nr++;
+
+			dup = evlist__find_dup_event_from_prev(evlist, evsel);
+			if (dup)
+				memcpy(evsel->abbr_name, dup->abbr_name, 3 * sizeof(char));
+			else
+				evlist__new_abbr_name(evsel->abbr_name);
+		}
+	}
+	evlist->nr_br_cntr = i;
 }
 
 bool evlist__valid_read_format(struct evlist *evlist)
@@ -1360,7 +1373,7 @@ static int evlist__create_syswide_maps(struct evlist *evlist)
 	 * error, and we may not want to do that fallback to a
 	 * default cpu identity map :-\
 	 */
-	cpus = perf_cpu_map__new(NULL);
+	cpus = perf_cpu_map__new_online_cpus();
 	if (!cpus)
 		return -ENOMEM;
 
@@ -2457,23 +2470,36 @@ struct evsel *evlist__find_evsel(struct evlist *evlist, int idx)
 	return NULL;
 }
 
-int evlist__scnprintf_evsels(struct evlist *evlist, size_t size, char *bf)
+void evlist__format_evsels(struct evlist *evlist, struct strbuf *sb, size_t max_length)
 {
-	struct evsel *evsel;
-	int printed = 0;
+	struct evsel *evsel, *leader = NULL;
+	bool first = true;
 
 	evlist__for_each_entry(evlist, evsel) {
+		struct evsel *new_leader = evsel__leader(evsel);
+
 		if (evsel__is_dummy_event(evsel))
 			continue;
-		if (size > (strlen(evsel__name(evsel)) + (printed ? 2 : 1))) {
-			printed += scnprintf(bf + printed, size - printed, "%s%s", printed ? "," : "", evsel__name(evsel));
-		} else {
-			printed += scnprintf(bf + printed, size - printed, "%s...", printed ? "," : "");
-			break;
-		}
-	}
 
-	return printed;
+		if (leader != new_leader && leader && leader->core.nr_members > 1)
+			strbuf_addch(sb, '}');
+
+		if (!first)
+			strbuf_addch(sb, ',');
+
+		if (sb->len > max_length) {
+			strbuf_addstr(sb, "...");
+			return;
+		}
+		if (leader != new_leader && new_leader->core.nr_members > 1)
+			strbuf_addch(sb, '{');
+
+		strbuf_addstr(sb, evsel__name(evsel));
+		first = false;
+		leader = new_leader;
+	}
+	if (leader && leader->core.nr_members > 1)
+		strbuf_addch(sb, '}');
 }
 
 void evlist__check_mem_load_aux(struct evlist *evlist)
@@ -2523,44 +2549,86 @@ void evlist__warn_user_requested_cpus(struct evlist *evlist, const char *cpu_lis
 		return;
 
 	evlist__for_each_entry(evlist, pos) {
-		struct perf_cpu_map *intersect, *to_test;
-		const struct perf_pmu *pmu = evsel__find_pmu(pos);
-
-		to_test = pmu && pmu->is_core ? pmu->cpus : cpu_map__online();
-		intersect = perf_cpu_map__intersect(to_test, user_requested_cpus);
-		if (!perf_cpu_map__equal(intersect, user_requested_cpus)) {
-			char buf[128];
-
-			cpu_map__snprint(to_test, buf, sizeof(buf));
-			pr_warning("WARNING: A requested CPU in '%s' is not supported by PMU '%s' (CPUs %s) for event '%s'\n",
-				cpu_list, pmu ? pmu->name : "cpu", buf, evsel__name(pos));
-		}
-		perf_cpu_map__put(intersect);
+		evsel__warn_user_requested_cpus(pos, user_requested_cpus);
 	}
 	perf_cpu_map__put(user_requested_cpus);
 }
 
-void evlist__uniquify_name(struct evlist *evlist)
+/* Should uniquify be disabled for the evlist? */
+static bool evlist__disable_uniquify(const struct evlist *evlist)
 {
-	struct evsel *pos;
-	char *new_name;
-	int ret;
+	struct evsel *counter;
+	struct perf_pmu *last_pmu = NULL;
+	bool first = true;
 
-	if (perf_pmus__num_core_pmus() == 1)
-		return;
-
-	evlist__for_each_entry(evlist, pos) {
-		if (!evsel__is_hybrid(pos))
-			continue;
-
-		if (strchr(pos->name, '/'))
-			continue;
-
-		ret = asprintf(&new_name, "%s/%s/",
-			       pos->pmu_name, pos->name);
-		if (ret) {
-			free(pos->name);
-			pos->name = new_name;
+	evlist__for_each_entry(evlist, counter) {
+		/* If PMUs vary then uniquify can be useful. */
+		if (!first && counter->pmu != last_pmu)
+			return false;
+		first = false;
+		if (counter->pmu) {
+			/* Allow uniquify for uncore PMUs. */
+			if (!counter->pmu->is_core)
+				return false;
+			/* Keep hybrid event names uniquified for clarity. */
+			if (perf_pmus__num_core_pmus() > 1)
+				return false;
 		}
+		last_pmu = counter->pmu;
 	}
+	return true;
+}
+
+static bool evlist__set_needs_uniquify(struct evlist *evlist, const struct perf_stat_config *config)
+{
+	struct evsel *counter;
+	bool needs_uniquify = false;
+
+	if (evlist__disable_uniquify(evlist)) {
+		evlist__for_each_entry(evlist, counter)
+			counter->uniquified_name = true;
+		return false;
+	}
+
+	evlist__for_each_entry(evlist, counter) {
+		if (evsel__set_needs_uniquify(counter, config))
+			needs_uniquify = true;
+	}
+	return needs_uniquify;
+}
+
+void evlist__uniquify_evsel_names(struct evlist *evlist, const struct perf_stat_config *config)
+{
+	if (evlist__set_needs_uniquify(evlist, config)) {
+		struct evsel *pos;
+
+		evlist__for_each_entry(evlist, pos)
+			evsel__uniquify_counter(pos);
+	}
+}
+
+bool evlist__has_bpf_output(struct evlist *evlist)
+{
+	struct evsel *evsel;
+
+	evlist__for_each_entry(evlist, evsel) {
+		if (evsel__is_bpf_output(evsel))
+			return true;
+	}
+
+	return false;
+}
+
+bool evlist__needs_bpf_sb_event(struct evlist *evlist)
+{
+	struct evsel *evsel;
+
+	evlist__for_each_entry(evlist, evsel) {
+		if (evsel__is_dummy_event(evsel))
+			continue;
+		if (!evsel->core.attr.exclude_kernel)
+			return true;
+	}
+
+	return false;
 }

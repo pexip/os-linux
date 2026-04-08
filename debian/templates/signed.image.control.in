@@ -1,5 +1,6 @@
 Package: linux-image-@abiname@@localversion@
 Meta-Rules-Target: image
+Meta-Rules-Makeflags: INSTALLDOCS_LINK_DOC=linux-base-@abiname@@localversion@
 Meta-Sign-Package: linux-image-@abiname@@localversion@-unsigned
 Meta-Sign-Files: boot/@image-stem@-@abiname@@localversion@:efi
 Build-Profiles: <!pkg.linux.nokernel>
@@ -12,11 +13,14 @@ Build-Depends:
 # Used by debian/signing_templates/rules.real
  rsync,
 Built-Using: @source_basename@@source_suffix@ (= @version_complete@)
-Depends: kmod, linux-base (>= 4.3~), ${misc:Depends}
-Recommends: firmware-linux-free
+Pre-Depends: linux-base (>= 4.12~)
+Depends:
+ linux-base-@abiname@@localversion@ (= @signedtemplate_binaryversion@),
+ kmod,
+ ${misc:Depends},
 Conflicts: linux-image-@abiname@@localversion@-unsigned
 Replaces: linux-image-@abiname@@localversion@-unsigned
-Suggests: linux-doc-@version@, debian-kernel-handbook
+Suggests: firmware-linux-free, linux-doc-@version@, debian-kernel-handbook
 Description: Linux @upstreamversion@ for @class@ (signed)
  The Linux kernel @upstreamversion@ and modules for use on @longclass@.
  .

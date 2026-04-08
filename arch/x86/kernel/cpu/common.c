@@ -26,9 +26,11 @@
 #include <linux/pgtable.h>
 #include <linux/stackprotector.h>
 #include <linux/utsname.h>
+#include <linux/efi.h>
 
 #include <asm/alternative.h>
 #include <asm/cmdline.h>
+#include <asm/cpuid/api.h>
 #include <asm/perf_event.h>
 #include <asm/mmu_context.h>
 #include <asm/doublefault.h>
@@ -61,30 +63,42 @@
 #include <asm/microcode.h>
 #include <asm/intel-family.h>
 #include <asm/cpu_device_id.h>
+#include <asm/fred.h>
 #include <asm/uv/uv.h>
+#include <asm/ia32.h>
 #include <asm/set_memory.h>
 #include <asm/traps.h>
 #include <asm/sev.h>
+#include <asm/tdx.h>
+#include <asm/posted_intr.h>
+#include <asm/runtime-const.h>
 
 #include "cpu.h"
+
+DEFINE_PER_CPU_READ_MOSTLY(struct cpuinfo_x86, cpu_info);
+EXPORT_PER_CPU_SYMBOL(cpu_info);
+
+/* Used for modules: built-in code uses runtime constants */
+unsigned long USER_PTR_MAX;
+EXPORT_SYMBOL(USER_PTR_MAX);
 
 u32 elf_hwcap2 __read_mostly;
 
 /* Number of siblings per CPU package */
-int smp_num_siblings = 1;
-EXPORT_SYMBOL(smp_num_siblings);
+unsigned int __max_threads_per_core __ro_after_init = 1;
+EXPORT_SYMBOL(__max_threads_per_core);
 
-/* Last level cache ID of each logical CPU */
-DEFINE_PER_CPU_READ_MOSTLY(u16, cpu_llc_id) = BAD_APICID;
+unsigned int __max_dies_per_package __ro_after_init = 1;
+EXPORT_SYMBOL(__max_dies_per_package);
 
-u16 get_llc_id(unsigned int cpu)
-{
-	return per_cpu(cpu_llc_id, cpu);
-}
-EXPORT_SYMBOL_GPL(get_llc_id);
+unsigned int __max_logical_packages __ro_after_init = 1;
+EXPORT_SYMBOL(__max_logical_packages);
 
-/* L2 cache ID of each logical CPU */
-DEFINE_PER_CPU_READ_MOSTLY(u16, cpu_l2c_id) = BAD_APICID;
+unsigned int __num_cores_per_package __ro_after_init = 1;
+EXPORT_SYMBOL(__num_cores_per_package);
+
+unsigned int __num_threads_per_package __ro_after_init = 1;
+EXPORT_SYMBOL(__num_threads_per_package);
 
 static struct ppin_info {
 	int	feature;
@@ -108,17 +122,17 @@ static const struct x86_cpu_id ppin_cpuids[] = {
 	X86_MATCH_FEATURE(X86_FEATURE_INTEL_PPIN, &ppin_info[X86_VENDOR_INTEL]),
 
 	/* Legacy models without CPUID enumeration */
-	X86_MATCH_INTEL_FAM6_MODEL(IVYBRIDGE_X, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(HASWELL_X, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(BROADWELL_D, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(BROADWELL_X, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(SKYLAKE_X, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(ICELAKE_X, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(ICELAKE_D, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(SAPPHIRERAPIDS_X, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(EMERALDRAPIDS_X, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(XEON_PHI_KNL, &ppin_info[X86_VENDOR_INTEL]),
-	X86_MATCH_INTEL_FAM6_MODEL(XEON_PHI_KNM, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_IVYBRIDGE_X, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_HASWELL_X, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_BROADWELL_D, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_BROADWELL_X, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_SKYLAKE_X, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_ICELAKE_X, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_ICELAKE_D, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_SAPPHIRERAPIDS_X, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_EMERALDRAPIDS_X, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_XEON_PHI_KNL, &ppin_info[X86_VENDOR_INTEL]),
+	X86_MATCH_VFM(INTEL_XEON_PHI_KNM, &ppin_info[X86_VENDOR_INTEL]),
 
 	{}
 };
@@ -139,7 +153,7 @@ static void ppin_init(struct cpuinfo_x86 *c)
 	 */
 	info = (struct ppin_info *)id->driver_data;
 
-	if (rdmsrl_safe(info->msr_ppin_ctl, &val))
+	if (rdmsrq_safe(info->msr_ppin_ctl, &val))
 		goto clear_ppin;
 
 	if ((val & 3UL) == 1UL) {
@@ -149,19 +163,19 @@ static void ppin_init(struct cpuinfo_x86 *c)
 
 	/* If PPIN is disabled, try to enable */
 	if (!(val & 2UL)) {
-		wrmsrl_safe(info->msr_ppin_ctl,  val | 2UL);
-		rdmsrl_safe(info->msr_ppin_ctl, &val);
+		wrmsrq_safe(info->msr_ppin_ctl,  val | 2UL);
+		rdmsrq_safe(info->msr_ppin_ctl, &val);
 	}
 
 	/* Is the enable bit set? */
 	if (val & 2UL) {
-		c->ppin = __rdmsr(info->msr_ppin);
+		c->ppin = native_rdmsrq(info->msr_ppin);
 		set_cpu_cap(c, info->feature);
 		return;
 	}
 
 clear_ppin:
-	clear_cpu_cap(c, info->feature);
+	setup_clear_cpu_cap(info->feature);
 }
 
 static void default_init(struct cpuinfo_x86 *c)
@@ -199,48 +213,41 @@ DEFINE_PER_CPU_PAGE_ALIGNED(struct gdt_page, gdt_page) = { .gdt = {
 	 * TLS descriptors are currently at a different place compared to i386.
 	 * Hopefully nobody expects them at a fixed place (Wine?)
 	 */
-	[GDT_ENTRY_KERNEL32_CS]		= GDT_ENTRY_INIT(0xc09b, 0, 0xfffff),
-	[GDT_ENTRY_KERNEL_CS]		= GDT_ENTRY_INIT(0xa09b, 0, 0xfffff),
-	[GDT_ENTRY_KERNEL_DS]		= GDT_ENTRY_INIT(0xc093, 0, 0xfffff),
-	[GDT_ENTRY_DEFAULT_USER32_CS]	= GDT_ENTRY_INIT(0xc0fb, 0, 0xfffff),
-	[GDT_ENTRY_DEFAULT_USER_DS]	= GDT_ENTRY_INIT(0xc0f3, 0, 0xfffff),
-	[GDT_ENTRY_DEFAULT_USER_CS]	= GDT_ENTRY_INIT(0xa0fb, 0, 0xfffff),
+	[GDT_ENTRY_KERNEL32_CS]		= GDT_ENTRY_INIT(DESC_CODE32, 0, 0xfffff),
+	[GDT_ENTRY_KERNEL_CS]		= GDT_ENTRY_INIT(DESC_CODE64, 0, 0xfffff),
+	[GDT_ENTRY_KERNEL_DS]		= GDT_ENTRY_INIT(DESC_DATA64, 0, 0xfffff),
+	[GDT_ENTRY_DEFAULT_USER32_CS]	= GDT_ENTRY_INIT(DESC_CODE32 | DESC_USER, 0, 0xfffff),
+	[GDT_ENTRY_DEFAULT_USER_DS]	= GDT_ENTRY_INIT(DESC_DATA64 | DESC_USER, 0, 0xfffff),
+	[GDT_ENTRY_DEFAULT_USER_CS]	= GDT_ENTRY_INIT(DESC_CODE64 | DESC_USER, 0, 0xfffff),
 #else
-	[GDT_ENTRY_KERNEL_CS]		= GDT_ENTRY_INIT(0xc09a, 0, 0xfffff),
-	[GDT_ENTRY_KERNEL_DS]		= GDT_ENTRY_INIT(0xc092, 0, 0xfffff),
-	[GDT_ENTRY_DEFAULT_USER_CS]	= GDT_ENTRY_INIT(0xc0fa, 0, 0xfffff),
-	[GDT_ENTRY_DEFAULT_USER_DS]	= GDT_ENTRY_INIT(0xc0f2, 0, 0xfffff),
+	[GDT_ENTRY_KERNEL_CS]		= GDT_ENTRY_INIT(DESC_CODE32, 0, 0xfffff),
+	[GDT_ENTRY_KERNEL_DS]		= GDT_ENTRY_INIT(DESC_DATA32, 0, 0xfffff),
+	[GDT_ENTRY_DEFAULT_USER_CS]	= GDT_ENTRY_INIT(DESC_CODE32 | DESC_USER, 0, 0xfffff),
+	[GDT_ENTRY_DEFAULT_USER_DS]	= GDT_ENTRY_INIT(DESC_DATA32 | DESC_USER, 0, 0xfffff),
 	/*
 	 * Segments used for calling PnP BIOS have byte granularity.
 	 * They code segments and data segments have fixed 64k limits,
 	 * the transfer segment sizes are set at run time.
 	 */
-	/* 32-bit code */
-	[GDT_ENTRY_PNPBIOS_CS32]	= GDT_ENTRY_INIT(0x409a, 0, 0xffff),
-	/* 16-bit code */
-	[GDT_ENTRY_PNPBIOS_CS16]	= GDT_ENTRY_INIT(0x009a, 0, 0xffff),
-	/* 16-bit data */
-	[GDT_ENTRY_PNPBIOS_DS]		= GDT_ENTRY_INIT(0x0092, 0, 0xffff),
-	/* 16-bit data */
-	[GDT_ENTRY_PNPBIOS_TS1]		= GDT_ENTRY_INIT(0x0092, 0, 0),
-	/* 16-bit data */
-	[GDT_ENTRY_PNPBIOS_TS2]		= GDT_ENTRY_INIT(0x0092, 0, 0),
+	[GDT_ENTRY_PNPBIOS_CS32]	= GDT_ENTRY_INIT(DESC_CODE32_BIOS, 0, 0xffff),
+	[GDT_ENTRY_PNPBIOS_CS16]	= GDT_ENTRY_INIT(DESC_CODE16, 0, 0xffff),
+	[GDT_ENTRY_PNPBIOS_DS]		= GDT_ENTRY_INIT(DESC_DATA16, 0, 0xffff),
+	[GDT_ENTRY_PNPBIOS_TS1]		= GDT_ENTRY_INIT(DESC_DATA16, 0, 0),
+	[GDT_ENTRY_PNPBIOS_TS2]		= GDT_ENTRY_INIT(DESC_DATA16, 0, 0),
 	/*
 	 * The APM segments have byte granularity and their bases
 	 * are set at run time.  All have 64k limits.
 	 */
-	/* 32-bit code */
-	[GDT_ENTRY_APMBIOS_BASE]	= GDT_ENTRY_INIT(0x409a, 0, 0xffff),
-	/* 16-bit code */
-	[GDT_ENTRY_APMBIOS_BASE+1]	= GDT_ENTRY_INIT(0x009a, 0, 0xffff),
-	/* data */
-	[GDT_ENTRY_APMBIOS_BASE+2]	= GDT_ENTRY_INIT(0x4092, 0, 0xffff),
+	[GDT_ENTRY_APMBIOS_BASE]	= GDT_ENTRY_INIT(DESC_CODE32_BIOS, 0, 0xffff),
+	[GDT_ENTRY_APMBIOS_BASE+1]	= GDT_ENTRY_INIT(DESC_CODE16, 0, 0xffff),
+	[GDT_ENTRY_APMBIOS_BASE+2]	= GDT_ENTRY_INIT(DESC_DATA32_BIOS, 0, 0xffff),
 
-	[GDT_ENTRY_ESPFIX_SS]		= GDT_ENTRY_INIT(0xc092, 0, 0xfffff),
-	[GDT_ENTRY_PERCPU]		= GDT_ENTRY_INIT(0xc092, 0, 0xfffff),
+	[GDT_ENTRY_ESPFIX_SS]		= GDT_ENTRY_INIT(DESC_DATA32, 0, 0xfffff),
+	[GDT_ENTRY_PERCPU]		= GDT_ENTRY_INIT(DESC_DATA32, 0, 0xfffff),
 #endif
 } };
 EXPORT_PER_CPU_SYMBOL_GPL(gdt_page);
+SYM_PIC_ALIAS(gdt_page);
 
 #ifdef CONFIG_X86_64
 static int __init x86_nopcid_setup(char *s)
@@ -276,21 +283,13 @@ static int __init x86_noinvpcid_setup(char *s)
 }
 early_param("noinvpcid", x86_noinvpcid_setup);
 
-#ifdef CONFIG_X86_32
-static int cachesize_override = -1;
-static int disable_x86_serial_nr = 1;
-
-static int __init cachesize_setup(char *str)
-{
-	get_option(&str, &cachesize_override);
-	return 1;
-}
-__setup("cachesize=", cachesize_setup);
-
 /* Standard macro to see if a specific flag is changeable */
-static inline int flag_is_changeable_p(u32 flag)
+static inline bool flag_is_changeable_p(unsigned long flag)
 {
-	u32 f1, f2;
+	unsigned long f1, f2;
+
+	if (!IS_ENABLED(CONFIG_X86_32))
+		return true;
 
 	/*
 	 * Cyrix and IDT cpus allow disabling of CPUID
@@ -313,11 +312,22 @@ static inline int flag_is_changeable_p(u32 flag)
 		      : "=&r" (f1), "=&r" (f2)
 		      : "ir" (flag));
 
-	return ((f1^f2) & flag) != 0;
+	return (f1 ^ f2) & flag;
 }
 
+#ifdef CONFIG_X86_32
+static int cachesize_override = -1;
+static int disable_x86_serial_nr = 1;
+
+static int __init cachesize_setup(char *str)
+{
+	get_option(&str, &cachesize_override);
+	return 1;
+}
+__setup("cachesize=", cachesize_setup);
+
 /* Probe for the CPUID instruction */
-int have_cpuid_p(void)
+bool cpuid_feature(void)
 {
 	return flag_is_changeable_p(X86_EFLAGS_ID);
 }
@@ -349,10 +359,6 @@ static int __init x86_serial_nr_setup(char *s)
 }
 __setup("serialnumber", x86_serial_nr_setup);
 #else
-static inline int flag_is_changeable_p(u32 flag)
-{
-	return 1;
-}
 static inline void squash_the_stupid_serial_number(struct cpuinfo_x86 *c)
 {
 }
@@ -400,9 +406,8 @@ out:
 }
 
 /* These bits should not change their value after CPU init is finished. */
-static const unsigned long cr4_pinned_mask =
-	X86_CR4_SMEP | X86_CR4_SMAP | X86_CR4_UMIP |
-	X86_CR4_FSGSBASE | X86_CR4_CET;
+static const unsigned long cr4_pinned_mask = X86_CR4_SMEP | X86_CR4_SMAP | X86_CR4_UMIP |
+					     X86_CR4_FSGSBASE | X86_CR4_CET | X86_CR4_FRED;
 static DEFINE_STATIC_KEY_FALSE_RO(cr_pinning);
 static unsigned long cr4_pinned_bits __ro_after_init;
 
@@ -563,9 +568,9 @@ __noendbr u64 ibt_save(bool disable)
 	u64 msr = 0;
 
 	if (cpu_feature_enabled(X86_FEATURE_IBT)) {
-		rdmsrl(MSR_IA32_S_CET, msr);
+		rdmsrq(MSR_IA32_S_CET, msr);
 		if (disable)
-			wrmsrl(MSR_IA32_S_CET, msr & ~CET_ENDBR_EN);
+			wrmsrq(MSR_IA32_S_CET, msr & ~CET_ENDBR_EN);
 	}
 
 	return msr;
@@ -576,10 +581,10 @@ __noendbr void ibt_restore(u64 save)
 	u64 msr;
 
 	if (cpu_feature_enabled(X86_FEATURE_IBT)) {
-		rdmsrl(MSR_IA32_S_CET, msr);
+		rdmsrq(MSR_IA32_S_CET, msr);
 		msr &= ~CET_ENDBR_EN;
 		msr |= (save & CET_ENDBR_EN);
-		wrmsrl(MSR_IA32_S_CET, msr);
+		wrmsrq(MSR_IA32_S_CET, msr);
 	}
 }
 
@@ -603,15 +608,15 @@ static __always_inline void setup_cet(struct cpuinfo_x86 *c)
 		set_cpu_cap(c, X86_FEATURE_USER_SHSTK);
 
 	if (kernel_ibt)
-		wrmsrl(MSR_IA32_S_CET, CET_ENDBR_EN);
+		wrmsrq(MSR_IA32_S_CET, CET_ENDBR_EN);
 	else
-		wrmsrl(MSR_IA32_S_CET, 0);
+		wrmsrq(MSR_IA32_S_CET, 0);
 
 	cr4_set_bits(X86_CR4_CET);
 
 	if (kernel_ibt && ibt_selftest()) {
 		pr_err("IBT selftest: Failed!\n");
-		wrmsrl(MSR_IA32_S_CET, 0);
+		wrmsrq(MSR_IA32_S_CET, 0);
 		setup_clear_cpu_cap(X86_FEATURE_IBT);
 	}
 }
@@ -622,8 +627,8 @@ __noendbr void cet_disable(void)
 	      cpu_feature_enabled(X86_FEATURE_SHSTK)))
 		return;
 
-	wrmsrl(MSR_IA32_S_CET, 0);
-	wrmsrl(MSR_IA32_U_CET, 0);
+	wrmsrq(MSR_IA32_S_CET, 0);
+	wrmsrq(MSR_IA32_U_CET, 0);
 }
 
 /*
@@ -638,9 +643,9 @@ struct cpuid_dependent_feature {
 
 static const struct cpuid_dependent_feature
 cpuid_dependent_features[] = {
-	{ X86_FEATURE_MWAIT,		0x00000005 },
-	{ X86_FEATURE_DCA,		0x00000009 },
-	{ X86_FEATURE_XSAVE,		0x0000000d },
+	{ X86_FEATURE_MWAIT,		CPUID_LEAF_MWAIT },
+	{ X86_FEATURE_DCA,		CPUID_LEAF_DCA },
+	{ X86_FEATURE_XSAVE,		CPUID_LEAF_XSTATE },
 	{ 0, 0 }
 };
 
@@ -668,8 +673,8 @@ static void filter_cpuid_features(struct cpuinfo_x86 *c, bool warn)
 		if (!warn)
 			continue;
 
-		pr_warn("CPU: CPU feature " X86_CAP_FMT " disabled, no CPUID level 0x%x\n",
-			x86_cap_flag(df->feature), df->level);
+		pr_warn("CPU: CPU feature %s disabled, no CPUID level 0x%x\n",
+			x86_cap_flags[df->feature], df->level);
 	}
 }
 
@@ -752,9 +757,9 @@ void __init switch_gdt_and_percpu_base(int cpu)
 	 * No need to load %gs. It is already correct.
 	 *
 	 * Writing %gs on 64bit would zero GSBASE which would make any per
-	 * CPU operation up to the point of the wrmsrl() fault.
+	 * CPU operation up to the point of the wrmsrq() fault.
 	 *
-	 * Set GSBASE to the new offset. Until the wrmsrl() happens the
+	 * Set GSBASE to the new offset. Until the wrmsrq() happens the
 	 * early mapping is still valid. That means the GSBASE update will
 	 * lose any prior per CPU data which was not copied over in
 	 * setup_per_cpu_areas().
@@ -762,7 +767,7 @@ void __init switch_gdt_and_percpu_base(int cpu)
 	 * This works even with stackprotector enabled because the
 	 * per CPU stack canary is 0 in both per CPU areas.
 	 */
-	wrmsrl(MSR_GS_BASE, cpu_kernelmode_gs_base(cpu));
+	wrmsrq(MSR_GS_BASE, cpu_kernelmode_gs_base(cpu));
 #else
 	/*
 	 * %fs is already set to __KERNEL_PERCPU, but after switching GDT
@@ -808,19 +813,6 @@ static void get_model_name(struct cpuinfo_x86 *c)
 	*(s + 1) = '\0';
 }
 
-void detect_num_cpu_cores(struct cpuinfo_x86 *c)
-{
-	unsigned int eax, ebx, ecx, edx;
-
-	c->x86_max_cores = 1;
-	if (!IS_ENABLED(CONFIG_SMP) || c->cpuid_level < 4)
-		return;
-
-	cpuid_count(4, 0, &eax, &ebx, &ecx, &edx);
-	if (eax & 0x1f)
-		c->x86_max_cores = (eax >> 26) + 1;
-}
-
 void cpu_detect_cache_sizes(struct cpuinfo_x86 *c)
 {
 	unsigned int n, dummy, ebx, ecx, edx, l2size;
@@ -860,13 +852,13 @@ void cpu_detect_cache_sizes(struct cpuinfo_x86 *c)
 	c->x86_cache_size = l2size;
 }
 
-u16 __read_mostly tlb_lli_4k[NR_INFO];
-u16 __read_mostly tlb_lli_2m[NR_INFO];
-u16 __read_mostly tlb_lli_4m[NR_INFO];
-u16 __read_mostly tlb_lld_4k[NR_INFO];
-u16 __read_mostly tlb_lld_2m[NR_INFO];
-u16 __read_mostly tlb_lld_4m[NR_INFO];
-u16 __read_mostly tlb_lld_1g[NR_INFO];
+u16 __read_mostly tlb_lli_4k;
+u16 __read_mostly tlb_lli_2m;
+u16 __read_mostly tlb_lli_4m;
+u16 __read_mostly tlb_lld_4k;
+u16 __read_mostly tlb_lld_2m;
+u16 __read_mostly tlb_lld_4m;
+u16 __read_mostly tlb_lld_1g;
 
 static void cpu_detect_tlb(struct cpuinfo_x86 *c)
 {
@@ -874,57 +866,10 @@ static void cpu_detect_tlb(struct cpuinfo_x86 *c)
 		this_cpu->c_detect_tlb(c);
 
 	pr_info("Last level iTLB entries: 4KB %d, 2MB %d, 4MB %d\n",
-		tlb_lli_4k[ENTRIES], tlb_lli_2m[ENTRIES],
-		tlb_lli_4m[ENTRIES]);
+		tlb_lli_4k, tlb_lli_2m, tlb_lli_4m);
 
 	pr_info("Last level dTLB entries: 4KB %d, 2MB %d, 4MB %d, 1GB %d\n",
-		tlb_lld_4k[ENTRIES], tlb_lld_2m[ENTRIES],
-		tlb_lld_4m[ENTRIES], tlb_lld_1g[ENTRIES]);
-}
-
-int detect_ht_early(struct cpuinfo_x86 *c)
-{
-#ifdef CONFIG_SMP
-	u32 eax, ebx, ecx, edx;
-
-	if (!cpu_has(c, X86_FEATURE_HT))
-		return -1;
-
-	if (cpu_has(c, X86_FEATURE_CMP_LEGACY))
-		return -1;
-
-	if (cpu_has(c, X86_FEATURE_XTOPOLOGY))
-		return -1;
-
-	cpuid(1, &eax, &ebx, &ecx, &edx);
-
-	smp_num_siblings = (ebx & 0xff0000) >> 16;
-	if (smp_num_siblings == 1)
-		pr_info_once("CPU0: Hyper-Threading is disabled\n");
-#endif
-	return 0;
-}
-
-void detect_ht(struct cpuinfo_x86 *c)
-{
-#ifdef CONFIG_SMP
-	int index_msb, core_bits;
-
-	if (detect_ht_early(c) < 0)
-		return;
-
-	index_msb = get_count_order(smp_num_siblings);
-	c->phys_proc_id = apic->phys_pkg_id(c->initial_apicid, index_msb);
-
-	smp_num_siblings = smp_num_siblings / c->x86_max_cores;
-
-	index_msb = get_count_order(smp_num_siblings);
-
-	core_bits = get_count_order(c->x86_max_cores);
-
-	c->cpu_core_id = apic->phys_pkg_id(c->initial_apicid, index_msb) &
-				       ((1 << core_bits) - 1);
-#endif
+		tlb_lld_4k, tlb_lld_2m, tlb_lld_4m, tlb_lld_1g);
 }
 
 void get_cpu_vendor(struct cpuinfo_x86 *c)
@@ -1116,22 +1061,38 @@ void get_cpu_address_sizes(struct cpuinfo_x86 *c)
 {
 	u32 eax, ebx, ecx, edx;
 
-	if (c->extended_cpuid_level >= 0x80000008) {
+	if (!cpu_has(c, X86_FEATURE_CPUID) ||
+	    (c->extended_cpuid_level < 0x80000008)) {
+		if (IS_ENABLED(CONFIG_X86_64)) {
+			c->x86_clflush_size = 64;
+			c->x86_phys_bits = 36;
+			c->x86_virt_bits = 48;
+		} else {
+			c->x86_clflush_size = 32;
+			c->x86_virt_bits = 32;
+			c->x86_phys_bits = 32;
+
+			if (cpu_has(c, X86_FEATURE_PAE) ||
+			    cpu_has(c, X86_FEATURE_PSE36))
+				c->x86_phys_bits = 36;
+		}
+	} else {
 		cpuid(0x80000008, &eax, &ebx, &ecx, &edx);
 
 		c->x86_virt_bits = (eax >> 8) & 0xff;
 		c->x86_phys_bits = eax & 0xff;
+
+		/* Provide a sane default if not enumerated: */
+		if (!c->x86_clflush_size)
+			c->x86_clflush_size = 32;
 	}
-#ifdef CONFIG_X86_32
-	else if (cpu_has(c, X86_FEATURE_PAE) || cpu_has(c, X86_FEATURE_PSE36))
-		c->x86_phys_bits = 36;
-#endif
+
 	c->x86_cache_bits = c->x86_phys_bits;
+	c->x86_cache_alignment = c->x86_clflush_size;
 }
 
 static void identify_cpu_without_cpuid(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_X86_32
 	int i;
 
 	/*
@@ -1152,7 +1113,6 @@ static void identify_cpu_without_cpuid(struct cpuinfo_x86 *c)
 				break;
 			}
 		}
-#endif
 }
 
 #define NO_SPECULATION		BIT(0)
@@ -1171,8 +1131,8 @@ static void identify_cpu_without_cpuid(struct cpuinfo_x86 *c)
 #define VULNWL(vendor, family, model, whitelist)	\
 	X86_MATCH_VENDOR_FAM_MODEL(vendor, family, model, whitelist)
 
-#define VULNWL_INTEL(model, whitelist)		\
-	VULNWL(INTEL, 6, INTEL_FAM6_##model, whitelist)
+#define VULNWL_INTEL(vfm, whitelist)		\
+	X86_MATCH_VFM(vfm, whitelist)
 
 #define VULNWL_AMD(family, whitelist)		\
 	VULNWL(AMD, family, X86_MODEL_ANY, whitelist)
@@ -1189,32 +1149,32 @@ static const __initconst struct x86_cpu_id cpu_vuln_whitelist[] = {
 	VULNWL(VORTEX,	6, X86_MODEL_ANY,	NO_SPECULATION),
 
 	/* Intel Family 6 */
-	VULNWL_INTEL(TIGERLAKE,			NO_MMIO),
-	VULNWL_INTEL(TIGERLAKE_L,		NO_MMIO),
-	VULNWL_INTEL(ALDERLAKE,			NO_MMIO),
-	VULNWL_INTEL(ALDERLAKE_L,		NO_MMIO),
+	VULNWL_INTEL(INTEL_TIGERLAKE,		NO_MMIO),
+	VULNWL_INTEL(INTEL_TIGERLAKE_L,		NO_MMIO),
+	VULNWL_INTEL(INTEL_ALDERLAKE,		NO_MMIO),
+	VULNWL_INTEL(INTEL_ALDERLAKE_L,		NO_MMIO),
 
-	VULNWL_INTEL(ATOM_SALTWELL,		NO_SPECULATION | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(ATOM_SALTWELL_TABLET,	NO_SPECULATION | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(ATOM_SALTWELL_MID,		NO_SPECULATION | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(ATOM_BONNELL,		NO_SPECULATION | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(ATOM_BONNELL_MID,		NO_SPECULATION | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_SALTWELL,	NO_SPECULATION | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_SALTWELL_TABLET, NO_SPECULATION | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_SALTWELL_MID,	NO_SPECULATION | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_BONNELL,	NO_SPECULATION | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_BONNELL_MID,	NO_SPECULATION | NO_ITLB_MULTIHIT),
 
-	VULNWL_INTEL(ATOM_SILVERMONT,		NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(ATOM_SILVERMONT_D,		NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(ATOM_SILVERMONT_MID,	NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(ATOM_AIRMONT,		NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(XEON_PHI_KNL,		NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(XEON_PHI_KNM,		NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_SILVERMONT,	NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_SILVERMONT_D,	NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_SILVERMONT_MID,	NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_AIRMONT,	NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_XEON_PHI_KNL,	NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_XEON_PHI_KNM,	NO_SSB | NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
 
-	VULNWL_INTEL(CORE_YONAH,		NO_SSB),
+	VULNWL_INTEL(INTEL_CORE_YONAH,		NO_SSB),
 
-	VULNWL_INTEL(ATOM_AIRMONT_MID,		NO_L1TF | MSBDS_ONLY | NO_SWAPGS | NO_ITLB_MULTIHIT),
-	VULNWL_INTEL(ATOM_AIRMONT_NP,		NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT),
+	VULNWL_INTEL(INTEL_ATOM_SILVERMONT_MID2,NO_SSB | NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT | MSBDS_ONLY),
+	VULNWL_INTEL(INTEL_ATOM_AIRMONT_NP,	NO_SSB | NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT),
 
-	VULNWL_INTEL(ATOM_GOLDMONT,		NO_MDS | NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT | NO_MMIO),
-	VULNWL_INTEL(ATOM_GOLDMONT_D,		NO_MDS | NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT | NO_MMIO),
-	VULNWL_INTEL(ATOM_GOLDMONT_PLUS,	NO_MDS | NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT | NO_MMIO | NO_EIBRS_PBRSB),
+	VULNWL_INTEL(INTEL_ATOM_GOLDMONT,	NO_MDS | NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT | NO_MMIO),
+	VULNWL_INTEL(INTEL_ATOM_GOLDMONT_D,	NO_MDS | NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT | NO_MMIO),
+	VULNWL_INTEL(INTEL_ATOM_GOLDMONT_PLUS,	NO_MDS | NO_L1TF | NO_SWAPGS | NO_ITLB_MULTIHIT | NO_MMIO | NO_EIBRS_PBRSB),
 
 	/*
 	 * Technically, swapgs isn't serializing on AMD (despite it previously
@@ -1224,9 +1184,9 @@ static const __initconst struct x86_cpu_id cpu_vuln_whitelist[] = {
 	 * good enough for our purposes.
 	 */
 
-	VULNWL_INTEL(ATOM_TREMONT,		NO_EIBRS_PBRSB),
-	VULNWL_INTEL(ATOM_TREMONT_L,		NO_EIBRS_PBRSB),
-	VULNWL_INTEL(ATOM_TREMONT_D,		NO_ITLB_MULTIHIT | NO_EIBRS_PBRSB),
+	VULNWL_INTEL(INTEL_ATOM_TREMONT,	NO_EIBRS_PBRSB),
+	VULNWL_INTEL(INTEL_ATOM_TREMONT_L,	NO_EIBRS_PBRSB),
+	VULNWL_INTEL(INTEL_ATOM_TREMONT_D,	NO_ITLB_MULTIHIT | NO_EIBRS_PBRSB),
 
 	/* AMD Family 0xf - 0x12 */
 	VULNWL_AMD(0x0f,	NO_MELTDOWN | NO_SSB | NO_L1TF | NO_MDS | NO_SWAPGS | NO_ITLB_MULTIHIT | NO_MMIO | NO_BHI),
@@ -1247,10 +1207,11 @@ static const __initconst struct x86_cpu_id cpu_vuln_whitelist[] = {
 #define VULNBL(vendor, family, model, blacklist)	\
 	X86_MATCH_VENDOR_FAM_MODEL(vendor, family, model, blacklist)
 
-#define VULNBL_INTEL_STEPPINGS(model, steppings, issues)		   \
-	X86_MATCH_VENDOR_FAM_MODEL_STEPPINGS_FEATURE(INTEL, 6,		   \
-					    INTEL_FAM6_##model, steppings, \
-					    X86_FEATURE_ANY, issues)
+#define VULNBL_INTEL_STEPS(vfm, max_stepping, issues)		   \
+	X86_MATCH_VFM_STEPS(vfm, X86_STEP_MIN, max_stepping, issues)
+
+#define VULNBL_INTEL_TYPE(vfm, cpu_type, issues)	\
+	X86_MATCH_VFM_CPU_TYPE(vfm, INTEL_CPU_TYPE_##cpu_type, issues)
 
 #define VULNBL_AMD(family, blacklist)		\
 	VULNBL(AMD, family, X86_MODEL_ANY, blacklist)
@@ -1279,54 +1240,71 @@ static const __initconst struct x86_cpu_id cpu_vuln_whitelist[] = {
 #define ITS_NATIVE_ONLY	BIT(9)
 /* CPU is affected by Transient Scheduler Attacks */
 #define TSA		BIT(10)
+/* CPU is affected by VMSCAPE */
+#define VMSCAPE		BIT(11)
 
 static const struct x86_cpu_id cpu_vuln_blacklist[] __initconst = {
-	VULNBL_INTEL_STEPPINGS(IVYBRIDGE,	X86_STEPPING_ANY,		SRBDS),
-	VULNBL_INTEL_STEPPINGS(HASWELL,		X86_STEPPING_ANY,		SRBDS),
-	VULNBL_INTEL_STEPPINGS(HASWELL_L,	X86_STEPPING_ANY,		SRBDS),
-	VULNBL_INTEL_STEPPINGS(HASWELL_G,	X86_STEPPING_ANY,		SRBDS),
-	VULNBL_INTEL_STEPPINGS(HASWELL_X,	X86_STEPPING_ANY,		MMIO),
-	VULNBL_INTEL_STEPPINGS(BROADWELL_D,	X86_STEPPING_ANY,		MMIO),
-	VULNBL_INTEL_STEPPINGS(BROADWELL_G,	X86_STEPPING_ANY,		SRBDS),
-	VULNBL_INTEL_STEPPINGS(BROADWELL_X,	X86_STEPPING_ANY,		MMIO),
-	VULNBL_INTEL_STEPPINGS(BROADWELL,	X86_STEPPING_ANY,		SRBDS),
-	VULNBL_INTEL_STEPPINGS(SKYLAKE_X,	X86_STEPPINGS(0x0, 0x5),	MMIO | RETBLEED | GDS),
-	VULNBL_INTEL_STEPPINGS(SKYLAKE_X,	X86_STEPPING_ANY,		MMIO | RETBLEED | GDS | ITS),
-	VULNBL_INTEL_STEPPINGS(SKYLAKE_L,	X86_STEPPING_ANY,		MMIO | RETBLEED | GDS | SRBDS),
-	VULNBL_INTEL_STEPPINGS(SKYLAKE,		X86_STEPPING_ANY,		MMIO | RETBLEED | GDS | SRBDS),
-	VULNBL_INTEL_STEPPINGS(KABYLAKE_L,	X86_STEPPINGS(0x0, 0xb),	MMIO | RETBLEED | GDS | SRBDS),
-	VULNBL_INTEL_STEPPINGS(KABYLAKE_L,	X86_STEPPING_ANY,		MMIO | RETBLEED | GDS | SRBDS | ITS),
-	VULNBL_INTEL_STEPPINGS(KABYLAKE,	X86_STEPPINGS(0x0, 0xc),	MMIO | RETBLEED | GDS | SRBDS),
-	VULNBL_INTEL_STEPPINGS(KABYLAKE,	X86_STEPPING_ANY,		MMIO | RETBLEED | GDS | SRBDS | ITS),
-	VULNBL_INTEL_STEPPINGS(CANNONLAKE_L,	X86_STEPPING_ANY,		RETBLEED),
-	VULNBL_INTEL_STEPPINGS(ICELAKE_L,	X86_STEPPING_ANY,		MMIO | MMIO_SBDS | RETBLEED | GDS | ITS | ITS_NATIVE_ONLY),
-	VULNBL_INTEL_STEPPINGS(ICELAKE_D,	X86_STEPPING_ANY,		MMIO | GDS | ITS | ITS_NATIVE_ONLY),
-	VULNBL_INTEL_STEPPINGS(ICELAKE_X,	X86_STEPPING_ANY,		MMIO | GDS | ITS | ITS_NATIVE_ONLY),
-	VULNBL_INTEL_STEPPINGS(COMETLAKE,	X86_STEPPING_ANY,		MMIO | MMIO_SBDS | RETBLEED | GDS | ITS),
-	VULNBL_INTEL_STEPPINGS(COMETLAKE_L,	X86_STEPPINGS(0x0, 0x0),	MMIO | RETBLEED | ITS),
-	VULNBL_INTEL_STEPPINGS(COMETLAKE_L,	X86_STEPPING_ANY,		MMIO | MMIO_SBDS | RETBLEED | GDS | ITS),
-	VULNBL_INTEL_STEPPINGS(TIGERLAKE_L,	X86_STEPPING_ANY,		GDS | ITS | ITS_NATIVE_ONLY),
-	VULNBL_INTEL_STEPPINGS(TIGERLAKE,	X86_STEPPING_ANY,		GDS | ITS | ITS_NATIVE_ONLY),
-	VULNBL_INTEL_STEPPINGS(LAKEFIELD,	X86_STEPPING_ANY,		MMIO | MMIO_SBDS | RETBLEED),
-	VULNBL_INTEL_STEPPINGS(ROCKETLAKE,	X86_STEPPING_ANY,		MMIO | RETBLEED | GDS | ITS | ITS_NATIVE_ONLY),
-	VULNBL_INTEL_STEPPINGS(ALDERLAKE,	X86_STEPPING_ANY,		RFDS),
-	VULNBL_INTEL_STEPPINGS(ALDERLAKE_L,	X86_STEPPING_ANY,		RFDS),
-	VULNBL_INTEL_STEPPINGS(RAPTORLAKE,	X86_STEPPING_ANY,		RFDS),
-	VULNBL_INTEL_STEPPINGS(RAPTORLAKE_P,	X86_STEPPING_ANY,		RFDS),
-	VULNBL_INTEL_STEPPINGS(RAPTORLAKE_S,	X86_STEPPING_ANY,		RFDS),
-	VULNBL_INTEL_STEPPINGS(ATOM_GRACEMONT,	X86_STEPPING_ANY,		RFDS),
-	VULNBL_INTEL_STEPPINGS(ATOM_TREMONT,	X86_STEPPING_ANY,		MMIO | MMIO_SBDS | RFDS),
-	VULNBL_INTEL_STEPPINGS(ATOM_TREMONT_D,	X86_STEPPING_ANY,		MMIO | RFDS),
-	VULNBL_INTEL_STEPPINGS(ATOM_TREMONT_L,	X86_STEPPING_ANY,		MMIO | MMIO_SBDS | RFDS),
-	VULNBL_INTEL_STEPPINGS(ATOM_GOLDMONT,	X86_STEPPING_ANY,		RFDS),
-	VULNBL_INTEL_STEPPINGS(ATOM_GOLDMONT_D,	X86_STEPPING_ANY,		RFDS),
-	VULNBL_INTEL_STEPPINGS(ATOM_GOLDMONT_PLUS, X86_STEPPING_ANY,		RFDS),
+	VULNBL_INTEL_STEPS(INTEL_SANDYBRIDGE_X,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_SANDYBRIDGE,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_IVYBRIDGE_X,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_IVYBRIDGE,	     X86_STEP_MAX,	SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_HASWELL,	     X86_STEP_MAX,	SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_HASWELL_L,	     X86_STEP_MAX,	SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_HASWELL_G,	     X86_STEP_MAX,	SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_HASWELL_X,	     X86_STEP_MAX,	MMIO | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_BROADWELL_D,	     X86_STEP_MAX,	MMIO | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_BROADWELL_X,	     X86_STEP_MAX,	MMIO | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_BROADWELL_G,	     X86_STEP_MAX,	SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_BROADWELL,	     X86_STEP_MAX,	SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_SKYLAKE_X,		      0x5,	MMIO | RETBLEED | GDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_SKYLAKE_X,	     X86_STEP_MAX,	MMIO | RETBLEED | GDS | ITS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_SKYLAKE_L,	     X86_STEP_MAX,	MMIO | RETBLEED | GDS | SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_SKYLAKE,	     X86_STEP_MAX,	MMIO | RETBLEED | GDS | SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_KABYLAKE_L,		      0xb,	MMIO | RETBLEED | GDS | SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_KABYLAKE_L,	     X86_STEP_MAX,	MMIO | RETBLEED | GDS | SRBDS | ITS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_KABYLAKE,		      0xc,	MMIO | RETBLEED | GDS | SRBDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_KABYLAKE,	     X86_STEP_MAX,	MMIO | RETBLEED | GDS | SRBDS | ITS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_CANNONLAKE_L,	     X86_STEP_MAX,	RETBLEED | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_ICELAKE_L,	     X86_STEP_MAX,	MMIO | MMIO_SBDS | RETBLEED | GDS | ITS | ITS_NATIVE_ONLY),
+	VULNBL_INTEL_STEPS(INTEL_ICELAKE_D,	     X86_STEP_MAX,	MMIO | GDS | ITS | ITS_NATIVE_ONLY),
+	VULNBL_INTEL_STEPS(INTEL_ICELAKE_X,	     X86_STEP_MAX,	MMIO | GDS | ITS | ITS_NATIVE_ONLY),
+	VULNBL_INTEL_STEPS(INTEL_COMETLAKE,	     X86_STEP_MAX,	MMIO | MMIO_SBDS | RETBLEED | GDS | ITS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_COMETLAKE_L,		      0x0,	MMIO | RETBLEED | ITS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_COMETLAKE_L,	     X86_STEP_MAX,	MMIO | MMIO_SBDS | RETBLEED | GDS | ITS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_TIGERLAKE_L,	     X86_STEP_MAX,	GDS | ITS | ITS_NATIVE_ONLY),
+	VULNBL_INTEL_STEPS(INTEL_TIGERLAKE,	     X86_STEP_MAX,	GDS | ITS | ITS_NATIVE_ONLY),
+	VULNBL_INTEL_STEPS(INTEL_LAKEFIELD,	     X86_STEP_MAX,	MMIO | MMIO_SBDS | RETBLEED),
+	VULNBL_INTEL_STEPS(INTEL_ROCKETLAKE,	     X86_STEP_MAX,	MMIO | RETBLEED | GDS | ITS | ITS_NATIVE_ONLY),
+	VULNBL_INTEL_TYPE(INTEL_ALDERLAKE,		     ATOM,	RFDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_ALDERLAKE,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_ALDERLAKE_L,	     X86_STEP_MAX,	RFDS | VMSCAPE),
+	VULNBL_INTEL_TYPE(INTEL_RAPTORLAKE,		     ATOM,	RFDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_RAPTORLAKE,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_RAPTORLAKE_P,	     X86_STEP_MAX,	RFDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_RAPTORLAKE_S,	     X86_STEP_MAX,	RFDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_METEORLAKE_L,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_ARROWLAKE_H,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_ARROWLAKE,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_ARROWLAKE_U,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_LUNARLAKE_M,	     X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_SAPPHIRERAPIDS_X,   X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_GRANITERAPIDS_X,    X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_EMERALDRAPIDS_X,    X86_STEP_MAX,	VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_ATOM_GRACEMONT,     X86_STEP_MAX,	RFDS | VMSCAPE),
+	VULNBL_INTEL_STEPS(INTEL_ATOM_TREMONT,	     X86_STEP_MAX,	MMIO | MMIO_SBDS | RFDS),
+	VULNBL_INTEL_STEPS(INTEL_ATOM_TREMONT_D,     X86_STEP_MAX,	MMIO | RFDS),
+	VULNBL_INTEL_STEPS(INTEL_ATOM_TREMONT_L,     X86_STEP_MAX,	MMIO | MMIO_SBDS | RFDS),
+	VULNBL_INTEL_STEPS(INTEL_ATOM_GOLDMONT,      X86_STEP_MAX,	RFDS),
+	VULNBL_INTEL_STEPS(INTEL_ATOM_GOLDMONT_D,    X86_STEP_MAX,	RFDS),
+	VULNBL_INTEL_STEPS(INTEL_ATOM_GOLDMONT_PLUS, X86_STEP_MAX,	RFDS),
+	VULNBL_INTEL_STEPS(INTEL_ATOM_CRESTMONT_X,   X86_STEP_MAX,	VMSCAPE),
 
 	VULNBL_AMD(0x15, RETBLEED),
 	VULNBL_AMD(0x16, RETBLEED),
-	VULNBL_AMD(0x17, RETBLEED | SMT_RSB | SRSO),
-	VULNBL_HYGON(0x18, RETBLEED | SMT_RSB | SRSO),
-	VULNBL_AMD(0x19, SRSO | TSA),
+	VULNBL_AMD(0x17, RETBLEED | SMT_RSB | SRSO | VMSCAPE),
+	VULNBL_HYGON(0x18, RETBLEED | SMT_RSB | SRSO | VMSCAPE),
+	VULNBL_AMD(0x19, SRSO | TSA | VMSCAPE),
+	VULNBL_AMD(0x1a, SRSO | VMSCAPE),
 	{}
 };
 
@@ -1342,7 +1320,7 @@ u64 x86_read_arch_cap_msr(void)
 	u64 x86_arch_cap_msr = 0;
 
 	if (boot_cpu_has(X86_FEATURE_ARCH_CAPABILITIES))
-		rdmsrl(MSR_IA32_ARCH_CAPABILITIES, x86_arch_cap_msr);
+		rdmsrq(MSR_IA32_ARCH_CAPABILITIES, x86_arch_cap_msr);
 
 	return x86_arch_cap_msr;
 }
@@ -1398,9 +1376,51 @@ static bool __init vulnerable_to_its(u64 x86_arch_cap_msr)
 	return false;
 }
 
+static struct x86_cpu_id cpu_latest_microcode[] = {
+#include "microcode/intel-ucode-defs.h"
+	{}
+};
+
+static bool __init cpu_has_old_microcode(void)
+{
+	const struct x86_cpu_id *m = x86_match_cpu(cpu_latest_microcode);
+
+	/* Give unknown CPUs a pass: */
+	if (!m) {
+		/* Intel CPUs should be in the list. Warn if not: */
+		if (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL)
+			pr_info("x86/CPU: Model not found in latest microcode list\n");
+		return false;
+	}
+
+	/*
+	 * Hosts usually lie to guests with a super high microcode
+	 * version. Just ignore what hosts tell guests:
+	 */
+	if (boot_cpu_has(X86_FEATURE_HYPERVISOR))
+		return false;
+
+	/* Consider all debug microcode to be old: */
+	if (boot_cpu_data.microcode & BIT(31))
+		return true;
+
+	/* Give new microcode a pass: */
+	if (boot_cpu_data.microcode >= m->driver_data)
+		return false;
+
+	/* Uh oh, too old: */
+	return true;
+}
+
 static void __init cpu_set_bug_bits(struct cpuinfo_x86 *c)
 {
 	u64 x86_arch_cap_msr = x86_read_arch_cap_msr();
+
+	if (cpu_has_old_microcode()) {
+		pr_warn("x86/CPU: Running old microcode\n");
+		setup_force_cpu_bug(X86_BUG_OLD_MICROCODE);
+		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
+	}
 
 	/* Set ITLB_MULTIHIT bug if cpu is not in the whitelist and not mitigated */
 	if (!cpu_matches(cpu_vuln_whitelist, NO_ITLB_MULTIHIT) &&
@@ -1412,8 +1432,10 @@ static void __init cpu_set_bug_bits(struct cpuinfo_x86 *c)
 
 	setup_force_cpu_bug(X86_BUG_SPECTRE_V1);
 
-	if (!cpu_matches(cpu_vuln_whitelist, NO_SPECTRE_V2))
+	if (!cpu_matches(cpu_vuln_whitelist, NO_SPECTRE_V2)) {
 		setup_force_cpu_bug(X86_BUG_SPECTRE_V2);
+		setup_force_cpu_bug(X86_BUG_SPECTRE_V2_USER);
+	}
 
 	if (!cpu_matches(cpu_vuln_whitelist, NO_SSB) &&
 	    !(x86_arch_cap_msr & ARCH_CAP_SSB_NO) &&
@@ -1423,8 +1445,13 @@ static void __init cpu_set_bug_bits(struct cpuinfo_x86 *c)
 	/*
 	 * AMD's AutoIBRS is equivalent to Intel's eIBRS - use the Intel feature
 	 * flag and protect from vendor-specific bugs via the whitelist.
+	 *
+	 * Don't use AutoIBRS when SNP is enabled because it degrades host
+	 * userspace indirect branch performance.
 	 */
-	if ((x86_arch_cap_msr & ARCH_CAP_IBRS_ALL) || cpu_has(c, X86_FEATURE_AUTOIBRS)) {
+	if ((x86_arch_cap_msr & ARCH_CAP_IBRS_ALL) ||
+	    (cpu_has(c, X86_FEATURE_AUTOIBRS) &&
+	     !cpu_feature_enabled(X86_FEATURE_SEV_SNP))) {
 		setup_force_cpu_cap(X86_FEATURE_IBRS_ENHANCED);
 		if (!cpu_matches(cpu_vuln_whitelist, NO_EIBRS_PBRSB) &&
 		    !(x86_arch_cap_msr & ARCH_CAP_PBRSB_NO))
@@ -1475,15 +1502,10 @@ static void __init cpu_set_bug_bits(struct cpuinfo_x86 *c)
 	 * Affected CPU list is generally enough to enumerate the vulnerability,
 	 * but for virtualization case check for ARCH_CAP MSR bits also, VMM may
 	 * not want the guest to enumerate the bug.
-	 *
-	 * Set X86_BUG_MMIO_UNKNOWN for CPUs that are neither in the blacklist,
-	 * nor in the whitelist and also don't enumerate MSR ARCH_CAP MMIO bits.
 	 */
 	if (!arch_cap_mmio_immune(x86_arch_cap_msr)) {
 		if (cpu_matches(cpu_vuln_blacklist, MMIO))
 			setup_force_cpu_bug(X86_BUG_MMIO_STALE_DATA);
-		else if (!cpu_matches(cpu_vuln_whitelist, NO_MMIO))
-			setup_force_cpu_bug(X86_BUG_MMIO_UNKNOWN);
 	}
 
 	if (!cpu_has(c, X86_FEATURE_BTC_NO)) {
@@ -1541,6 +1563,14 @@ static void __init cpu_set_bug_bits(struct cpuinfo_x86 *c)
 		}
 	}
 
+	/*
+	 * Set the bug only on bare-metal. A nested hypervisor should already be
+	 * deploying IBPB to isolate itself from nested guests.
+	 */
+	if (cpu_matches(cpu_vuln_blacklist, VMSCAPE) &&
+	    !boot_cpu_has(X86_FEATURE_HYPERVISOR))
+		setup_force_cpu_bug(X86_BUG_VMSCAPE);
+
 	if (cpu_matches(cpu_vuln_whitelist, NO_MELTDOWN))
 		return;
 
@@ -1574,15 +1604,96 @@ static void detect_nopl(void)
 #endif
 }
 
+static inline bool parse_set_clear_cpuid(char *arg, bool set)
+{
+	char *opt;
+	int taint = 0;
+
+	while (arg) {
+		bool found __maybe_unused = false;
+		unsigned int bit;
+
+		opt = strsep(&arg, ",");
+
+		/*
+		 * Handle naked numbers first for feature flags which don't
+		 * have names. It doesn't make sense for a bug not to have a
+		 * name so don't handle bug flags here.
+		 */
+		if (!kstrtouint(opt, 10, &bit)) {
+			if (bit < NCAPINTS * 32) {
+
+				if (set) {
+					pr_warn("setcpuid: force-enabling CPU feature flag:");
+					setup_force_cpu_cap(bit);
+				} else {
+					pr_warn("clearcpuid: force-disabling CPU feature flag:");
+					setup_clear_cpu_cap(bit);
+				}
+				/* empty-string, i.e., ""-defined feature flags */
+				if (!x86_cap_flags[bit])
+					pr_cont(" %d:%d\n", bit >> 5, bit & 31);
+				else
+					pr_cont(" %s\n", x86_cap_flags[bit]);
+
+				taint++;
+			}
+			/*
+			 * The assumption is that there are no feature names with only
+			 * numbers in the name thus go to the next argument.
+			 */
+			continue;
+		}
+
+		for (bit = 0; bit < 32 * (NCAPINTS + NBUGINTS); bit++) {
+			const char *flag;
+			const char *kind;
+
+			if (bit < 32 * NCAPINTS) {
+				flag = x86_cap_flags[bit];
+				kind = "feature";
+			} else {
+				kind = "bug";
+				flag = x86_bug_flags[bit - (32 * NCAPINTS)];
+			}
+
+			if (!flag)
+				continue;
+
+			if (strcmp(flag, opt))
+				continue;
+
+			if (set) {
+				pr_warn("setcpuid: force-enabling CPU %s flag: %s\n",
+					kind, flag);
+				setup_force_cpu_cap(bit);
+			} else {
+				pr_warn("clearcpuid: force-disabling CPU %s flag: %s\n",
+					kind, flag);
+				setup_clear_cpu_cap(bit);
+			}
+			taint++;
+			found = true;
+			break;
+		}
+
+		if (!found)
+			pr_warn("%s: unknown CPU flag: %s", set ? "setcpuid" : "clearcpuid", opt);
+	}
+
+	return taint;
+}
+
+
 /*
  * We parse cpu parameters early because fpu__init_system() is executed
  * before parse_early_param().
  */
 static void __init cpu_parse_early_param(void)
 {
+	bool cpuid_taint = false;
 	char arg[128];
-	char *argptr = arg, *opt;
-	int arglen, taint = 0;
+	int arglen;
 
 #ifdef CONFIG_X86_32
 	if (cmdline_find_option_bool(boot_command_line, "no387"))
@@ -1608,62 +1719,23 @@ static void __init cpu_parse_early_param(void)
 	if (cmdline_find_option_bool(boot_command_line, "nousershstk"))
 		setup_clear_cpu_cap(X86_FEATURE_USER_SHSTK);
 
+	/* Minimize the gap between FRED is available and available but disabled. */
+	arglen = cmdline_find_option(boot_command_line, "fred", arg, sizeof(arg));
+	if (arglen != 2 || strncmp(arg, "on", 2))
+		setup_clear_cpu_cap(X86_FEATURE_FRED);
+
 	arglen = cmdline_find_option(boot_command_line, "clearcpuid", arg, sizeof(arg));
-	if (arglen <= 0)
-		return;
+	if (arglen > 0)
+		cpuid_taint |= parse_set_clear_cpuid(arg, false);
 
-	pr_info("Clearing CPUID bits:");
+	arglen = cmdline_find_option(boot_command_line, "setcpuid", arg, sizeof(arg));
+	if (arglen > 0)
+		cpuid_taint |= parse_set_clear_cpuid(arg, true);
 
-	while (argptr) {
-		bool found __maybe_unused = false;
-		unsigned int bit;
-
-		opt = strsep(&argptr, ",");
-
-		/*
-		 * Handle naked numbers first for feature flags which don't
-		 * have names.
-		 */
-		if (!kstrtouint(opt, 10, &bit)) {
-			if (bit < NCAPINTS * 32) {
-
-				/* empty-string, i.e., ""-defined feature flags */
-				if (!x86_cap_flags[bit])
-					pr_cont(" " X86_CAP_FMT_NUM, x86_cap_flag_num(bit));
-				else
-					pr_cont(" " X86_CAP_FMT, x86_cap_flag(bit));
-
-				setup_clear_cpu_cap(bit);
-				taint++;
-			}
-			/*
-			 * The assumption is that there are no feature names with only
-			 * numbers in the name thus go to the next argument.
-			 */
-			continue;
-		}
-
-		for (bit = 0; bit < 32 * NCAPINTS; bit++) {
-			if (!x86_cap_flag(bit))
-				continue;
-
-			if (strcmp(x86_cap_flag(bit), opt))
-				continue;
-
-			pr_cont(" %s", opt);
-			setup_clear_cpu_cap(bit);
-			taint++;
-			found = true;
-			break;
-		}
-
-		if (!found)
-			pr_cont(" (unknown: %s)", opt);
-	}
-	pr_cont("\n");
-
-	if (taint)
+	if (cpuid_taint) {
+		pr_warn("!!! setcpuid=/clearcpuid= in use, this is for TESTING ONLY, may break things horribly. Tainting kernel.\n");
 		add_taint(TAINT_CPU_OUT_OF_SPEC, LOCKDEP_STILL_OK);
+	}
 }
 
 /*
@@ -1677,42 +1749,37 @@ static void __init cpu_parse_early_param(void)
  */
 static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_X86_64
-	c->x86_clflush_size = 64;
-	c->x86_phys_bits = 36;
-	c->x86_virt_bits = 48;
-#else
-	c->x86_clflush_size = 32;
-	c->x86_phys_bits = 32;
-	c->x86_virt_bits = 32;
-#endif
-	c->x86_cache_alignment = c->x86_clflush_size;
-
 	memset(&c->x86_capability, 0, sizeof(c->x86_capability));
 	c->extended_cpuid_level = 0;
 
-	if (!have_cpuid_p())
+	if (!cpuid_feature())
 		identify_cpu_without_cpuid(c);
 
 	/* cyrix could have cpuid enabled via c_identify()*/
-	if (have_cpuid_p()) {
+	if (cpuid_feature()) {
 		cpu_detect(c);
 		get_cpu_vendor(c);
+		intel_unlock_cpuid_leafs(c);
 		get_cpu_cap(c);
-		get_cpu_address_sizes(c);
 		setup_force_cpu_cap(X86_FEATURE_CPUID);
+		get_cpu_address_sizes(c);
 		cpu_parse_early_param();
+
+		cpu_init_topology(c);
 
 		if (this_cpu->c_early_init)
 			this_cpu->c_early_init(c);
 
 		c->cpu_index = 0;
 		filter_cpuid_features(c, false);
+		check_cpufeature_deps(c);
 
 		if (this_cpu->c_bsp_init)
 			this_cpu->c_bsp_init(c);
 	} else {
 		setup_clear_cpu_cap(X86_FEATURE_CPUID);
+		get_cpu_address_sizes(c);
+		cpu_init_topology(c);
 	}
 
 	setup_force_cpu_cap(X86_FEATURE_ALWAYS);
@@ -1745,6 +1812,7 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
 		setup_clear_cpu_cap(X86_FEATURE_LA57);
 
 	detect_nopl();
+	mca_bsp_init(c);
 }
 
 void __init init_cpu_devs(void)
@@ -1804,11 +1872,11 @@ static bool detect_null_seg_behavior(void)
 	 */
 
 	unsigned long old_base, tmp;
-	rdmsrl(MSR_FS_BASE, old_base);
-	wrmsrl(MSR_FS_BASE, 1);
+	rdmsrq(MSR_FS_BASE, old_base);
+	wrmsrq(MSR_FS_BASE, 1);
 	loadsegment(fs, 0);
-	rdmsrl(MSR_FS_BASE, tmp);
-	wrmsrl(MSR_FS_BASE, old_base);
+	rdmsrq(MSR_FS_BASE, tmp);
+	wrmsrq(MSR_FS_BASE, old_base);
 	return tmp == 0;
 }
 
@@ -1849,32 +1917,20 @@ static void generic_identify(struct cpuinfo_x86 *c)
 {
 	c->extended_cpuid_level = 0;
 
-	if (!have_cpuid_p())
+	if (!cpuid_feature())
 		identify_cpu_without_cpuid(c);
 
 	/* cyrix could have cpuid enabled via c_identify()*/
-	if (!have_cpuid_p())
+	if (!cpuid_feature())
 		return;
 
 	cpu_detect(c);
 
 	get_cpu_vendor(c);
-
+	intel_unlock_cpuid_leafs(c);
 	get_cpu_cap(c);
 
 	get_cpu_address_sizes(c);
-
-	if (c->cpuid_level >= 0x00000001) {
-		c->initial_apicid = (cpuid_ebx(1) >> 24) & 0xFF;
-#ifdef CONFIG_X86_32
-# ifdef CONFIG_SMP
-		c->apicid = apic->phys_pkg_id(c->initial_apicid, 0);
-# else
-		c->apicid = c->initial_apicid;
-# endif
-#endif
-		c->phys_proc_id = c->initial_apicid;
-	}
 
 	get_model_name(c); /* Default name */
 
@@ -1897,28 +1953,6 @@ static void generic_identify(struct cpuinfo_x86 *c)
 }
 
 /*
- * Validate that ACPI/mptables have the same information about the
- * effective APIC id and update the package map.
- */
-static void validate_apic_and_package_id(struct cpuinfo_x86 *c)
-{
-#ifdef CONFIG_SMP
-	unsigned int apicid, cpu = smp_processor_id();
-
-	apicid = apic->cpu_present_to_apicid(cpu);
-
-	if (apicid != c->apicid) {
-		pr_err(FW_BUG "CPU%u: APIC id mismatch. Firmware: %x APIC: %x\n",
-		       cpu, apicid, c->initial_apicid);
-	}
-	BUG_ON(topology_update_package_map(c->phys_proc_id, cpu));
-	BUG_ON(topology_update_die_map(c->cpu_die_id, cpu));
-#else
-	c->logical_proc_id = 0;
-#endif
-}
-
-/*
  * This does the hard work of actually picking apart the CPU stuff...
  */
 static void identify_cpu(struct cpuinfo_x86 *c)
@@ -1931,9 +1965,6 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 	c->x86_model = c->x86_stepping = 0;	/* So far unknown... */
 	c->x86_vendor_id[0] = '\0'; /* Unset */
 	c->x86_model_id[0] = '\0';  /* Unset */
-	c->x86_max_cores = 1;
-	c->x86_coreid_bits = 0;
-	c->cu_id = 0xff;
 #ifdef CONFIG_X86_64
 	c->x86_clflush_size = 64;
 	c->x86_phys_bits = 36;
@@ -1952,16 +1983,13 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 
 	generic_identify(c);
 
+	cpu_parse_topology(c);
+
 	if (this_cpu->c_identify)
 		this_cpu->c_identify(c);
 
 	/* Clear/Set all flags overridden by options, after probe */
 	apply_forced_caps(c);
-
-#ifdef CONFIG_X86_64
-	c->apicid = apic->phys_pkg_id(c->initial_apicid, 0);
-#endif
-
 
 	/*
 	 * Set default APIC and TSC_DEADLINE MSR fencing flag. AMD and
@@ -1981,6 +2009,8 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 	 */
 	if (this_cpu->c_init)
 		this_cpu->c_init(c);
+
+	bus_lock_init();
 
 	/* Disable the PN if appropriate */
 	squash_the_stupid_serial_number(c);
@@ -2004,6 +2034,9 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 	/* Filter out anything that depends on CPUID levels we don't have */
 	filter_cpuid_features(c, true);
 
+	/* Check for unmet dependencies based on the CPUID dependency table */
+	check_cpufeature_deps(c);
+
 	/* If the model name is still unset, do table lookup. */
 	if (!c->x86_model_id[0]) {
 		const char *p;
@@ -2015,10 +2048,6 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 			sprintf(c->x86_model_id, "%02x/%02x",
 				c->x86, c->x86_model);
 	}
-
-#ifdef CONFIG_X86_64
-	detect_ht(c);
-#endif
 
 	x86_init_rdrand(c);
 	setup_pku(c);
@@ -2051,11 +2080,7 @@ static void identify_cpu(struct cpuinfo_x86 *c)
 	/* Init Machine Check Exception if available. */
 	mcheck_cpu_init(c);
 
-	select_idle_routine(c);
-
-#ifdef CONFIG_NUMA
 	numa_add_cpu(smp_processor_id());
-#endif
 }
 
 /*
@@ -2080,9 +2105,9 @@ void enable_sep_cpu(void)
 	 */
 
 	tss->x86_tss.ss1 = __KERNEL_CS;
-	wrmsr(MSR_IA32_SYSENTER_CS, tss->x86_tss.ss1, 0);
-	wrmsr(MSR_IA32_SYSENTER_ESP, (unsigned long)(cpu_entry_stack(cpu) + 1), 0);
-	wrmsr(MSR_IA32_SYSENTER_EIP, (unsigned long)entry_SYSENTER_32, 0);
+	wrmsrq(MSR_IA32_SYSENTER_CS, tss->x86_tss.ss1);
+	wrmsrq(MSR_IA32_SYSENTER_ESP, (unsigned long)(cpu_entry_stack(cpu) + 1));
+	wrmsrq(MSR_IA32_SYSENTER_EIP, (unsigned long)entry_SYSENTER_32);
 
 	put_cpu();
 }
@@ -2100,23 +2125,30 @@ static __init void identify_boot_cpu(void)
 	setup_cr_pinning();
 
 	tsx_init();
+	tdx_init();
 	lkgs_init();
 }
 
-void identify_secondary_cpu(struct cpuinfo_x86 *c)
+void identify_secondary_cpu(unsigned int cpu)
 {
-	BUG_ON(c == &boot_cpu_data);
+	struct cpuinfo_x86 *c = &cpu_data(cpu);
+
+	/* Copy boot_cpu_data only on the first bringup */
+	if (!c->initialized)
+		*c = boot_cpu_data;
+	c->cpu_index = cpu;
+
 	identify_cpu(c);
 #ifdef CONFIG_X86_32
 	enable_sep_cpu();
 #endif
-	validate_apic_and_package_id(c);
 	x86_spec_ctrl_setup_ap();
 	update_srbds_msr();
 	if (boot_cpu_has_bug(X86_BUG_GDS))
 		update_gds_msr();
 
 	tsx_ap_init();
+	c->initialized = true;
 }
 
 void print_cpu_info(struct cpuinfo_x86 *c)
@@ -2147,28 +2179,42 @@ void print_cpu_info(struct cpuinfo_x86 *c)
 }
 
 /*
- * clearcpuid= was already parsed in cpu_parse_early_param().  This dummy
- * function prevents it from becoming an environment variable for init.
+ * clearcpuid= and setcpuid= were already parsed in cpu_parse_early_param().
+ * These dummy functions prevent them from becoming an environment variable for
+ * init.
  */
+
 static __init int setup_clearcpuid(char *arg)
 {
 	return 1;
 }
 __setup("clearcpuid=", setup_clearcpuid);
 
-DEFINE_PER_CPU_ALIGNED(struct pcpu_hot, pcpu_hot) = {
-	.current_task	= &init_task,
-	.preempt_count	= INIT_PREEMPT_COUNT,
-	.top_of_stack	= TOP_OF_INIT_STACK,
-};
-EXPORT_PER_CPU_SYMBOL(pcpu_hot);
+static __init int setup_setcpuid(char *arg)
+{
+	return 1;
+}
+__setup("setcpuid=", setup_setcpuid);
+
+DEFINE_PER_CPU_CACHE_HOT(struct task_struct *, current_task) = &init_task;
+EXPORT_PER_CPU_SYMBOL(current_task);
+EXPORT_PER_CPU_SYMBOL(const_current_task);
+
+DEFINE_PER_CPU_CACHE_HOT(int, __preempt_count) = INIT_PREEMPT_COUNT;
+EXPORT_PER_CPU_SYMBOL(__preempt_count);
+
+DEFINE_PER_CPU_CACHE_HOT(unsigned long, cpu_current_top_of_stack) = TOP_OF_INIT_STACK;
 
 #ifdef CONFIG_X86_64
-DEFINE_PER_CPU_FIRST(struct fixed_percpu_data,
-		     fixed_percpu_data) __aligned(PAGE_SIZE) __visible;
-EXPORT_PER_CPU_SYMBOL_GPL(fixed_percpu_data);
+/*
+ * Note: Do not make this dependant on CONFIG_MITIGATION_CALL_DEPTH_TRACKING
+ * so that this space is reserved in the hot cache section even when the
+ * mitigation is disabled.
+ */
+DEFINE_PER_CPU_CACHE_HOT(u64, __x86_call_depth);
+EXPORT_PER_CPU_SYMBOL(__x86_call_depth);
 
-static void wrmsrl_cstar(unsigned long val)
+static void wrmsrq_cstar(unsigned long val)
 {
 	/*
 	 * Intel CPUs do not support 32-bit SYSCALL. Writing to MSR_CSTAR
@@ -2176,39 +2222,37 @@ static void wrmsrl_cstar(unsigned long val)
 	 * guest. Avoid the pointless write on all Intel CPUs.
 	 */
 	if (boot_cpu_data.x86_vendor != X86_VENDOR_INTEL)
-		wrmsrl(MSR_CSTAR, val);
+		wrmsrq(MSR_CSTAR, val);
 }
 
-/* May not be marked __init: used by software suspend */
-void syscall_init(void)
+static inline void idt_syscall_init(void)
 {
-	wrmsr(MSR_STAR, 0, (__USER32_CS << 16) | __KERNEL_CS);
-	wrmsrl(MSR_LSTAR, (unsigned long)entry_SYSCALL_64);
+	wrmsrq(MSR_LSTAR, (unsigned long)entry_SYSCALL_64);
 
-#ifdef CONFIG_IA32_EMULATION
-	wrmsrl_cstar((unsigned long)entry_SYSCALL_compat);
-	/*
-	 * This only works on Intel CPUs.
-	 * On AMD CPUs these MSRs are 32-bit, CPU truncates MSR_IA32_SYSENTER_EIP.
-	 * This does not cause SYSENTER to jump to the wrong location, because
-	 * AMD doesn't allow SYSENTER in long mode (either 32- or 64-bit).
-	 */
-	wrmsrl_safe(MSR_IA32_SYSENTER_CS, (u64)__KERNEL_CS);
-	wrmsrl_safe(MSR_IA32_SYSENTER_ESP,
-		    (unsigned long)(cpu_entry_stack(smp_processor_id()) + 1));
-	wrmsrl_safe(MSR_IA32_SYSENTER_EIP, (u64)entry_SYSENTER_compat);
-#else
-	wrmsrl_cstar((unsigned long)entry_SYSCALL32_ignore);
-	wrmsrl_safe(MSR_IA32_SYSENTER_CS, (u64)GDT_ENTRY_INVALID_SEG);
-	wrmsrl_safe(MSR_IA32_SYSENTER_ESP, 0ULL);
-	wrmsrl_safe(MSR_IA32_SYSENTER_EIP, 0ULL);
-#endif
+	if (ia32_enabled()) {
+		wrmsrq_cstar((unsigned long)entry_SYSCALL_compat);
+		/*
+		 * This only works on Intel CPUs.
+		 * On AMD CPUs these MSRs are 32-bit, CPU truncates MSR_IA32_SYSENTER_EIP.
+		 * This does not cause SYSENTER to jump to the wrong location, because
+		 * AMD doesn't allow SYSENTER in long mode (either 32- or 64-bit).
+		 */
+		wrmsrq_safe(MSR_IA32_SYSENTER_CS, (u64)__KERNEL_CS);
+		wrmsrq_safe(MSR_IA32_SYSENTER_ESP,
+			    (unsigned long)(cpu_entry_stack(smp_processor_id()) + 1));
+		wrmsrq_safe(MSR_IA32_SYSENTER_EIP, (u64)entry_SYSENTER_compat);
+	} else {
+		wrmsrq_cstar((unsigned long)entry_SYSCALL32_ignore);
+		wrmsrq_safe(MSR_IA32_SYSENTER_CS, (u64)GDT_ENTRY_INVALID_SEG);
+		wrmsrq_safe(MSR_IA32_SYSENTER_ESP, 0ULL);
+		wrmsrq_safe(MSR_IA32_SYSENTER_EIP, 0ULL);
+	}
 
 	/*
 	 * Flags to clear on syscall; clear as much as possible
 	 * to minimize user space-kernel interference.
 	 */
-	wrmsrl(MSR_SYSCALL_MASK,
+	wrmsrq(MSR_SYSCALL_MASK,
 	       X86_EFLAGS_CF|X86_EFLAGS_PF|X86_EFLAGS_AF|
 	       X86_EFLAGS_ZF|X86_EFLAGS_SF|X86_EFLAGS_TF|
 	       X86_EFLAGS_IF|X86_EFLAGS_DF|X86_EFLAGS_OF|
@@ -2216,21 +2260,35 @@ void syscall_init(void)
 	       X86_EFLAGS_AC|X86_EFLAGS_ID);
 }
 
-#else	/* CONFIG_X86_64 */
+/* May not be marked __init: used by software suspend */
+void syscall_init(void)
+{
+	/* The default user and kernel segments */
+	wrmsr(MSR_STAR, 0, (__USER32_CS << 16) | __KERNEL_CS);
+
+	/*
+	 * Except the IA32_STAR MSR, there is NO need to setup SYSCALL and
+	 * SYSENTER MSRs for FRED, because FRED uses the ring 3 FRED
+	 * entrypoint for SYSCALL and SYSENTER, and ERETU is the only legit
+	 * instruction to return to ring 3 (both sysexit and sysret cause
+	 * #UD when FRED is enabled).
+	 */
+	if (!cpu_feature_enabled(X86_FEATURE_FRED))
+		idt_syscall_init();
+}
+#endif /* CONFIG_X86_64 */
 
 #ifdef CONFIG_STACKPROTECTOR
-DEFINE_PER_CPU(unsigned long, __stack_chk_guard);
+DEFINE_PER_CPU_CACHE_HOT(unsigned long, __stack_chk_guard);
 #ifndef CONFIG_SMP
 EXPORT_PER_CPU_SYMBOL(__stack_chk_guard);
 #endif
 #endif
 
-#endif	/* CONFIG_X86_64 */
-
 static void initialize_debug_regs(void)
 {
 	/* Control register first -- to make sure everything is disabled. */
-	set_debugreg(0, 7);
+	set_debugreg(DR7_FIXED_1, 7);
 	set_debugreg(DR6_RESERVED, 6);
 	/* dr5 and dr4 don't exist */
 	set_debugreg(0, 3);
@@ -2259,7 +2317,7 @@ static inline void setup_getcpu(int cpu)
 	struct desc_struct d = { };
 
 	if (boot_cpu_has(X86_FEATURE_RDTSCP) || boot_cpu_has(X86_FEATURE_RDPID))
-		wrmsr(MSR_TSC_AUX, cpudata, 0);
+		wrmsrq(MSR_TSC_AUX, cpudata);
 
 	/* Store CPU and node number in limit. */
 	d.limit0 = cpudata;
@@ -2309,7 +2367,7 @@ static inline void tss_setup_io_bitmap(struct tss_struct *tss)
  * Setup everything needed to handle exceptions from the IDT, including the IST
  * exceptions which use paranoid_entry().
  */
-void cpu_init_exception_handling(void)
+void cpu_init_exception_handling(bool boot_cpu)
 {
 	struct tss_struct *tss = this_cpu_ptr(&cpu_tss_rw);
 	int cpu = raw_smp_processor_id();
@@ -2317,8 +2375,9 @@ void cpu_init_exception_handling(void)
 	/* paranoid_entry() gets the CPU number from the GDT */
 	setup_getcpu(cpu);
 
-	/* IST vectors need TSS to be set up. */
-	tss_setup_ist(tss);
+	/* For IDT mode, IST vectors need to be set in TSS. */
+	if (!cpu_feature_enabled(X86_FEATURE_FRED))
+		tss_setup_ist(tss);
 	tss_setup_io_bitmap(tss);
 	set_tss_desc(cpu, &get_cpu_entry_area(cpu)->tss.x86_tss);
 
@@ -2327,8 +2386,23 @@ void cpu_init_exception_handling(void)
 	/* GHCB needs to be setup to handle #VC. */
 	setup_ghcb();
 
-	/* Finally load the IDT */
-	load_current_idt();
+	if (cpu_feature_enabled(X86_FEATURE_FRED)) {
+		/* The boot CPU has enabled FRED during early boot */
+		if (!boot_cpu)
+			cpu_init_fred_exceptions();
+
+		cpu_init_fred_rsps();
+	} else {
+		load_current_idt();
+	}
+}
+
+void __init cpu_init_replace_early_idt(void)
+{
+	if (cpu_feature_enabled(X86_FEATURE_FRED))
+		cpu_init_fred_exceptions();
+	else
+		idt_setup_early_pf();
 }
 
 /*
@@ -2358,11 +2432,13 @@ void cpu_init(void)
 		memset(cur->thread.tls_array, 0, GDT_ENTRY_TLS_ENTRIES * 8);
 		syscall_init();
 
-		wrmsrl(MSR_FS_BASE, 0);
-		wrmsrl(MSR_KERNEL_GS_BASE, 0);
+		wrmsrq(MSR_FS_BASE, 0);
+		wrmsrq(MSR_KERNEL_GS_BASE, 0);
 		barrier();
 
 		x2apic_setup();
+
+		intel_posted_msi_init();
 	}
 
 	mmgrab(&init_mm);
@@ -2451,13 +2527,17 @@ void arch_smt_update(void)
 
 void __init arch_cpu_finalize_init(void)
 {
+	struct cpuinfo_x86 *c = this_cpu_ptr(&cpu_info);
+
 	identify_boot_cpu();
+
+	select_idle_routine();
 
 	/*
 	 * identify_boot_cpu() initialized SMT support information, let the
 	 * core code know.
 	 */
-	cpu_smt_set_num_threads(smp_num_siblings, smp_num_siblings);
+	cpu_smt_set_num_threads(__max_threads_per_core, __max_threads_per_core);
 
 	if (!IS_ENABLED(CONFIG_SMP)) {
 		pr_info("CPU: ");
@@ -2487,9 +2567,31 @@ void __init arch_cpu_finalize_init(void)
 	fpu__init_system();
 	fpu__init_cpu();
 
+	/*
+	 * This needs to follow the FPU initializtion, since EFI depends on it.
+	 */
+	if (efi_enabled(EFI_RUNTIME_SERVICES))
+		efi_enter_virtual_mode();
+
+	/*
+	 * Ensure that access to the per CPU representation has the initial
+	 * boot CPU configuration.
+	 */
+	*c = boot_cpu_data;
+	c->initialized = true;
+
 	alternative_instructions();
 
 	if (IS_ENABLED(CONFIG_X86_64)) {
+		USER_PTR_MAX = TASK_SIZE_MAX;
+
+		/*
+		 * Enable this when LAM is gated on LASS support
+		if (cpu_feature_enabled(X86_FEATURE_LAM))
+			USER_PTR_MAX = (1ul << 63) - PAGE_SIZE;
+		 */
+		runtime_const_init(ptr, USER_PTR_MAX);
+
 		/*
 		 * Make sure the first 2MB area is not mapped by huge pages
 		 * There are typically fixed size MTRRs in there and overlapping

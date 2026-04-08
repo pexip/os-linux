@@ -21,16 +21,13 @@ static void rtl92s_init_aspm_vars(struct ieee80211_hw *hw)
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_pci *rtlpci = rtl_pcidev(rtl_pcipriv(hw));
 
-	/*close ASPM for AMD defaultly */
-	rtlpci->const_amdpci_aspm = 0;
-
 	/* ASPM PS mode.
 	 * 0 - Disable ASPM,
 	 * 1 - Enable ASPM without Clock Req,
 	 * 2 - Enable ASPM with Clock Req,
 	 * 3 - Alwyas Enable ASPM with Clock Req,
 	 * 4 - Always Enable ASPM without Clock Req.
-	 * set defult to RTL8192CE:3 RTL8192E:2
+	 * set default to RTL8192CE:3 RTL8192E:2
 	 * */
 	rtlpci->const_pci_aspm = 2;
 
@@ -224,7 +221,7 @@ static bool rtl92se_is_tx_desc_closed(struct ieee80211_hw *hw, u8 hw_queue,
 	return true;
 }
 
-static struct rtl_hal_ops rtl8192se_hal_ops = {
+static const struct rtl_hal_ops rtl8192se_hal_ops = {
 	.init_sw_vars = rtl92s_init_sw_vars,
 	.deinit_sw_vars = rtl92s_deinit_sw_vars,
 	.read_eeprom_info = rtl92se_read_eeprom_info,

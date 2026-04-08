@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: ((GPL-2.0 WITH Linux-syscall-note) OR BSD-3-Clause)
-
+---
 name: ovs_vport
 version: 2
 protocol: genetlink-legacy
 uapi-header: linux/openvswitch.h
 
-doc:
+doc: >-
   OVS vport configuration over generic netlink.
 
 definitions:
@@ -21,11 +21,10 @@ definitions:
     type: enum
     enum-name: ovs-vport-type
     name-prefix: ovs-vport-type-
-    entries: [ unspec, netdev, internal, gre, vxlan, geneve ]
+    entries: [unspec, netdev, internal, gre, vxlan, geneve]
   -
-    name: vport-stats
+    name: ovs-vport-stats
     type: struct
-    enum-name: ovs-vport-stats
     members:
       -
         name: rx-packets
@@ -106,7 +105,7 @@ attribute-sets:
       -
         name: stats
         type: binary
-        struct: vport-stats
+        struct: ovs-vport-stats
       -
         name: pad
         type: unused
@@ -123,30 +122,27 @@ attribute-sets:
 
 operations:
   name-prefix: ovs-vport-cmd-
+  fixed-header: ovs-header
   list:
     -
       name: new
       doc: Create a new OVS vport
       attribute-set: vport
-      fixed-header: ovs-header
       do:
         request:
           attributes:
             - name
             - type
             - upcall-pid
-            - dp-ifindex
             - ifindex
             - options
     -
       name: del
       doc: Delete existing OVS vport from a data path
       attribute-set: vport
-      fixed-header: ovs-header
       do:
         request:
           attributes:
-            - dp-ifindex
             - port-no
             - type
             - name
@@ -154,15 +150,12 @@ operations:
       name: get
       doc: Get / dump OVS vport configuration and state
       attribute-set: vport
-      fixed-header: ovs-header
       do: &vport-get-op
         request:
           attributes:
-            - dp-ifindex
             - name
         reply: &dev-all
           attributes:
-            - dp-ifindex
             - port-no
             - type
             - name

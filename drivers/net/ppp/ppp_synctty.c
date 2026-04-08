@@ -43,7 +43,7 @@
 #include <linux/interrupt.h>
 #include <linux/slab.h>
 #include <linux/refcount.h>
-#include <asm/unaligned.h>
+#include <linux/unaligned.h>
 #include <linux/uaccess.h>
 
 #define PPP_VERSION	"2.4.2"
@@ -729,5 +729,6 @@ ppp_sync_cleanup(void)
 
 module_init(ppp_sync_init);
 module_exit(ppp_sync_cleanup);
+MODULE_DESCRIPTION("PPP synchronous TTY channel module");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS_LDISC(N_SYNC_PPP);

@@ -35,7 +35,7 @@ struct perf_buffer {
 	spinlock_t			event_lock;
 	struct list_head		event_list;
 
-	atomic_t			mmap_count;
+	refcount_t			mmap_count;
 	unsigned long			mmap_locked;
 	struct user_struct		*mmap_user;
 
@@ -47,11 +47,12 @@ struct perf_buffer {
 	unsigned long			aux_pgoff;
 	int				aux_nr_pages;
 	int				aux_overwrite;
-	atomic_t			aux_mmap_count;
+	refcount_t			aux_mmap_count;
 	unsigned long			aux_mmap_locked;
 	void				(*free_aux)(void *);
 	refcount_t			aux_refcount;
 	int				aux_in_sampling;
+	int				aux_in_pause_resume;
 	void				**aux_pages;
 	void				*aux_priv;
 
@@ -209,7 +210,7 @@ arch_perf_out_copy_user(void *dst, const void *src, unsigned long n)
 
 DEFINE_OUTPUT_COPY(__output_copy_user, arch_perf_out_copy_user)
 
-static inline int get_recursion_context(int *recursion)
+static inline int get_recursion_context(u8 *recursion)
 {
 	unsigned char rctx = interrupt_context_level();
 
@@ -222,7 +223,7 @@ static inline int get_recursion_context(int *recursion)
 	return rctx;
 }
 
-static inline void put_recursion_context(int *recursion, int rctx)
+static inline void put_recursion_context(u8 *recursion, unsigned char rctx)
 {
 	barrier();
 	recursion[rctx]--;

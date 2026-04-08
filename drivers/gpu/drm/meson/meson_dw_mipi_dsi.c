@@ -330,13 +330,11 @@ static int meson_dw_mipi_dsi_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int meson_dw_mipi_dsi_remove(struct platform_device *pdev)
+static void meson_dw_mipi_dsi_remove(struct platform_device *pdev)
 {
 	struct meson_dw_mipi_dsi *mipi_dsi = platform_get_drvdata(pdev);
 
 	dw_mipi_dsi_remove(mipi_dsi->dmd);
-
-	return 0;
 }
 
 static const struct of_device_id meson_dw_mipi_dsi_of_table[] = {

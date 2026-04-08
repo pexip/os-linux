@@ -49,7 +49,7 @@ enum {
 
 struct mlx5e_ptp {
 	/* data path */
-	struct mlx5e_ptpsq         ptpsq[MLX5E_MAX_NUM_TC];
+	struct mlx5e_ptpsq         ptpsq[MLX5_MAX_NUM_TC];
 	struct mlx5e_rq            rq;
 	struct napi_struct         napi;
 	struct device             *pdev;
@@ -66,6 +66,7 @@ struct mlx5e_ptp {
 	struct mlx5_core_dev      *mdev;
 	struct hwtstamp_config    *tstamp;
 	DECLARE_BITMAP(state, MLX5E_PTP_STATE_NUM_STATES);
+	struct mlx5_sq_bfreg      *bfreg;
 };
 
 static inline bool mlx5e_use_ptpsq(struct sk_buff *skb)

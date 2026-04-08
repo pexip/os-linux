@@ -6,6 +6,7 @@ libcpupower.so.1 libcpupower1 #MINVER#
  cpufreq_get_available_governors@Base 4.7~rc2-1~exp1
  cpufreq_get_boost_frequencies@Base 5.5.8-1~exp1
  cpufreq_get_driver@Base 4.7~rc2-1~exp1
+ cpufreq_get_energy_performance_preference@Base 6.14~
  cpufreq_get_freq_hardware@Base 4.7~rc2-1~exp1
  cpufreq_get_freq_kernel@Base 4.7~rc2-1~exp1
  cpufreq_get_hardware_limits@Base 4.7~rc2-1~exp1
@@ -23,6 +24,7 @@ libcpupower.so.1 libcpupower1 #MINVER#
  cpufreq_put_available_governors@Base 4.7~rc2-1~exp1
  cpufreq_put_boost_frequencies@Base 5.5.8-1~exp1
  cpufreq_put_driver@Base 4.7~rc2-1~exp1
+ cpufreq_put_energy_performance_preference@Base 6.14~
  cpufreq_put_policy@Base 4.7~rc2-1~exp1
  cpufreq_put_related_cpus@Base 4.7~rc2-1~exp1
  cpufreq_put_stats@Base 4.7~rc2-1~exp1
@@ -36,6 +38,7 @@ libcpupower.so.1 libcpupower1 #MINVER#
  cpuidle_state_disable@Base 4.7~rc2-1~exp1
  cpuidle_state_latency@Base 4.7~rc2-1~exp1
  cpuidle_state_name@Base 4.7~rc2-1~exp1
+ cpuidle_state_residency@Base 6.12~rc2-1~exp1
  cpuidle_state_time@Base 4.7~rc2-1~exp1
  cpuidle_state_usage@Base 4.7~rc2-1~exp1
  cpupower_is_cpu_online@Base 4.7~rc2-1~exp1
@@ -51,6 +54,7 @@ libcpupower.so.1 libcpupower1 #MINVER#
  powercap_get_power_uw@Base 6.2~rc1-1~exp1
  powercap_init_zones@Base 6.2~rc1-1~exp1
  powercap_read_zone@Base 6.2~rc1-1~exp1
+ powercap_set_enabled@Base 6.11.2-1~exp1
  powercap_walk_zones@Base 6.2~rc1-1~exp1
  powercap_zone_get_enabled@Base 6.2~rc1-1~exp1
  powercap_zone_set_enabled@Base 6.2~rc1-1~exp1

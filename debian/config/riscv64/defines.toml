@@ -1,0 +1,24 @@
+[[flavour]]
+name = 'riscv64'
+[flavour.defs]
+is_default = true
+[flavour.description]
+hardware = '64-bit RISC-V platforms'
+[flavour.packages]
+installer = true
+
+[[featureset]]
+name = 'none'
+
+[build]
+enable_dtb = true
+enable_rust = true
+kernel_file = 'arch/riscv/boot/Image'
+kernel_stem = 'vmlinux'
+
+[relations.image]
+breaks = [
+  'u-boot-efi-dtb (<< 5~)',
+  'reform-tools (<< 1.83~)',
+  'flash-kernel (<< 3.110~)',
+]

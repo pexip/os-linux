@@ -87,14 +87,14 @@ static struct ocfs2_xattr_def_value_root def_xv = {
 	.xv.xr_list.l_count = cpu_to_le16(1),
 };
 
-const struct xattr_handler *ocfs2_xattr_handlers[] = {
+const struct xattr_handler * const ocfs2_xattr_handlers[] = {
 	&ocfs2_xattr_user_handler,
 	&ocfs2_xattr_trusted_handler,
 	&ocfs2_xattr_security_handler,
 	NULL
 };
 
-static const struct xattr_handler *ocfs2_xattr_handler_map[OCFS2_XATTR_MAX] = {
+static const struct xattr_handler * const ocfs2_xattr_handler_map[OCFS2_XATTR_MAX] = {
 	[OCFS2_XATTR_INDEX_USER]		= &ocfs2_xattr_user_handler,
 	[OCFS2_XATTR_INDEX_POSIX_ACL_ACCESS]	= &nop_posix_acl_access,
 	[OCFS2_XATTR_INDEX_POSIX_ACL_DEFAULT]	= &nop_posix_acl_default,
@@ -648,7 +648,7 @@ int ocfs2_calc_xattr_init(struct inode *dir,
 	 * 256(name) + 80(value) + 16(entry) = 352 bytes,
 	 * The max space of acl xattr taken inline is
 	 * 80(value) + 16(entry) * 2(if directory) = 192 bytes,
-	 * when blocksize = 512, may reserve one more cluser for
+	 * when blocksize = 512, may reserve one more cluster for
 	 * xattr bucket, otherwise reserve one metadata block
 	 * for them is ok.
 	 * If this is a new directory with inline data,
@@ -4166,15 +4166,6 @@ static int cmp_xe(const void *a, const void *b)
 	return 0;
 }
 
-static void swap_xe(void *a, void *b, int size)
-{
-	struct ocfs2_xattr_entry *l = a, *r = b, tmp;
-
-	tmp = *l;
-	memcpy(l, r, sizeof(struct ocfs2_xattr_entry));
-	memcpy(r, &tmp, sizeof(struct ocfs2_xattr_entry));
-}
-
 /*
  * When the ocfs2_xattr_block is filled up, new bucket will be created
  * and all the xattr entries will be moved to the new bucket.
@@ -4240,7 +4231,7 @@ static void ocfs2_cp_xattr_block_to_bucket(struct inode *inode,
 	trace_ocfs2_cp_xattr_block_to_bucket_end(offset, size, off_change);
 
 	sort(target + offset, count, sizeof(struct ocfs2_xattr_entry),
-	     cmp_xe, swap_xe);
+	     cmp_xe, NULL);
 }
 
 /*
@@ -4380,7 +4371,7 @@ static int cmp_xe_offset(const void *a, const void *b)
 
 /*
  * defrag a xattr bucket if we find that the bucket has some
- * holes beteen name/value pairs.
+ * holes between name/value pairs.
  * We will move all the name/value pairs to the end of the bucket
  * so that we can spare some space for insertion.
  */
@@ -4435,7 +4426,7 @@ static int ocfs2_defrag_xattr_bucket(struct inode *inode,
 	 */
 	sort(entries, le16_to_cpu(xh->xh_count),
 	     sizeof(struct ocfs2_xattr_entry),
-	     cmp_xe_offset, swap_xe);
+	     cmp_xe_offset, NULL);
 
 	/* Move all name/values to the end of the bucket. */
 	xe = xh->xh_entries;
@@ -4477,7 +4468,7 @@ static int ocfs2_defrag_xattr_bucket(struct inode *inode,
 	/* sort the entries by their name_hash. */
 	sort(entries, le16_to_cpu(xh->xh_count),
 	     sizeof(struct ocfs2_xattr_entry),
-	     cmp_xe, swap_xe);
+	     cmp_xe, NULL);
 
 	buf = bucket_buf;
 	for (i = 0; i < bucket->bu_blocks; i++, buf += blocksize)
@@ -5020,7 +5011,7 @@ static int ocfs2_divide_xattr_cluster(struct inode *inode,
  * 2. If cluster_size == bucket_size:
  *    a) If the previous extent rec has more than one cluster and the insert
  *       place isn't in the last cluster, copy the entire last cluster to the
- *       new one. This time, we don't need to upate the first_bh and header_bh
+ *       new one. This time, we don't need to update the first_bh and header_bh
  *       since they will not be moved into the new cluster.
  *    b) Otherwise, move the bottom half of the xattrs in the last cluster into
  *       the new one. And we set the extend flag to zero if the insert place is
@@ -6198,7 +6189,7 @@ struct ocfs2_xattr_reflink {
 /*
  * Given a xattr header and xe offset,
  * return the proper xv and the corresponding bh.
- * xattr in inode, block and xattr tree have different implementaions.
+ * xattr in inode, block and xattr tree have different implementations.
  */
 typedef int (get_xattr_value_root)(struct super_block *sb,
 				   struct buffer_head *bh,
@@ -6278,7 +6269,7 @@ static int ocfs2_get_xattr_value_root(struct super_block *sb,
 }
 
 /*
- * Lock the meta_ac and caculate how much credits we need for reflink xattrs.
+ * Lock the meta_ac and calculate how much credits we need for reflink xattrs.
  * It is only used for inline xattr and xattr block.
  */
 static int ocfs2_reflink_lock_xattr_allocators(struct ocfs2_super *osb,

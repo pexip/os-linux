@@ -9,7 +9,6 @@
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_framebuffer.h>
 #include <drm/drm_gem_atomic_helper.h>
-#include <drm/drm_plane_helper.h>
 
 #include "lsdc_drv.h"
 #include "lsdc_regs.h"
@@ -172,7 +171,8 @@ static const struct drm_plane_helper_funcs lsdc_primary_helper_funcs = {
 };
 
 static int lsdc_cursor_plane_atomic_async_check(struct drm_plane *plane,
-						struct drm_atomic_state *state)
+						struct drm_atomic_state *state,
+						bool flip)
 {
 	struct drm_plane_state *new_state;
 	struct drm_crtc_state *crtc_state;

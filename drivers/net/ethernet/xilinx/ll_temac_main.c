@@ -1595,7 +1595,7 @@ static int temac_probe(struct platform_device *pdev)
 	if (temac_np) {
 		lp->phy_node = of_parse_phandle(temac_np, "phy-handle", 0);
 		if (lp->phy_node)
-			dev_dbg(lp->dev, "using PHY node %pOF\n", temac_np);
+			dev_dbg(lp->dev, "using PHY node %pOF\n", lp->phy_node);
 	} else if (pdata) {
 		snprintf(lp->phy_name, sizeof(lp->phy_name),
 			 PHY_ID_FMT, lp->mii_bus->id, pdata->phy_addr);
@@ -1626,7 +1626,7 @@ err_sysfs_create:
 	return rc;
 }
 
-static int temac_remove(struct platform_device *pdev)
+static void temac_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct temac_local *lp = netdev_priv(ndev);
@@ -1636,7 +1636,6 @@ static int temac_remove(struct platform_device *pdev)
 	if (lp->phy_node)
 		of_node_put(lp->phy_node);
 	temac_mdio_teardown(lp);
-	return 0;
 }
 
 static const struct of_device_id temac_of_match[] = {

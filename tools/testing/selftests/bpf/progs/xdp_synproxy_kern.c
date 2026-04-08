@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: LGPL-2.1 OR BSD-2-Clause
 /* Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved. */
 
+#define BPF_NO_KFUNC_PROTOTYPES
 #include "vmlinux.h"
 
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 #include <asm/errno.h>
+
+#include "bpf_compiler.h"
 
 #define TC_ACT_OK 0
 #define TC_ACT_SHOT 2
@@ -18,7 +21,6 @@
 
 #define tcp_flag_word(tp) (((union tcp_word_hdr *)(tp))->words[3])
 
-#define IP_DF 0x4000
 #define IP_MF 0x2000
 #define IP_OFFSET 0x1fff
 
@@ -151,11 +153,11 @@ static __always_inline __u16 csum_ipv6_magic(const struct in6_addr *saddr,
 	__u64 sum = csum;
 	int i;
 
-#pragma unroll
+	__pragma_loop_unroll
 	for (i = 0; i < 4; i++)
 		sum += (__u32)saddr->in6_u.u6_addr32[i];
 
-#pragma unroll
+	__pragma_loop_unroll
 	for (i = 0; i < 4; i++)
 		sum += (__u32)daddr->in6_u.u6_addr32[i];
 
@@ -179,7 +181,7 @@ static __always_inline __u32 tcp_ns_to_ts(__u64 ns)
 	return ns / (NSEC_PER_SEC / TCP_TS_HZ);
 }
 
-static __always_inline __u32 tcp_time_stamp_raw(void)
+static __always_inline __u32 tcp_clock_ms(void)
 {
 	return tcp_ns_to_ts(tcp_clock_ns());
 }
@@ -294,7 +296,7 @@ static __always_inline bool tscookie_init(struct tcphdr *tcp_header,
 	if (!loop_ctx.option_timestamp)
 		return false;
 
-	cookie = tcp_time_stamp_raw() & ~TSMASK;
+	cookie = tcp_clock_ms() & ~TSMASK;
 	cookie |= loop_ctx.wscale & TS_OPT_WSCALE_MASK;
 	if (loop_ctx.option_sack)
 		cookie |= TS_OPT_SACK;
@@ -439,7 +441,7 @@ static __always_inline int tcp_lookup(void *ctx, struct header_pointers *hdr, bo
 		/* TCP doesn't normally use fragments, and XDP can't reassemble
 		 * them.
 		 */
-		if ((hdr->ipv4->frag_off & bpf_htons(IP_DF | IP_MF | IP_OFFSET)) != bpf_htons(IP_DF))
+		if ((hdr->ipv4->frag_off & bpf_htons(IP_MF | IP_OFFSET)) != 0)
 			return XDP_DROP;
 
 		tup.ipv4.saddr = hdr->ipv4->saddr;

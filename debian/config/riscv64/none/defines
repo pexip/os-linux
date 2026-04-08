@@ -1,7 +1,0 @@
-[base]
-flavours:
- riscv64
-default-flavour: riscv64
-
-[riscv64_packages]
-installer: true

@@ -90,7 +90,7 @@ __bpf_kfunc static void dctcp_init(struct sock *sk)
 {
 	const struct tcp_sock *tp = tcp_sk(sk);
 
-	if ((tp->ecn_flags & TCP_ECN_OK) ||
+	if (tcp_ecn_mode_any(tp) ||
 	    (sk->sk_state == TCP_LISTEN ||
 	     sk->sk_state == TCP_CLOSE)) {
 		struct dctcp *ca = inet_csk_ca(sk);
@@ -271,18 +271,14 @@ static struct tcp_congestion_ops dctcp_reno __read_mostly = {
 	.name		= "dctcp-reno",
 };
 
-BTF_SET8_START(tcp_dctcp_check_kfunc_ids)
-#ifdef CONFIG_X86
-#ifdef CONFIG_DYNAMIC_FTRACE
+BTF_KFUNCS_START(tcp_dctcp_check_kfunc_ids)
 BTF_ID_FLAGS(func, dctcp_init)
 BTF_ID_FLAGS(func, dctcp_update_alpha)
 BTF_ID_FLAGS(func, dctcp_cwnd_event)
 BTF_ID_FLAGS(func, dctcp_ssthresh)
 BTF_ID_FLAGS(func, dctcp_cwnd_undo)
 BTF_ID_FLAGS(func, dctcp_state)
-#endif
-#endif
-BTF_SET8_END(tcp_dctcp_check_kfunc_ids)
+BTF_KFUNCS_END(tcp_dctcp_check_kfunc_ids)
 
 static const struct btf_kfunc_id_set tcp_dctcp_kfunc_set = {
 	.owner = THIS_MODULE,

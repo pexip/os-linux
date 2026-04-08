@@ -5,7 +5,7 @@
 //  Author: Claude <claude@insginal.co.kr>
 
 #include <linux/module.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
 
@@ -20,9 +20,9 @@
 static int arndale_rt5631_hw_params(struct snd_pcm_substream *substream,
 				    struct snd_pcm_hw_params *params)
 {
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
-	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
-	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct snd_soc_dai *cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
+	struct snd_soc_dai *codec_dai = snd_soc_rtd_to_codec(rtd, 0);
 	int rfs, ret;
 	unsigned long rclk;
 
@@ -55,8 +55,8 @@ static const struct snd_soc_ops arndale_rt5631_ops = {
 static int arndale_wm1811_hw_params(struct snd_pcm_substream *substream,
 				    struct snd_pcm_hw_params *params)
 {
-	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
-	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
+	struct snd_soc_dai *codec_dai = snd_soc_rtd_to_codec(rtd, 0);
 	unsigned int rfs, rclk;
 
 	/* Ensure AIF1CLK is >= 3 MHz for optimal performance */
@@ -95,7 +95,7 @@ static struct snd_soc_dai_link arndale_rt5631_dai[] = {
 		.stream_name = "Primary",
 		.dai_fmt = SND_SOC_DAIFMT_I2S
 			| SND_SOC_DAIFMT_NB_NF
-			| SND_SOC_DAIFMT_CBS_CFS,
+			| SND_SOC_DAIFMT_CBC_CFC,
 		.ops = &arndale_rt5631_ops,
 		SND_SOC_DAILINK_REG(rt5631_hifi),
 	},
@@ -112,7 +112,7 @@ static struct snd_soc_dai_link arndale_wm1811_dai[] = {
 		.stream_name = "Primary",
 		.dai_fmt = SND_SOC_DAIFMT_I2S
 			| SND_SOC_DAIFMT_NB_NF
-			| SND_SOC_DAIFMT_CBM_CFM,
+			| SND_SOC_DAIFMT_CBP_CFP,
 		.ops = &arndale_wm1811_ops,
 		SND_SOC_DAILINK_REG(wm1811_hifi),
 	},
@@ -207,7 +207,7 @@ static struct platform_driver arndale_audio_driver = {
 		.of_match_table = arndale_audio_of_match,
 	},
 	.probe = arndale_audio_probe,
-	.remove_new = arndale_audio_remove,
+	.remove = arndale_audio_remove,
 };
 
 module_platform_driver(arndale_audio_driver);

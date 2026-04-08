@@ -10,7 +10,7 @@
 #include <linux/ratelimit.h>
 
 #ifdef CONFIG_SYSCTL
-static struct ctl_table fsverity_sysctl_table[] = {
+static const struct ctl_table fsverity_sysctl_table[] = {
 #ifdef CONFIG_FS_VERITY_BUILTIN_SIGNATURES
 	{
 		.procname       = "require_signatures",
@@ -22,7 +22,6 @@ static struct ctl_table fsverity_sysctl_table[] = {
 		.extra2         = SYSCTL_ONE,
 	},
 #endif
-	{ }
 };
 
 static void __init fsverity_init_sysctl(void)
@@ -64,6 +63,7 @@ static int __init fsverity_init(void)
 	fsverity_init_workqueue();
 	fsverity_init_sysctl();
 	fsverity_init_signature();
+	fsverity_init_bpf();
 	return 0;
 }
 late_initcall(fsverity_init)

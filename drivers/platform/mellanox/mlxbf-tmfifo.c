@@ -98,7 +98,7 @@ struct mlxbf_tmfifo_vring {
 /* Check whether vring is in drop mode. */
 #define IS_VRING_DROP(_r) ({ \
 	typeof(_r) (r) = (_r); \
-	(r->desc_head == &r->drop_desc ? true : false); })
+	r->desc_head == &r->drop_desc; })
 
 /* A stub length to drop maximum length packet. */
 #define VRING_DROP_DESC_MAX_LEN		GENMASK(15, 0)
@@ -1059,9 +1059,7 @@ static void mlxbf_tmfifo_virtio_del_vqs(struct virtio_device *vdev)
 static int mlxbf_tmfifo_virtio_find_vqs(struct virtio_device *vdev,
 					unsigned int nvqs,
 					struct virtqueue *vqs[],
-					vq_callback_t *callbacks[],
-					const char * const names[],
-					const bool *ctx,
+					struct virtqueue_info vqs_info[],
 					struct irq_affinity *desc)
 {
 	struct mlxbf_tmfifo_vdev *tm_vdev = mlxbf_vdev_to_tmfifo(vdev);
@@ -1073,7 +1071,9 @@ static int mlxbf_tmfifo_virtio_find_vqs(struct virtio_device *vdev,
 		return -EINVAL;
 
 	for (i = 0; i < nvqs; ++i) {
-		if (!names[i]) {
+		struct virtqueue_info *vqi = &vqs_info[i];
+
+		if (!vqi->name) {
 			ret = -EINVAL;
 			goto error;
 		}
@@ -1085,7 +1085,7 @@ static int mlxbf_tmfifo_virtio_find_vqs(struct virtio_device *vdev,
 		vq = vring_new_virtqueue(i, vring->num, vring->align, vdev,
 					 false, false, vring->va,
 					 mlxbf_tmfifo_virtio_notify,
-					 callbacks[i], names[i]);
+					 vqi->callback, vqi->name);
 		if (!vq) {
 			dev_err(&vdev->dev, "vring_new_virtqueue failed\n");
 			ret = -ENOMEM;
@@ -1288,7 +1288,7 @@ static void mlxbf_tmfifo_get_cfg_mac(u8 *mac)
 		ether_addr_copy(mac, mlxbf_tmfifo_net_default_mac);
 }
 
-/* Set TmFifo thresolds which is used to trigger interrupts. */
+/* Set TmFifo thresholds which is used to trigger interrupts. */
 static void mlxbf_tmfifo_set_threshold(struct mlxbf_tmfifo *fifo)
 {
 	u64 ctl;
@@ -1321,7 +1321,7 @@ static void mlxbf_tmfifo_cleanup(struct mlxbf_tmfifo *fifo)
 	int i;
 
 	fifo->is_ready = false;
-	del_timer_sync(&fifo->timer);
+	timer_delete_sync(&fifo->timer);
 	mlxbf_tmfifo_disable_irqs(fifo);
 	cancel_work_sync(&fifo->work);
 	for (i = 0; i < MLXBF_TMFIFO_VDEV_MAX; i++)
@@ -1432,13 +1432,11 @@ fail:
 }
 
 /* Device remove function. */
-static int mlxbf_tmfifo_remove(struct platform_device *pdev)
+static void mlxbf_tmfifo_remove(struct platform_device *pdev)
 {
 	struct mlxbf_tmfifo *fifo = platform_get_drvdata(pdev);
 
 	mlxbf_tmfifo_cleanup(fifo);
-
-	return 0;
 }
 
 static const struct acpi_device_id mlxbf_tmfifo_acpi_match[] = {

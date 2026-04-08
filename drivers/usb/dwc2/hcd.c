@@ -3227,7 +3227,7 @@ host:
 
 static void dwc2_wakeup_detected(struct timer_list *t)
 {
-	struct dwc2_hsotg *hsotg = from_timer(hsotg, t, wkp_timer);
+	struct dwc2_hsotg *hsotg = timer_container_of(hsotg, t, wkp_timer);
 	u32 hprt0;
 
 	dev_dbg(hsotg->dev, "%s()\n", __func__);
@@ -5081,7 +5081,7 @@ static void dwc2_hcd_free(struct dwc2_hsotg *hsotg)
 
 	cancel_work_sync(&hsotg->phy_reset_work);
 
-	del_timer(&hsotg->wkp_timer);
+	timer_delete(&hsotg->wkp_timer);
 }
 
 static void dwc2_hcd_release(struct dwc2_hsotg *hsotg)
@@ -5474,6 +5474,49 @@ int dwc2_restore_host_registers(struct dwc2_hsotg *hsotg)
 	return 0;
 }
 
+int dwc2_host_backup_critical_registers(struct dwc2_hsotg *hsotg)
+{
+	int ret;
+
+	/* Backup all registers */
+	ret = dwc2_backup_global_registers(hsotg);
+	if (ret) {
+		dev_err(hsotg->dev, "%s: failed to backup global registers\n",
+			__func__);
+		return ret;
+	}
+
+	ret = dwc2_backup_host_registers(hsotg);
+	if (ret) {
+		dev_err(hsotg->dev, "%s: failed to backup host registers\n",
+			__func__);
+		return ret;
+	}
+
+	return 0;
+}
+
+int dwc2_host_restore_critical_registers(struct dwc2_hsotg *hsotg)
+{
+	int ret;
+
+	ret = dwc2_restore_global_registers(hsotg);
+	if (ret) {
+		dev_err(hsotg->dev, "%s: failed to restore registers\n",
+			__func__);
+		return ret;
+	}
+
+	ret = dwc2_restore_host_registers(hsotg);
+	if (ret) {
+		dev_err(hsotg->dev, "%s: failed to restore host registers\n",
+			__func__);
+		return ret;
+	}
+
+	return 0;
+}
+
 /**
  * dwc2_host_enter_hibernation() - Put controller in Hibernation.
  *
@@ -5489,18 +5532,9 @@ int dwc2_host_enter_hibernation(struct dwc2_hsotg *hsotg)
 	u32 gpwrdn;
 
 	dev_dbg(hsotg->dev, "Preparing host for hibernation\n");
-	ret = dwc2_backup_global_registers(hsotg);
-	if (ret) {
-		dev_err(hsotg->dev, "%s: failed to backup global registers\n",
-			__func__);
+	ret = dwc2_host_backup_critical_registers(hsotg);
+	if (ret)
 		return ret;
-	}
-	ret = dwc2_backup_host_registers(hsotg);
-	if (ret) {
-		dev_err(hsotg->dev, "%s: failed to backup host registers\n",
-			__func__);
-		return ret;
-	}
 
 	/* Enter USB Suspend Mode */
 	hprt0 = dwc2_readl(hsotg, HPRT0);
@@ -5522,6 +5556,11 @@ int dwc2_host_enter_hibernation(struct dwc2_hsotg *hsotg)
 	gusbcfg = dwc2_readl(hsotg, GUSBCFG);
 	if (gusbcfg & GUSBCFG_ULPI_UTMI_SEL) {
 		/* ULPI interface */
+		udelay(10);
+		gpwrdn = dwc2_readl(hsotg, GPWRDN);
+		gpwrdn |= GPWRDN_ULPI_LATCH_EN_DURING_HIB_ENTRY;
+		dwc2_writel(hsotg, gpwrdn, GPWRDN);
+		udelay(10);
 		/* Suspend the Phy Clock */
 		pcgcctl = dwc2_readl(hsotg, PCGCTL);
 		pcgcctl |= PCGCTL_STOPPCLK;
@@ -5628,6 +5667,11 @@ int dwc2_host_exit_hibernation(struct dwc2_hsotg *hsotg, int rem_wakeup,
 	dwc2_writel(hsotg, gr->gusbcfg, GUSBCFG);
 	dwc2_writel(hsotg, hr->hcfg, HCFG);
 
+	/* Reset ULPI latch */
+	gpwrdn = dwc2_readl(hsotg, GPWRDN);
+	gpwrdn &= ~GPWRDN_ULPI_LATCH_EN_DURING_HIB_ENTRY;
+	dwc2_writel(hsotg, gpwrdn, GPWRDN);
+
 	/* De-assert Wakeup Logic */
 	if (!(rem_wakeup && hsotg->hw_params.snpsid >= DWC2_CORE_REV_4_30a)) {
 		gpwrdn = dwc2_readl(hsotg, GPWRDN);
@@ -5684,20 +5728,9 @@ int dwc2_host_exit_hibernation(struct dwc2_hsotg *hsotg, int rem_wakeup,
 	dwc2_writel(hsotg, 0xffffffff, GINTSTS);
 
 	/* Restore global registers */
-	ret = dwc2_restore_global_registers(hsotg);
-	if (ret) {
-		dev_err(hsotg->dev, "%s: failed to restore registers\n",
-			__func__);
+	ret = dwc2_host_restore_critical_registers(hsotg);
+	if (ret)
 		return ret;
-	}
-
-	/* Restore host registers */
-	ret = dwc2_restore_host_registers(hsotg);
-	if (ret) {
-		dev_err(hsotg->dev, "%s: failed to restore host registers\n",
-			__func__);
-		return ret;
-	}
 
 	if (rem_wakeup) {
 		dwc2_hcd_rem_wakeup(hsotg);
@@ -5764,19 +5797,9 @@ int dwc2_host_enter_partial_power_down(struct dwc2_hsotg *hsotg)
 		dev_warn(hsotg->dev, "Suspend wasn't generated\n");
 
 	/* Backup all registers */
-	ret = dwc2_backup_global_registers(hsotg);
-	if (ret) {
-		dev_err(hsotg->dev, "%s: failed to backup global registers\n",
-			__func__);
+	ret = dwc2_host_backup_critical_registers(hsotg);
+	if (ret)
 		return ret;
-	}
-
-	ret = dwc2_backup_host_registers(hsotg);
-	if (ret) {
-		dev_err(hsotg->dev, "%s: failed to backup host registers\n",
-			__func__);
-		return ret;
-	}
 
 	/*
 	 * Clear any pending interrupts since dwc2 will not be able to
@@ -5845,19 +5868,9 @@ int dwc2_host_exit_partial_power_down(struct dwc2_hsotg *hsotg,
 
 	udelay(100);
 	if (restore) {
-		ret = dwc2_restore_global_registers(hsotg);
-		if (ret) {
-			dev_err(hsotg->dev, "%s: failed to restore registers\n",
-				__func__);
+		ret = dwc2_host_restore_critical_registers(hsotg);
+		if (ret)
 			return ret;
-		}
-
-		ret = dwc2_restore_host_registers(hsotg);
-		if (ret) {
-			dev_err(hsotg->dev, "%s: failed to restore host registers\n",
-				__func__);
-			return ret;
-		}
 	}
 
 	/* Drive resume signaling and exit suspend mode on the port. */

@@ -3,9 +3,10 @@
  * Copyright 2023 Linus Torvalds <torvalds@linux-foundation.org>
  */
 
+#include <linux/export.h>
 #include <linux/linkage.h>
+#include <linux/objtool.h>
 #include <asm/asm.h>
-#include <asm/export.h>
 
 /*
  * copy_user_nocache - Uncached memory copy with exception handling
@@ -27,6 +28,7 @@
  * rax uncopied bytes or 0 if successful.
  */
 SYM_FUNC_START(__copy_user_nocache)
+	ANNOTATE_NOENDBR
 	/* If destination is not 7-byte aligned, we'll have to align it */
 	testb $7,%dil
 	jne .Lalign

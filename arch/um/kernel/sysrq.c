@@ -11,7 +11,6 @@
 #include <linux/sched/debug.h>
 #include <linux/sched/task_stack.h>
 
-#include <asm/sysrq.h>
 #include <asm/stacktrace.h>
 #include <os.h>
 
@@ -32,12 +31,6 @@ void show_stack(struct task_struct *task, unsigned long *stack,
 {
 	struct pt_regs *segv_regs = current->thread.segv_regs;
 	int i;
-
-	if (!segv_regs && os_is_signal_stack()) {
-		pr_err("Received SIGSEGV in SIGSEGV handler,"
-				" aborting stack trace!\n");
-		return;
-	}
 
 	if (!stack)
 		stack = get_stack_pointer(task, segv_regs);

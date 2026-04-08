@@ -2481,15 +2481,13 @@ static int atl1_rings_clean(struct napi_struct *napi, int budget)
 
 static inline int atl1_sched_rings_clean(struct atl1_adapter* adapter)
 {
-	if (!napi_schedule_prep(&adapter->napi))
+	if (!napi_schedule(&adapter->napi))
 		/* It is possible in case even the RX/TX ints are disabled via IMR
 		 * register the ISR bits are set anyway (but do not produce IRQ).
 		 * To handle such situation the napi functions used to check is
 		 * something scheduled or not.
 		 */
 		return 0;
-
-	__napi_schedule(&adapter->napi);
 
 	/*
 	 * Disable RX/TX ints via IMR register if it is
@@ -2593,8 +2591,8 @@ static irqreturn_t atl1_intr(int irq, void *data)
  */
 static void atl1_phy_config(struct timer_list *t)
 {
-	struct atl1_adapter *adapter = from_timer(adapter, t,
-						  phy_config_timer);
+	struct atl1_adapter *adapter = timer_container_of(adapter, t,
+							  phy_config_timer);
 	struct atl1_hw *hw = &adapter->hw;
 	unsigned long flags;
 
@@ -2678,7 +2676,7 @@ static void atl1_down(struct atl1_adapter *adapter)
 
 	napi_disable(&adapter->napi);
 	netif_stop_queue(netdev);
-	del_timer_sync(&adapter->phy_config_timer);
+	timer_delete_sync(&adapter->phy_config_timer);
 	adapter->phy_timer_pending = false;
 
 	atlx_irq_disable(adapter);
@@ -2724,7 +2722,7 @@ static int atl1_change_mtu(struct net_device *netdev, int new_mtu)
 	adapter->rx_buffer_len = (max_frame + 7) & ~7;
 	adapter->hw.rx_jumbo_th = adapter->rx_buffer_len / 8;
 
-	netdev->mtu = new_mtu;
+	WRITE_ONCE(netdev->mtu, new_mtu);
 	if (netif_running(netdev)) {
 		atl1_down(adapter);
 		atl1_up(adapter);

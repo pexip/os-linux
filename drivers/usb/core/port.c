@@ -9,8 +9,11 @@
 
 #include <linux/kstrtox.h>
 #include <linux/slab.h>
+#include <linux/string_choices.h>
+#include <linux/sysfs.h>
 #include <linux/pm_qos.h>
 #include <linux/component.h>
+#include <linux/usb/of.h>
 
 #include "hub.h"
 
@@ -23,7 +26,7 @@ static ssize_t early_stop_show(struct device *dev,
 {
 	struct usb_port *port_dev = to_usb_port(dev);
 
-	return sysfs_emit(buf, "%s\n", port_dev->early_stop ? "yes" : "no");
+	return sysfs_emit(buf, "%s\n", str_yes_no(port_dev->early_stop));
 }
 
 static ssize_t early_stop_store(struct device *dev, struct device_attribute *attr,
@@ -165,7 +168,7 @@ static ssize_t location_show(struct device *dev,
 {
 	struct usb_port *port_dev = to_usb_port(dev);
 
-	return sprintf(buf, "0x%08x\n", port_dev->location);
+	return sysfs_emit(buf, "0x%08x\n", port_dev->location);
 }
 static DEVICE_ATTR_RO(location);
 
@@ -190,7 +193,7 @@ static ssize_t connect_type_show(struct device *dev,
 		break;
 	}
 
-	return sprintf(buf, "%s\n", result);
+	return sysfs_emit(buf, "%s\n", result);
 }
 static DEVICE_ATTR_RO(connect_type);
 
@@ -209,7 +212,7 @@ static ssize_t over_current_count_show(struct device *dev,
 {
 	struct usb_port *port_dev = to_usb_port(dev);
 
-	return sprintf(buf, "%u\n", port_dev->over_current_count);
+	return sysfs_emit(buf, "%u\n", port_dev->over_current_count);
 }
 static DEVICE_ATTR_RO(over_current_count);
 
@@ -218,7 +221,7 @@ static ssize_t quirks_show(struct device *dev,
 {
 	struct usb_port *port_dev = to_usb_port(dev);
 
-	return sprintf(buf, "%08x\n", port_dev->quirks);
+	return sysfs_emit(buf, "%08x\n", port_dev->quirks);
 }
 
 static ssize_t quirks_store(struct device *dev, struct device_attribute *attr,
@@ -253,7 +256,7 @@ static ssize_t usb3_lpm_permit_show(struct device *dev,
 			p = "0";
 	}
 
-	return sprintf(buf, "%s\n", p);
+	return sysfs_emit(buf, "%s\n", p);
 }
 
 static ssize_t usb3_lpm_permit_store(struct device *dev,
@@ -466,7 +469,7 @@ static const struct dev_pm_ops usb_port_pm_ops = {
 #endif
 };
 
-struct device_type usb_port_device_type = {
+const struct device_type usb_port_device_type = {
 	.name =		"usb_port",
 	.release =	usb_port_device_release,
 	.pm =		&usb_port_pm_ops,
@@ -691,6 +694,7 @@ static void find_and_link_peer(struct usb_hub *hub, int port1)
 
 static int connector_bind(struct device *dev, struct device *connector, void *data)
 {
+	struct usb_port *port_dev = to_usb_port(dev);
 	int ret;
 
 	ret = sysfs_create_link(&dev->kobj, &connector->kobj, "connector");
@@ -698,16 +702,30 @@ static int connector_bind(struct device *dev, struct device *connector, void *da
 		return ret;
 
 	ret = sysfs_create_link(&connector->kobj, &dev->kobj, dev_name(dev));
-	if (ret)
+	if (ret) {
 		sysfs_remove_link(&dev->kobj, "connector");
+		return ret;
+	}
 
-	return ret;
+	port_dev->connector = data;
+
+	/*
+	 * If there is already USB device connected to the port, letting the
+	 * Type-C connector know about it immediately.
+	 */
+	if (port_dev->child)
+		typec_attach(port_dev->connector, &port_dev->child->dev);
+
+	return 0;
 }
 
 static void connector_unbind(struct device *dev, struct device *connector, void *data)
 {
+	struct usb_port *port_dev = to_usb_port(dev);
+
 	sysfs_remove_link(&connector->kobj, dev_name(dev));
 	sysfs_remove_link(&dev->kobj, "connector");
+	port_dev->connector = NULL;
 }
 
 static const struct component_ops connector_ops = {
@@ -731,11 +749,13 @@ int usb_hub_create_port_device(struct usb_hub *hub, int port1)
 		return -ENOMEM;
 	}
 
+	port_dev->connect_type = usb_of_get_connect_type(hdev, port1);
 	hub->ports[port1 - 1] = port_dev;
 	port_dev->portnum = port1;
 	set_bit(port1, hub->power_bits);
 	port_dev->dev.parent = hub->intfdev;
 	if (hub_is_superspeed(hdev)) {
+		port_dev->is_superspeed = 1;
 		port_dev->usb3_lpm_u1_permit = 1;
 		port_dev->usb3_lpm_u2_permit = 1;
 		port_dev->dev.groups = port_dev_usb3_group;
@@ -743,8 +763,6 @@ int usb_hub_create_port_device(struct usb_hub *hub, int port1)
 		port_dev->dev.groups = port_dev_group;
 	port_dev->dev.type = &usb_port_device_type;
 	port_dev->dev.driver = &usb_port_driver;
-	if (hub_is_superspeed(hub->hdev))
-		port_dev->is_superspeed = 1;
 	dev_set_name(&port_dev->dev, "%s-port%d", dev_name(&hub->hdev->dev),
 			port1);
 	mutex_init(&port_dev->status_lock);
