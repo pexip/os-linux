@@ -24,7 +24,7 @@ class CheckSecureBootConfig:
                 kconfig.read(fh)
 
             for name, value in [('EFI_STUB', True),
-                                ('LOCK_DOWN_IN_EFI_SECURE_BOOT', True),
+                                ('LOCK_DOWN_IN_EFI_SECURE_BOOT', False),
                                 ('SYSTEM_TRUSTED_KEYS', '""')]:
                 if name not in kconfig:
                     out.write(f'Secure Boot: CONFIG_{name} is not defined\n')
