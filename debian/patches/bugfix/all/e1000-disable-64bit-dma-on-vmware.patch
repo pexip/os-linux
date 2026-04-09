@@ -1,6 +1,6 @@
---- a/drivers/net/ethernet/intel/e1000/e1000_main.c
-+++ b/drivers/net/ethernet/intel/e1000/e1000_main.c
-@@ -996,8 +996,11 @@
+--- linux.orig/drivers/net/ethernet/intel/e1000/e1000_main.c
++++ linux/drivers/net/ethernet/intel/e1000/e1000_main.c
+@@ -991,8 +991,11 @@ static int e1000_probe(struct pci_dev *p
  	 * 64-bit DMA addresses to 64-bit hardware.  There are some
  	 * 32-bit adapters that Tx hang when given 64-bit DMA addresses
  	 */

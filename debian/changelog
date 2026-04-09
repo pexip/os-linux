@@ -1,8 +1,16 @@
 linux (6.18.15-1+pexip25u1) pexip-trixie; urgency=medium
 
   * Move trixie kernel forward to 6.18.15
+  * debian/patches/pexip_suppress_mfd_warning.patch
+    Remove as deprecation warning is now an error
+  * debian/patches/pexip_hv-kvp-net-scripts.patch
+    debian/patches/pexip_hv-kvp-read-only.patch
+    debian/patches/bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
+    Remove Fuzz
+  * debian/patches/openssl3-deprecations.patch
+    Update
 
- -- Vincent Sanders <vince@pexip.com>  Wed, 25 Mar 2026 09:32:28 +0000
+ -- Vincent Sanders <vince@pexip.com>  Thu, 9 Apr 2026 10:48:22 +0000
 
 linux (6.18.15-1~bpo13+1) trixie-backports; urgency=medium
 

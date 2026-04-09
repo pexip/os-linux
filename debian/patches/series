@@ -108,9 +108,7 @@ bugfix/all/tools-hv-Make-the-sample-hv_get_dhcp_info-script-mor.patch
 # Pexip fixes
 bugfix/all/e1000-disable-64bit-dma-on-vmware.patch
 openssl3-deprecations.patch
-
 pexip_types.patch
-pexip_suppress_mfd_warning.patch
 
 # Pexip Hyper-V Daemons patches
 pexip_hv-vss-freeze-flag.patch

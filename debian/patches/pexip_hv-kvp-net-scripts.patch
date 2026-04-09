@@ -1,8 +1,6 @@
-diff --git a/tools/hv/hv_get_dhcp_info.sh b/tools/hv/hv_get_dhcp_info.sh
-index 2f2a3c7df3..0a234f8a47 100755
---- a/tools/hv/hv_get_dhcp_info.sh
-+++ b/tools/hv/hv_get_dhcp_info.sh
-@@ -1,27 +1,15 @@
+--- linux.orig/tools/hv/hv_get_dhcp_info.sh
++++ linux/tools/hv/hv_get_dhcp_info.sh
+@@ -1,19 +1,11 @@
  #!/bin/bash
  # SPDX-License-Identifier: GPL-2.0
  
@@ -17,27 +15,38 @@ index 2f2a3c7df3..0a234f8a47 100755
  #	that DHCP is enabled on the interface. If DHCP is not enabled,
  #	the script prints the string "Disabled" to stdout.
 -#
--# Each Distro is expected to implement this script in a distro specific
--# fashion. For instance, on Distros that ship with Network Manager enabled,
--# this script can be based on the Network Manager APIs for retrieving DHCP
--# information.
+-# Distributions may need to adapt or replace this script for their
+-# preferred network configuration system.
  
--if_file="/etc/sysconfig/network-scripts/ifcfg-"$1
-+dhcp_flag=/run/pexip-net-info
+ # Report status based on result of previous command
+ report() {
+@@ -85,8 +77,18 @@ check_network_scripts() {
+     fi
+ }
  
--dhcp=$(grep "dhcp" $if_file 2>/dev/null)
--
--if [ "$dhcp" != "" ];
-+if [ -f "${dhcp_flag}" ];
- then
- echo "Enabled"
- else
-diff --git a/tools/hv/hv_get_dns_info.sh b/tools/hv/hv_get_dns_info.sh
-index 058c17b46f..673425651f 100755
---- a/tools/hv/hv_get_dns_info.sh
-+++ b/tools/hv/hv_get_dns_info.sh
+-check_network_manager "$1" ||
+-check_systemd_networkd "$1" ||
+-check_ifupdown "$1" ||
+-check_network_scripts "$1" ||
++check_pexip_flag() {
++    if [ -f "/run/pexip-net-info" ]; then
++	true
++	report
++    else
++	return 1
++    fi
++}
++
++#check_network_manager "$1" ||
++#check_systemd_networkd "$1" ||
++#check_ifupdown "$1" ||
++#check_network_scripts "$1" ||
++check_pexip_flag "$1" ||
+ report
+--- linux.orig/tools/hv/hv_get_dns_info.sh
++++ linux/tools/hv/hv_get_dns_info.sh
 @@ -1,13 +1,3 @@
- #!/bin/bash
+ #!/bin/sh
  
 -# This example script parses /etc/resolv.conf to retrive DNS information.
 -# In the interest of keeping the KVP daemon code free of distro specific
@@ -49,4 +58,4 @@ index 058c17b46f..673425651f 100755
 -# this script can be based on the Network Manager APIs for retrieving DNS
 -# entries.
 -
- cat /etc/resolv.conf 2>/dev/null | awk '/^nameserver/ { print $2 }'
+ exec awk '/^nameserver/ { print $2 }' /etc/resolv.conf 2>/dev/null

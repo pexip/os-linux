@@ -1,5 +1,5 @@
---- a/scripts/sign-file.c
-+++ b/scripts/sign-file.c
+--- linux.orig/scripts/sign-file.c
++++ linux/scripts/sign-file.c
 @@ -240,8 +240,10 @@ int main(int argc, char **argv)
  	X509 *x509;
  	BIO *bd, *bm;
@@ -21,64 +21,8 @@
  		drain_openssl_errors(__LINE__, 0);
  		digest_algo = EVP_get_digestbyname(hash_algo);
  		ERR(!digest_algo, "EVP_get_digestbyname");
---- a/tools/build/feature/test-libcrypto.c
-+++ b/tools/build/feature/test-libcrypto.c
-@@ -19,7 +19,14 @@ int main(void)
- 	EVP_DigestFinal_ex(mdctx, &md[0], &digest_len);
- 	EVP_MD_CTX_free(mdctx);
- 
--	SHA1(&dat[0], sizeof(dat), &md[0]);
-+	mdctx = EVP_MD_CTX_new();
-+	if (!mdctx)
-+		return 0;
-+
-+	EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL);
-+	EVP_DigestUpdate(mdctx, &dat[0], sizeof(dat));
-+	EVP_DigestFinal_ex(mdctx, &md[0], &digest_len);
-+	EVP_MD_CTX_free(mdctx);
- 
- 	return 0;
- }
---- a/tools/perf/util/genelf.c
-+++ b/tools/perf/util/genelf.c
-@@ -37,12 +37,11 @@
- #undef BUILD_ID_URANDOM /* different uuid for each run */
- 
- #ifdef BUILD_ID_SHA
--#include <openssl/sha.h>
-+#include <openssl/evp.h>
- #endif
- 
- #ifdef BUILD_ID_MD5
- #include <openssl/evp.h>
--#include <openssl/md5.h>
- #endif
- #endif
- 
-@@ -128,10 +127,20 @@ gen_build_id(struct buildid_note *note,
- 	     const void *code,
- 	     size_t csize)
- {
-+	EVP_MD_CTX *mdctx;
-+	size_t digest_len;
-+
- 	if (sizeof(note->build_id) < SHA_DIGEST_LENGTH)
- 		errx(1, "build_id too small for SHA1");
- 
--	SHA1(code, csize, (unsigned char *)note->build_id);
-+	mdctx = EVP_MD_CTX_new();
-+	if (!mdctx)
-+		errx(1, "Failed allocating EVP_MD_CTX");
-+
-+	EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL);
-+	EVP_DigestUpdate(mdctx, code, csize);
-+	EVP_DigestFinal_ex(mdctx, (unsigned char *)note->build_id, &digest_len);
-+	EVP_MD_CTX_free(mdctx);
- }
- #endif
- 
---- a/tools/testing/selftests/sgx/sigstruct.c
-+++ b/tools/testing/selftests/sgx/sigstruct.c
+--- linux.orig/tools/testing/selftests/sgx/sigstruct.c
++++ linux/tools/testing/selftests/sgx/sigstruct.c
 @@ -150,19 +150,25 @@ static bool check_crypto_errors(void)
  	return had_errors;
  }
@@ -199,8 +143,8 @@
 +	EVP_PKEY_free(key);
  	return false;
  }
---- a/certs/extract-cert.c
-+++ b/certs/extract-cert.c
+--- linux.orig/certs/extract-cert.c
++++ linux/certs/extract-cert.c
 @@ -127,8 +127,10 @@ int main(int argc, char **argv)
  	char *cert_src;
  	char *verbose_env;
