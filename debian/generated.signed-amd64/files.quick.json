@@ -1,13 +1,3 @@
 {
-  "packages": {
-    "linux-image-6.18.15+pexip25-test-unsigned": {
-      "trusted_certs": [],
-      "files": [
-        {
-          "sig_type": "efi",
-          "file": "boot/vmlinuz-6.18.15+pexip25-test"
-        }
-      ]
-    }
-  }
+  "packages": {}
 }

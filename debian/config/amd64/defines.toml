@@ -2,37 +2,39 @@
 name = 'amd64'
 [flavour.defs]
 is_default = true
-[flavour.description]
-hardware = '64-bit PCs'
-hardware_long = 'PCs with AMD64, Intel 64 or VIA Nano processors'
-[flavour.packages]
-installer = true
-
-[[flavour]]
-name = 'cloud-amd64'
 [flavour.build]
-config = ['config.cloud']
+config = ['config.cloud', 'amd64/config.cloud-amd64', 'amd64/config.pexip-amd64']
 [flavour.description]
-hardware = 'x86-64 cloud'
-hardware_long = 'cloud platforms including Amazon EC2, Microsoft Azure, and Google Compute Engine'
+hardware = 'Pexip x86-64 cloud'
+hardware_long = 'Pexip OS on x86-64 cloud platforms'
+#[flavour.packages]
+#installer = true
 
-[[flavour]]
-name = 'rt-amd64'
-[flavour.build]
-config = ['config.rt']
-[flavour.description]
-hardware = '64-bit PCs'
-hardware_long = 'PCs with AMD64, Intel 64 or VIA Nano processors'
-parts = ['rt']
+#[[flavour]]
+#name = 'cloud-amd64'
+#[flavour.build]
+#config = ['config.cloud']
+#[flavour.description]
+#hardware = 'x86-64 cloud'
+#hardware_long = 'cloud platforms including Amazon EC2, Microsoft Azure, and Google Compute Engine'
 
-[[flavour]]
-name = 'test'
-[flavour.build]
-config = ['config.test', 'amd64/config.test']
-[flavour.defs]
-is_test = true
-[flavour.packages]
-installer = true
+#[[flavour]]
+#name = 'rt-amd64'
+#[flavour.build]
+#config = ['config.rt']
+#[flavour.description]
+#hardware = '64-bit PCs'
+#hardware_long = 'PCs with AMD64, Intel 64 or VIA Nano processors'
+#parts = ['rt']
+
+#[[flavour]]
+#name = 'test'
+#[flavour.build]
+#config = ['config.test', 'amd64/config.test']
+#[flavour.defs]
+#is_test = true
+#[flavour.packages]
+#installer = true
 
 [[featureset]]
 name = 'none'

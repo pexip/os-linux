@@ -1,8 +1,8 @@
 27cf0129426728d593b7ab77a5223175  debian/bin/gencontrol.py
-636d0339b1bff53aece13ee6401b3e30  debian/build/version-info
+69345c519f3c47949d56071ac0410ede  debian/build/version-info
 ba2c200f8c43f7ec8d8323561739379a  debian/config/alpha/defines.toml
-fc5d6d91ce75516e35af76f5c5c3c64a  debian/config/amd64/defines.toml
-e9b72d7310f6eefa3ff3cc34ef1f4d59  debian/config/arm64/defines.toml
+914f11c0ce03e68c1f330987e4440c23  debian/config/amd64/defines.toml
+e956143bd353695ede4aecbe0e52d599  debian/config/arm64/defines.toml
 bd6755d9b59c1b2cd883628dc59669d3  debian/config/armhf/defines.toml
 7a6b3a5d80497b2172b04a43d26dd6ef  debian/config/defines.toml
 c840ab923e0857515675530f3f72496b  debian/config/hppa/defines.toml

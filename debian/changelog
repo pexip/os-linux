@@ -1,3 +1,9 @@
+linux (6.18.15-1+pexip25u2) pexip-trixie; urgency=medium
+
+  * Update the flavours built on amd64 and arm64 architectures
+
+ -- Vincent Sanders <vince@pexip.com>  Fri, 10 Apr 2026 11:29:33 +0000
+
 linux (6.18.15-1+pexip25u1) pexip-trixie; urgency=medium
 
   * Move trixie kernel forward to 6.18.15
