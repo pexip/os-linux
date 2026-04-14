@@ -1,3 +1,11 @@
+linux (6.18.15-1+pexip25u3) pexip-trixie; urgency=medium
+
+  * Do not attempt to build debian signed packages
+  * Set the ABI from config instead of from changelog version
+  * Regenerate all the debian packaging files for the new ABI
+
+ -- Vincent Sanders <vince@pexip.com>  Wed, 15 Apr 2026 11:52:01 +0000
+
 linux (6.18.15-1+pexip25u2) pexip-trixie; urgency=medium
 
   * Update the flavours built on amd64 and arm64 architectures

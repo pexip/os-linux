@@ -1,0 +1,4 @@
+usr/lib/linux-kbuild-6.18-1+pexip25/scripts                          usr/src/linux-headers-6.18-1+pexip25-m68k/scripts
+usr/lib/linux-kbuild-6.18-1+pexip25/tools                            usr/src/linux-headers-6.18-1+pexip25-m68k/tools
+usr/src/linux-headers-6.18-1+pexip25-m68k                                               usr/lib/modules/6.18-1+pexip25-m68k/build
+usr/src/linux-headers-6.18-1+pexip25-common  usr/lib/modules/6.18-1+pexip25-m68k/source
