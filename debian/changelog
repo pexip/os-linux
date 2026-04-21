@@ -1,3 +1,9 @@
+linux (6.18.22-1+pexip25u1) pexip-trixie; urgency=medium
+
+  * Update packaging for new kernel version
+
+ -- Vincent Sanders <vince@pexip.com>  Tue, 21 Apr 2026 11:23:55 +0000
+
 linux (6.18.15-1+pexip25u3) pexip-trixie; urgency=medium
 
   * Do not attempt to build debian signed packages

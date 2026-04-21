@@ -1,4 +1,0 @@
-boot/vmlinu?-6.18-1+pexip25-riscv64
-lib/modules/6.18-1+pexip25-riscv64/modules.builtin  lib/modules/6.18-1+pexip25-riscv64
-lib/modules/6.18-1+pexip25-riscv64/modules.order    lib/modules/6.18-1+pexip25-riscv64
-lib/modules/6.18-1+pexip25-riscv64/dtb              lib/modules/6.18-1+pexip25-riscv64

@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+version=6.18.22+pexip25-alpha-smp
+
+linux-run-hooks headers postinst $version -- "$@"
+
+exit 0

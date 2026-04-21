@@ -121,8 +121,7 @@ name = 'none'
 
 [[debianrelease]]
 name_regex = 'pexip-trixie'
-abi_version_full = false
-abi_suffix = '-1+pexip25'
+abi_suffix = '+pexip25'
 revision_regex = '\d+(\.\d+)?(\+pexip25u\d+)?'
 
 [[debianrelease]]

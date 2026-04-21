@@ -1,7 +1,0 @@
-#!/bin/sh -e
-
-version=6.18-1+pexip25-armmp-lpae
-
-linux-run-hooks headers postinst $version -- "$@"
-
-exit 0

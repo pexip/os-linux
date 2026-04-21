@@ -1,4 +1,0 @@
-usr/lib/linux-kbuild-6.18-1+pexip25/scripts                          usr/src/linux-headers-6.18-1+pexip25-armmp/scripts
-usr/lib/linux-kbuild-6.18-1+pexip25/tools                            usr/src/linux-headers-6.18-1+pexip25-armmp/tools
-usr/src/linux-headers-6.18-1+pexip25-armmp                                               usr/lib/modules/6.18-1+pexip25-armmp/build
-usr/src/linux-headers-6.18-1+pexip25-common  usr/lib/modules/6.18-1+pexip25-armmp/source
