@@ -1,3 +1,4 @@
+Fix types.h so that older compilers (e.g. ICC) work with them
 Index: os-linux/include/uapi/linux/types.h
 ===================================================================
 --- os-linux.orig/include/uapi/linux/types.h

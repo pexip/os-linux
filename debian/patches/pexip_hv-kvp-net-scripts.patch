@@ -1,3 +1,4 @@
+Add Pexip-specific network info scripts for hyperv
 --- linux.orig/tools/hv/hv_get_dhcp_info.sh
 +++ linux/tools/hv/hv_get_dhcp_info.sh
 @@ -1,19 +1,11 @@

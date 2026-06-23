@@ -1,3 +1,4 @@
+Avoid using deprecated OpenSSL 3 APIs
 --- linux.orig/scripts/sign-file.c
 +++ linux/scripts/sign-file.c
 @@ -240,8 +240,10 @@ int main(int argc, char **argv)

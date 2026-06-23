@@ -1,3 +1,4 @@
+Make hyperv write operations compile-time optional
 --- linux.orig/tools/hv/hv_kvp_daemon.c
 +++ linux/tools/hv/hv_kvp_daemon.c
 @@ -1922,6 +1922,7 @@ reopen_kvp_fd:

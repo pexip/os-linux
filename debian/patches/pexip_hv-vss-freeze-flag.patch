@@ -1,3 +1,4 @@
+Touch flag before filesystem freeze to allow detection
 diff --git a/tools/hv/hv_vss_daemon.c b/tools/hv/hv_vss_daemon.c
 index dd111870be..1f5c988a42 100644
 --- a/tools/hv/hv_vss_daemon.c
