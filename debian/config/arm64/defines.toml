@@ -49,7 +49,7 @@ name = 'none'
 compiler_gnutype_compat = 'arm-linux-gnueabihf'
 enable_dtb = true
 enable_rust = true
-enable_signed = false
+enable_signed = true
 kernel_file = 'arch/arm64/boot/Image'
 kernel_stem = 'vmlinuz'
 
