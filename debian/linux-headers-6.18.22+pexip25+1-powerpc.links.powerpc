@@ -1,0 +1,4 @@
+usr/lib/linux-kbuild-6.18.22+pexip25+1/scripts                          usr/src/linux-headers-6.18.22+pexip25+1-powerpc/scripts
+usr/lib/linux-kbuild-6.18.22+pexip25+1/tools                            usr/src/linux-headers-6.18.22+pexip25+1-powerpc/tools
+usr/src/linux-headers-6.18.22+pexip25+1-powerpc                                               usr/lib/modules/6.18.22+pexip25+1-powerpc/build
+usr/src/linux-headers-6.18.22+pexip25+1-common  usr/lib/modules/6.18.22+pexip25+1-powerpc/source

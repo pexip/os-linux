@@ -1,0 +1,4 @@
+usr/lib/linux-kbuild-6.18.22+pexip25+1/scripts                          usr/src/linux-headers-6.18.22+pexip25+1-s390x/scripts
+usr/lib/linux-kbuild-6.18.22+pexip25+1/tools                            usr/src/linux-headers-6.18.22+pexip25+1-s390x/tools
+usr/src/linux-headers-6.18.22+pexip25+1-s390x                                               usr/lib/modules/6.18.22+pexip25+1-s390x/build
+usr/src/linux-headers-6.18.22+pexip25+1-common  usr/lib/modules/6.18.22+pexip25+1-s390x/source

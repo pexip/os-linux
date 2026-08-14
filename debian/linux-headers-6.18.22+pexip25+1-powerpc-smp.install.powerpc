@@ -1,0 +1,4 @@
+.config .kernel* Module.symvers include  usr/src/linux-headers-6.18.22+pexip25+1-powerpc-smp
+scripts/module.lds                       usr/src/linux-headers-6.18.22+pexip25+1-powerpc-smp/arch/powerpc
+arch/powerpc/include             usr/src/linux-headers-6.18.22+pexip25+1-powerpc-smp/arch/powerpc
+arch/powerpc/lib/crtsavres.o     usr/src/linux-headers-6.18.22+pexip25+1-powerpc-smp/arch/powerpc/lib
