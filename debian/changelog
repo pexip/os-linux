@@ -1,3 +1,9 @@
+linux (6.18.22-1+pexip25u3) pexip-trixie; urgency=medium
+
+  * Update the control file generation for the signed build
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Fri, 14 Aug 2026 19:01:45 +0100
+
 linux (6.18.22-1+pexip25u2) pexip-trixie; urgency=medium
 
   * Re-enable generation of signed packages

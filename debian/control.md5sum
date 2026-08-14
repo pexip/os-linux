@@ -1,5 +1,5 @@
 27cf0129426728d593b7ab77a5223175  debian/bin/gencontrol.py
-f167a32a1d89241449eeca9ced247244  debian/build/version-info
+8b50392098ffb897eee36882824c2285  debian/build/version-info
 ba2c200f8c43f7ec8d8323561739379a  debian/config/alpha/defines.toml
 914f11c0ce03e68c1f330987e4440c23  debian/config/amd64/defines.toml
 e956143bd353695ede4aecbe0e52d599  debian/config/arm64/defines.toml
@@ -60,7 +60,7 @@ c73ff8d70d4ecc4b54c256736f0142ba  debian/templates/signed.image.lintian-override
 33c0a191fd9baec7c2039e133f412a48  debian/templates/signed.image.postrm.in
 5344a14c92dc835312653f6a9cd40593  debian/templates/signed.image.preinst.in
 5f670e46192710c3ed7caad2b49c5186  debian/templates/signed.image.prerm.in
-3cae3a79a66a1b6b9c951f96dafd357b  debian/templates/signed.source.control.in
+fcf1f9fe0e8c56482164d0968fe73251  debian/templates/signed.source.control.in
 16024b5ebf67b3fd36831e3461bb7d7c  debian/templates/signed.source.lintian-overrides.in
 97970d0d777c7de87ba24b28a0458cba  debian/templates/source.control.in
 edfa7fed4bdffa5ce37dc67af2875954  debian/templates/sourcebin.control.in

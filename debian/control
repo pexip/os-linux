@@ -78,147 +78,147 @@ Description: CPU frequency and voltage scaling tools for Linux (libraries)
  .
  This package contains the shared library.
 
-Package: linux-base-6.18.22+pexip25+1-alpha-generic
+Package: linux-base-6.18.22+pexip25+2-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for Alpha (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-alpha-smp
+Package: linux-base-6.18.22+pexip25+2-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for Alpha SMP (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-amd64
+Package: linux-base-6.18.22+pexip25+2-amd64
 Architecture: amd64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for Pexip x86-64 cloud (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-arm64
+Package: linux-base-6.18.22+pexip25+2-arm64
 Architecture: arm64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for Pexip arm64 cloud (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-armmp
+Package: linux-base-6.18.22+pexip25+2-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for ARMv7 multiplatform compatible SoCs (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-armmp-lpae
+Package: linux-base-6.18.22+pexip25+2-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for ARMv7 multiplatform compatible SoCs supporting LPAE (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-loong64
+Package: linux-base-6.18.22+pexip25+2-loong64
 Architecture: loong64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for 64-bit LoongArch platforms (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-m68k
+Package: linux-base-6.18.22+pexip25+2-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for Motorola MC68020+ family (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-parisc
+Package: linux-base-6.18.22+pexip25+2-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for 32-bit PA-RISC (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-parisc64
+Package: linux-base-6.18.22+pexip25+2-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for 64-bit PA-RISC (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-powerpc
+Package: linux-base-6.18.22+pexip25+2-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for uniprocessor 32-bit PowerPC (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-powerpc-smp
+Package: linux-base-6.18.22+pexip25+2-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for multiprocessor 32-bit PowerPC (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-powerpc64
+Package: linux-base-6.18.22+pexip25+2-powerpc64
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for 64-bit PowerPC with 4k pages (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-powerpc64-64k
+Package: linux-base-6.18.22+pexip25+2-powerpc64-64k
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for 64-bit PowerPC with 64k pages (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-powerpc64le
+Package: linux-base-6.18.22+pexip25+2-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for Little-endian 64-bit PowerPC with 4k pages (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-powerpc64le-64k
+Package: linux-base-6.18.22+pexip25+2-powerpc64le-64k
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for Little-endian 64-bit PowerPC with 64k pages (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-riscv64
+Package: linux-base-6.18.22+pexip25+2-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for 64-bit RISC-V platforms (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-s390x
+Package: linux-base-6.18.22+pexip25+2-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for IBM zSeries (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-sh7751r
+Package: linux-base-6.18.22+pexip25+2-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for sh7751r (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-sparc64
+Package: linux-base-6.18.22+pexip25+2-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
 Description: Linux for uniprocessor 64-bit UltraSPARC (dummy package)
  This package contains files common to all Linux kernel packages.
 
-Package: linux-base-6.18.22+pexip25+1-sparc64-smp
+Package: linux-base-6.18.22+pexip25+2-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Depends: ${misc:Depends}
@@ -228,133 +228,133 @@ Description: Linux for multiprocessor 64-bit UltraSPARC (dummy package)
 Package: linux-base-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-alpha-generic (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-alpha-generic (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Alpha (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-alpha-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-alpha-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Alpha SMP (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-armmp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-armmp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for ARMv7 multiplatform compatible SoCs (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-armmp-lpae (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-armmp-lpae (= ${binary:Version}), ${misc:Depends}
 Description: Linux for ARMv7 multiplatform compatible SoCs supporting LPAE (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-loong64
 Architecture: loong64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-loong64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-loong64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit LoongArch platforms (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-m68k (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-m68k (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Motorola MC68020+ family (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-parisc (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-parisc (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 32-bit PA-RISC (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-parisc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-parisc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PA-RISC (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-powerpc (= ${binary:Version}), ${misc:Depends}
 Description: Linux for uniprocessor 32-bit PowerPC (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-powerpc-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for multiprocessor 32-bit PowerPC (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-powerpc64
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-powerpc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PowerPC with 4k pages (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-powerpc64-64k
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PowerPC with 64k pages (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc64le (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-powerpc64le (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Little-endian 64-bit PowerPC with 4k pages (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-powerpc64le-64k
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Little-endian 64-bit PowerPC with 64k pages (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-riscv64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-riscv64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit RISC-V platforms (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-s390x (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-s390x (= ${binary:Version}), ${misc:Depends}
 Description: Linux for IBM zSeries (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-sh7751r (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-sh7751r (= ${binary:Version}), ${misc:Depends}
 Description: Linux for sh7751r (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-sparc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-sparc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for uniprocessor 64-bit UltraSPARC (dummy package)
  This package contains files common to all Linux kernel packages.
 
 Package: linux-base-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-sparc64-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-6.18.22+pexip25+2-sparc64-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for multiprocessor 64-bit UltraSPARC (dummy package)
  This package contains files common to all Linux kernel packages.
 
@@ -393,277 +393,277 @@ Description: CPU power management tools for Linux
  .
  ${cpupower:Arch-Description}
 
-Package: linux-headers-6.18.22+pexip25+1-alpha-generic
+Package: linux-headers-6.18.22+pexip25+2-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-alpha-generic (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-alpha-generic
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-alpha-generic (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-alpha-generic
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-alpha-generic, generally used for building
+ Linux kernel 6.18.22+pexip25+2-alpha-generic, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-alpha-generic, and can be used
+ /usr/src/linux-headers-6.18.22+pexip25+2-alpha-generic, and can be used
  for building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-alpha-generic package.
+ linux-image-6.18.22+pexip25+2-alpha-generic package.
 
-Package: linux-headers-6.18.22+pexip25+1-alpha-smp
+Package: linux-headers-6.18.22+pexip25+2-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-alpha-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-alpha-smp
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-alpha-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-alpha-smp
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-alpha-smp, generally used for building
+ Linux kernel 6.18.22+pexip25+2-alpha-smp, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-alpha-smp, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-alpha-smp, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-alpha-smp package.
+ linux-image-6.18.22+pexip25+2-alpha-smp package.
 
-Package: linux-headers-6.18.22+pexip25+1-amd64
+Package: linux-headers-6.18.22+pexip25+2-amd64
 Architecture: amd64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-amd64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-amd64
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-amd64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-amd64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-amd64, generally used for building
+ Linux kernel 6.18.22+pexip25+2-amd64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-amd64, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-amd64, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-amd64 package.
+ linux-image-6.18.22+pexip25+2-amd64 package.
 
-Package: linux-headers-6.18.22+pexip25+1-arm64
+Package: linux-headers-6.18.22+pexip25+2-arm64
 Architecture: arm64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-arm64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-arm64
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-arm64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-arm64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-arm64, generally used for building
+ Linux kernel 6.18.22+pexip25+2-arm64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-arm64, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-arm64, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-arm64 package.
+ linux-image-6.18.22+pexip25+2-arm64 package.
 
-Package: linux-headers-6.18.22+pexip25+1-armmp
+Package: linux-headers-6.18.22+pexip25+2-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-armmp (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-armmp
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-armmp (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-armmp
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-armmp, generally used for building
+ Linux kernel 6.18.22+pexip25+2-armmp, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-armmp, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-armmp, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-armmp package.
+ linux-image-6.18.22+pexip25+2-armmp package.
 
-Package: linux-headers-6.18.22+pexip25+1-armmp-lpae
+Package: linux-headers-6.18.22+pexip25+2-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-armmp-lpae (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-armmp-lpae
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-armmp-lpae (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-armmp-lpae
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-armmp-lpae, generally used for building
+ Linux kernel 6.18.22+pexip25+2-armmp-lpae, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-armmp-lpae, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-armmp-lpae, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-armmp-lpae package.
+ linux-image-6.18.22+pexip25+2-armmp-lpae package.
 
-Package: linux-headers-6.18.22+pexip25+1-common
+Package: linux-headers-6.18.22+pexip25+2-common
 Architecture: all
 Build-Profiles: <!pkg.linux.nokernel>
 Depends: ${misc:Depends}
 Multi-Arch: foreign
-Description: Common header files for Linux 6.18.22+pexip25+1
+Description: Common header files for Linux 6.18.22+pexip25+2
  This package provides the common kernel header files for Linux kernel
- version 6.18.22+pexip25+1, generally used for building out-of-tree kernel
+ version 6.18.22+pexip25+2, generally used for building out-of-tree kernel
  modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-common.
+ /usr/src/linux-headers-6.18.22+pexip25+2-common.
  .
  To obtain a complete set of headers you also need to install the
- linux-headers-6.18.22+pexip25+1-(flavour) package, matching the flavour of
+ linux-headers-6.18.22+pexip25+2-(flavour) package, matching the flavour of
  the kernel you intend the build for.
 
-Package: linux-headers-6.18.22+pexip25+1-loong64
+Package: linux-headers-6.18.22+pexip25+2-loong64
 Architecture: loong64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-loong64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-loong64
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-loong64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-loong64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-loong64, generally used for building
+ Linux kernel 6.18.22+pexip25+2-loong64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-loong64, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-loong64, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-loong64 package.
+ linux-image-6.18.22+pexip25+2-loong64 package.
 
-Package: linux-headers-6.18.22+pexip25+1-m68k
+Package: linux-headers-6.18.22+pexip25+2-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-m68k (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-m68k
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-m68k (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-m68k
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-m68k, generally used for building
+ Linux kernel 6.18.22+pexip25+2-m68k, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-m68k, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-m68k, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-m68k package.
+ linux-image-6.18.22+pexip25+2-m68k package.
 
-Package: linux-headers-6.18.22+pexip25+1-parisc
+Package: linux-headers-6.18.22+pexip25+2-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-parisc (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-parisc
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-parisc (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-parisc
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-parisc, generally used for building
+ Linux kernel 6.18.22+pexip25+2-parisc, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-parisc, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-parisc, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-parisc package.
+ linux-image-6.18.22+pexip25+2-parisc package.
 
-Package: linux-headers-6.18.22+pexip25+1-parisc64
+Package: linux-headers-6.18.22+pexip25+2-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-parisc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-parisc64
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-parisc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-parisc64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-parisc64, generally used for building
+ Linux kernel 6.18.22+pexip25+2-parisc64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-parisc64, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-parisc64, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-parisc64 package.
+ linux-image-6.18.22+pexip25+2-parisc64 package.
 
-Package: linux-headers-6.18.22+pexip25+1-powerpc
+Package: linux-headers-6.18.22+pexip25+2-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-powerpc (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-powerpc
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-powerpc (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-powerpc
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-powerpc, generally used for building
+ Linux kernel 6.18.22+pexip25+2-powerpc, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-powerpc, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-powerpc, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-powerpc package.
+ linux-image-6.18.22+pexip25+2-powerpc package.
 
-Package: linux-headers-6.18.22+pexip25+1-powerpc-smp
+Package: linux-headers-6.18.22+pexip25+2-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-powerpc-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-powerpc-smp
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-powerpc-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-powerpc-smp
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-powerpc-smp, generally used for building
+ Linux kernel 6.18.22+pexip25+2-powerpc-smp, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-powerpc-smp, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-powerpc-smp, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-powerpc-smp package.
+ linux-image-6.18.22+pexip25+2-powerpc-smp package.
 
-Package: linux-headers-6.18.22+pexip25+1-powerpc64
+Package: linux-headers-6.18.22+pexip25+2-powerpc64
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-powerpc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-powerpc64
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-powerpc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-powerpc64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-powerpc64, generally used for building
+ Linux kernel 6.18.22+pexip25+2-powerpc64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-powerpc64, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-powerpc64, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-powerpc64 package.
+ linux-image-6.18.22+pexip25+2-powerpc64 package.
 
-Package: linux-headers-6.18.22+pexip25+1-powerpc64-64k
+Package: linux-headers-6.18.22+pexip25+2-powerpc64-64k
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-powerpc64-64k (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-powerpc64-64k
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-powerpc64-64k (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-powerpc64-64k
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-powerpc64-64k, generally used for building
+ Linux kernel 6.18.22+pexip25+2-powerpc64-64k, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-powerpc64-64k, and can be used
+ /usr/src/linux-headers-6.18.22+pexip25+2-powerpc64-64k, and can be used
  for building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-powerpc64-64k package.
+ linux-image-6.18.22+pexip25+2-powerpc64-64k package.
 
-Package: linux-headers-6.18.22+pexip25+1-powerpc64le
+Package: linux-headers-6.18.22+pexip25+2-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-powerpc64le (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-powerpc64le
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-powerpc64le (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-powerpc64le
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-powerpc64le, generally used for building
+ Linux kernel 6.18.22+pexip25+2-powerpc64le, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-powerpc64le, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-powerpc64le, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-powerpc64le package.
+ linux-image-6.18.22+pexip25+2-powerpc64le package.
 
-Package: linux-headers-6.18.22+pexip25+1-powerpc64le-64k
+Package: linux-headers-6.18.22+pexip25+2-powerpc64le-64k
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-powerpc64le-64k (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-powerpc64le-64k
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-powerpc64le-64k (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-powerpc64le-64k
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-powerpc64le-64k, generally used for
+ Linux kernel 6.18.22+pexip25+2-powerpc64le-64k, generally used for
  building out-of-tree kernel modules.  These files are going to be
- installed into /usr/src/linux-headers-6.18.22+pexip25+1-powerpc64le-64k,
+ installed into /usr/src/linux-headers-6.18.22+pexip25+2-powerpc64le-64k,
  and can be used for building modules that load into the kernel provided by
- the linux-image-6.18.22+pexip25+1-powerpc64le-64k package.
+ the linux-image-6.18.22+pexip25+2-powerpc64le-64k package.
 
-Package: linux-headers-6.18.22+pexip25+1-riscv64
+Package: linux-headers-6.18.22+pexip25+2-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-riscv64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-riscv64
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-riscv64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-riscv64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-riscv64, generally used for building
+ Linux kernel 6.18.22+pexip25+2-riscv64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-riscv64, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-riscv64, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-riscv64 package.
+ linux-image-6.18.22+pexip25+2-riscv64 package.
 
-Package: linux-headers-6.18.22+pexip25+1-s390x
+Package: linux-headers-6.18.22+pexip25+2-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-s390x (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-s390x
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-s390x (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-s390x
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-s390x, generally used for building
+ Linux kernel 6.18.22+pexip25+2-s390x, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-s390x, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-s390x, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-s390x package.
+ linux-image-6.18.22+pexip25+2-s390x package.
 
-Package: linux-headers-6.18.22+pexip25+1-sh7751r
+Package: linux-headers-6.18.22+pexip25+2-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-sh7751r (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-sh7751r
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-sh7751r (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-sh7751r
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-sh7751r, generally used for building
+ Linux kernel 6.18.22+pexip25+2-sh7751r, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-sh7751r, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-sh7751r, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-sh7751r package.
+ linux-image-6.18.22+pexip25+2-sh7751r package.
 
-Package: linux-headers-6.18.22+pexip25+1-sparc64
+Package: linux-headers-6.18.22+pexip25+2-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-sparc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-sparc64
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-sparc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-sparc64
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-sparc64, generally used for building
+ Linux kernel 6.18.22+pexip25+2-sparc64, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-sparc64, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-sparc64, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-sparc64 package.
+ linux-image-6.18.22+pexip25+2-sparc64 package.
 
-Package: linux-headers-6.18.22+pexip25+1-sparc64-smp
+Package: linux-headers-6.18.22+pexip25+2-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
-Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+1-sparc64-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+1, ${misc:Depends}
-Description: Header files for Linux 6.18.22+pexip25+1-sparc64-smp
+Depends: gcc-14-for-host, linux-base (>= 4.12~), linux-base-6.18.22+pexip25+2-sparc64-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-common (= ${source:Version}), linux-kbuild-6.18.22+pexip25+2, ${misc:Depends}
+Description: Header files for Linux 6.18.22+pexip25+2-sparc64-smp
  This package provides the architecture-specific kernel header files for
- Linux kernel 6.18.22+pexip25+1-sparc64-smp, generally used for building
+ Linux kernel 6.18.22+pexip25+2-sparc64-smp, generally used for building
  out-of-tree kernel modules.  These files are going to be installed into
- /usr/src/linux-headers-6.18.22+pexip25+1-sparc64-smp, and can be used for
+ /usr/src/linux-headers-6.18.22+pexip25+2-sparc64-smp, and can be used for
  building modules that load into the kernel provided by the
- linux-image-6.18.22+pexip25+1-sparc64-smp package.
+ linux-image-6.18.22+pexip25+2-sparc64-smp package.
 
 Package: linux-headers-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-alpha-generic (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-alpha-generic (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-alpha-generic (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-alpha-generic (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux alpha-generic configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel alpha-generic configuration.
@@ -672,7 +672,7 @@ Package: linux-headers-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-alpha-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-alpha-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-alpha-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-alpha-smp (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux alpha-smp configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel alpha-smp configuration.
@@ -681,7 +681,7 @@ Package: linux-headers-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-armmp (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-armmp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-armmp (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-armmp (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux armmp configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel armmp configuration.
@@ -689,7 +689,7 @@ Description: Header files for Linux armmp configuration (meta-package)
 Package: linux-headers-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-armmp-lpae (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-armmp-lpae (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-armmp-lpae (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-armmp-lpae (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux armmp-lpae configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel armmp-lpae configuration.
@@ -698,7 +698,7 @@ Package: linux-headers-loong64
 Architecture: loong64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-loong64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-loong64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-loong64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-loong64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux loong64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel loong64 configuration.
@@ -707,7 +707,7 @@ Package: linux-headers-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-m68k (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-m68k (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-m68k (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-m68k (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux m68k configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel m68k configuration.
@@ -716,7 +716,7 @@ Package: linux-headers-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-parisc (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-parisc (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-parisc (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-parisc (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux parisc configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel parisc configuration.
@@ -724,7 +724,7 @@ Description: Header files for Linux parisc configuration (meta-package)
 Package: linux-headers-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-parisc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-parisc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-parisc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-parisc64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux parisc64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel parisc64 configuration.
@@ -732,7 +732,7 @@ Description: Header files for Linux parisc64 configuration (meta-package)
 Package: linux-headers-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-powerpc (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-powerpc (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-powerpc (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc configuration.
@@ -740,7 +740,7 @@ Description: Header files for Linux powerpc configuration (meta-package)
 Package: linux-headers-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-powerpc-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-powerpc-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-powerpc-smp (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc-smp configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc-smp configuration.
@@ -749,7 +749,7 @@ Package: linux-headers-powerpc64
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-powerpc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-powerpc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-powerpc64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc64 configuration.
@@ -757,7 +757,7 @@ Description: Header files for Linux powerpc64 configuration (meta-package)
 Package: linux-headers-powerpc64-64k
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-powerpc64-64k (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc64-64k (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc64-64k configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc64-64k configuration.
@@ -766,7 +766,7 @@ Package: linux-headers-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-powerpc64le (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-powerpc64le (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc64le (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-powerpc64le (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc64le configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc64le configuration.
@@ -774,7 +774,7 @@ Description: Header files for Linux powerpc64le configuration (meta-package)
 Package: linux-headers-powerpc64le-64k
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-powerpc64le-64k (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc64le-64k (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux powerpc64le-64k configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel powerpc64le-64k configuration.
@@ -783,7 +783,7 @@ Package: linux-headers-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-riscv64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-riscv64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-riscv64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-riscv64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux riscv64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel riscv64 configuration.
@@ -792,7 +792,7 @@ Package: linux-headers-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-s390x (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-s390x (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-s390x (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-s390x (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux s390x configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel s390x configuration.
@@ -800,7 +800,7 @@ Description: Header files for Linux s390x configuration (meta-package)
 Package: linux-headers-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-sh7751r (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-sh7751r (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-sh7751r (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-sh7751r (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux sh7751r configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel sh7751r configuration.
@@ -808,7 +808,7 @@ Description: Header files for Linux sh7751r configuration (meta-package)
 Package: linux-headers-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Depends: linux-base-sparc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-sparc64 (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-sparc64 (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-sparc64 (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux sparc64 configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel sparc64 configuration.
@@ -817,16 +817,16 @@ Package: linux-headers-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-headers-generic
-Depends: linux-base-sparc64-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+1-sparc64-smp (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-sparc64-smp (= ${binary:Version}), linux-headers-6.18.22+pexip25+2-sparc64-smp (= ${binary:Version}), ${misc:Depends}
 Description: Header files for Linux sparc64-smp configuration (meta-package)
  This package depends on the architecture-specific header files for the
  latest Linux kernel sparc64-smp configuration.
 
-Package: linux-image-6.18.22+pexip25+1-alpha-generic
+Package: linux-image-6.18.22+pexip25+2-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [alpha] | initramfs-tools (>= 0.120+deb8u2) [alpha] | linux-initramfs-tool [alpha], kmod, linux-base-6.18.22+pexip25+1-alpha-generic (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [alpha] | initramfs-tools (>= 0.120+deb8u2) [alpha] | linux-initramfs-tool [alpha], kmod, linux-base-6.18.22+pexip25+2-alpha-generic (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [alpha]
 Suggests: aboot [alpha], debian-kernel-handbook, fdutils [alpha], firmware-linux-free, linux-doc-6.18
 Breaks: fwupdate (<< 12-7) [alpha], initramfs-tools (<< 0.120+deb8u2) [alpha], wireless-regdb (<< 2019.06.03-1~) [alpha]
@@ -834,21 +834,21 @@ Description: Linux 6.18.22 for Alpha
  The Linux kernel 6.18.22 and modules for use on DEC Alpha systems with
  extended kernel start address (Wildfire, Titan, Marvel).
 
-Package: linux-image-6.18.22+pexip25+1-alpha-generic-dbg
+Package: linux-image-6.18.22+pexip25+2-alpha-generic-dbg
 Architecture: alpha
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-alpha-generic (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-alpha-generic
+Depends: linux-base-6.18.22+pexip25+2-alpha-generic (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-alpha-generic
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-alpha-generic.
+ modules in linux-image-6.18.22+pexip25+2-alpha-generic.
 
-Package: linux-image-6.18.22+pexip25+1-alpha-smp
+Package: linux-image-6.18.22+pexip25+2-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [alpha] | initramfs-tools (>= 0.120+deb8u2) [alpha] | linux-initramfs-tool [alpha], kmod, linux-base-6.18.22+pexip25+1-alpha-smp (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [alpha] | initramfs-tools (>= 0.120+deb8u2) [alpha] | linux-initramfs-tool [alpha], kmod, linux-base-6.18.22+pexip25+2-alpha-smp (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [alpha]
 Suggests: aboot [alpha], debian-kernel-handbook, fdutils [alpha], firmware-linux-free, linux-doc-6.18
 Breaks: fwupdate (<< 12-7) [alpha], initramfs-tools (<< 0.120+deb8u2) [alpha], wireless-regdb (<< 2019.06.03-1~) [alpha]
@@ -856,69 +856,69 @@ Description: Linux 6.18.22 for Alpha SMP
  The Linux kernel 6.18.22 and modules for use on DEC Alpha SMP systems with
  extended kernel start address (Wildfire, Titan, Marvel).
 
-Package: linux-image-6.18.22+pexip25+1-alpha-smp-dbg
+Package: linux-image-6.18.22+pexip25+2-alpha-smp-dbg
 Architecture: alpha
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-alpha-smp (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-alpha-smp
+Depends: linux-base-6.18.22+pexip25+2-alpha-smp (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-alpha-smp
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-alpha-smp.
+ modules in linux-image-6.18.22+pexip25+2-alpha-smp.
 
-Package: linux-image-6.18.22+pexip25+1-amd64-dbg
+Package: linux-image-6.18.22+pexip25+2-amd64-dbg
 Architecture: amd64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-amd64 (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-amd64
+Depends: linux-base-6.18.22+pexip25+2-amd64 (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-amd64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-amd64.
+ modules in linux-image-6.18.22+pexip25+2-amd64.
 
-Package: linux-image-6.18.22+pexip25+1-amd64-unsigned
+Package: linux-image-6.18.22+pexip25+2-amd64-unsigned
 Architecture: amd64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [amd64] | initramfs-tools (>= 0.120+deb8u2) [amd64] | linux-initramfs-tool [amd64], kmod, linux-base-6.18.22+pexip25+1-amd64 (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [amd64] | initramfs-tools (>= 0.120+deb8u2) [amd64] | linux-initramfs-tool [amd64], kmod, linux-base-6.18.22+pexip25+2-amd64 (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [amd64]
 Suggests: debian-kernel-handbook, firmware-linux-free, grub-pc [amd64] | grub-efi-amd64 [amd64] | extlinux [amd64], linux-doc-6.18
-Replaces: linux-image-6.18.22+pexip25+1-amd64
+Replaces: linux-image-6.18.22+pexip25+2-amd64
 Breaks: fwupdate (<< 12-7) [amd64], initramfs-tools (<< 0.120+deb8u2) [amd64], wireless-regdb (<< 2019.06.03-1~) [amd64]
-Conflicts: linux-image-6.18.22+pexip25+1-amd64
+Conflicts: linux-image-6.18.22+pexip25+2-amd64
 Description: Linux 6.18.22 for Pexip x86-64 cloud
  The Linux kernel 6.18.22 and modules for use on Pexip OS on x86-64 cloud
  platforms.
 
-Package: linux-image-6.18.22+pexip25+1-arm64-dbg
+Package: linux-image-6.18.22+pexip25+2-arm64-dbg
 Architecture: arm64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-arm64 (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-arm64
+Depends: linux-base-6.18.22+pexip25+2-arm64 (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-arm64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-arm64.
+ modules in linux-image-6.18.22+pexip25+2-arm64.
 
-Package: linux-image-6.18.22+pexip25+1-arm64-unsigned
+Package: linux-image-6.18.22+pexip25+2-arm64-unsigned
 Architecture: arm64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [arm64] | initramfs-tools (>= 0.120+deb8u2) [arm64] | linux-initramfs-tool [arm64], kmod, linux-base-6.18.22+pexip25+1-arm64 (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [arm64] | initramfs-tools (>= 0.120+deb8u2) [arm64] | linux-initramfs-tool [arm64], kmod, linux-base-6.18.22+pexip25+2-arm64 (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [arm64]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18
-Replaces: linux-image-6.18.22+pexip25+1-arm64
+Replaces: linux-image-6.18.22+pexip25+2-arm64
 Breaks: flash-kernel (<< 3.110~) [arm64], fwupdate (<< 12-7) [arm64], initramfs-tools (<< 0.120+deb8u2) [arm64], reform-tools (<< 1.83~) [arm64], u-boot-efi-dtb (<< 5~) [arm64], wireless-regdb (<< 2019.06.03-1~) [arm64]
-Conflicts: linux-image-6.18.22+pexip25+1-arm64
+Conflicts: linux-image-6.18.22+pexip25+2-arm64
 Description: Linux 6.18.22 for Pexip arm64 cloud
  The Linux kernel 6.18.22 and modules for use on Pexip OS on x86-64 cloud
  platforms.
 
-Package: linux-image-6.18.22+pexip25+1-armmp
+Package: linux-image-6.18.22+pexip25+2-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [armhf] | initramfs-tools (>= 0.120+deb8u2) [armhf] | linux-initramfs-tool [armhf], kmod, linux-base-6.18.22+pexip25+1-armmp (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [armhf] | initramfs-tools (>= 0.120+deb8u2) [armhf] | linux-initramfs-tool [armhf], kmod, linux-base-6.18.22+pexip25+2-armmp (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [armhf]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18
 Breaks: flash-kernel (<< 3.110~) [armhf], fwupdate (<< 12-7) [armhf], initramfs-tools (<< 0.120+deb8u2) [armhf], reform-tools (<< 1.83~) [armhf], u-boot-efi-dtb (<< 5~) [armhf], wireless-regdb (<< 2019.06.03-1~) [armhf]
@@ -927,21 +927,21 @@ Description: Linux 6.18.22 for ARMv7 multiplatform compatible SoCs
  kernel.  See https://wiki.debian.org/DebianKernel/ARMMP for details of
  supported platforms.
 
-Package: linux-image-6.18.22+pexip25+1-armmp-dbg
+Package: linux-image-6.18.22+pexip25+2-armmp-dbg
 Architecture: armhf
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-armmp (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-armmp
+Depends: linux-base-6.18.22+pexip25+2-armmp (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-armmp
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-armmp.
+ modules in linux-image-6.18.22+pexip25+2-armmp.
 
-Package: linux-image-6.18.22+pexip25+1-armmp-lpae
+Package: linux-image-6.18.22+pexip25+2-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [armhf] | initramfs-tools (>= 0.120+deb8u2) [armhf] | linux-initramfs-tool [armhf], kmod, linux-base-6.18.22+pexip25+1-armmp-lpae (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [armhf] | initramfs-tools (>= 0.120+deb8u2) [armhf] | linux-initramfs-tool [armhf], kmod, linux-base-6.18.22+pexip25+2-armmp-lpae (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [armhf]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18
 Breaks: flash-kernel (<< 3.110~) [armhf], fwupdate (<< 12-7) [armhf], initramfs-tools (<< 0.120+deb8u2) [armhf], reform-tools (<< 1.83~) [armhf], u-boot-efi-dtb (<< 5~) [armhf], wireless-regdb (<< 2019.06.03-1~) [armhf]
@@ -950,21 +950,21 @@ Description: Linux 6.18.22 for ARMv7 multiplatform compatible SoCs supporting LP
  supporting LPAE. See https://wiki.debian.org/DebianKernel/ARMMP for
  details of supported platforms..
 
-Package: linux-image-6.18.22+pexip25+1-armmp-lpae-dbg
+Package: linux-image-6.18.22+pexip25+2-armmp-lpae-dbg
 Architecture: armhf
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-armmp-lpae (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-armmp-lpae
+Depends: linux-base-6.18.22+pexip25+2-armmp-lpae (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-armmp-lpae
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-armmp-lpae.
+ modules in linux-image-6.18.22+pexip25+2-armmp-lpae.
 
-Package: linux-image-6.18.22+pexip25+1-loong64
+Package: linux-image-6.18.22+pexip25+2-loong64
 Architecture: loong64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [loong64] | initramfs-tools (>= 0.120+deb8u2) [loong64] | linux-initramfs-tool [loong64], kmod, linux-base-6.18.22+pexip25+1-loong64 (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [loong64] | initramfs-tools (>= 0.120+deb8u2) [loong64] | linux-initramfs-tool [loong64], kmod, linux-base-6.18.22+pexip25+2-loong64 (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [loong64]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18
 Breaks: fwupdate (<< 12-7) [loong64], initramfs-tools (<< 0.120+deb8u2) [loong64], wireless-regdb (<< 2019.06.03-1~) [loong64]
@@ -972,42 +972,42 @@ Description: Linux 6.18.22 for 64-bit LoongArch platforms
  The Linux kernel 6.18.22 and modules for use on 64-bit LoongArch
  platforms.
 
-Package: linux-image-6.18.22+pexip25+1-loong64-dbg
+Package: linux-image-6.18.22+pexip25+2-loong64-dbg
 Architecture: loong64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-loong64 (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-loong64
+Depends: linux-base-6.18.22+pexip25+2-loong64 (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-loong64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-loong64.
+ modules in linux-image-6.18.22+pexip25+2-loong64.
 
-Package: linux-image-6.18.22+pexip25+1-m68k
+Package: linux-image-6.18.22+pexip25+2-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [m68k] | initramfs-tools (>= 0.120+deb8u2) [m68k] | linux-initramfs-tool [m68k], kmod, linux-base-6.18.22+pexip25+1-m68k (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [m68k] | initramfs-tools (>= 0.120+deb8u2) [m68k] | linux-initramfs-tool [m68k], kmod, linux-base-6.18.22+pexip25+2-m68k (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [m68k]
 Suggests: debian-kernel-handbook, fdutils [m68k], firmware-linux-free, linux-doc-6.18, vmelilo [m68k]
 Breaks: fwupdate (<< 12-7) [m68k], initramfs-tools (<< 0.120+deb8u2) [m68k], wireless-regdb (<< 2019.06.03-1~) [m68k]
 Description: Linux 6.18.22 for Motorola MC68020+ family
  The Linux kernel 6.18.22 and modules for use on Motorola MC68020+ family.
 
-Package: linux-image-6.18.22+pexip25+1-m68k-dbg
+Package: linux-image-6.18.22+pexip25+2-m68k-dbg
 Architecture: m68k
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-m68k (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-m68k
+Depends: linux-base-6.18.22+pexip25+2-m68k (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-m68k
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-m68k.
+ modules in linux-image-6.18.22+pexip25+2-m68k.
 
-Package: linux-image-6.18.22+pexip25+1-parisc
+Package: linux-image-6.18.22+pexip25+2-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [hppa] | initramfs-tools (>= 0.120+deb8u2) [hppa] | linux-initramfs-tool [hppa], kmod, linux-base-6.18.22+pexip25+1-parisc (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [hppa] | initramfs-tools (>= 0.120+deb8u2) [hppa] | linux-initramfs-tool [hppa], kmod, linux-base-6.18.22+pexip25+2-parisc (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [hppa]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18, palo [hppa]
 Breaks: fwupdate (<< 12-7) [hppa], initramfs-tools (<< 0.120+deb8u2) [hppa], wireless-regdb (<< 2019.06.03-1~) [hppa]
@@ -1015,21 +1015,21 @@ Description: Linux 6.18.22 for 32-bit PA-RISC
  The Linux kernel 6.18.22 and modules for use on HP PA-RISC 32-bit systems
  with max 4 GB RAM.
 
-Package: linux-image-6.18.22+pexip25+1-parisc-dbg
+Package: linux-image-6.18.22+pexip25+2-parisc-dbg
 Architecture: hppa
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-parisc (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-parisc
+Depends: linux-base-6.18.22+pexip25+2-parisc (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-parisc
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-parisc.
+ modules in linux-image-6.18.22+pexip25+2-parisc.
 
-Package: linux-image-6.18.22+pexip25+1-parisc64
+Package: linux-image-6.18.22+pexip25+2-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [hppa] | initramfs-tools (>= 0.120+deb8u2) [hppa] | linux-initramfs-tool [hppa], kmod, linux-base-6.18.22+pexip25+1-parisc64 (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [hppa] | initramfs-tools (>= 0.120+deb8u2) [hppa] | linux-initramfs-tool [hppa], kmod, linux-base-6.18.22+pexip25+2-parisc64 (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [hppa]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18, palo [hppa]
 Breaks: fwupdate (<< 12-7) [hppa], initramfs-tools (<< 0.120+deb8u2) [hppa], wireless-regdb (<< 2019.06.03-1~) [hppa]
@@ -1037,21 +1037,21 @@ Description: Linux 6.18.22 for 64-bit PA-RISC
  The Linux kernel 6.18.22 and modules for use on HP PA-RISC 64-bit systems
  with support for more than 4 GB RAM.
 
-Package: linux-image-6.18.22+pexip25+1-parisc64-dbg
+Package: linux-image-6.18.22+pexip25+2-parisc64-dbg
 Architecture: hppa
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-parisc64 (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-parisc64
+Depends: linux-base-6.18.22+pexip25+2-parisc64 (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-parisc64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-parisc64.
+ modules in linux-image-6.18.22+pexip25+2-parisc64.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc
+Package: linux-image-6.18.22+pexip25+2-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [powerpc] | initramfs-tools (>= 0.120+deb8u2) [powerpc] | linux-initramfs-tool [powerpc], kmod, linux-base-6.18.22+pexip25+1-powerpc (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [powerpc] | initramfs-tools (>= 0.120+deb8u2) [powerpc] | linux-initramfs-tool [powerpc], kmod, linux-base-6.18.22+pexip25+2-powerpc (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [powerpc]
 Suggests: debian-kernel-handbook, firmware-linux-free, grub-ieee1275 [powerpc], linux-doc-6.18, mkvmlinuz [powerpc]
 Breaks: fwupdate (<< 12-7) [powerpc], initramfs-tools (<< 0.120+deb8u2) [powerpc], wireless-regdb (<< 2019.06.03-1~) [powerpc]
@@ -1059,21 +1059,21 @@ Description: Linux 6.18.22 for uniprocessor 32-bit PowerPC
  The Linux kernel 6.18.22 and modules for use on uniprocessor 32-bit
  PowerPC.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc-dbg
+Package: linux-image-6.18.22+pexip25+2-powerpc-dbg
 Architecture: powerpc
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-powerpc
+Depends: linux-base-6.18.22+pexip25+2-powerpc (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-powerpc
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-powerpc.
+ modules in linux-image-6.18.22+pexip25+2-powerpc.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc-smp
+Package: linux-image-6.18.22+pexip25+2-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [powerpc] | initramfs-tools (>= 0.120+deb8u2) [powerpc] | linux-initramfs-tool [powerpc], kmod, linux-base-6.18.22+pexip25+1-powerpc-smp (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [powerpc] | initramfs-tools (>= 0.120+deb8u2) [powerpc] | linux-initramfs-tool [powerpc], kmod, linux-base-6.18.22+pexip25+2-powerpc-smp (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [powerpc]
 Suggests: debian-kernel-handbook, firmware-linux-free, grub-ieee1275 [powerpc], linux-doc-6.18, mkvmlinuz [powerpc]
 Breaks: fwupdate (<< 12-7) [powerpc], initramfs-tools (<< 0.120+deb8u2) [powerpc], wireless-regdb (<< 2019.06.03-1~) [powerpc]
@@ -1081,21 +1081,21 @@ Description: Linux 6.18.22 for multiprocessor 32-bit PowerPC
  The Linux kernel 6.18.22 and modules for use on multiprocessor 32-bit
  PowerPC.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc-smp-dbg
+Package: linux-image-6.18.22+pexip25+2-powerpc-smp-dbg
 Architecture: powerpc
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc-smp (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-powerpc-smp
+Depends: linux-base-6.18.22+pexip25+2-powerpc-smp (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-powerpc-smp
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-powerpc-smp.
+ modules in linux-image-6.18.22+pexip25+2-powerpc-smp.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc64
+Package: linux-image-6.18.22+pexip25+2-powerpc64
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [ppc64] | initramfs-tools (>= 0.120+deb8u2) [ppc64] | linux-initramfs-tool [ppc64], kmod, linux-base-6.18.22+pexip25+1-powerpc64 (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [ppc64] | initramfs-tools (>= 0.120+deb8u2) [ppc64] | linux-initramfs-tool [ppc64], kmod, linux-base-6.18.22+pexip25+2-powerpc64 (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [ppc64]
 Suggests: debian-kernel-handbook, firmware-linux-free, grub-ieee1275 [ppc64], linux-doc-6.18, mkvmlinuz [ppc64]
 Breaks: fwupdate (<< 12-7) [ppc64], initramfs-tools (<< 0.120+deb8u2) [ppc64], wireless-regdb (<< 2019.06.03-1~) [ppc64]
@@ -1103,11 +1103,11 @@ Description: Linux 6.18.22 for 64-bit PowerPC with 4k pages
  The Linux kernel 6.18.22 and modules for use on 64-bit PowerPC with 4k
  pages.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc64-64k
+Package: linux-image-6.18.22+pexip25+2-powerpc64-64k
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [ppc64] | initramfs-tools (>= 0.120+deb8u2) [ppc64] | linux-initramfs-tool [ppc64], kmod, linux-base-6.18.22+pexip25+1-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [ppc64] | initramfs-tools (>= 0.120+deb8u2) [ppc64] | linux-initramfs-tool [ppc64], kmod, linux-base-6.18.22+pexip25+2-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [ppc64]
 Suggests: debian-kernel-handbook, firmware-linux-free, grub-ieee1275 [ppc64], linux-doc-6.18, mkvmlinuz [ppc64]
 Breaks: fwupdate (<< 12-7) [ppc64], initramfs-tools (<< 0.120+deb8u2) [ppc64], wireless-regdb (<< 2019.06.03-1~) [ppc64]
@@ -1115,31 +1115,31 @@ Description: Linux 6.18.22 for 64-bit PowerPC with 64k pages
  The Linux kernel 6.18.22 and modules for use on 64-bit PowerPC with 64k
  pages.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc64-64k-dbg
+Package: linux-image-6.18.22+pexip25+2-powerpc64-64k-dbg
 Architecture: ppc64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-powerpc64-64k
+Depends: linux-base-6.18.22+pexip25+2-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-powerpc64-64k
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-powerpc64-64k.
+ modules in linux-image-6.18.22+pexip25+2-powerpc64-64k.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc64-dbg
+Package: linux-image-6.18.22+pexip25+2-powerpc64-dbg
 Architecture: ppc64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc64 (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-powerpc64
+Depends: linux-base-6.18.22+pexip25+2-powerpc64 (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-powerpc64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-powerpc64.
+ modules in linux-image-6.18.22+pexip25+2-powerpc64.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc64le
+Package: linux-image-6.18.22+pexip25+2-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [ppc64el] | initramfs-tools (>= 0.120+deb8u2) [ppc64el] | linux-initramfs-tool [ppc64el], kmod, linux-base-6.18.22+pexip25+1-powerpc64le (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [ppc64el] | initramfs-tools (>= 0.120+deb8u2) [ppc64el] | linux-initramfs-tool [ppc64el], kmod, linux-base-6.18.22+pexip25+2-powerpc64le (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [ppc64el]
 Suggests: debian-kernel-handbook, firmware-linux-free, grub-ieee1275 [ppc64el], linux-doc-6.18, mkvmlinuz [ppc64el]
 Breaks: fwupdate (<< 12-7) [ppc64el], initramfs-tools (<< 0.120+deb8u2) [ppc64el], wireless-regdb (<< 2019.06.03-1~) [ppc64el]
@@ -1147,11 +1147,11 @@ Description: Linux 6.18.22 for Little-endian 64-bit PowerPC with 4k pages
  The Linux kernel 6.18.22 and modules for use on Little-endian 64-bit
  PowerPC with 4k pages.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc64le-64k
+Package: linux-image-6.18.22+pexip25+2-powerpc64le-64k
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [ppc64el] | initramfs-tools (>= 0.120+deb8u2) [ppc64el] | linux-initramfs-tool [ppc64el], kmod, linux-base-6.18.22+pexip25+1-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [ppc64el] | initramfs-tools (>= 0.120+deb8u2) [ppc64el] | linux-initramfs-tool [ppc64el], kmod, linux-base-6.18.22+pexip25+2-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [ppc64el]
 Suggests: debian-kernel-handbook, firmware-linux-free, grub-ieee1275 [ppc64el], linux-doc-6.18, mkvmlinuz [ppc64el]
 Breaks: fwupdate (<< 12-7) [ppc64el], initramfs-tools (<< 0.120+deb8u2) [ppc64el], wireless-regdb (<< 2019.06.03-1~) [ppc64el]
@@ -1159,73 +1159,73 @@ Description: Linux 6.18.22 for Little-endian 64-bit PowerPC with 64k pages
  The Linux kernel 6.18.22 and modules for use on Little-endian 64-bit
  PowerPC with 64k pages.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc64le-64k-dbg
+Package: linux-image-6.18.22+pexip25+2-powerpc64le-64k-dbg
 Architecture: ppc64el
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-powerpc64le-64k
+Depends: linux-base-6.18.22+pexip25+2-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-powerpc64le-64k
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-powerpc64le-64k.
+ modules in linux-image-6.18.22+pexip25+2-powerpc64le-64k.
 
-Package: linux-image-6.18.22+pexip25+1-powerpc64le-dbg
+Package: linux-image-6.18.22+pexip25+2-powerpc64le-dbg
 Architecture: ppc64el
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-powerpc64le (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-powerpc64le
+Depends: linux-base-6.18.22+pexip25+2-powerpc64le (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-powerpc64le
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-powerpc64le.
+ modules in linux-image-6.18.22+pexip25+2-powerpc64le.
 
-Package: linux-image-6.18.22+pexip25+1-riscv64
+Package: linux-image-6.18.22+pexip25+2-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [riscv64] | initramfs-tools (>= 0.120+deb8u2) [riscv64] | linux-initramfs-tool [riscv64], kmod, linux-base-6.18.22+pexip25+1-riscv64 (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [riscv64] | initramfs-tools (>= 0.120+deb8u2) [riscv64] | linux-initramfs-tool [riscv64], kmod, linux-base-6.18.22+pexip25+2-riscv64 (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [riscv64]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18
 Breaks: flash-kernel (<< 3.110~) [riscv64], fwupdate (<< 12-7) [riscv64], initramfs-tools (<< 0.120+deb8u2) [riscv64], reform-tools (<< 1.83~) [riscv64], u-boot-efi-dtb (<< 5~) [riscv64], wireless-regdb (<< 2019.06.03-1~) [riscv64]
 Description: Linux 6.18.22 for 64-bit RISC-V platforms
  The Linux kernel 6.18.22 and modules for use on 64-bit RISC-V platforms.
 
-Package: linux-image-6.18.22+pexip25+1-riscv64-dbg
+Package: linux-image-6.18.22+pexip25+2-riscv64-dbg
 Architecture: riscv64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-riscv64 (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-riscv64
+Depends: linux-base-6.18.22+pexip25+2-riscv64 (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-riscv64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-riscv64.
+ modules in linux-image-6.18.22+pexip25+2-riscv64.
 
-Package: linux-image-6.18.22+pexip25+1-s390x
+Package: linux-image-6.18.22+pexip25+2-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [s390x] | initramfs-tools (>= 0.120+deb8u2) [s390x] | linux-initramfs-tool [s390x], kmod, linux-base-6.18.22+pexip25+1-s390x (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [s390x] | initramfs-tools (>= 0.120+deb8u2) [s390x] | linux-initramfs-tool [s390x], kmod, linux-base-6.18.22+pexip25+2-s390x (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [s390x]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18, s390-tools [s390x]
 Breaks: fwupdate (<< 12-7) [s390x], initramfs-tools (<< 0.120+deb8u2) [s390x], wireless-regdb (<< 2019.06.03-1~) [s390x]
 Description: Linux 6.18.22 for IBM zSeries
  The Linux kernel 6.18.22 and modules for use on IBM zSeries.
 
-Package: linux-image-6.18.22+pexip25+1-s390x-dbg
+Package: linux-image-6.18.22+pexip25+2-s390x-dbg
 Architecture: s390x
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-s390x (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-s390x
+Depends: linux-base-6.18.22+pexip25+2-s390x (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-s390x
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-s390x.
+ modules in linux-image-6.18.22+pexip25+2-s390x.
 
-Package: linux-image-6.18.22+pexip25+1-sh7751r
+Package: linux-image-6.18.22+pexip25+2-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [sh4] | initramfs-tools (>= 0.120+deb8u2) [sh4] | linux-initramfs-tool [sh4], kmod, linux-base-6.18.22+pexip25+1-sh7751r (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [sh4] | initramfs-tools (>= 0.120+deb8u2) [sh4] | linux-initramfs-tool [sh4], kmod, linux-base-6.18.22+pexip25+2-sh7751r (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [sh4]
 Suggests: debian-kernel-handbook, firmware-linux-free, linux-doc-6.18
 Breaks: fwupdate (<< 12-7) [sh4], initramfs-tools (<< 0.120+deb8u2) [sh4], wireless-regdb (<< 2019.06.03-1~) [sh4]
@@ -1233,21 +1233,21 @@ Description: Linux 6.18.22 for sh7751r
  The Linux kernel 6.18.22 and modules for use on Renesas SH7751R R2D plus
  board.
 
-Package: linux-image-6.18.22+pexip25+1-sh7751r-dbg
+Package: linux-image-6.18.22+pexip25+2-sh7751r-dbg
 Architecture: sh4
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-sh7751r (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-sh7751r
+Depends: linux-base-6.18.22+pexip25+2-sh7751r (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-sh7751r
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-sh7751r.
+ modules in linux-image-6.18.22+pexip25+2-sh7751r.
 
-Package: linux-image-6.18.22+pexip25+1-sparc64
+Package: linux-image-6.18.22+pexip25+2-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [sparc64] | initramfs-tools (>= 0.120+deb8u2) [sparc64] | linux-initramfs-tool [sparc64], kmod, linux-base-6.18.22+pexip25+1-sparc64 (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [sparc64] | initramfs-tools (>= 0.120+deb8u2) [sparc64] | linux-initramfs-tool [sparc64], kmod, linux-base-6.18.22+pexip25+2-sparc64 (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [sparc64]
 Suggests: debian-kernel-handbook, fdutils [sparc64], firmware-linux-free, grub-ieee1275 [sparc64], linux-doc-6.18
 Breaks: fwupdate (<< 12-7) [sparc64], initramfs-tools (<< 0.120+deb8u2) [sparc64], wireless-regdb (<< 2019.06.03-1~) [sparc64]
@@ -1255,21 +1255,21 @@ Description: Linux 6.18.22 for uniprocessor 64-bit UltraSPARC
  The Linux kernel 6.18.22 and modules for use on uniprocessor 64-bit
  UltraSPARC.
 
-Package: linux-image-6.18.22+pexip25+1-sparc64-dbg
+Package: linux-image-6.18.22+pexip25+2-sparc64-dbg
 Architecture: sparc64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-sparc64 (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-sparc64
+Depends: linux-base-6.18.22+pexip25+2-sparc64 (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-sparc64
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-sparc64.
+ modules in linux-image-6.18.22+pexip25+2-sparc64.
 
-Package: linux-image-6.18.22+pexip25+1-sparc64-smp
+Package: linux-image-6.18.22+pexip25+2-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.quick>
 Pre-Depends: linux-base (>= 4.12~)
-Depends: dracut [sparc64] | initramfs-tools (>= 0.120+deb8u2) [sparc64] | linux-initramfs-tool [sparc64], kmod, linux-base-6.18.22+pexip25+1-sparc64-smp (= ${binary:Version}), ${misc:Depends}
+Depends: dracut [sparc64] | initramfs-tools (>= 0.120+deb8u2) [sparc64] | linux-initramfs-tool [sparc64], kmod, linux-base-6.18.22+pexip25+2-sparc64-smp (= ${binary:Version}), ${misc:Depends}
 Recommends: apparmor [sparc64]
 Suggests: debian-kernel-handbook, fdutils [sparc64], firmware-linux-free, grub-ieee1275 [sparc64], linux-doc-6.18
 Breaks: fwupdate (<< 12-7) [sparc64], initramfs-tools (<< 0.120+deb8u2) [sparc64], wireless-regdb (<< 2019.06.03-1~) [sparc64]
@@ -1277,21 +1277,21 @@ Description: Linux 6.18.22 for multiprocessor 64-bit UltraSPARC
  The Linux kernel 6.18.22 and modules for use on multiprocessor 64-bit
  UltraSPARC.
 
-Package: linux-image-6.18.22+pexip25+1-sparc64-smp-dbg
+Package: linux-image-6.18.22+pexip25+2-sparc64-smp-dbg
 Architecture: sparc64
 Section: debug
 Priority: optional
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.quick>
-Depends: linux-base-6.18.22+pexip25+1-sparc64-smp (= ${binary:Version}), ${misc:Depends}
-Description: Debug symbols for linux-image-6.18.22+pexip25+1-sparc64-smp
+Depends: linux-base-6.18.22+pexip25+2-sparc64-smp (= ${binary:Version}), ${misc:Depends}
+Description: Debug symbols for linux-image-6.18.22+pexip25+2-sparc64-smp
  This package provides the detached debug symbols for the Linux kernel and
- modules in linux-image-6.18.22+pexip25+1-sparc64-smp.
+ modules in linux-image-6.18.22+pexip25+2-sparc64-smp.
 
 Package: linux-image-alpha-generic
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-alpha-generic, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-alpha-generic (= ${binary:Version}), linux-image-6.18.22+pexip25+1-alpha-generic (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-alpha-generic, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-alpha-generic (= ${binary:Version}), linux-image-6.18.22+pexip25+2-alpha-generic (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Alpha (meta-package)
  This package depends on the latest Linux kernel and modules for use on DEC
  Alpha systems with extended kernel start address (Wildfire, Titan,
@@ -1301,7 +1301,7 @@ Package: linux-image-alpha-generic-dbg
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-alpha-generic (= ${binary:Version}), linux-image-6.18.22+pexip25+1-alpha-generic-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-alpha-generic (= ${binary:Version}), linux-image-6.18.22+pexip25+2-alpha-generic-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux alpha-generic configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel alpha-generic configuration.
@@ -1309,8 +1309,8 @@ Description: Debugging symbols for Linux alpha-generic configuration (meta-packa
 Package: linux-image-alpha-smp
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-alpha-smp, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-alpha-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+1-alpha-smp (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-alpha-smp, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-alpha-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+2-alpha-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Alpha SMP (meta-package)
  This package depends on the latest Linux kernel and modules for use on DEC
  Alpha SMP systems with extended kernel start address (Wildfire, Titan,
@@ -1320,7 +1320,7 @@ Package: linux-image-alpha-smp-dbg
 Architecture: alpha
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-alpha-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+1-alpha-smp-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-alpha-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+2-alpha-smp-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux alpha-smp configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel alpha-smp configuration.
@@ -1344,8 +1344,8 @@ Description: Template for signed linux-image packages for arm64
 Package: linux-image-armmp
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-armmp, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-armmp (= ${binary:Version}), linux-image-6.18.22+pexip25+1-armmp (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-armmp, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-armmp (= ${binary:Version}), linux-image-6.18.22+pexip25+2-armmp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for ARMv7 multiplatform compatible SoCs (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  ARMv7 multiplatform kernel.  See
@@ -1356,7 +1356,7 @@ Package: linux-image-armmp-dbg
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-armmp (= ${binary:Version}), linux-image-6.18.22+pexip25+1-armmp-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-armmp (= ${binary:Version}), linux-image-6.18.22+pexip25+2-armmp-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux armmp configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel armmp configuration.
@@ -1364,8 +1364,8 @@ Description: Debugging symbols for Linux armmp configuration (meta-package)
 Package: linux-image-armmp-lpae
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-armmp-lpae, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-armmp-lpae (= ${binary:Version}), linux-image-6.18.22+pexip25+1-armmp-lpae (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-armmp-lpae, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-armmp-lpae (= ${binary:Version}), linux-image-6.18.22+pexip25+2-armmp-lpae (= ${binary:Version}), ${misc:Depends}
 Description: Linux for ARMv7 multiplatform compatible SoCs supporting LPAE (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  ARMv7 multiplatform kernel supporting LPAE. See
@@ -1376,7 +1376,7 @@ Package: linux-image-armmp-lpae-dbg
 Architecture: armhf
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-armmp-lpae (= ${binary:Version}), linux-image-6.18.22+pexip25+1-armmp-lpae-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-armmp-lpae (= ${binary:Version}), linux-image-6.18.22+pexip25+2-armmp-lpae-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux armmp-lpae configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel armmp-lpae configuration.
@@ -1384,8 +1384,8 @@ Description: Debugging symbols for Linux armmp-lpae configuration (meta-package)
 Package: linux-image-loong64
 Architecture: loong64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-loong64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-loong64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-loong64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-loong64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-loong64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-loong64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit LoongArch platforms (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  64-bit LoongArch platforms.
@@ -1394,7 +1394,7 @@ Package: linux-image-loong64-dbg
 Architecture: loong64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-loong64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-loong64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-loong64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-loong64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux loong64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel loong64 configuration.
@@ -1402,8 +1402,8 @@ Description: Debugging symbols for Linux loong64 configuration (meta-package)
 Package: linux-image-m68k
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-m68k, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-m68k (= ${binary:Version}), linux-image-6.18.22+pexip25+1-m68k (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-m68k, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-m68k (= ${binary:Version}), linux-image-6.18.22+pexip25+2-m68k (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Motorola MC68020+ family (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Motorola MC68020+ family.
@@ -1412,7 +1412,7 @@ Package: linux-image-m68k-dbg
 Architecture: m68k
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-m68k (= ${binary:Version}), linux-image-6.18.22+pexip25+1-m68k-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-m68k (= ${binary:Version}), linux-image-6.18.22+pexip25+2-m68k-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux m68k configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel m68k configuration.
@@ -1420,8 +1420,8 @@ Description: Debugging symbols for Linux m68k configuration (meta-package)
 Package: linux-image-parisc
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-parisc, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-parisc (= ${binary:Version}), linux-image-6.18.22+pexip25+1-parisc (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-parisc, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-parisc (= ${binary:Version}), linux-image-6.18.22+pexip25+2-parisc (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 32-bit PA-RISC (meta-package)
  This package depends on the latest Linux kernel and modules for use on HP
  PA-RISC 32-bit systems with max 4 GB RAM.
@@ -1430,7 +1430,7 @@ Package: linux-image-parisc-dbg
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-parisc (= ${binary:Version}), linux-image-6.18.22+pexip25+1-parisc-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-parisc (= ${binary:Version}), linux-image-6.18.22+pexip25+2-parisc-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux parisc configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel parisc configuration.
@@ -1438,8 +1438,8 @@ Description: Debugging symbols for Linux parisc configuration (meta-package)
 Package: linux-image-parisc64
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-parisc64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-parisc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-parisc64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-parisc64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-parisc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-parisc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PA-RISC (meta-package)
  This package depends on the latest Linux kernel and modules for use on HP
  PA-RISC 64-bit systems with support for more than 4 GB RAM.
@@ -1448,7 +1448,7 @@ Package: linux-image-parisc64-dbg
 Architecture: hppa
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-parisc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-parisc64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-parisc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-parisc64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux parisc64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel parisc64 configuration.
@@ -1456,8 +1456,8 @@ Description: Debugging symbols for Linux parisc64 configuration (meta-package)
 Package: linux-image-powerpc
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-powerpc, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-powerpc (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-powerpc, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-powerpc (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc (= ${binary:Version}), ${misc:Depends}
 Description: Linux for uniprocessor 32-bit PowerPC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  uniprocessor 32-bit PowerPC.
@@ -1466,7 +1466,7 @@ Package: linux-image-powerpc-dbg
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-powerpc (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc configuration.
@@ -1474,8 +1474,8 @@ Description: Debugging symbols for Linux powerpc configuration (meta-package)
 Package: linux-image-powerpc-smp
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-powerpc-smp, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-powerpc-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc-smp (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-powerpc-smp, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-powerpc-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for multiprocessor 32-bit PowerPC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  multiprocessor 32-bit PowerPC.
@@ -1484,7 +1484,7 @@ Package: linux-image-powerpc-smp-dbg
 Architecture: powerpc
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-powerpc-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc-smp-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc-smp-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc-smp configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc-smp configuration.
@@ -1492,8 +1492,8 @@ Description: Debugging symbols for Linux powerpc-smp configuration (meta-package
 Package: linux-image-powerpc64
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-powerpc64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-powerpc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-powerpc64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-powerpc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PowerPC with 4k pages (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  64-bit PowerPC with 4k pages.
@@ -1501,8 +1501,8 @@ Description: Linux for 64-bit PowerPC with 4k pages (meta-package)
 Package: linux-image-powerpc64-64k
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-powerpc64-64k, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-powerpc64-64k (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-powerpc64-64k, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-powerpc64-64k (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc64-64k (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit PowerPC with 64k pages (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  64-bit PowerPC with 64k pages.
@@ -1511,7 +1511,7 @@ Package: linux-image-powerpc64-64k-dbg
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-powerpc64-64k (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc64-64k-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc64-64k (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc64-64k-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc64-64k configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc64-64k configuration.
@@ -1520,7 +1520,7 @@ Package: linux-image-powerpc64-dbg
 Architecture: ppc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-powerpc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc64 configuration.
@@ -1528,8 +1528,8 @@ Description: Debugging symbols for Linux powerpc64 configuration (meta-package)
 Package: linux-image-powerpc64le
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-powerpc64le, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-powerpc64le (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc64le (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-powerpc64le, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-powerpc64le (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc64le (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Little-endian 64-bit PowerPC with 4k pages (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Little-endian 64-bit PowerPC with 4k pages.
@@ -1537,8 +1537,8 @@ Description: Linux for Little-endian 64-bit PowerPC with 4k pages (meta-package)
 Package: linux-image-powerpc64le-64k
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-powerpc64le-64k, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-powerpc64le-64k (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-powerpc64le-64k, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-powerpc64le-64k (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc64le-64k (= ${binary:Version}), ${misc:Depends}
 Description: Linux for Little-endian 64-bit PowerPC with 64k pages (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Little-endian 64-bit PowerPC with 64k pages.
@@ -1547,7 +1547,7 @@ Package: linux-image-powerpc64le-64k-dbg
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-powerpc64le-64k (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc64le-64k-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc64le-64k (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc64le-64k-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc64le-64k configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc64le-64k configuration.
@@ -1556,7 +1556,7 @@ Package: linux-image-powerpc64le-dbg
 Architecture: ppc64el
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-powerpc64le (= ${binary:Version}), linux-image-6.18.22+pexip25+1-powerpc64le-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-powerpc64le (= ${binary:Version}), linux-image-6.18.22+pexip25+2-powerpc64le-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux powerpc64le configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel powerpc64le configuration.
@@ -1564,8 +1564,8 @@ Description: Debugging symbols for Linux powerpc64le configuration (meta-package
 Package: linux-image-riscv64
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-riscv64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-riscv64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-riscv64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-riscv64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-riscv64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-riscv64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for 64-bit RISC-V platforms (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  64-bit RISC-V platforms.
@@ -1574,7 +1574,7 @@ Package: linux-image-riscv64-dbg
 Architecture: riscv64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-riscv64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-riscv64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-riscv64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-riscv64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux riscv64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel riscv64 configuration.
@@ -1582,8 +1582,8 @@ Description: Debugging symbols for Linux riscv64 configuration (meta-package)
 Package: linux-image-s390x
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-s390x, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-s390x (= ${binary:Version}), linux-image-6.18.22+pexip25+1-s390x (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-s390x, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-s390x (= ${binary:Version}), linux-image-6.18.22+pexip25+2-s390x (= ${binary:Version}), ${misc:Depends}
 Description: Linux for IBM zSeries (meta-package)
  This package depends on the latest Linux kernel and modules for use on IBM
  zSeries.
@@ -1592,7 +1592,7 @@ Package: linux-image-s390x-dbg
 Architecture: s390x
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-s390x (= ${binary:Version}), linux-image-6.18.22+pexip25+1-s390x-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-s390x (= ${binary:Version}), linux-image-6.18.22+pexip25+2-s390x-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux s390x configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel s390x configuration.
@@ -1600,8 +1600,8 @@ Description: Debugging symbols for Linux s390x configuration (meta-package)
 Package: linux-image-sh7751r
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-sh7751r, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-sh7751r (= ${binary:Version}), linux-image-6.18.22+pexip25+1-sh7751r (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-sh7751r, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-sh7751r (= ${binary:Version}), linux-image-6.18.22+pexip25+2-sh7751r (= ${binary:Version}), ${misc:Depends}
 Description: Linux for sh7751r (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  Renesas SH7751R R2D plus board.
@@ -1610,7 +1610,7 @@ Package: linux-image-sh7751r-dbg
 Architecture: sh4
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-sh7751r (= ${binary:Version}), linux-image-6.18.22+pexip25+1-sh7751r-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-sh7751r (= ${binary:Version}), linux-image-6.18.22+pexip25+2-sh7751r-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux sh7751r configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel sh7751r configuration.
@@ -1618,8 +1618,8 @@ Description: Debugging symbols for Linux sh7751r configuration (meta-package)
 Package: linux-image-sparc64
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-latest-modules-6.18.22+pexip25+1-sparc64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-sparc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-sparc64 (= ${binary:Version}), ${misc:Depends}
+Provides: linux-latest-modules-6.18.22+pexip25+2-sparc64, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-sparc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-sparc64 (= ${binary:Version}), ${misc:Depends}
 Description: Linux for uniprocessor 64-bit UltraSPARC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  uniprocessor 64-bit UltraSPARC.
@@ -1628,7 +1628,7 @@ Package: linux-image-sparc64-dbg
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-sparc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+1-sparc64-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-sparc64 (= ${binary:Version}), linux-image-6.18.22+pexip25+2-sparc64-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux sparc64 configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel sparc64 configuration.
@@ -1636,8 +1636,8 @@ Description: Debugging symbols for Linux sparc64 configuration (meta-package)
 Package: linux-image-sparc64-smp
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nometa !pkg.linux.quick>
-Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+1-sparc64-smp, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
-Depends: linux-base-sparc64-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+1-sparc64-smp (= ${binary:Version}), ${misc:Depends}
+Provides: linux-image-generic, linux-latest-modules-6.18.22+pexip25+2-sparc64-smp, virtualbox-guest-modules [amd64], wireguard-modules (= 1.0.0)
+Depends: linux-base-sparc64-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+2-sparc64-smp (= ${binary:Version}), ${misc:Depends}
 Description: Linux for multiprocessor 64-bit UltraSPARC (meta-package)
  This package depends on the latest Linux kernel and modules for use on
  multiprocessor 64-bit UltraSPARC.
@@ -1646,7 +1646,7 @@ Package: linux-image-sparc64-smp-dbg
 Architecture: sparc64
 Build-Profiles: <!pkg.linux.nokernel !pkg.linux.nokerneldbg !pkg.linux.nometa !pkg.linux.quick>
 Provides: linux-latest-image-dbg
-Depends: linux-base-sparc64-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+1-sparc64-smp-dbg (= ${binary:Version}), ${misc:Depends}
+Depends: linux-base-sparc64-smp (= ${binary:Version}), linux-image-6.18.22+pexip25+2-sparc64-smp-dbg (= ${binary:Version}), ${misc:Depends}
 Description: Debugging symbols for Linux sparc64-smp configuration (meta-package)
  This package depends on the detached debugging symbols for the latest
  Linux kernel sparc64-smp configuration.
@@ -1657,12 +1657,12 @@ Depends: linux-image-amd64 [amd64], linux-image-arm64 [arm64], ${misc:Depends}
 Description: Linux kernel suitable for virtual machines (meta-package)
  This package depends on the binary Linux image.
 
-Package: linux-kbuild-6.18.22+pexip25+1
+Package: linux-kbuild-6.18.22+pexip25+2
 Architecture: linux-any
 Build-Profiles: <!pkg.linux.notools>
 Depends: pahole, ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
 Multi-Arch: foreign
-Description: Kbuild infrastructure for Linux 6.18.22+pexip25+1
+Description: Kbuild infrastructure for Linux 6.18.22+pexip25+2
  This package provides the kbuild infrastructure for the headers packages
  for Linux kernel version 6.18.
 
@@ -2086,170 +2086,170 @@ Description: USB device sharing system over IP network
  This package provides the server component 'usbipd' and the client tool
  'usbip'.
 
-Package: kernel-image-6.18.22+pexip25+1-alpha-generic-di
+Package: kernel-image-6.18.22+pexip25+2-alpha-generic-di
 Architecture: alpha
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-alpha-generic
+Kernel-Version: 6.18.22+pexip25+2-alpha-generic
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-armmp-di
+Package: kernel-image-6.18.22+pexip25+2-armmp-di
 Architecture: armhf
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-armmp
+Kernel-Version: 6.18.22+pexip25+2-armmp
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-loong64-di
+Package: kernel-image-6.18.22+pexip25+2-loong64-di
 Architecture: loong64
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-loong64
+Kernel-Version: 6.18.22+pexip25+2-loong64
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-m68k-di
+Package: kernel-image-6.18.22+pexip25+2-m68k-di
 Architecture: m68k
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-m68k
+Kernel-Version: 6.18.22+pexip25+2-m68k
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-parisc-di
+Package: kernel-image-6.18.22+pexip25+2-parisc-di
 Architecture: hppa
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-parisc
+Kernel-Version: 6.18.22+pexip25+2-parisc
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-parisc64-di
+Package: kernel-image-6.18.22+pexip25+2-parisc64-di
 Architecture: hppa
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-parisc64
+Kernel-Version: 6.18.22+pexip25+2-parisc64
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-powerpc-di
+Package: kernel-image-6.18.22+pexip25+2-powerpc-di
 Architecture: powerpc
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-powerpc
+Kernel-Version: 6.18.22+pexip25+2-powerpc
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-powerpc64-di
+Package: kernel-image-6.18.22+pexip25+2-powerpc64-di
 Architecture: ppc64
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-powerpc64
+Kernel-Version: 6.18.22+pexip25+2-powerpc64
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-powerpc64le-di
+Package: kernel-image-6.18.22+pexip25+2-powerpc64le-di
 Architecture: ppc64el
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-powerpc64le
+Kernel-Version: 6.18.22+pexip25+2-powerpc64le
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-riscv64-di
+Package: kernel-image-6.18.22+pexip25+2-riscv64-di
 Architecture: riscv64
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-riscv64
+Kernel-Version: 6.18.22+pexip25+2-riscv64
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-s390x-di
+Package: kernel-image-6.18.22+pexip25+2-s390x-di
 Architecture: s390x
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-s390x
+Kernel-Version: 6.18.22+pexip25+2-s390x
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-sh7751r-di
+Package: kernel-image-6.18.22+pexip25+2-sh7751r-di
 Architecture: sh4
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-sh7751r
+Kernel-Version: 6.18.22+pexip25+2-sh7751r
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your
  full Debian system.
 
-Package: kernel-image-6.18.22+pexip25+1-sparc64-di
+Package: kernel-image-6.18.22+pexip25+2-sparc64-di
 Architecture: sparc64
 Section: debian-installer
 Priority: standard
 Package-Type: udeb
 Build-Profiles: <!noudeb !pkg.linux.nokernel !pkg.linux.quick>
 Provides: kernel-image
-Kernel-Version: 6.18.22+pexip25+1-sparc64
+Kernel-Version: 6.18.22+pexip25+2-sparc64
 Description: Linux kernel image and core modules for the Debian installer
  This package contains the kernel image and core modules for the Debian
  installer boot images.  It does _not_ provide a usable kernel for your

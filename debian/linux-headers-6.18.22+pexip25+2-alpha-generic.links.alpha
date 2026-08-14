@@ -1,0 +1,4 @@
+usr/lib/linux-kbuild-6.18.22+pexip25+2/scripts                          usr/src/linux-headers-6.18.22+pexip25+2-alpha-generic/scripts
+usr/lib/linux-kbuild-6.18.22+pexip25+2/tools                            usr/src/linux-headers-6.18.22+pexip25+2-alpha-generic/tools
+usr/src/linux-headers-6.18.22+pexip25+2-alpha-generic                                               usr/lib/modules/6.18.22+pexip25+2-alpha-generic/build
+usr/src/linux-headers-6.18.22+pexip25+2-common  usr/lib/modules/6.18.22+pexip25+2-alpha-generic/source
