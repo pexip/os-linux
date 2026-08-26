@@ -211,6 +211,11 @@ CONFIG_LOCK_DOWN_KERNEL_FORCE_NONE=y
 CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y
 
 ##
+## file: certs/Kconfig
+##
+CONFIG_SYSTEM_TRUSTED_KEYS="debian/pexip-modules.pem"
+
+##
 ## file: unknown
 ##
 CONFIG_USB_XHCI_PCI=m
