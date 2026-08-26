@@ -1,3 +1,13 @@
+linux (6.18.22-1+pexip25u4) pexip-trixie; urgency=medium
+
+  * Turn on extra kernel security options:
+
+    + CONFIG_SECURITY_LOCKDOWN_LSM
+    + CONFIG_LOCK_DOWN_KERNEL_FORCE_NONE
+    + CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Wed, 26 Aug 2026 18:55:36 +0100
+
 linux (6.18.22-1+pexip25u3) pexip-trixie; urgency=medium
 
   * Update the control file generation for the signed build

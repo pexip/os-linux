@@ -231,3 +231,12 @@ CONFIG_SUSPEND=y
 ## file: security/selinux/Kconfig
 ##
 CONFIG_SECURITY_SELINUX_BOOTPARAM=y
+
+##
+## file: security/lockdown/Kconfig
+##
+CONFIG_SECURITY_LOCKDOWN_LSM=y
+## choice: Kernel default lockdown mode
+CONFIG_LOCK_DOWN_KERNEL_FORCE_NONE=y
+## end choice
+CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y
