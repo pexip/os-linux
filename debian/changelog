@@ -1,3 +1,10 @@
+linux (6.18.22-1+pexip25u6) pexip-trixie; urgency=medium
+
+  * Another no-change rebuild to land the signed version of
+    linux-base-* into main
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Fri, 02 Oct 2026 17:56:55 +0100
+
 linux (6.18.22-1+pexip25u5) pexip-trixie; urgency=medium
 
   * No-change rebuild
