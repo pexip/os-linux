@@ -207,13 +207,13 @@ static int ntfs_symlink(struct mnt_idmap *idmap, struct inode *dir,
 }
 
 /*
- * ntfs_mkdir- inode_operations::mkdir
+ * ntfs_mkdir - inode_operations::mkdir
  */
 static struct dentry *ntfs_mkdir(struct mnt_idmap *idmap, struct inode *dir,
 				 struct dentry *dentry, umode_t mode)
 {
-	return ERR_PTR(ntfs_create_inode(idmap, dir, dentry, NULL, S_IFDIR | mode, 0,
-					 NULL, 0, NULL));
+	return ERR_PTR(ntfs_create_inode(idmap, dir, dentry, NULL,
+					 S_IFDIR | mode, 0, NULL, 0, NULL));
 }
 
 /*
@@ -340,7 +340,7 @@ static int ntfs_rename(struct mnt_idmap *idmap, struct inode *dir,
 			ntfs_sync_inode(dir);
 
 		if (IS_DIRSYNC(new_dir))
-			ntfs_sync_inode(inode);
+			ntfs_sync_inode(new_dir);
 	}
 
 	if (dir_ni != new_dir_ni)
