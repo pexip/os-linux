@@ -1,3 +1,9 @@
+linux (6.18.60-1+pexip25u1) pexip-trixie; urgency=medium
+
+  * New upstream release
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Tue, 03 Nov 2026 19:25:59 +0000
+
 linux (6.18.58-1+pexip25u1) pexip-trixie; urgency=medium
 
   * Update packaging for new kernel version
