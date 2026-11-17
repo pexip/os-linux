@@ -1,3 +1,9 @@
+linux (6.18.64-1+pexip25u1) pexip-trixie; urgency=medium
+
+  * New upstream release
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Tue, 17 Nov 2026 16:43:54 +0000
+
 linux (6.18.63-1+pexip25u1) pexip-trixie; urgency=medium
 
   * New upstream release
